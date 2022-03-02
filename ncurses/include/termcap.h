@@ -35,7 +35,7 @@
 /* $Id: termcap.h.in,v 1.20 2021/06/17 21:26:02 tom Exp $ */
 
 #ifndef NCURSES_TERMCAP_H_incl
-#define NCURSES_TERMCAP_H_incl  1
+#define NCURSES_TERMCAP_H_incl	1
 
 #undef  NCURSES_VERSION
 #define NCURSES_VERSION "6.3"
