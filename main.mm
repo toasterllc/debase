@@ -3,6 +3,9 @@
 #include "ncurses/c++/cursesp.h"
 
 int main(int argc, const char* argv[]) {
+    pause();
+    pause();
+    
     // There doesn't seem to be a better way to do this
     setenv("TERM", "xterm-1003", true);
     ::endwin();
@@ -14,7 +17,8 @@ int main(int argc, const char* argv[]) {
     
     mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
     mouseinterval(0);
-    
+    win.scrollok(true);
+//    win.setscrreg(-10, 10);
     for (;;) {
         NCursesPanel::redraw();
         int key = win.getch();
@@ -22,7 +26,7 @@ int main(int argc, const char* argv[]) {
             MEVENT mouseEvent = {};
             int ir = getmouse(&mouseEvent);
             if (ir != OK) continue;
-            panel.mvwin(mouseEvent.y, mouseEvent.x);
+            panel.mvwin(-2, -2);
         }
     }
     return 0;

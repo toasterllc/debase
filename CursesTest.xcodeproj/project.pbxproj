@@ -7,12 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55D1D17327CF5A6900C78ED3 /* libncurses.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF5227CF5A2A00C78ED3 /* libncurses.a */; };
-		55D1D17427CF5A6C00C78ED3 /* libpanel.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4F27CF5A2A00C78ED3 /* libpanel.a */; };
-		55D1D17527CF5A6E00C78ED3 /* libncurses++.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4B27CF5A2A00C78ED3 /* libncurses++.a */; };
-		55D1D1A227CF5FF700C78ED3 /* libmenu.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF5027CF5A2A00C78ED3 /* libmenu.a */; };
-		55D1D1A327CF600200C78ED3 /* libform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4D27CF5A2A00C78ED3 /* libform.a */; };
 		55D1D1A527CF6C9300C78ED3 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D1A427CF6C9300C78ED3 /* main.mm */; };
+		55D1D1DC27CF9C5300C78ED3 /* libncurses_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1D1D027CF9C3200C78ED3 /* libncurses_g.a */; };
+		55D1D1DD27CF9C5500C78ED3 /* libncurses++_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1D1CA27CF9C3200C78ED3 /* libncurses++_g.a */; };
+		55D1D1DE27CF9C5C00C78ED3 /* libpanel_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1D1C927CF9C3200C78ED3 /* libpanel_g.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -85,11 +83,6 @@
 		55D1CCC427CF5A2900C78ED3 /* MKkey_defs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = MKkey_defs.sh; sourceTree = "<group>"; };
 		55D1CCC527CF5A2900C78ED3 /* curses.head */ = {isa = PBXFileReference; lastKnownFileType = text; path = curses.head; sourceTree = "<group>"; };
 		55D1CCC627CF5A2900C78ED3 /* curses.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = curses.h; sourceTree = "<group>"; };
-		55D1CF4B27CF5A2A00C78ED3 /* libncurses++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libncurses++.a"; sourceTree = "<group>"; };
-		55D1CF4D27CF5A2A00C78ED3 /* libform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libform.a; sourceTree = "<group>"; };
-		55D1CF4F27CF5A2A00C78ED3 /* libpanel.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpanel.a; sourceTree = "<group>"; };
-		55D1CF5027CF5A2A00C78ED3 /* libmenu.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmenu.a; sourceTree = "<group>"; };
-		55D1CF5227CF5A2A00C78ED3 /* libncurses.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libncurses.a; sourceTree = "<group>"; };
 		55D1D1A427CF6C9300C78ED3 /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		55D1D1B127CF6F1A00C78ED3 /* cursesp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesp.h; sourceTree = "<group>"; };
 		55D1D1B227CF6F1A00C78ED3 /* internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = internal.h; sourceTree = "<group>"; };
@@ -99,6 +92,16 @@
 		55D1D1BB27CF6F1A00C78ED3 /* cursslk.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursslk.h; sourceTree = "<group>"; };
 		55D1D1C327CF6F1A00C78ED3 /* cursesm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesm.h; sourceTree = "<group>"; };
 		55D1D1C727CF6F9A00C78ED3 /* etip.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = etip.h; sourceTree = "<group>"; };
+		55D1D1C827CF9C3200C78ED3 /* libmenu.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmenu.a; sourceTree = "<group>"; };
+		55D1D1C927CF9C3200C78ED3 /* libpanel_g.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpanel_g.a; sourceTree = "<group>"; };
+		55D1D1CA27CF9C3200C78ED3 /* libncurses++_g.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libncurses++_g.a"; sourceTree = "<group>"; };
+		55D1D1CB27CF9C3200C78ED3 /* libncurses++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libncurses++.a"; sourceTree = "<group>"; };
+		55D1D1CC27CF9C3200C78ED3 /* libform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libform.a; sourceTree = "<group>"; };
+		55D1D1CD27CF9C3200C78ED3 /* libncurses.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libncurses.a; sourceTree = "<group>"; };
+		55D1D1CE27CF9C3200C78ED3 /* libpanel.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpanel.a; sourceTree = "<group>"; };
+		55D1D1CF27CF9C3200C78ED3 /* libform_g.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libform_g.a; sourceTree = "<group>"; };
+		55D1D1D027CF9C3200C78ED3 /* libncurses_g.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libncurses_g.a; sourceTree = "<group>"; };
+		55D1D1D127CF9C3200C78ED3 /* libmenu_g.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmenu_g.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,11 +109,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55D1D17327CF5A6900C78ED3 /* libncurses.a in Frameworks */,
-				55D1D17427CF5A6C00C78ED3 /* libpanel.a in Frameworks */,
-				55D1D17527CF5A6E00C78ED3 /* libncurses++.a in Frameworks */,
-				55D1D1A227CF5FF700C78ED3 /* libmenu.a in Frameworks */,
-				55D1D1A327CF600200C78ED3 /* libform.a in Frameworks */,
+				55D1D1DC27CF9C5300C78ED3 /* libncurses_g.a in Frameworks */,
+				55D1D1DD27CF9C5500C78ED3 /* libncurses++_g.a in Frameworks */,
+				55D1D1DE27CF9C5C00C78ED3 /* libpanel_g.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,11 +212,16 @@
 		55D1CF4A27CF5A2A00C78ED3 /* lib */ = {
 			isa = PBXGroup;
 			children = (
-				55D1CF4B27CF5A2A00C78ED3 /* libncurses++.a */,
-				55D1CF4D27CF5A2A00C78ED3 /* libform.a */,
-				55D1CF4F27CF5A2A00C78ED3 /* libpanel.a */,
-				55D1CF5027CF5A2A00C78ED3 /* libmenu.a */,
-				55D1CF5227CF5A2A00C78ED3 /* libncurses.a */,
+				55D1D1CF27CF9C3200C78ED3 /* libform_g.a */,
+				55D1D1CC27CF9C3200C78ED3 /* libform.a */,
+				55D1D1D127CF9C3200C78ED3 /* libmenu_g.a */,
+				55D1D1C827CF9C3200C78ED3 /* libmenu.a */,
+				55D1D1D027CF9C3200C78ED3 /* libncurses_g.a */,
+				55D1D1CD27CF9C3200C78ED3 /* libncurses.a */,
+				55D1D1CA27CF9C3200C78ED3 /* libncurses++_g.a */,
+				55D1D1CB27CF9C3200C78ED3 /* libncurses++.a */,
+				55D1D1C927CF9C3200C78ED3 /* libpanel_g.a */,
+				55D1D1CE27CF9C3200C78ED3 /* libpanel.a */,
 			);
 			path = lib;
 			sourceTree = "<group>";
