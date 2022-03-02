@@ -70,18 +70,18 @@ set_menu_format(MENU *menu, int rows, int cols)
       int total_rows, total_cols;
 
       if (menu->status & _POSTED)
-	RETURN(E_POSTED);
+        RETURN(E_POSTED);
 
       if (!(menu->items))
-	RETURN(E_NOT_CONNECTED);
+        RETURN(E_NOT_CONNECTED);
 
       if (rows == 0)
-	rows = menu->frows;
+        rows = menu->frows;
       if (cols == 0)
-	cols = menu->fcols;
+        cols = menu->fcols;
 
       if (menu->pattern)
-	Reset_Pattern(menu);
+        Reset_Pattern(menu);
 
       menu->frows = (short)rows;
       menu->fcols = (short)cols;
@@ -89,8 +89,8 @@ set_menu_format(MENU *menu, int rows, int cols)
       assert(rows > 0 && cols > 0);
       total_rows = (menu->nitems - 1) / cols + 1;
       total_cols = (menu->opt & O_ROWMAJOR) ?
-	minimum(menu->nitems, cols) :
-	(menu->nitems - 1) / total_rows + 1;
+        minimum(menu->nitems, cols) :
+        (menu->nitems - 1) / total_rows + 1;
 
       menu->rows = (short)total_rows;
       menu->cols = (short)total_cols;
@@ -104,9 +104,9 @@ set_menu_format(MENU *menu, int rows, int cols)
   else
     {
       if (rows > 0)
-	_nc_Default_Menu.frows = (short)rows;
+        _nc_Default_Menu.frows = (short)rows;
       if (cols > 0)
-	_nc_Default_Menu.fcols = (short)cols;
+        _nc_Default_Menu.fcols = (short)cols;
     }
 
   RETURN(E_OK);

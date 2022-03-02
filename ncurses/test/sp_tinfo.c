@@ -49,8 +49,8 @@ typedef struct {
     int (*outc) (SCREEN *, int);
 } MYDATA;
 
-static bool opt_n = FALSE;	/* true to suppress new_prescr */
-static bool opt_t = FALSE;	/* true to use termcap */
+static bool opt_n = FALSE;      /* true to suppress new_prescr */
+static bool opt_t = FALSE;      /* true to use termcap */
 
 static int
 my_outc(SCREEN *sp, int ch)
@@ -78,11 +78,11 @@ initialize(const char *name, FILE *output)
     result->sp = opt_n ? NULL : new_prescr();
 
     if (opt_t) {
-	char *temp = strdup(name);
-	tgetent_sp(result->sp, temp, name);
-	free(temp);
+        char *temp = strdup(name);
+        tgetent_sp(result->sp, temp, name);
+        free(temp);
     } else {
-	setupterm((NCURSES_CONST char *) name, fileno(output), &error);
+        setupterm((NCURSES_CONST char *) name, fileno(output), &error);
     }
     result->term = cur_term;
 
@@ -93,11 +93,11 @@ static void
 show_flag(MYDATA * data, const char *name, int value)
 {
     if (value < 0) {
-	fprintf(data->fp, " %s = (unknown)\n", name);
+        fprintf(data->fp, " %s = (unknown)\n", name);
     } else if (value == 0) {
-	fprintf(data->fp, " %s = false\n", name);
+        fprintf(data->fp, " %s = false\n", name);
     } else {
-	fprintf(data->fp, " %s = true\n", name);
+        fprintf(data->fp, " %s = true\n", name);
     }
 }
 
@@ -109,19 +109,19 @@ show_cap_flag(MYDATA * data, const char *ti, const char *tc)
 {
     const char *name = (opt_t ? tc : ti);
     show_flag(data, name, (opt_t
-			   ? tgetflag_sp(TC_PARMS)
-			   : tigetflag_sp(TI_PARMS)));
+                           ? tgetflag_sp(TC_PARMS)
+                           : tigetflag_sp(TI_PARMS)));
 }
 
 static void
 show_number(MYDATA * data, const char *name, int value)
 {
     if (value <= -2) {
-	fprintf(data->fp, " %s = (unknown)\n", name);
+        fprintf(data->fp, " %s = (unknown)\n", name);
     } else if (value <= -1) {
-	fprintf(data->fp, " %s = (missing)\n", name);
+        fprintf(data->fp, " %s = (missing)\n", name);
     } else {
-	fprintf(data->fp, " %s = %d\n", name, value);
+        fprintf(data->fp, " %s = %d\n", name, value);
     }
 }
 
@@ -130,8 +130,8 @@ show_cap_number(MYDATA * data, const char *ti, const char *tc)
 {
     const char *name = (opt_t ? tc : ti);
     show_number(data, name, (opt_t
-			     ? tgetnum_sp(TC_PARMS)
-			     : tigetnum_sp(TI_PARMS)));
+                             ? tgetnum_sp(TC_PARMS)
+                             : tigetnum_sp(TI_PARMS)));
 }
 
 static void
@@ -139,22 +139,22 @@ show_string(MYDATA * data, const char *name, const char *value)
 {
     fprintf(data->fp, " %s = ", name);
     if (value == 0) {
-	fprintf(data->fp, "(missing)");
+        fprintf(data->fp, "(missing)");
     } else if (value == (char *) -1) {
-	fprintf(data->fp, "(canceled)");
+        fprintf(data->fp, "(canceled)");
     } else {
-	int ch;
-	while ((ch = UChar(*value++)) != '\0') {
-	    if (ch < 32) {
-		fprintf(data->fp, "^%c", ch | '@');
-	    } else if (ch == 127) {
-		fprintf(data->fp, "^?");
-	    } else if (ch > 127) {
-		fprintf(data->fp, "\\%03o", ch);
-	    } else {
-		fprintf(data->fp, "%c", ch);
-	    }
-	}
+        int ch;
+        while ((ch = UChar(*value++)) != '\0') {
+            if (ch < 32) {
+                fprintf(data->fp, "^%c", ch | '@');
+            } else if (ch == 127) {
+                fprintf(data->fp, "^?");
+            } else if (ch > 127) {
+                fprintf(data->fp, "\\%03o", ch);
+            } else {
+                fprintf(data->fp, "%c", ch);
+            }
+        }
     }
     fprintf(data->fp, "\n");
 }
@@ -166,20 +166,20 @@ show_cap_string(MYDATA * data, const char *ti, const char *tc)
     char tcapjunk[1024];
     char *tcap_ptr = tcapjunk;
     show_string(data, name, (opt_t
-			     ? tgetstr_sp(TC_PARMS, &tcap_ptr)
-			     : tigetstr_sp(TI_PARMS)));
+                             ? tgetstr_sp(TC_PARMS, &tcap_ptr)
+                             : tigetstr_sp(TI_PARMS)));
 }
 
 static void
 show_char(MYDATA * data, const char *name, int value)
 {
     if (value < 0) {
-	show_string(data, name, "(missing)");
+        show_string(data, name, "(missing)");
     } else {
-	char temp[2];
-	temp[0] = (char) value;
-	temp[1] = '\0';
-	show_string(data, name, temp);
+        char temp[2];
+        temp[0] = (char) value;
+        temp[1] = '\0';
+        show_string(data, name, temp);
     }
 }
 
@@ -219,7 +219,7 @@ do_stuff(MYDATA * data)
     has_key_sp(sp, 0);
     key_defined_sp(sp, my_text);
     if ((s = keybound_sp(sp, my_code, 0)) != 0)
-	free(s);
+        free(s);
 #endif
     keyname_sp(sp, '?');
 #if NCURSES_EXT_FUNCS
@@ -235,14 +235,14 @@ do_stuff(MYDATA * data)
      * These functions are low-level settings for ncurses.
      */
 #if NCURSES_EXT_FUNCS
-    set_tabsize_sp(sp, 5);	/* waddch */
+    set_tabsize_sp(sp, 5);      /* waddch */
 #endif
-    typeahead_sp(sp, FALSE);	/* waddch */
-    use_env_sp(sp, FALSE);	/* newterm */
-    use_tioctl_sp(sp, FALSE);	/* newterm */
-    intrflush_sp(sp, 0, 0);	/* wgetch */
-    flushinp_sp(sp);		/* waddch */
-    halfdelay_sp(sp, 5);	/* wgetch */
+    typeahead_sp(sp, FALSE);    /* waddch */
+    use_env_sp(sp, FALSE);      /* newterm */
+    use_tioctl_sp(sp, FALSE);   /* newterm */
+    intrflush_sp(sp, 0, 0);     /* wgetch */
+    flushinp_sp(sp);            /* waddch */
+    halfdelay_sp(sp, 5);        /* wgetch */
 
     /*
      * These manipulate the terminal modes, mainly for wgetch.
@@ -280,7 +280,7 @@ cleanup(MYDATA * data)
     set_curterm(data->term);
     del_curterm(data->term);
 #if !NO_LEAKS
-    free(data->sp);		/* cannot use delscreen in tinfo */
+    free(data->sp);             /* cannot use delscreen in tinfo */
 #endif
     free(data);
 }
@@ -290,16 +290,16 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: sp_tinfo [output] [error]",
-	"",
-	"Options:",
-	" -n   suppress call to new_prescr()",
-	" -t   use termcap functions rather than terminfo",
-	NULL
+        "Usage: sp_tinfo [output] [error]",
+        "",
+        "Options:",
+        " -n   suppress call to new_prescr()",
+        " -t   use termcap functions rather than terminfo",
+        NULL
     };
     size_t n;
     for (n = 0; n < SIZEOF(tbl); ++n) {
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     }
     ExitProgram(EXIT_FAILURE);
 }
@@ -312,23 +312,23 @@ main(int argc, char *argv[])
     int n;
 
     while ((n = getopt(argc, argv, "nt")) != -1) {
-	switch (n) {
-	case 'n':
-	    opt_n = TRUE;
-	    break;
-	case 't':
-	    opt_t = TRUE;
-	    break;
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        switch (n) {
+        case 'n':
+            opt_n = TRUE;
+            break;
+        case 't':
+            opt_t = TRUE;
+            break;
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
     argv += (optind - 1);
     argc -= (optind - 1);
 
     if (argc > 3)
-	usage();
+        usage();
 
     my_out = initialize((argc > 1) ? argv[1] : "vt100", stdout);
     my_err = initialize((argc > 2) ? argv[2] : "ansi", stderr);
@@ -346,7 +346,7 @@ int
 main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 {
     fprintf(stderr,
-	    "This program requires the low-level ncurses sp-funcs tputs_sp\n");
+            "This program requires the low-level ncurses sp-funcs tputs_sp\n");
     ExitProgram(EXIT_FAILURE);
 }
 #endif

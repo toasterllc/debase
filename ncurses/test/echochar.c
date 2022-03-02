@@ -47,8 +47,8 @@ cleanup(void)
     stop_curses();
 
     printf("\n\n%ld total cells, rate %.2f/sec\n",
-	   total_chars,
-	   ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
+           total_chars,
+           ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
 }
 
 static void
@@ -69,12 +69,12 @@ set_color(char *my_pairs, int fg, int bg)
 {
     int pair = (fg * COLORS) + bg;
     if (pair < COLOR_PAIRS) {
-	if (!my_pairs[pair]) {
-	    init_pair((short) pair,
-		      (short) fg,
-		      (short) bg);
-	}
-	attron(COLOR_PAIR(pair));
+        if (!my_pairs[pair]) {
+            init_pair((short) pair,
+                      (short) fg,
+                      (short) bg);
+        }
+        attron(COLOR_PAIR(pair));
     }
 }
 
@@ -92,25 +92,25 @@ main(int argc GCC_UNUSED,
     int last_bg = 0;
 
     while ((ch = getopt(argc, argv, "r")) != -1) {
-	switch (ch) {
-	case 'r':
-	    opt_r = TRUE;
-	    break;
-	default:
-	    fprintf(stderr, "Usage: echochar [-r]\n");
-	    ExitProgram(EXIT_FAILURE);
-	}
+        switch (ch) {
+        case 'r':
+            opt_r = TRUE;
+            break;
+        default:
+            fprintf(stderr, "Usage: echochar [-r]\n");
+            ExitProgram(EXIT_FAILURE);
+        }
     }
 
     InitAndCatch(initscr(), onsig);
 
     use_colors = has_colors();
     if (use_colors) {
-	start_color();
-	if (COLOR_PAIRS > 0) {
-	    my_pairs = typeCalloc(char, (size_t) COLOR_PAIRS);
-	}
-	use_colors = (my_pairs != 0);
+        start_color();
+        if (COLOR_PAIRS > 0) {
+            my_pairs = typeCalloc(char, (size_t) COLOR_PAIRS);
+        }
+        use_colors = (my_pairs != 0);
     }
 
     srand((unsigned) time(0));
@@ -122,37 +122,37 @@ main(int argc GCC_UNUSED,
     started = time((time_t *) 0);
 
     while (!interrupted) {
-	int x = (int) (c * ranf()) + 2;
-	int y = (int) (r * ranf()) + 2;
-	int p = (ranf() > 0.9) ? '*' : ' ';
+        int x = (int) (c * ranf()) + 2;
+        int y = (int) (r * ranf()) + 2;
+        int p = (ranf() > 0.9) ? '*' : ' ';
 
-	move(y, x);
-	if (use_colors > 0) {
-	    int z = (int) (ranf() * COLORS);
-	    if (ranf() > 0.01) {
-		set_color(my_pairs, z, last_bg);
-		last_fg = z;
-	    } else {
-		set_color(my_pairs, last_fg, z);
-		last_bg = z;
-		napms(1);
-	    }
-	} else {
-	    if (ranf() <= 0.01) {
-		if (ranf() > 0.6)
-		    attron(A_REVERSE);
-		else
-		    attroff(A_REVERSE);
-		napms(1);
-	    }
-	}
-	if (opt_r) {
-	    AddCh(UChar(p));
-	    refresh();
-	} else {
-	    echochar(UChar(p));
-	}
-	++total_chars;
+        move(y, x);
+        if (use_colors > 0) {
+            int z = (int) (ranf() * COLORS);
+            if (ranf() > 0.01) {
+                set_color(my_pairs, z, last_bg);
+                last_fg = z;
+            } else {
+                set_color(my_pairs, last_fg, z);
+                last_bg = z;
+                napms(1);
+            }
+        } else {
+            if (ranf() <= 0.01) {
+                if (ranf() > 0.6)
+                    attron(A_REVERSE);
+                else
+                    attroff(A_REVERSE);
+                napms(1);
+            }
+        }
+        if (opt_r) {
+            AddCh(UChar(p));
+            refresh();
+        } else {
+            echochar(UChar(p));
+        }
+        ++total_chars;
     }
     cleanup();
     free(my_pairs);

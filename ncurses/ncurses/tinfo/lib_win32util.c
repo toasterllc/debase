@@ -69,60 +69,60 @@ _nc_console_checkmintty(int fd, LPHANDLE pMinTTY)
 
     if (handle != INVALID_HANDLE_VALUE) {
         dw = GetFileType(handle);
-	if (dw == FILE_TYPE_PIPE) {
-	    if (GetNamedPipeInfo(handle, 0, 0, 0, 0)) {
-	        ULONG pPid;
-		/* Requires NT6 */
-		if (GetNamedPipeServerProcessId(handle, &pPid)) {
-		    TCHAR buf[MAX_PATH];
-		    DWORD len = 0;
-		    /* These security attributes may allow us to
-		       create a remote thread in mintty to manipulate
-		       the terminal state remotely */
-		    HANDLE pHandle = OpenProcess(
-						 PROCESS_CREATE_THREAD
-						 | PROCESS_QUERY_INFORMATION
-						 | PROCESS_VM_OPERATION
-						 | PROCESS_VM_WRITE
-						 | PROCESS_VM_READ,
-						 FALSE,
-						 pPid);
-		    if (pMinTTY)
-		        *pMinTTY = INVALID_HANDLE_VALUE;
-		    if (pHandle != INVALID_HANDLE_VALUE) {
-		        if ((len = GetProcessImageFileName(
-							   pHandle,
-							   buf,
-							   (DWORD)
-							   array_length(buf)))) {
-			    TCHAR *pos = _tcsrchr(buf, _T('\\'));
-			    if (pos) {
-			        pos++;
-				if (_tcsnicmp(pos, _TEXT("mintty.exe"), 10)
-				    == 0) {
-				    if (pMinTTY)
-				        *pMinTTY = pHandle;
-				    code = 1;
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}
+        if (dw == FILE_TYPE_PIPE) {
+            if (GetNamedPipeInfo(handle, 0, 0, 0, 0)) {
+                ULONG pPid;
+                /* Requires NT6 */
+                if (GetNamedPipeServerProcessId(handle, &pPid)) {
+                    TCHAR buf[MAX_PATH];
+                    DWORD len = 0;
+                    /* These security attributes may allow us to
+                       create a remote thread in mintty to manipulate
+                       the terminal state remotely */
+                    HANDLE pHandle = OpenProcess(
+                                                 PROCESS_CREATE_THREAD
+                                                 | PROCESS_QUERY_INFORMATION
+                                                 | PROCESS_VM_OPERATION
+                                                 | PROCESS_VM_WRITE
+                                                 | PROCESS_VM_READ,
+                                                 FALSE,
+                                                 pPid);
+                    if (pMinTTY)
+                        *pMinTTY = INVALID_HANDLE_VALUE;
+                    if (pHandle != INVALID_HANDLE_VALUE) {
+                        if ((len = GetProcessImageFileName(
+                                                           pHandle,
+                                                           buf,
+                                                           (DWORD)
+                                                           array_length(buf)))) {
+                            TCHAR *pos = _tcsrchr(buf, _T('\\'));
+                            if (pos) {
+                                pos++;
+                                if (_tcsnicmp(pos, _TEXT("mintty.exe"), 10)
+                                    == 0) {
+                                    if (pMinTTY)
+                                        *pMinTTY = pHandle;
+                                    code = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     returnCode(code);
 }
 #endif /* _NC_CHECK_MINTTY */
 
-#define JAN1970 116444736000000000LL	/* the value for 01/01/1970 00:00 */
+#define JAN1970 116444736000000000LL    /* the value for 01/01/1970 00:00 */
 
 NCURSES_EXPORT(int)
 _nc_gettimeofday(struct timeval *tv, void *tz GCC_UNUSED)
 {
     union {
-	FILETIME ft;
-	long long since1601;	/* time since 1 Jan 1601 in 100ns units */
+        FILETIME ft;
+        long long since1601;    /* time since 1 Jan 1601 in 100ns units */
     } data;
 
     GetSystemTimeAsFileTime(&data.ft);

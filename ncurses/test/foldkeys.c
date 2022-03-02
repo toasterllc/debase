@@ -56,23 +56,23 @@ log_last_line(WINDOW *win)
     FILE *fp;
 
     if ((fp = fopen(MY_LOGFILE, "a")) != 0) {
-	char temp[256];
-	int y, x, n;
-	int need = sizeof(temp) - 1;
-	if (need > COLS)
-	    need = COLS;
-	getyx(win, y, x);
-	wmove(win, y - 1, 0);
-	n = winnstr(win, temp, need);
-	while (n-- > 0) {
-	    if (isspace(UChar(temp[n])))
-		temp[n] = '\0';
-	    else
-		break;
-	}
-	wmove(win, y, x);
-	fprintf(fp, "%s\n", temp);
-	fclose(fp);
+        char temp[256];
+        int y, x, n;
+        int need = sizeof(temp) - 1;
+        if (need > COLS)
+            need = COLS;
+        getyx(win, y, x);
+        wmove(win, y - 1, 0);
+        n = winnstr(win, temp, need);
+        while (n-- > 0) {
+            if (isspace(UChar(temp[n])))
+                temp[n] = '\0';
+            else
+                break;
+        }
+        wmove(win, y, x);
+        fprintf(fp, "%s\n", temp);
+        fclose(fp);
     }
 }
 
@@ -110,16 +110,16 @@ demo_foldkeys(void)
      * List the predefined keys using the strnames[] array.
      */
     for (code = 0; code < STRCOUNT; ++code) {
-	NCURSES_CONST char *name = strnames[code];
-	NCURSES_CONST char *value = tigetstr(name);
-	if (value != 0 && value != (NCURSES_CONST char *) -1) {
-	    info[info_len].name = strnames[code];
-	    info[info_len].code = key_defined(value);
-	    info[info_len].value = value;
-	    info[info_len].state = 0;
-	    if (info[info_len].code > 0)
-		++info_len;
-	}
+        NCURSES_CONST char *name = strnames[code];
+        NCURSES_CONST char *value = tigetstr(name);
+        if (value != 0 && value != (NCURSES_CONST char *) -1) {
+            info[info_len].name = strnames[code];
+            info[info_len].code = key_defined(value);
+            info[info_len].value = value;
+            info[info_len].state = 0;
+            if (info[info_len].code > 0)
+                ++info_len;
+        }
     }
 
     /*
@@ -128,14 +128,14 @@ demo_foldkeys(void)
      * understand.
      */
     for (code = KEY_MAX; code < MAX_KEYS; ++code) {
-	NCURSES_CONST char *name = keyname(code);
-	if (name != 0) {
-	    info[info_len].name = name;
-	    info[info_len].code = code;
-	    info[info_len].value = tigetstr(name);
-	    info[info_len].state = 0;
-	    ++info_len;
-	}
+        NCURSES_CONST char *name = keyname(code);
+        if (name != 0) {
+            info[info_len].name = name;
+            info[info_len].code = code;
+            info[info_len].value = tigetstr(name);
+            info[info_len].state = 0;
+            ++info_len;
+        }
     }
     printw("Initially %d key definitions\n", info_len);
 
@@ -143,52 +143,52 @@ demo_foldkeys(void)
      * Look for keys that have xterm-style modifiers.
      */
     for (j = 0; j < info_len; ++j) {
-	int first, second;
-	char final[2];
-	char *value;
-	size_t need;
+        int first, second;
+        char final[2];
+        char *value;
+        size_t need;
 
-	if (info[j].state == 0
-	    && sscanf(info[j].value,
-		      "\033[%d;%d%c",
-		      &first,
-		      &second,
-		      final) == 3
-	    && *final != ';'
-	    && (need = strlen(info[j].value)) != 0
-	    && (value = strdup(info[j].value)) != 0) {
-	    (void) need;	/* _nc_SLIMIT is normally nothing  */
-	    _nc_SPRINTF(value, _nc_SLIMIT(need) "\033[%d%c", first, *final);
-	    for (k = 0; k < info_len; ++k) {
-		if (info[k].state == 0
-		    && !strcmp(info[k].value, value)) {
-		    info[j].state = 1;
-		    break;
-		}
-	    }
-	    if (info[j].state == 0) {
-		_nc_SPRINTF(value, _nc_SLIMIT(need) "\033O%c", *final);
-		for (k = 0; k < info_len; ++k) {
-		    if (info[k].state == 0
-			&& !strcmp(info[k].value, value)) {
-			info[j].state = 1;
-			break;
-		    }
-		}
-	    }
-	    if (info[j].state == 1) {
-		if ((define_key(info[j].value, info[k].code)) != ERR) {
-		    printw("map %s to %s\n", info[j].value, info[k].value);
-		    keyok(info[j].code, FALSE);
-		    ++merged;
-		} else {
-		    printw("? cannot define_key %d:%s\n", j, info[j].value);
-		}
-	    } else {
-		printw("? cannot merge %d:%s\n", j, info[j].value);
-	    }
-	    free(value);
-	}
+        if (info[j].state == 0
+            && sscanf(info[j].value,
+                      "\033[%d;%d%c",
+                      &first,
+                      &second,
+                      final) == 3
+            && *final != ';'
+            && (need = strlen(info[j].value)) != 0
+            && (value = strdup(info[j].value)) != 0) {
+            (void) need;        /* _nc_SLIMIT is normally nothing  */
+            _nc_SPRINTF(value, _nc_SLIMIT(need) "\033[%d%c", first, *final);
+            for (k = 0; k < info_len; ++k) {
+                if (info[k].state == 0
+                    && !strcmp(info[k].value, value)) {
+                    info[j].state = 1;
+                    break;
+                }
+            }
+            if (info[j].state == 0) {
+                _nc_SPRINTF(value, _nc_SLIMIT(need) "\033O%c", *final);
+                for (k = 0; k < info_len; ++k) {
+                    if (info[k].state == 0
+                        && !strcmp(info[k].value, value)) {
+                        info[j].state = 1;
+                        break;
+                    }
+                }
+            }
+            if (info[j].state == 1) {
+                if ((define_key(info[j].value, info[k].code)) != ERR) {
+                    printw("map %s to %s\n", info[j].value, info[k].value);
+                    keyok(info[j].code, FALSE);
+                    ++merged;
+                } else {
+                    printw("? cannot define_key %d:%s\n", j, info[j].value);
+                }
+            } else {
+                printw("? cannot merge %d:%s\n", j, info[j].value);
+            }
+            free(value);
+        }
     }
     printw("Merged to %d key definitions\n", info_len - merged);
 }
@@ -202,14 +202,14 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 #endif
 
     if (newterm(0, stdout, stdin) == 0) {
-	fprintf(stderr, "Cannot initialize terminal\n");
-	ExitProgram(EXIT_FAILURE);
+        fprintf(stderr, "Cannot initialize terminal\n");
+        ExitProgram(EXIT_FAILURE);
     }
 
     unlink(MY_LOGFILE);
 
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     scrollok(stdscr, TRUE);
     keypad(stdscr, TRUE);
@@ -222,35 +222,35 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 #endif
 
     while ((ch = getch()) != ERR) {
-	bool escaped = (ch >= MY_KEYS);
-	const char *name = keyname(escaped ? (ch - MY_KEYS) : ch);
+        bool escaped = (ch >= MY_KEYS);
+        const char *name = keyname(escaped ? (ch - MY_KEYS) : ch);
 
 #if HAVE_GETTIMEOFDAY
-	int secs, msecs;
-	struct timeval current;
+        int secs, msecs;
+        struct timeval current;
 
-	gettimeofday(&current, 0);
-	secs = (int) (current.tv_sec - previous.tv_sec);
-	msecs = (int) ((current.tv_usec - previous.tv_usec) / 1000);
-	if (msecs < 0) {
-	    msecs += 1000;
-	    --secs;
-	}
-	if (msecs >= 1000) {
-	    secs += msecs / 1000;
-	    msecs %= 1000;
-	}
-	printw("%6d.%03d ", secs, msecs);
-	previous = current;
+        gettimeofday(&current, 0);
+        secs = (int) (current.tv_sec - previous.tv_sec);
+        msecs = (int) ((current.tv_usec - previous.tv_usec) / 1000);
+        if (msecs < 0) {
+            msecs += 1000;
+            --secs;
+        }
+        if (msecs >= 1000) {
+            secs += msecs / 1000;
+            msecs %= 1000;
+        }
+        printw("%6d.%03d ", secs, msecs);
+        previous = current;
 #endif
-	printw("Keycode %d, name %s%s\n",
-	       ch,
-	       escaped ? "ESC-" : "",
-	       name != 0 ? name : "<null>");
-	log_last_line(stdscr);
-	clrtoeol();
-	if (ch == 'q')
-	    break;
+        printw("Keycode %d, name %s%s\n",
+               ch,
+               escaped ? "ESC-" : "",
+               name != 0 ? name : "<null>");
+        log_last_line(stdscr);
+        clrtoeol();
+        if (ch == 'q')
+            break;
     }
     endwin();
     ExitProgram(EXIT_SUCCESS);

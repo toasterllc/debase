@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
- *	beep.c
+ *      beep.c
  *
- *	The routine beep().
+ *      The routine beep().
  *
  */
 
@@ -50,10 +50,10 @@
 MODULE_ID("$Id: lib_beep.c,v 1.18 2020/02/02 23:34:34 tom Exp $")
 
 /*
- *	beep()
+ *      beep()
  *
- *	Sound the current terminal's audible bell if it has one.   If not,
- *	flash the screen if possible.
+ *      Sound the current terminal's audible bell if it has one.   If not,
+ *      flash the screen if possible.
  *
  */
 
@@ -66,16 +66,16 @@ NCURSES_SP_NAME(beep) (NCURSES_SP_DCL0)
 
 #ifdef USE_TERM_DRIVER
     if (SP_PARM != 0)
-	res = CallDriver_1(SP_PARM, td_doBeepOrFlash, TRUE);
+        res = CallDriver_1(SP_PARM, td_doBeepOrFlash, TRUE);
 #else
     /* FIXME: should make sure that we are not in altchar mode */
     if (cur_term == 0) {
-	res = ERR;
+        res = ERR;
     } else if (bell) {
-	res = NCURSES_PUTP2_FLUSH("bell", bell);
+        res = NCURSES_PUTP2_FLUSH("bell", bell);
     } else if (flash_screen) {
-	res = NCURSES_PUTP2_FLUSH("flash_screen", flash_screen);
-	_nc_flush();
+        res = NCURSES_PUTP2_FLUSH("flash_screen", flash_screen);
+        _nc_flush();
     }
 #endif
 

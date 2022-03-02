@@ -58,30 +58,30 @@ NCURSES_SP_NAME(tigetflag) (NCURSES_SP_DCLx const char *str)
     T((T_CALLED("tigetflag(%p, %s)"), (void *) SP_PARM, str));
 
     if (HasTInfoTerminal(SP_PARM)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(str, BOOLEAN, FALSE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(str, BOOLEAN, FALSE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_boolean(i, tp) {
-		const char *capname = ExtBoolname(tp, i, boolnames);
-		if (same_name(str, capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_boolean(i, tp) {
+                const char *capname = ExtBoolname(tp, i, boolnames);
+                if (same_name(str, capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    /* note: setupterm forces invalid booleans to false */
-	    result = tp->Booleans[j];
-	}
+        if (j >= 0) {
+            /* note: setupterm forces invalid booleans to false */
+            result = tp->Booleans[j];
+        }
     }
 
     returnCode(result);
@@ -98,37 +98,37 @@ tigetflag(const char *str)
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(tigetnum) (NCURSES_SP_DCLx const char *str)
 {
-    int result = CANCELLED_NUMERIC;	/* Solaris returns a -1 on error */
+    int result = CANCELLED_NUMERIC;     /* Solaris returns a -1 on error */
 
     T((T_CALLED("tigetnum(%p, %s)"), (void *) SP_PARM, str));
 
     if (HasTInfoTerminal(SP_PARM)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(str, NUMBER, FALSE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(str, NUMBER, FALSE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_number(i, tp) {
-		const char *capname = ExtNumname(tp, i, numnames);
-		if (same_name(str, capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_number(i, tp) {
+                const char *capname = ExtNumname(tp, i, numnames);
+                if (same_name(str, capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    if (VALID_NUMERIC(tp->Numbers[j]))
-		result = tp->Numbers[j];
-	    else
-		result = ABSENT_NUMERIC;
-	}
+        if (j >= 0) {
+            if (VALID_NUMERIC(tp->Numbers[j]))
+                result = tp->Numbers[j];
+            else
+                result = ABSENT_NUMERIC;
+        }
     }
 
     returnCode(result);
@@ -150,30 +150,30 @@ NCURSES_SP_NAME(tigetstr) (NCURSES_SP_DCLx const char *str)
     T((T_CALLED("tigetstr(%p, %s)"), (void *) SP_PARM, str));
 
     if (HasTInfoTerminal(SP_PARM)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(str, STRING, FALSE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(str, STRING, FALSE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_string(i, tp) {
-		const char *capname = ExtStrname(tp, i, strnames);
-		if (same_name(str, capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_string(i, tp) {
+                const char *capname = ExtStrname(tp, i, strnames);
+                if (same_name(str, capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    /* note: setupterm forces cancelled strings to null */
-	    result = tp->Strings[j];
-	}
+        if (j >= 0) {
+            /* note: setupterm forces cancelled strings to null */
+            result = tp->Strings[j];
+        }
     }
 
     returnPtr(result);

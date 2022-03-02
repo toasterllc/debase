@@ -44,74 +44,74 @@ test_termattrs(unsigned long value)
 {
 #define DATA(name) { name, #name }
     static struct {
-	unsigned long code;
-	const char *name;
+        unsigned long code;
+        const char *name;
     } table[] = {
 #ifdef A_ATTRIBUTES
-	DATA(A_ATTRIBUTES),
+        DATA(A_ATTRIBUTES),
 #endif
 #ifdef A_CHARTEXT
-	    DATA(A_CHARTEXT),
+            DATA(A_CHARTEXT),
 #endif
 #ifdef A_COLOR
-	    DATA(A_COLOR),
+            DATA(A_COLOR),
 #endif
 #ifdef A_STANDOUT
-	    DATA(A_STANDOUT),
+            DATA(A_STANDOUT),
 #endif
 #ifdef A_UNDERLINE
-	    DATA(A_UNDERLINE),
+            DATA(A_UNDERLINE),
 #endif
 #ifdef A_REVERSE
-	    DATA(A_REVERSE),
+            DATA(A_REVERSE),
 #endif
 #ifdef A_BLINK
-	    DATA(A_BLINK),
+            DATA(A_BLINK),
 #endif
 #ifdef A_DIM
-	    DATA(A_DIM),
+            DATA(A_DIM),
 #endif
 #ifdef A_BOLD
-	    DATA(A_BOLD),
+            DATA(A_BOLD),
 #endif
 #ifdef A_ALTCHARSET
-	    DATA(A_ALTCHARSET),
+            DATA(A_ALTCHARSET),
 #endif
 #ifdef A_INVIS
-	    DATA(A_INVIS),
+            DATA(A_INVIS),
 #endif
 #ifdef A_PROTECT
-	    DATA(A_PROTECT),
+            DATA(A_PROTECT),
 #endif
 #ifdef A_HORIZONTAL
-	    DATA(A_HORIZONTAL),
+            DATA(A_HORIZONTAL),
 #endif
 #ifdef A_LEFT
-	    DATA(A_LEFT),
+            DATA(A_LEFT),
 #endif
 #ifdef A_LOW
-	    DATA(A_LOW),
+            DATA(A_LOW),
 #endif
 #ifdef A_RIGHT
-	    DATA(A_RIGHT),
+            DATA(A_RIGHT),
 #endif
 #ifdef A_TOP
-	    DATA(A_TOP),
+            DATA(A_TOP),
 #endif
 #ifdef A_VERTICAL
-	    DATA(A_VERTICAL),
+            DATA(A_VERTICAL),
 #endif
 #ifdef A_ITALIC
-	    DATA(A_ITALIC),
+            DATA(A_ITALIC),
 #endif
     };
     size_t n;
     fprintf(my_fp, "Result: %08lX\r\n", value);
     for (n = 0; n < SIZEOF(table); ++n) {
-	if ((value & table[n].code) != 0) {
-	    fprintf(my_fp, "%08lX %08lX %s\r\n",
-		    table[n].code, value & table[n].code, table[n].name);
-	}
+        if ((value & table[n].code) != 0) {
+            fprintf(my_fp, "%08lX %08lX %s\r\n",
+                    table[n].code, value & table[n].code, table[n].name);
+        }
     };
     fputs("\r\n", my_fp);
 }
@@ -121,19 +121,19 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: test_termattrs [options]"
-	,""
-	,"Options:"
-	,"  -e      use stderr (default stdout)"
-	,"  -n      do not initialize terminal"
-	,"  -s      use setupterm rather than newterm"
+        "Usage: test_termattrs [options]"
+        ,""
+        ,"Options:"
+        ,"  -e      use stderr (default stdout)"
+        ,"  -n      do not initialize terminal"
+        ,"  -s      use setupterm rather than newterm"
 #if USE_WIDEC_SUPPORT
-	,"  -w      use term_attrs rather than termattrs"
+        ,"  -w      use term_attrs rather than termattrs"
 #endif
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -150,42 +150,42 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     my_fp = stdout;
 
     while ((ch = getopt(argc, argv, "ensw")) != -1) {
-	switch (ch) {
-	case 'e':
-	    my_fp = stderr;
-	    break;
-	case 'n':
-	    no_init = TRUE;
-	    break;
-	case 's':
-	    s_opt = TRUE;
-	    break;
+        switch (ch) {
+        case 'e':
+            my_fp = stderr;
+            break;
+        case 'n':
+            no_init = TRUE;
+            break;
+        case 's':
+            s_opt = TRUE;
+            break;
 #if USE_WIDEC_SUPPORT
-	case 'w':
-	    w_opt = TRUE;
-	    break;
+        case 'w':
+            w_opt = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	    break;
-	}
+        default:
+            usage();
+            break;
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     if (no_init) {
-	START_TRACE();
+        START_TRACE();
     } else if (s_opt) {
-	setupterm((char *) 0, fileno(my_fp), (int *) 0);
+        setupterm((char *) 0, fileno(my_fp), (int *) 0);
     } else {
-	newterm((char *) 0, my_fp, stdin);
+        newterm((char *) 0, my_fp, stdin);
     }
 #if USE_WIDEC_SUPPORT
     if (w_opt)
-	test_termattrs((unsigned long) term_attrs());
+        test_termattrs((unsigned long) term_attrs());
     else
 #endif
-	test_termattrs((unsigned long) termattrs());
+        test_termattrs((unsigned long) termattrs());
     ExitProgram(EXIT_SUCCESS);
 }
 

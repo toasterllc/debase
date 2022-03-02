@@ -34,12 +34,12 @@
  ****************************************************************************/
 
 /*
- *	lib_baudrate.c
+ *      lib_baudrate.c
  *
  */
 
 #include <curses.priv.h>
-#include <termcap.h>		/* ospeed */
+#include <termcap.h>            /* ospeed */
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/param.h>
 #endif
@@ -51,10 +51,10 @@
  * ospeed's type for compatibility.
  */
 #if NCURSES_OSPEED_COMPAT && \
- 	((defined(__FreeBSD__) && (__FreeBSD_version < 700000)) || \
-	defined(__NetBSD__) || \
-	((defined(__OpenBSD__) && OpenBSD < 201510)) || \
-	defined(__APPLE__))
+        ((defined(__FreeBSD__) && (__FreeBSD_version < 700000)) || \
+        defined(__NetBSD__) || \
+        ((defined(__OpenBSD__) && OpenBSD < 201510)) || \
+        defined(__APPLE__))
 #undef B0
 #undef B50
 #undef B75
@@ -87,16 +87,16 @@
 MODULE_ID("$Id: lib_baudrate.c,v 1.45 2020/09/05 21:15:32 tom Exp $")
 
 /*
- *	int
- *	baudrate()
+ *      int
+ *      baudrate()
  *
- *	Returns the current terminal's baud rate.
+ *      Returns the current terminal's baud rate.
  *
  */
 
 struct speed {
-    int given_speed;		/* values for 'ospeed' */
-    int actual_speed;		/* the actual speed */
+    int given_speed;            /* values for 'ospeed' */
+    int actual_speed;           /* the actual speed */
 };
 
 #if !defined(EXP_WIN32_DRIVER)
@@ -207,33 +207,33 @@ _nc_baudrate(int OSpeed)
     int result = ERR;
 
     if (OSpeed < 0)
-	OSpeed = (NCURSES_OSPEED) OSpeed;
+        OSpeed = (NCURSES_OSPEED) OSpeed;
     if (OSpeed < 0)
-	OSpeed = (unsigned short) OSpeed;
+        OSpeed = (unsigned short) OSpeed;
 #if !USE_REENTRANT
     if (OSpeed == last_OSpeed) {
-	result = last_baudrate;
+        result = last_baudrate;
     }
 #endif
     if (result == ERR) {
-	if (OSpeed >= 0) {
-	    unsigned i;
+        if (OSpeed >= 0) {
+            unsigned i;
 
-	    for (i = 0; i < SIZEOF(speeds); i++) {
-		if (speeds[i].given_speed > OSpeed) {
-		    break;
-		}
-		if (speeds[i].given_speed == OSpeed) {
-		    result = speeds[i].actual_speed;
-		    break;
-		}
-	    }
-	}
+            for (i = 0; i < SIZEOF(speeds); i++) {
+                if (speeds[i].given_speed > OSpeed) {
+                    break;
+                }
+                if (speeds[i].given_speed == OSpeed) {
+                    result = speeds[i].actual_speed;
+                    break;
+                }
+            }
+        }
 #if !USE_REENTRANT
-	if (OSpeed != last_OSpeed) {
-	    last_OSpeed = OSpeed;
-	    last_baudrate = result;
-	}
+        if (OSpeed != last_OSpeed) {
+            last_OSpeed = OSpeed;
+            last_baudrate = result;
+        }
 #endif
     }
     return (result);
@@ -248,14 +248,14 @@ _nc_ospeed(int BaudRate)
     (void) BaudRate;
 #else
     if (BaudRate >= 0) {
-	unsigned i;
+        unsigned i;
 
-	for (i = 0; i < SIZEOF(speeds); i++) {
-	    if (speeds[i].actual_speed == BaudRate) {
-		result = speeds[i].given_speed;
-		break;
-	    }
-	}
+        for (i = 0; i < SIZEOF(speeds); i++) {
+            if (speeds[i].actual_speed == BaudRate) {
+                result = speeds[i].given_speed;
+                break;
+            }
+        }
     }
 #endif
     return (result);
@@ -278,31 +278,31 @@ NCURSES_SP_NAME(baudrate) (NCURSES_SP_DCL0)
      */
 #ifdef TRACE
     if (IsValidTIScreen(SP_PARM)
-	&& !NC_ISATTY(fileno((SP_PARM && SP_PARM->_ofp) ? SP_PARM->_ofp : stdout))
-	&& getenv("BAUDRATE") != 0) {
-	int ret;
-	if ((ret = _nc_getenv_num("BAUDRATE")) <= 0)
-	    ret = 9600;
-	ospeed = (NCURSES_OSPEED) _nc_ospeed(ret);
-	returnCode(ret);
+        && !NC_ISATTY(fileno((SP_PARM && SP_PARM->_ofp) ? SP_PARM->_ofp : stdout))
+        && getenv("BAUDRATE") != 0) {
+        int ret;
+        if ((ret = _nc_getenv_num("BAUDRATE")) <= 0)
+            ret = 9600;
+        ospeed = (NCURSES_OSPEED) _nc_ospeed(ret);
+        returnCode(ret);
     }
 #endif
 
     if (IsValidTIScreen(SP_PARM)) {
 #ifdef USE_OLD_TTY
-	result = (int) cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
-	ospeed = (NCURSES_OSPEED) _nc_ospeed(result);
+        result = (int) cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
+        ospeed = (NCURSES_OSPEED) _nc_ospeed(result);
 #else /* !USE_OLD_TTY */
 #ifdef TERMIOS
-	ospeed = (NCURSES_OSPEED) cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
+        ospeed = (NCURSES_OSPEED) cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
 #else
-	ospeed = (NCURSES_OSPEED) TerminalOf(SP_PARM)->Nttyb.sg_ospeed;
+        ospeed = (NCURSES_OSPEED) TerminalOf(SP_PARM)->Nttyb.sg_ospeed;
 #endif
-	result = _nc_baudrate(ospeed);
+        result = _nc_baudrate(ospeed);
 #endif
-	TerminalOf(SP_PARM)->_baudrate = result;
+        TerminalOf(SP_PARM)->_baudrate = result;
     } else {
-	result = ERR;
+        result = ERR;
     }
 #endif /* !EXP_WIN32_DRIVER */
     returnCode(result);

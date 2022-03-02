@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 /*
- *	comp_error.c -- Error message routines
+ *      comp_error.c -- Error message routines
  *
  */
 
@@ -48,8 +48,8 @@ NCURSES_EXPORT_VAR(bool) _nc_suppress_warnings = FALSE;
 NCURSES_EXPORT_VAR(int) _nc_curr_line = 0; /* current line # in input */
 NCURSES_EXPORT_VAR(int) _nc_curr_col = 0; /* current column # in input */
 
-#define SourceName	_nc_globals.comp_sourcename
-#define TermType	_nc_globals.comp_termtype
+#define SourceName      _nc_globals.comp_sourcename
+#define TermType        _nc_globals.comp_termtype
 
 NCURSES_EXPORT(const char *)
 _nc_get_source(void)
@@ -69,12 +69,12 @@ _nc_set_type(const char *const name)
 {
 #define MY_SIZE (size_t) MAX_NAME_SIZE
     if (TermType == 0)
-	TermType = typeMalloc(char, MY_SIZE + 1);
+        TermType = typeMalloc(char, MY_SIZE + 1);
     if (TermType != 0) {
-	TermType[0] = '\0';
-	if (name) {
-	    _nc_STRNCAT(TermType, name, MY_SIZE, MY_SIZE);
-	}
+        TermType[0] = '\0';
+        if (name) {
+            _nc_STRNCAT(TermType, name, MY_SIZE, MY_SIZE);
+        }
     }
 }
 
@@ -83,12 +83,12 @@ _nc_get_type(char *name)
 {
 #if NO_LEAKS
     if (name == 0 && TermType != 0) {
-	FreeAndNull(TermType);
-	return;
+        FreeAndNull(TermType);
+        return;
     }
 #endif
     if (name != 0)
-	_nc_STRCPY(name, TermType != 0 ? TermType : "", MAX_NAME_SIZE);
+        _nc_STRCPY(name, TermType != 0 ? TermType : "", MAX_NAME_SIZE);
 }
 
 static NCURSES_INLINE void
@@ -96,11 +96,11 @@ where_is_problem(void)
 {
     fprintf(stderr, "\"%s\"", SourceName ? SourceName : "?");
     if (_nc_curr_line >= 0)
-	fprintf(stderr, ", line %d", _nc_curr_line);
+        fprintf(stderr, ", line %d", _nc_curr_line);
     if (_nc_curr_col >= 0)
-	fprintf(stderr, ", col %d", _nc_curr_col);
+        fprintf(stderr, ", col %d", _nc_curr_col);
     if (TermType != 0 && TermType[0] != '\0')
-	fprintf(stderr, ", terminal '%s'", TermType);
+        fprintf(stderr, ", terminal '%s'", TermType);
     fputc(':', stderr);
     fputc(' ', stderr);
 }
@@ -111,7 +111,7 @@ _nc_warning(const char *const fmt, ...)
     va_list argp;
 
     if (_nc_suppress_warnings)
-	return;
+        return;
 
     where_is_problem();
     va_start(argp, fmt);
@@ -151,7 +151,7 @@ _nc_syserr_abort(const char *const fmt, ...)
 #ifndef USE_ROOT_ENVIRON
     if (getuid() != ROOT_UID)
 #endif
-	abort();
+        abort();
 #endif
     /* Dumping core in production code is not a good idea.
      */

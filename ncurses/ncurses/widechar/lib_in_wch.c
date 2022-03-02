@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_in_wch.c
+**      lib_in_wch.c
 **
-**	The routine win_wch().
+**      The routine win_wch().
 **
 */
 
@@ -50,15 +50,15 @@ win_wch(WINDOW *win, cchar_t *wcval)
     TR(TRACE_CCALLS, (T_CALLED("win_wch(%p,%p)"), (void *) win, (void *) wcval));
 
     if (win != 0
-	&& wcval != 0) {
-	int row, col;
+        && wcval != 0) {
+        int row, col;
 
-	getyx(win, row, col);
+        getyx(win, row, col);
 
-	*wcval = win->_line[row].text[col];
-	TR(TRACE_CCALLS, ("data %s", _tracecchar_t(wcval)));
+        *wcval = win->_line[row].text[col];
+        TR(TRACE_CCALLS, ("data %s", _tracecchar_t(wcval)));
     } else {
-	code = ERR;
+        code = ERR;
     }
     TR(TRACE_CCALLS, (T_RETURN("%d"), code));
     return (code);

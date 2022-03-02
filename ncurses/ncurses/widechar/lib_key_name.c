@@ -28,9 +28,9 @@
  ****************************************************************************/
 
 /*
-**	lib_key_name.c
+**      lib_key_name.c
 **
-**	The routine key_name().
+**      The routine key_name().
 **
 */
 
@@ -54,7 +54,7 @@ key_name(wchar_t c)
     my_wchars = wunctrl(&my_cchar);
     len = wcstombs(MyData, my_wchars, sizeof(MyData) - 1);
     if (isEILSEQ(len) || (len == 0)) {
-	return 0;
+        return 0;
     }
 
     MyData[len] = '\0';

@@ -56,7 +56,7 @@ static void
 init_linedata(const char *name)
 {
     if ((linedata = fopen(name, "r")) == 0) {
-	failed(name);
+        failed(name);
     }
 }
 
@@ -65,44 +65,44 @@ read_linedata(WINDOW *work)
 {
     int result;
     if (linedata != 0) {
-	result = fgetc(linedata);
-	if (result == EOF) {
-	    fclose(linedata);
-	    linedata = 0;
-	    result = read_linedata(work);
-	} else {
-	    wrefresh(work);
-	    if (result == '\n') {
-		result = key_NEWLINE;
-	    }
-	}
+        result = fgetc(linedata);
+        if (result == EOF) {
+            fclose(linedata);
+            linedata = 0;
+            result = read_linedata(work);
+        } else {
+            wrefresh(work);
+            if (result == '\n') {
+                result = key_NEWLINE;
+            }
+        }
     } else {
 #ifdef WIDE_LINEDATA
-	wint_t ch;
-	int code;
+        wint_t ch;
+        int code;
 
-	result = ERR;
-	while ((code = wget_wch(work, &ch)) != ERR) {
+        result = ERR;
+        while ((code = wget_wch(work, &ch)) != ERR) {
 
-	    if (code == KEY_CODE_YES) {
-		switch (ch) {
-		case KEY_DOWN:
-		    result = key_NEWLINE;
-		    break;
-		case KEY_BACKSPACE:
-		    result = key_BACKSPACE;
-		    break;
-		default:
-		    beep();
-		    continue;
-		}
-	    } else {
-		result = (int) ch;
-		break;
-	    }
-	}
+            if (code == KEY_CODE_YES) {
+                switch (ch) {
+                case KEY_DOWN:
+                    result = key_NEWLINE;
+                    break;
+                case KEY_BACKSPACE:
+                    result = key_BACKSPACE;
+                    break;
+                default:
+                    beep();
+                    continue;
+                }
+            } else {
+                result = (int) ch;
+                break;
+            }
+        }
 #else
-	result = wgetch(work);
+        result = wgetch(work);
 #endif
     }
     return result;

@@ -52,36 +52,36 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     while ((n = getopt(argc, argv, "ms")) != -1) {
-	switch (n) {
-	case 'm':
-	    do_meta = TRUE;
-	    break;
-	case 's':
-	    do_setup = TRUE;
-	    break;
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        switch (n) {
+        case 'm':
+            do_meta = TRUE;
+            break;
+        case 's':
+            do_setup = TRUE;
+            break;
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
 
     if (do_setup) {
-	/*
-	 * Get the terminfo entry into memory, and tell ncurses that we want to
-	 * use function keys.  That will make it add any user-defined keys that
-	 * appear in the terminfo.
-	 */
-	newterm(getenv("TERM"), stderr, stdin);
-	keypad(stdscr, TRUE);
-	if (do_meta)
-	    meta(stdscr, TRUE);
-	endwin();
+        /*
+         * Get the terminfo entry into memory, and tell ncurses that we want to
+         * use function keys.  That will make it add any user-defined keys that
+         * appear in the terminfo.
+         */
+        newterm(getenv("TERM"), stderr, stdin);
+        keypad(stdscr, TRUE);
+        if (do_meta)
+            meta(stdscr, TRUE);
+        endwin();
     }
     for (n = -1; n < KEY_MAX + 512; n++) {
-	int check = wcwidth((wchar_t) n);
-	const char *result = check >= 0 ? key_name((wchar_t) n) : "?";
-	if (result != 0)
-	    printf("%d(%5o):%s\n", n, n, result);
+        int check = wcwidth((wchar_t) n);
+        const char *result = check >= 0 ? key_name((wchar_t) n) : "?";
+        if (result != 0)
+            printf("%d(%5o):%s\n", n, n, result);
     }
     ExitProgram(EXIT_SUCCESS);
 }

@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_printw.c
+**      lib_printw.c
 **
-**	The routines printw(), wprintw() and friends.
+**      The routines printw(), wprintw() and friends.
 **
 */
 
@@ -98,11 +98,11 @@ mvprintw(int y, int x, const char *fmt, ...)
 #endif
 
     if ((code = move(y, x)) != ERR) {
-	va_list argp;
+        va_list argp;
 
-	va_start(argp, fmt);
-	code = vw_printw(stdscr, fmt, argp);
-	va_end(argp);
+        va_start(argp, fmt);
+        code = vw_printw(stdscr, fmt, argp);
+        va_end(argp);
     }
     returnCode(code);
 }
@@ -121,11 +121,11 @@ mvwprintw(WINDOW *win, int y, int x, const char *fmt, ...)
 #endif
 
     if ((code = wmove(win, y, x)) != ERR) {
-	va_list argp;
+        va_list argp;
 
-	va_start(argp, fmt);
-	code = vw_printw(win, fmt, argp);
-	va_end(argp);
+        va_start(argp, fmt);
+        code = vw_printw(win, fmt, argp);
+        va_end(argp);
     }
     returnCode(code);
 }
@@ -143,7 +143,7 @@ vwprintw(WINDOW *win, const char *fmt, va_list argp)
 
     buf = NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_ARGx fmt, argp);
     if (buf != 0) {
-	code = waddstr(win, buf);
+        code = waddstr(win, buf);
     }
     returnCode(code);
 }
@@ -161,7 +161,7 @@ vw_printw(WINDOW *win, const char *fmt, va_list argp)
 
     buf = NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_ARGx fmt, argp);
     if (buf != 0) {
-	code = waddstr(win, buf);
+        code = waddstr(win, buf);
     }
     returnCode(code);
 }

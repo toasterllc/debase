@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_ungetch.c
+**      lib_ungetch.c
 **
-**	The routine ungetch().
+**      The routine ungetch().
 **
 */
 
@@ -54,7 +54,7 @@ _nc_fifo_dump(SCREEN *sp)
     int i;
     T(("head = %d, tail = %d, peek = %d", head, tail, peek));
     for (i = 0; i < 10; i++)
-	T(("char %d = %s", i, _nc_tracechar(sp, sp->_fifo[i])));
+        T(("char %d = %s", i, _nc_tracechar(sp, sp->_fifo[i])));
 }
 #endif /* TRACE */
 
@@ -66,23 +66,23 @@ safe_ungetch(SCREEN *sp, int ch)
     T((T_CALLED("ungetch(%p,%s)"), (void *) sp, _nc_tracechar(sp, ch)));
 
     if (sp != 0 && tail >= 0) {
-	if (head < 0) {
-	    head = 0;
-	    t_inc();
-	    peek = tail;	/* no raw keys */
-	} else {
-	    h_dec();
-	}
+        if (head < 0) {
+            head = 0;
+            t_inc();
+            peek = tail;        /* no raw keys */
+        } else {
+            h_dec();
+        }
 
-	sp->_fifo[head] = ch;
-	T(("ungetch %s ok", _nc_tracechar(sp, ch)));
+        sp->_fifo[head] = ch;
+        T(("ungetch %s ok", _nc_tracechar(sp, ch)));
 #ifdef TRACE
-	if (USE_TRACEF(TRACE_IEVENT)) {
-	    _nc_fifo_dump(sp);
-	    _nc_unlock_global(tracef);
-	}
+        if (USE_TRACEF(TRACE_IEVENT)) {
+            _nc_fifo_dump(sp);
+            _nc_unlock_global(tracef);
+        }
 #endif
-	rc = OK;
+        rc = OK;
     }
     returnCode(rc);
 }

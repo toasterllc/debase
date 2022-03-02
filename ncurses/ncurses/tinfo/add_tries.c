@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	add_tries.c
+**      add_tries.c
 **
-**	Add keycode/string to tries-tree.
+**      Add keycode/string to tries-tree.
 **
 */
 
@@ -54,68 +54,68 @@ _nc_add_to_try(TRIES ** tree, const char *str, unsigned code)
     T((T_CALLED("_nc_add_to_try(%p, %s, %u)"),
        (void *) *tree, _nc_visbuf(str), code));
     if (txt == 0 || *txt == '\0' || code == 0)
-	returnCode(ERR);
+        returnCode(ERR);
 
     if ((*tree) != 0) {
-	ptr = savedptr = (*tree);
+        ptr = savedptr = (*tree);
 
-	for (;;) {
-	    unsigned char cmp = *txt;
+        for (;;) {
+            unsigned char cmp = *txt;
 
-	    while (!CMP_TRY(ptr->ch, cmp)
-		   && ptr->sibling != 0)
-		ptr = ptr->sibling;
+            while (!CMP_TRY(ptr->ch, cmp)
+                   && ptr->sibling != 0)
+                ptr = ptr->sibling;
 
-	    if (CMP_TRY(ptr->ch, cmp)) {
-		if (*(++txt) == '\0') {
-		    ptr->value = (unsigned short) code;
-		    returnCode(OK);
-		}
-		if (ptr->child != 0)
-		    ptr = ptr->child;
-		else
-		    break;
-	    } else {
-		if ((ptr->sibling = typeCalloc(TRIES, 1)) == 0) {
-		    returnCode(ERR);
-		}
+            if (CMP_TRY(ptr->ch, cmp)) {
+                if (*(++txt) == '\0') {
+                    ptr->value = (unsigned short) code;
+                    returnCode(OK);
+                }
+                if (ptr->child != 0)
+                    ptr = ptr->child;
+                else
+                    break;
+            } else {
+                if ((ptr->sibling = typeCalloc(TRIES, 1)) == 0) {
+                    returnCode(ERR);
+                }
 
-		savedptr = ptr = ptr->sibling;
-		SET_TRY(ptr, txt);
-		ptr->value = 0;
+                savedptr = ptr = ptr->sibling;
+                SET_TRY(ptr, txt);
+                ptr->value = 0;
 
-		break;
-	    }
-	}			/* end for (;;) */
-    } else {			/* (*tree) == 0 :: First sequence to be added */
-	savedptr = ptr = (*tree) = typeCalloc(TRIES, 1);
+                break;
+            }
+        }                       /* end for (;;) */
+    } else {                    /* (*tree) == 0 :: First sequence to be added */
+        savedptr = ptr = (*tree) = typeCalloc(TRIES, 1);
 
-	if (ptr == 0) {
-	    returnCode(ERR);
-	}
+        if (ptr == 0) {
+            returnCode(ERR);
+        }
 
-	SET_TRY(ptr, txt);
-	ptr->value = 0;
+        SET_TRY(ptr, txt);
+        ptr->value = 0;
     }
 
     /* at this point, we are adding to the try.  ptr->child == 0 */
 
     while (*txt) {
-	ptr->child = typeCalloc(TRIES, 1);
+        ptr->child = typeCalloc(TRIES, 1);
 
-	ptr = ptr->child;
+        ptr = ptr->child;
 
-	if (ptr == 0) {
-	    while ((ptr = savedptr) != 0) {
-		savedptr = ptr->child;
-		free(ptr);
-	    }
-	    *tree = NULL;
-	    returnCode(ERR);
-	}
+        if (ptr == 0) {
+            while ((ptr = savedptr) != 0) {
+                savedptr = ptr->child;
+                free(ptr);
+            }
+            *tree = NULL;
+            returnCode(ERR);
+        }
 
-	SET_TRY(ptr, txt);
-	ptr->value = 0;
+        SET_TRY(ptr, txt);
+        ptr->value = 0;
     }
 
     ptr->value = (unsigned short) code;

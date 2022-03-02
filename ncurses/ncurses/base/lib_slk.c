@@ -37,8 +37,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slk.c
- *	Soft key routines.
+ *      lib_slk.c
+ *      Soft key routines.
  */
 
 #include <curses.priv.h>
@@ -69,9 +69,9 @@ static int
 slk_failed(NCURSES_SP_DCL0)
 {
     if ((0 != SP_PARM) && SP_PARM->_slk) {
-	FreeIfNeeded(SP_PARM->_slk->ent);
-	free(SP_PARM->_slk);
-	SP_PARM->_slk = (SLK *) 0;
+        FreeIfNeeded(SP_PARM->_slk->ent);
+        free(SP_PARM->_slk);
+        SP_PARM->_slk = (SLK *) 0;
     }
     return ERR;
 }
@@ -83,47 +83,47 @@ _nc_format_slks(NCURSES_SP_DCLx int cols)
     int max_length;
 
     if (!SP_PARM || !SP_PARM->_slk)
-	return ERR;
+        return ERR;
 
     max_length = SP_PARM->_slk->maxlen;
-    if (SP_PARM->slk_format >= 3) {	/* PC style */
-	gap = (cols - 3 * (3 + 4 * max_length)) / 2;
+    if (SP_PARM->slk_format >= 3) {     /* PC style */
+        gap = (cols - 3 * (3 + 4 * max_length)) / 2;
 
-	if (gap < 1)
-	    gap = 1;
+        if (gap < 1)
+            gap = 1;
 
-	for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
-	    SP_PARM->_slk->ent[i].ent_x = x;
-	    x += max_length;
-	    x += (i == 3 || i == 7) ? gap : 1;
-	}
+        for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
+            SP_PARM->_slk->ent[i].ent_x = x;
+            x += max_length;
+            x += (i == 3 || i == 7) ? gap : 1;
+        }
     } else {
-	if (SP_PARM->slk_format == 2) {		/* 4-4 */
-	    gap = cols - (int) (SP_PARM->_slk->maxlab * max_length) - 6;
+        if (SP_PARM->slk_format == 2) {         /* 4-4 */
+            gap = cols - (int) (SP_PARM->_slk->maxlab * max_length) - 6;
 
-	    if (gap < 1)
-		gap = 1;
-	    for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
-		SP_PARM->_slk->ent[i].ent_x = x;
-		x += max_length;
-		x += (i == 3) ? gap : 1;
-	    }
-	} else {
-	    if (SP_PARM->slk_format == 1) {	/* 1 -> 3-2-3 */
-		gap = (cols - (SP_PARM->_slk->maxlab * max_length) - 5)
-		    / 2;
+            if (gap < 1)
+                gap = 1;
+            for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
+                SP_PARM->_slk->ent[i].ent_x = x;
+                x += max_length;
+                x += (i == 3) ? gap : 1;
+            }
+        } else {
+            if (SP_PARM->slk_format == 1) {     /* 1 -> 3-2-3 */
+                gap = (cols - (SP_PARM->_slk->maxlab * max_length) - 5)
+                    / 2;
 
-		if (gap < 1)
-		    gap = 1;
-		for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
-		    SP_PARM->_slk->ent[i].ent_x = x;
-		    x += max_length;
-		    x += (i == 2 || i == 4) ? gap : 1;
-		}
-	    } else {
-		return slk_failed(NCURSES_SP_ARG);
-	    }
-	}
+                if (gap < 1)
+                    gap = 1;
+                for (i = x = 0; i < SP_PARM->_slk->maxlab; i++) {
+                    SP_PARM->_slk->ent[i].ent_x = x;
+                    x += max_length;
+                    x += (i == 2 || i == 4) ? gap : 1;
+                }
+            } else {
+                return slk_failed(NCURSES_SP_ARG);
+            }
+        }
     }
     SP_PARM->_slk->dirty = TRUE;
 
@@ -149,19 +149,19 @@ _nc_slk_initialize(WINDOW *stwin, int cols)
 
     sp = _nc_screen_of(stwin);
     if (0 == sp)
-	returnCode(ERR);
+        returnCode(ERR);
 
     assert(TerminalOf(SP_PARM));
 
     numlab = NumLabels;
 
-    if (SP_PARM->_slk) {	/* we did this already, so simply return */
-	returnCode(OK);
+    if (SP_PARM->_slk) {        /* we did this already, so simply return */
+        returnCode(OK);
     } else if ((SP_PARM->_slk = typeCalloc(SLK, 1)) == 0)
-	returnCode(ERR);
+        returnCode(ERR);
 
     if (!SP_PARM->slk_format)
-	SP_PARM->slk_format = _nc_globals.slk_format;
+        SP_PARM->slk_format = _nc_globals.slk_format;
 
     /*
      * If we use colors, vidputs() will suppress video attributes that conflict
@@ -169,52 +169,52 @@ _nc_slk_initialize(WINDOW *stwin, int cols)
      * work.
      */
     if ((NoColorVideo & 1) == 0)
-	SetAttr(SP_PARM->_slk->attr, A_STANDOUT);
+        SetAttr(SP_PARM->_slk->attr, A_STANDOUT);
     else
-	SetAttr(SP_PARM->_slk->attr, A_REVERSE);
+        SetAttr(SP_PARM->_slk->attr, A_REVERSE);
 
     SP_PARM->_slk->maxlab = (short) ((numlab > 0)
-				     ? numlab
-				     : MAX_SKEY(SP_PARM->slk_format));
+                                     ? numlab
+                                     : MAX_SKEY(SP_PARM->slk_format));
     SP_PARM->_slk->maxlen = (short) ((numlab > 0)
-				     ? LabelWidth * LabelHeight
-				     : MAX_SKEY_LEN(SP_PARM->slk_format));
+                                     ? LabelWidth * LabelHeight
+                                     : MAX_SKEY_LEN(SP_PARM->slk_format));
     SP_PARM->_slk->labcnt = (short) ((SP_PARM->_slk->maxlab < MAX_SKEY(SP_PARM->slk_format))
-				     ? MAX_SKEY(SP_PARM->slk_format)
-				     : SP_PARM->_slk->maxlab);
+                                     ? MAX_SKEY(SP_PARM->slk_format)
+                                     : SP_PARM->_slk->maxlab);
 
     if (SP_PARM->_slk->maxlen <= 0
-	|| SP_PARM->_slk->labcnt <= 0
-	|| (SP_PARM->_slk->ent = typeCalloc(slk_ent,
-					    (size_t) SP_PARM->_slk->labcnt))
-	== NULL)
-	returnCode(slk_failed(NCURSES_SP_ARG));
+        || SP_PARM->_slk->labcnt <= 0
+        || (SP_PARM->_slk->ent = typeCalloc(slk_ent,
+                                            (size_t) SP_PARM->_slk->labcnt))
+        == NULL)
+        returnCode(slk_failed(NCURSES_SP_ARG));
 
     max_length = (size_t) SP_PARM->_slk->maxlen;
     for (i = 0; i < SP_PARM->_slk->labcnt; i++) {
-	size_t used = max_length + 1;
+        size_t used = max_length + 1;
 
-	SP_PARM->_slk->ent[i].ent_text = (char *) _nc_doalloc(0, used);
-	if (SP_PARM->_slk->ent[i].ent_text == 0)
-	    returnCode(slk_failed(NCURSES_SP_ARG));
-	memset(SP_PARM->_slk->ent[i].ent_text, 0, used);
+        SP_PARM->_slk->ent[i].ent_text = (char *) _nc_doalloc(0, used);
+        if (SP_PARM->_slk->ent[i].ent_text == 0)
+            returnCode(slk_failed(NCURSES_SP_ARG));
+        memset(SP_PARM->_slk->ent[i].ent_text, 0, used);
 
-	SP_PARM->_slk->ent[i].form_text = (char *) _nc_doalloc(0, used);
-	if (SP_PARM->_slk->ent[i].form_text == 0)
-	    returnCode(slk_failed(NCURSES_SP_ARG));
+        SP_PARM->_slk->ent[i].form_text = (char *) _nc_doalloc(0, used);
+        if (SP_PARM->_slk->ent[i].form_text == 0)
+            returnCode(slk_failed(NCURSES_SP_ARG));
 
-	if (used > 1) {
-	    memset(SP_PARM->_slk->ent[i].form_text, ' ', used - 1);
-	}
-	SP_PARM->_slk->ent[i].form_text[used - 1] = '\0';
+        if (used > 1) {
+            memset(SP_PARM->_slk->ent[i].form_text, ' ', used - 1);
+        }
+        SP_PARM->_slk->ent[i].form_text[used - 1] = '\0';
 
-	SP_PARM->_slk->ent[i].visible = (char) (i < SP_PARM->_slk->maxlab);
+        SP_PARM->_slk->ent[i].visible = (char) (i < SP_PARM->_slk->maxlab);
     }
 
     res = _nc_format_slks(NCURSES_SP_ARGx cols);
 
     if ((SP_PARM->_slk->win = stwin) == NULL) {
-	returnCode(slk_failed(NCURSES_SP_ARG));
+        returnCode(slk_failed(NCURSES_SP_ARG));
     }
 
     /* We now reset the format so that the next newterm has again
@@ -234,9 +234,9 @@ NCURSES_SP_NAME(slk_restore) (NCURSES_SP_DCL0)
     T((T_CALLED("slk_restore(%p)"), (void *) SP_PARM));
 
     if (0 == SP_PARM)
-	returnCode(ERR);
+        returnCode(ERR);
     if (SP_PARM->_slk == NULL)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_slk->hidden = FALSE;
     SP_PARM->_slk->dirty = TRUE;
 

@@ -28,25 +28,25 @@
  ****************************************************************************/
 /*
 
-	 @@@        @@@    @@@@@@@@@@     @@@@@@@@@@@    @@@@@@@@@@@@
-	 @@@        @@@   @@@@@@@@@@@@    @@@@@@@@@@@@   @@@@@@@@@@@@@
-	 @@@        @@@  @@@@      @@@@   @@@@           @@@@ @@@  @@@@
-	 @@@   @@   @@@  @@@        @@@   @@@            @@@  @@@   @@@
-	 @@@  @@@@  @@@  @@@        @@@   @@@            @@@  @@@   @@@
-	 @@@@ @@@@ @@@@  @@@        @@@   @@@            @@@  @@@   @@@
-	  @@@@@@@@@@@@   @@@@      @@@@   @@@            @@@  @@@   @@@
-	   @@@@  @@@@     @@@@@@@@@@@@    @@@            @@@  @@@   @@@
-	    @@    @@       @@@@@@@@@@     @@@            @@@  @@@   @@@
+         @@@        @@@    @@@@@@@@@@     @@@@@@@@@@@    @@@@@@@@@@@@
+         @@@        @@@   @@@@@@@@@@@@    @@@@@@@@@@@@   @@@@@@@@@@@@@
+         @@@        @@@  @@@@      @@@@   @@@@           @@@@ @@@  @@@@
+         @@@   @@   @@@  @@@        @@@   @@@            @@@  @@@   @@@
+         @@@  @@@@  @@@  @@@        @@@   @@@            @@@  @@@   @@@
+         @@@@ @@@@ @@@@  @@@        @@@   @@@            @@@  @@@   @@@
+          @@@@@@@@@@@@   @@@@      @@@@   @@@            @@@  @@@   @@@
+           @@@@  @@@@     @@@@@@@@@@@@    @@@            @@@  @@@   @@@
+            @@    @@       @@@@@@@@@@     @@@            @@@  @@@   @@@
 
-				 Eric P. Scott
-			  Caltech High Energy Physics
-				 October, 1980
+                                 Eric P. Scott
+                          Caltech High Energy Physics
+                                 October, 1980
 
-		Hacks to turn this into a test frame for cursor movement:
-			Eric S. Raymond <esr@snark.thyrsus.com>
-				January, 1995
+                Hacks to turn this into a test frame for cursor movement:
+                        Eric S. Raymond <esr@snark.thyrsus.com>
+                                January, 1995
 
-		July 1995 (esr): worms is now in living color! :-)
+                July 1995 (esr): worms is now in living color! :-)
 
   This program makes a good torture-test for the ncurses cursor-optimization
   code.  You can use -T to set the worm move interval over which movement
@@ -68,8 +68,8 @@
 
 WANT_USE_WINDOW();
 
-#define MAX_WORMS	40
-#define MAX_LENGTH	1024
+#define MAX_WORMS       40
+#define MAX_LENGTH      1024
 
 static chtype flavor[] =
 {
@@ -257,76 +257,76 @@ draw_worm(WINDOW *win, void *data)
     bool done = FALSE;
 
     if ((x = w->xpos[h = w->head]) < 0) {
-	wmove(win, y = w->ypos[h] = last_y, x = w->xpos[h] = 0);
-	waddch(win, attrs);
-	refs[y][x]++;
+        wmove(win, y = w->ypos[h] = last_y, x = w->xpos[h] = 0);
+        waddch(win, attrs);
+        refs[y][x]++;
     } else {
-	y = w->ypos[h];
+        y = w->ypos[h];
     }
 
     if (x > last_x)
-	x = last_x;
+        x = last_x;
     if (y > last_y)
-	y = last_y;
+        y = last_y;
 
     if (++h == length)
-	h = 0;
+        h = 0;
 
     if (w->xpos[w->head = h] >= 0) {
-	int x1, y1;
-	x1 = w->xpos[h];
-	y1 = w->ypos[h];
-	if (y1 < LINES
-	    && x1 < COLS
-	    && --refs[y1][x1] == 0) {
-	    wmove(win, y1, x1);
-	    waddch(win, trail);
-	}
+        int x1, y1;
+        x1 = w->xpos[h];
+        y1 = w->ypos[h];
+        if (y1 < LINES
+            && x1 < COLS
+            && --refs[y1][x1] == 0) {
+            wmove(win, y1, x1);
+            waddch(win, trail);
+        }
     }
 
     op = &(x == 0
-	   ? (y == 0
-	      ? upleft
-	      : (y == last_y
-		 ? lowleft
-		 : left))
-	   : (x == last_x
-	      ? (y == 0
-		 ? upright
-		 : (y == last_y
-		    ? lowright
-		    : right))
-	      : (y == 0
-		 ? upper
-		 : (y == last_y
-		    ? lower
-		    : normal))))[w->orientation];
+           ? (y == 0
+              ? upleft
+              : (y == last_y
+                 ? lowleft
+                 : left))
+           : (x == last_x
+              ? (y == 0
+                 ? upright
+                 : (y == last_y
+                    ? lowright
+                    : right))
+              : (y == 0
+                 ? upper
+                 : (y == last_y
+                    ? lower
+                    : normal))))[w->orientation];
 
     switch (op->nopts) {
     case 0:
-	done = TRUE;
-	Trace(("done - draw_worm"));
-	break;
+        done = TRUE;
+        Trace(("done - draw_worm"));
+        break;
     case 1:
-	w->orientation = op->opts[0];
-	break;
+        w->orientation = op->opts[0];
+        break;
     default:
-	w->orientation = op->opts[(int) (ranf() * (double) op->nopts)];
-	break;
+        w->orientation = op->opts[(int) (ranf() * (double) op->nopts)];
+        break;
     }
 
     if (!done) {
-	x += xinc[w->orientation];
-	y += yinc[w->orientation];
-	wmove(win, y, x);
+        x += xinc[w->orientation];
+        y += yinc[w->orientation];
+        wmove(win, y, x);
 
-	if (y < 0)
-	    y = 0;
-	waddch(win, attrs);
+        if (y < 0)
+            y = 0;
+        waddch(win, attrs);
 
-	w->ypos[h] = y;
-	w->xpos[h] = x;
-	refs[y][x]++;
+        w->ypos[h] = y;
+        w->xpos[h] = x;
+        refs[y][x]++;
     }
 
     return done;
@@ -337,7 +337,7 @@ static bool
 quit_worm(int bitnum)
 {
     pending = (pending | (unsigned) (1 << bitnum));
-    napms(10);			/* let the other thread(s) have a chance */
+    napms(10);                  /* let the other thread(s) have a chance */
     pending = (pending & (unsigned) ~(1 << bitnum));
     return quitting;
 }
@@ -348,14 +348,14 @@ start_worm(void *arg)
     unsigned long compare = 0;
     Trace(("start_worm"));
     while (!quit_worm((int) (((struct worm *) arg) - worm))) {
-	while (compare < sequence) {
-	    ++compare;
+        while (compare < sequence) {
+            ++compare;
 #if HAVE_USE_WINDOW
-	    use_window(stdscr, draw_worm, arg);
+            use_window(stdscr, draw_worm, arg);
 #else
-	    draw_worm(stdscr, arg);
+            draw_worm(stdscr, arg);
 #endif
-	}
+        }
     }
     Trace(("...start_worm (done)"));
     return NULL;
@@ -372,21 +372,21 @@ draw_all_worms(void)
 #ifdef USE_PTHREADS
     static bool first = TRUE;
     if (first) {
-	first = FALSE;
-	for (n = 0, w = &worm[0]; n < number; n++, w++) {
-	    (void) pthread_create(&(w->thread), NULL, start_worm, w);
-	}
+        first = FALSE;
+        for (n = 0, w = &worm[0]; n < number; n++, w++) {
+            (void) pthread_create(&(w->thread), NULL, start_worm, w);
+        }
     }
 #else
     for (n = 0, w = &worm[0]; n < number; n++, w++) {
-	if (
+        if (
 #if HAVE_USE_WINDOW
-	       USING_WINDOW2(stdscr, draw_worm, w)
+               USING_WINDOW2(stdscr, draw_worm, w)
 #else
-	       draw_worm(stdscr, w)
+               draw_worm(stdscr, w)
 #endif
-	    )
-	    done = TRUE;
+            )
+            done = TRUE;
     }
 #endif
     return done;
@@ -409,28 +409,28 @@ update_refs(WINDOW *win, void *data)
     (void) win;
     (void) data;
     if (last_x != COLS - 1) {
-	for (y = 0; y <= last_y; y++) {
-	    refs[y] = typeRealloc(int, (size_t) COLS, refs[y]);
-	    if (!refs[y])
-		failed("update_refs");
-	    for (x = last_x + 1; x < COLS; x++)
-		refs[y][x] = 0;
-	}
-	last_x = COLS - 1;
+        for (y = 0; y <= last_y; y++) {
+            refs[y] = typeRealloc(int, (size_t) COLS, refs[y]);
+            if (!refs[y])
+                failed("update_refs");
+            for (x = last_x + 1; x < COLS; x++)
+                refs[y][x] = 0;
+        }
+        last_x = COLS - 1;
     }
     if (last_y != LINES - 1) {
-	for (y = LINES; y <= last_y; y++)
-	    free(refs[y]);
-	max_refs = LINES;
-	refs = typeRealloc(int *, (size_t) LINES, refs);
-	for (y = last_y + 1; y < LINES; y++) {
-	    refs[y] = typeMalloc(int, (size_t) COLS);
-	    if (!refs[y])
-		failed("update_refs");
-	    for (x = 0; x < COLS; x++)
-		refs[y][x] = 0;
-	}
-	last_y = LINES - 1;
+        for (y = LINES; y <= last_y; y++)
+            free(refs[y]);
+        max_refs = LINES;
+        refs = typeRealloc(int *, (size_t) LINES, refs);
+        for (y = last_y + 1; y < LINES; y++) {
+            refs[y] = typeMalloc(int, (size_t) COLS);
+            if (!refs[y])
+                failed("update_refs");
+            for (x = 0; x < COLS; x++)
+                refs[y][x] = 0;
+        }
+        last_y = LINES - 1;
     }
     return OK;
 }
@@ -441,25 +441,25 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: worm [options]"
-	,""
-	,"Options:"
+        "Usage: worm [options]"
+        ,""
+        ,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors"
+        ," -d       invoke use_default_colors"
 #endif
-	," -f       fill screen with copies of \"WORM\" at start"
-	," -l <n>   set length of worms"
-	," -n <n>   set number of worms"
-	," -t       leave trail of \".\""
+        ," -f       fill screen with copies of \"WORM\" at start"
+        ," -l <n>   set length of worms"
+        ," -n <n>   set number of worms"
+        ," -t       leave trail of \".\""
 #ifdef TRACE
-	," -T <start>,<end> set trace interval"
-	," -N       suppress cursor-movement optimization"
+        ," -T <start>,<end> set trace interval"
+        ," -N       suppress cursor-movement optimization"
 #endif
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -480,46 +480,46 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     while ((ch = getopt(argc, argv, "dfl:n:tT:N")) != -1) {
-	switch (ch) {
+        switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    opt_d = TRUE;
-	    break;
+        case 'd':
+            opt_d = TRUE;
+            break;
 #endif
-	case 'f':
-	    field = "WORM";
-	    break;
-	case 'l':
-	    if ((length = atoi(optarg)) < 2 || length > MAX_LENGTH) {
-		fprintf(stderr, "%s: Invalid length\n", *argv);
-		usage();
-	    }
-	    break;
-	case 'n':
-	    if ((number = atoi(optarg)) < 1 || number > MAX_WORMS) {
-		fprintf(stderr, "%s: Invalid number of worms\n", *argv);
-		usage();
-	    }
-	    break;
-	case 't':
-	    trail = '.';
-	    break;
+        case 'f':
+            field = "WORM";
+            break;
+        case 'l':
+            if ((length = atoi(optarg)) < 2 || length > MAX_LENGTH) {
+                fprintf(stderr, "%s: Invalid length\n", *argv);
+                usage();
+            }
+            break;
+        case 'n':
+            if ((number = atoi(optarg)) < 1 || number > MAX_WORMS) {
+                fprintf(stderr, "%s: Invalid number of worms\n", *argv);
+                usage();
+            }
+            break;
+        case 't':
+            trail = '.';
+            break;
 #ifdef TRACE
-	case 'T':
-	    if (sscanf(optarg, "%d,%d", &trace_start, &trace_end) != 2)
-		usage();
-	    break;
-	case 'N':
-	    _nc_optimize_enable ^= OPTIMIZE_ALL;	/* declared by ncurses */
-	    break;
+        case 'T':
+            if (sscanf(optarg, "%d,%d", &trace_start, &trace_end) != 2)
+                usage();
+            break;
+        case 'N':
+            _nc_optimize_enable ^= OPTIMIZE_ALL;        /* declared by ncurses */
+            break;
 #endif /* TRACE */
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     signal(SIGINT, onsig);
     initscr();
@@ -534,34 +534,34 @@ main(int argc, char *argv[])
 
 #ifdef A_COLOR
     if (has_colors()) {
-	int bg = COLOR_BLACK;
-	start_color();
+        int bg = COLOR_BLACK;
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (opt_d && (use_default_colors() == OK))
-	    bg = -1;
+        if (opt_d && (use_default_colors() == OK))
+            bg = -1;
 #endif
 
 #define SET_COLOR(num, fg) \
-	    init_pair(num+1, (short) fg, (short) bg); \
-	    flavor[num] |= (chtype) COLOR_PAIR(num+1) | A_BOLD
+            init_pair(num+1, (short) fg, (short) bg); \
+            flavor[num] |= (chtype) COLOR_PAIR(num+1) | A_BOLD
 
-	SET_COLOR(0, COLOR_GREEN);
-	SET_COLOR(1, COLOR_RED);
-	SET_COLOR(2, COLOR_CYAN);
-	SET_COLOR(3, COLOR_WHITE);
-	SET_COLOR(4, COLOR_MAGENTA);
-	SET_COLOR(5, COLOR_BLUE);
-	SET_COLOR(6, COLOR_YELLOW);
+        SET_COLOR(0, COLOR_GREEN);
+        SET_COLOR(1, COLOR_RED);
+        SET_COLOR(2, COLOR_CYAN);
+        SET_COLOR(3, COLOR_WHITE);
+        SET_COLOR(4, COLOR_MAGENTA);
+        SET_COLOR(5, COLOR_BLUE);
+        SET_COLOR(6, COLOR_YELLOW);
     }
 #endif /* A_COLOR */
 
     max_refs = LINES;
     refs = typeMalloc(int *, (size_t) max_refs);
     for (y = 0; y < max_refs; y++) {
-	refs[y] = typeMalloc(int, (size_t) COLS);
-	for (x = 0; x < COLS; x++) {
-	    refs[y][x] = 0;
-	}
+        refs[y] = typeMalloc(int, (size_t) COLS);
+        for (x = 0; x < COLS; x++) {
+            refs[y][x] = 0;
+        }
     }
 
 #ifdef BADCORNER
@@ -570,93 +570,93 @@ main(int argc, char *argv[])
 #endif /* BADCORNER */
 
     for (n = number, w = &worm[0]; --n >= 0; w++) {
-	w->attrs = flavor[(unsigned) n % SIZEOF(flavor)];
-	w->orientation = 0;
-	w->head = 0;
+        w->attrs = flavor[(unsigned) n % SIZEOF(flavor)];
+        w->orientation = 0;
+        w->head = 0;
 
-	if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
-	    fprintf(stderr, "%s: out of memory\n", *argv);
-	    ExitProgram(EXIT_FAILURE);
-	}
-	w->xpos = ip;
-	for (x = length; --x >= 0;)
-	    *ip++ = -1;
-	if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
-	    fprintf(stderr, "%s: out of memory\n", *argv);
-	    ExitProgram(EXIT_FAILURE);
-	}
-	w->ypos = ip;
-	for (y = length; --y >= 0;)
-	    *ip++ = -1;
+        if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
+            fprintf(stderr, "%s: out of memory\n", *argv);
+            ExitProgram(EXIT_FAILURE);
+        }
+        w->xpos = ip;
+        for (x = length; --x >= 0;)
+            *ip++ = -1;
+        if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
+            fprintf(stderr, "%s: out of memory\n", *argv);
+            ExitProgram(EXIT_FAILURE);
+        }
+        w->ypos = ip;
+        for (y = length; --y >= 0;)
+            *ip++ = -1;
     }
     if (field) {
-	const char *p;
-	p = field;
-	for (y = last_y; --y >= 0;) {
-	    for (x = COLS; --x >= 0;) {
-		addch((chtype) (*p++));
-		if (!*p)
-		    p = field;
-	    }
-	}
+        const char *p;
+        p = field;
+        for (y = last_y; --y >= 0;) {
+            for (x = COLS; --x >= 0;) {
+                addch((chtype) (*p++));
+                if (!*p)
+                    p = field;
+            }
+        }
     }
     USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     nodelay(stdscr, TRUE);
 
     while (!done) {
-	++sequence;
-	if ((ch = get_input()) > 0) {
+        ++sequence;
+        if ((ch = get_input()) > 0) {
 #ifdef TRACE
-	    if (trace_start || trace_end) {
-		if (generation == trace_start) {
-		    curses_trace(TRACE_CALLS);
-		    get_input();
-		} else if (generation == trace_end) {
-		    curses_trace(0);
-		    get_input();
-		}
+            if (trace_start || trace_end) {
+                if (generation == trace_start) {
+                    curses_trace(TRACE_CALLS);
+                    get_input();
+                } else if (generation == trace_end) {
+                    curses_trace(0);
+                    get_input();
+                }
 
-		generation++;
-	    }
+                generation++;
+            }
 #endif
 
 #ifdef KEY_RESIZE
-	    if (ch == KEY_RESIZE) {
-		USING_WINDOW(stdscr, update_refs);
-	    }
+            if (ch == KEY_RESIZE) {
+                USING_WINDOW(stdscr, update_refs);
+            }
 #endif
 
-	    /*
-	     * Make it simple to put this into single-step mode, or resume
-	     * normal operation -T.Dickey
-	     */
-	    if (ch == 'q') {
-		quitting = TRUE;
-		done = TRUE;
-		Trace(("done - quitting"));
-		continue;
-	    } else if (ch == 's') {
-		nodelay(stdscr, FALSE);
-	    } else if (ch == ' ') {
-		nodelay(stdscr, TRUE);
-	    }
-	}
+            /*
+             * Make it simple to put this into single-step mode, or resume
+             * normal operation -T.Dickey
+             */
+            if (ch == 'q') {
+                quitting = TRUE;
+                done = TRUE;
+                Trace(("done - quitting"));
+                continue;
+            } else if (ch == 's') {
+                nodelay(stdscr, FALSE);
+            } else if (ch == ' ') {
+                nodelay(stdscr, TRUE);
+            }
+        }
 
-	done = draw_all_worms();
-	napms(10);
-	USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
+        done = draw_all_worms();
+        napms(10);
+        USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     }
 
     Trace(("Cleanup"));
     cleanup();
 #if NO_LEAKS
     for (y = 0; y < max_refs; y++) {
-	free(refs[y]);
+        free(refs[y]);
     }
     free(refs);
     for (n = number, w = &worm[0]; --n >= 0; w++) {
-	free(w->xpos);
-	free(w->ypos);
+        free(w->xpos);
+        free(w->ypos);
     }
 #endif
 #ifdef USE_PTHREADS
@@ -665,7 +665,7 @@ main(int argc, char *argv[])
      */
     Trace(("join all threads"));
     for (n = 0; n < number; n++) {
-	pthread_join(worm[n].thread, NULL);
+        pthread_join(worm[n].thread, NULL);
     }
 #endif
     ExitProgram(EXIT_SUCCESS);

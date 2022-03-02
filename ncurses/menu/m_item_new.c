@@ -75,11 +75,11 @@ Is_Printable_String(const char *s)
 
       mbstowcs(temp, s, (unsigned)count);
       for (n = 0; n < count; ++n)
-	if (!iswprint((wint_t)temp[n]))
-	  {
-	    result = FALSE;
-	    break;
-	  }
+        if (!iswprint((wint_t)temp[n]))
+          {
+            result = FALSE;
+            break;
+          }
       free(temp);
     }
 #else
@@ -87,10 +87,10 @@ Is_Printable_String(const char *s)
   while (*s)
     {
       if (!isprint(UChar(*s)))
-	{
-	  result = FALSE;
-	  break;
-	}
+        {
+          result = FALSE;
+          break;
+        }
       s++;
     }
 #endif
@@ -126,27 +126,27 @@ new_item(const char *name, const char *description)
       item = typeCalloc(ITEM, 1);
 
       if (item)
-	{
-	  T((T_CREATE("item %p"), (void *)item));
-	  *item = _nc_Default_Item;	/* hope we have struct assignment */
+        {
+          T((T_CREATE("item %p"), (void *)item));
+          *item = _nc_Default_Item;     /* hope we have struct assignment */
 
-	  item->name.length = (unsigned short)strlen(name);
-	  item->name.str = name;
+          item->name.length = (unsigned short)strlen(name);
+          item->name.str = name;
 
-	  if (description && (*description != '\0') &&
-	      Is_Printable_String(description))
-	    {
-	      item->description.length = (unsigned short)strlen(description);
-	      item->description.str = description;
-	    }
-	  else
-	    {
-	      item->description.length = 0;
-	      item->description.str = (char *)0;
-	    }
-	}
+          if (description && (*description != '\0') &&
+              Is_Printable_String(description))
+            {
+              item->description.length = (unsigned short)strlen(description);
+              item->description.str = description;
+            }
+          else
+            {
+              item->description.length = 0;
+              item->description.str = (char *)0;
+            }
+        }
       else
-	SET_ERROR(E_SYSTEM_ERROR);
+        SET_ERROR(E_SYSTEM_ERROR);
     }
   returnItem(item);
 }
@@ -213,44 +213,44 @@ set_menu_mark(MENU *menu, const char *mark)
       unsigned short old_status = menu->status;
 
       if (menu->status & _POSTED)
-	{
-	  /* If the menu is already posted, the geometry is fixed. Then
-	     we can only accept a mark with exactly the same length */
-	  if (menu->marklen != l)
-	    RETURN(E_BAD_ARGUMENT);
-	}
+        {
+          /* If the menu is already posted, the geometry is fixed. Then
+             we can only accept a mark with exactly the same length */
+          if (menu->marklen != l)
+            RETURN(E_BAD_ARGUMENT);
+        }
       menu->marklen = l;
       if (l)
-	{
-	  menu->mark = strdup(mark);
-	  if (menu->mark)
-	    {
-	      if (menu != &_nc_Default_Menu)
-		SetStatus(menu, _MARK_ALLOCATED);
-	    }
-	  else
-	    {
-	      menu->mark = old_mark;
-	      menu->marklen = (short)((old_mark != 0) ? strlen(old_mark) : 0);
-	      RETURN(E_SYSTEM_ERROR);
-	    }
-	}
+        {
+          menu->mark = strdup(mark);
+          if (menu->mark)
+            {
+              if (menu != &_nc_Default_Menu)
+                SetStatus(menu, _MARK_ALLOCATED);
+            }
+          else
+            {
+              menu->mark = old_mark;
+              menu->marklen = (short)((old_mark != 0) ? strlen(old_mark) : 0);
+              RETURN(E_SYSTEM_ERROR);
+            }
+        }
       else
-	menu->mark = (char *)0;
+        menu->mark = (char *)0;
 
       if ((old_status & _MARK_ALLOCATED) && old_mark)
-	free(old_mark);
+        free(old_mark);
 
       if (menu->status & _POSTED)
-	{
-	  _nc_Draw_Menu(menu);
-	  _nc_Show_Menu(menu);
-	}
+        {
+          _nc_Draw_Menu(menu);
+          _nc_Show_Menu(menu);
+        }
       else
-	{
-	  /* Recalculate the geometry */
-	  _nc_Calculate_Item_Length_and_Width(menu);
-	}
+        {
+          /* Recalculate the geometry */
+          _nc_Calculate_Item_Length_and_Width(menu);
+        }
     }
   else
     {

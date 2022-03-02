@@ -54,9 +54,9 @@ ceiling_panel(SCREEN * sp)
   else
     {
       if (0 == CURRENT_SCREEN)
-	returnPanel(0);
+        returnPanel(0);
       else
-	returnPanel(ceiling_panel(CURRENT_SCREEN));
+        returnPanel(ceiling_panel(CURRENT_SCREEN));
     }
 }
 #endif

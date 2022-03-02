@@ -73,7 +73,7 @@ set_field_type(FIELD *field, FIELDTYPE *type, ...)
     {
       res = E_OK;
       if (field->type)
-	field->type->ref++;
+        field->type->ref++;
     }
 
   va_end(ap);

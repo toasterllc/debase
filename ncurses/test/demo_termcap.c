@@ -117,33 +117,33 @@ static void
 make_dblist(void)
 {
     if (d_opt && e_opt) {
-	int pass;
+        int pass;
 
-	for (pass = 0; pass < 2; ++pass) {
-	    char *p, *q;
-	    size_t count = 0;
+        for (pass = 0; pass < 2; ++pass) {
+            char *p, *q;
+            size_t count = 0;
 
-	    for (p = q = d_opt; *p != '\0'; ++p) {
-		if (*p == ':') {
-		    if (p != q + 1) {
-			if (pass) {
-			    db_list[count] = make_dbitem(p, q);
-			}
-			count++;
-		    }
-		    q = p + 1;
-		}
-	    }
-	    if (p != q + 1) {
-		if (pass) {
-		    db_list[count] = make_dbitem(p, q);
-		}
-		count++;
-	    }
-	    if (!pass) {
-		db_list = typeCalloc(char *, count + 1);
-	    }
-	}
+            for (p = q = d_opt; *p != '\0'; ++p) {
+                if (*p == ':') {
+                    if (p != q + 1) {
+                        if (pass) {
+                            db_list[count] = make_dbitem(p, q);
+                        }
+                        count++;
+                    }
+                    q = p + 1;
+                }
+            }
+            if (p != q + 1) {
+                if (pass) {
+                    db_list[count] = make_dbitem(p, q);
+                }
+                count++;
+            }
+            if (!pass) {
+                db_list = typeCalloc(char *, count + 1);
+            }
+        }
     }
 }
 
@@ -153,15 +153,15 @@ next_dbitem(void)
     char *result = 0;
 
     if (db_list) {
-	if ((result = db_list[db_item]) == 0) {
-	    db_item = 0;
-	    result = db_list[0];
-	} else {
-	    db_item++;
-	}
+        if ((result = db_list[db_item]) == 0) {
+            db_item = 0;
+            result = db_list[0];
+        } else {
+            db_item++;
+        }
     }
     if (result != 0)
-	printf("** %s\n", result);
+        printf("** %s\n", result);
     return result;
 }
 
@@ -170,11 +170,11 @@ static void
 free_dblist(void)
 {
     if (db_list) {
-	int n;
-	for (n = 0; db_list[n]; ++n)
-	    free(db_list[n]);
-	free(db_list);
-	db_list = 0;
+        int n;
+        for (n = 0; db_list[n]; ++n)
+            free(db_list[n]);
+        free(db_list);
+        db_list = 0;
     }
 }
 #endif /* NO_LEAKS */
@@ -184,56 +184,56 @@ show_string(const char *name, const char *value)
 {
     printf(FNAME(str), name);
     if (value == ((char *) -1)) {
-	printf("CANCELLED");
+        printf("CANCELLED");
     } else if (value == ((char *) 0)) {
-	printf("ABSENT");
+        printf("ABSENT");
     } else {
-	while (*value != 0) {
-	    int ch = UChar(*value++);
-	    switch (ch) {
-	    case '\177':
-		fputs("^?", stdout);
-		break;
-	    case '\033':
-		fputs("\\E", stdout);
-		break;
-	    case '\b':
-		fputs("\\b", stdout);
-		break;
-	    case '\f':
-		fputs("\\f", stdout);
-		break;
-	    case '\n':
-		fputs("\\n", stdout);
-		break;
-	    case '\r':
-		fputs("\\r", stdout);
-		break;
-	    case ' ':
-		fputs("\\s", stdout);
-		break;
-	    case '\t':
-		fputs("\\t", stdout);
-		break;
-	    case '^':
-		fputs("\\^", stdout);
-		break;
-	    case ':':
-		fputs("\\072", stdout);
-		break;
-	    case '\\':
-		fputs("\\\\", stdout);
-		break;
-	    default:
-		if (isgraph(ch))
-		    fputc(ch, stdout);
-		else if (ch < 32)
-		    printf("^%c", ch + '@');
-		else
-		    printf("\\%03o", ch);
-		break;
-	    }
-	}
+        while (*value != 0) {
+            int ch = UChar(*value++);
+            switch (ch) {
+            case '\177':
+                fputs("^?", stdout);
+                break;
+            case '\033':
+                fputs("\\E", stdout);
+                break;
+            case '\b':
+                fputs("\\b", stdout);
+                break;
+            case '\f':
+                fputs("\\f", stdout);
+                break;
+            case '\n':
+                fputs("\\n", stdout);
+                break;
+            case '\r':
+                fputs("\\r", stdout);
+                break;
+            case ' ':
+                fputs("\\s", stdout);
+                break;
+            case '\t':
+                fputs("\\t", stdout);
+                break;
+            case '^':
+                fputs("\\^", stdout);
+                break;
+            case ':':
+                fputs("\\072", stdout);
+                break;
+            case '\\':
+                fputs("\\\\", stdout);
+                break;
+            default:
+                if (isgraph(ch))
+                    fputc(ch, stdout);
+                else if (ch < 32)
+                    printf("^%c", ch + '@');
+                else
+                    printf("\\%03o", ch);
+                break;
+            }
+        }
     }
     printf("\n");
 }
@@ -260,32 +260,32 @@ dumpit(NCURSES_CONST char *cap)
     int num;
 
     if ((str = tgetstr(cap, &ap)) != 0) {
-	total_values++;
-	total_s_values++;
-	if (!q_opt) {
-	    /*
-	     * Note that the strings returned are mostly terminfo format, since
-	     * ncurses does not convert except for a handful of special cases.
-	     */
-	    show_string(cap, str);
-	}
+        total_values++;
+        total_s_values++;
+        if (!q_opt) {
+            /*
+             * Note that the strings returned are mostly terminfo format, since
+             * ncurses does not convert except for a handful of special cases.
+             */
+            show_string(cap, str);
+        }
     } else if ((num = tgetnum(cap)) >= 0) {
-	total_values++;
-	total_n_values++;
-	if (!q_opt) {
-	    show_number(cap, num);
-	}
+        total_values++;
+        total_n_values++;
+        if (!q_opt) {
+            show_number(cap, num);
+        }
     } else if (tgetflag(cap) > 0) {
-	total_values++;
-	total_b_values++;
-	if (!q_opt) {
-	    printf(FNAME(flg), cap);
-	    printf("%s\n", "true");
-	}
+        total_values++;
+        total_b_values++;
+        if (!q_opt) {
+            printf(FNAME(flg), cap);
+            printf("%s\n", "true");
+        }
     }
 
     if (!q_opt)
-	fflush(stdout);
+        fflush(stdout);
 }
 
 static void
@@ -294,26 +294,26 @@ brute_force(const char *name)
     char buffer[1024];
 
     if (db_list) {
-	putenv(next_dbitem());
+        putenv(next_dbitem());
     }
     if (!q_opt)
-	printf("Terminal type \"%s\"\n", name);
+        printf("Terminal type \"%s\"\n", name);
     if (tgetent(buffer, name) >= 0) {
-	char cap[3];
-	int c1, c2;
+        char cap[3];
+        int c1, c2;
 
-	cap[2] = 0;
-	for (EachCapName(c1)) {
-	    cap[0] = (char) c1;
-	    if (isCapName(c1)) {
-		for (EachCapName(c2)) {
-		    cap[1] = (char) c2;
-		    if (isCapName(c2)) {
-			dumpit(cap);
-		    }
-		}
-	    }
-	}
+        cap[2] = 0;
+        for (EachCapName(c1)) {
+            cap[0] = (char) c1;
+            if (isCapName(c1)) {
+                for (EachCapName(c2)) {
+                    cap[1] = (char) c2;
+                    if (isCapName(c2)) {
+                        dumpit(cap);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -322,7 +322,7 @@ static void
 dump_xname(NCURSES_CONST char *cap)
 {
     if (strlen(cap) == 2)
-	dumpit(cap);
+        dumpit(cap);
 }
 #endif
 
@@ -332,60 +332,60 @@ demo_termcap(NCURSES_CONST char *name)
     char buffer[1024];
 
     if (db_list) {
-	putenv(next_dbitem());
+        putenv(next_dbitem());
     }
     if (!q_opt)
-	printf("Terminal type \"%s\"\n", name);
+        printf("Terminal type \"%s\"\n", name);
     if (tgetent(buffer, name) >= 0) {
-	NCURSES_CONST char *cap;
-	unsigned n;
+        NCURSES_CONST char *cap;
+        unsigned n;
 
-	if (b_opt) {
-	    for (n = 0;; ++n) {
-		cap = my_boolcodes[n];
-		if (cap == 0)
-		    break;
-		dumpit(cap);
-	    }
-	}
+        if (b_opt) {
+            for (n = 0;; ++n) {
+                cap = my_boolcodes[n];
+                if (cap == 0)
+                    break;
+                dumpit(cap);
+            }
+        }
 
-	if (n_opt) {
-	    for (n = 0;; ++n) {
-		cap = my_numcodes[n];
-		if (cap == 0)
-		    break;
-		dumpit(cap);
-	    }
-	}
+        if (n_opt) {
+            for (n = 0;; ++n) {
+                cap = my_numcodes[n];
+                if (cap == 0)
+                    break;
+                dumpit(cap);
+            }
+        }
 
-	if (s_opt) {
-	    for (n = 0;; ++n) {
-		cap = my_strcodes[n];
-		if (cap == 0)
-		    break;
-		dumpit(cap);
-	    }
-	}
+        if (s_opt) {
+            for (n = 0;; ++n) {
+                cap = my_strcodes[n];
+                if (cap == 0)
+                    break;
+                dumpit(cap);
+            }
+        }
 #ifdef NCURSES_VERSION
-	if (x_opt && (my_blob == 0) && y_opt) {
+        if (x_opt && (my_blob == 0) && y_opt) {
 #if NCURSES_XNAMES
-	    TERMTYPE *term = (TERMTYPE *) cur_term;
-	    if (term != 0
-		&& ((NUM_BOOLEANS(term) != BOOLCOUNT)
-		    || (NUM_NUMBERS(term) != NUMCOUNT)
-		    || (NUM_STRINGS(term) != STRCOUNT))) {
-		for (n = BOOLCOUNT; n < NUM_BOOLEANS(term); ++n) {
-		    dump_xname(ExtBoolname(term, (int) n, boolnames));
-		}
-		for (n = NUMCOUNT; n < NUM_NUMBERS(term); ++n) {
-		    dump_xname(ExtNumname(term, (int) n, numnames));
-		}
-		for (n = STRCOUNT; n < NUM_STRINGS(term); ++n) {
-		    dump_xname(ExtStrname(term, (int) n, strnames));
-		}
-	    }
+            TERMTYPE *term = (TERMTYPE *) cur_term;
+            if (term != 0
+                && ((NUM_BOOLEANS(term) != BOOLCOUNT)
+                    || (NUM_NUMBERS(term) != NUMCOUNT)
+                    || (NUM_STRINGS(term) != STRCOUNT))) {
+                for (n = BOOLCOUNT; n < NUM_BOOLEANS(term); ++n) {
+                    dump_xname(ExtBoolname(term, (int) n, boolnames));
+                }
+                for (n = NUMCOUNT; n < NUM_NUMBERS(term); ++n) {
+                    dump_xname(ExtNumname(term, (int) n, numnames));
+                }
+                for (n = STRCOUNT; n < NUM_STRINGS(term); ++n) {
+                    dump_xname(ExtStrname(term, (int) n, strnames));
+                }
+            }
 #endif
-	}
+        }
 #endif
     }
 }
@@ -416,12 +416,12 @@ parse_description(const char *input_name)
     STATE state;
 
     if (stat(input_name, &sb) != 0
-	|| (sb.st_mode & S_IFMT) != S_IFREG) {
-	failed("input is not a file");
+        || (sb.st_mode & S_IFMT) != S_IFREG) {
+        failed("input is not a file");
     }
 
     if (sb.st_size == 0) {
-	failed("input is empty");
+        failed("input is empty");
     }
 
     /*
@@ -429,16 +429,16 @@ parse_description(const char *input_name)
      * is small, just allocate the maximum for simplicity.
      */
     if ((my_blob = malloc((size_t) sb.st_size + 1)) == 0 ||
-	(my_boolcodes = typeCalloc(char *, sb.st_size)) == 0 ||
-	  (my_numcodes = typeCalloc(char *, sb.st_size)) == 0 ||
-	  (my_numvalues = typeCalloc(char *, sb.st_size)) == 0 ||
-	  (my_strcodes = typeCalloc(char *, sb.st_size)) == 0 ||
-	  (my_strvalues = typeCalloc(char *, sb.st_size)) == 0) {
-	failed("cannot allocate memory for input-file");
+        (my_boolcodes = typeCalloc(char *, sb.st_size)) == 0 ||
+          (my_numcodes = typeCalloc(char *, sb.st_size)) == 0 ||
+          (my_numvalues = typeCalloc(char *, sb.st_size)) == 0 ||
+          (my_strcodes = typeCalloc(char *, sb.st_size)) == 0 ||
+          (my_strvalues = typeCalloc(char *, sb.st_size)) == 0) {
+        failed("cannot allocate memory for input-file");
     }
 
     if ((fp = fopen(input_name, "r")) == 0)
-	failed("cannot open input-file");
+        failed("cannot open input-file");
     len = fread(my_blob, sizeof(char), (size_t) sb.st_size, fp);
     my_blob[sb.st_size] = '\0';
     fclose(fp);
@@ -453,116 +453,116 @@ parse_description(const char *input_name)
      */
     state = pNewline;
     for (j = k = 0; j < len; ++j) {
-	int ch = my_blob[j];
-	if (ch == '\t') {
-	    ch = ' ';
-	}
-	switch (state) {
-	case pNewline:
-	    if (ch == ' ') {
-		continue;
-	    }
-	    if (ch == '#') {
-		state = pComment;
-		continue;
-	    }
-	    state = pDefault;
-	    /* FALLTHRU */
-	case pDefault:
-	    switch (ch) {
-	    case '|':
-		state = pDescription;
-		continue;
-	    case '\\':
-		state = pEscaped;
-		continue;
-	    case '\n':
-		state = pNewline;
-		continue;
-	    case ' ':
-	    case ':':
-		break;
-	    default:
-		state = pName;
-		break;
-	    }
-	    my_blob[k++] = (char) ch;
-	    break;
-	case pComment:
-	    if (ch == '\n')
-		state = pNewline;
-	    break;
-	case pDescription:
-	    switch (ch) {
-	    case ':':
-		state = pDefault;
-		break;
-	    case '\n':
-		state = pNewline;
-		break;
-	    }
-	    break;
-	case pEscaped:
-	    if (ch != '\n') {
-		my_blob[k++] = (char) ch;
-		state = pDefault;
-	    } else {
-		state = pNewline;
-	    }
-	    break;
-	case pName:
-	    switch (ch) {
-	    case '\n':
-		state = pNewline;
-		continue;
-	    case ' ':
-	    case ':':
-		state = pDefault;
-		break;
-	    case '#':
-		state = pNumber;
-		break;
-	    case '|':
-		state = pDescription;
-		continue;
-	    }
-	    my_blob[k++] = (char) ch;
-	    break;
-	case pNumber:
-	    switch (ch) {
-	    case '\n':
-		state = pNewline;
-		continue;
-	    case ':':
-		state = pDefault;
-		break;
-	    case ' ':
-		state = pDefault;
-		continue;
-	    }
-	    my_blob[k++] = (char) ch;
-	    break;
-	case pString:
-	    switch (ch) {
-	    case '\\':
-		if (my_blob[j + 1] == '\0') {
-		    state = pDefault;
-		    continue;
-		}
-		break;
-	    case '\n':
-		state = pNewline;
-		continue;
-	    case ':':
-		state = pDefault;
-		break;
-	    }
-	    my_blob[k++] = (char) ch;
-	    break;
-	default:
-	    /* not used */
-	    break;
-	}
+        int ch = my_blob[j];
+        if (ch == '\t') {
+            ch = ' ';
+        }
+        switch (state) {
+        case pNewline:
+            if (ch == ' ') {
+                continue;
+            }
+            if (ch == '#') {
+                state = pComment;
+                continue;
+            }
+            state = pDefault;
+            /* FALLTHRU */
+        case pDefault:
+            switch (ch) {
+            case '|':
+                state = pDescription;
+                continue;
+            case '\\':
+                state = pEscaped;
+                continue;
+            case '\n':
+                state = pNewline;
+                continue;
+            case ' ':
+            case ':':
+                break;
+            default:
+                state = pName;
+                break;
+            }
+            my_blob[k++] = (char) ch;
+            break;
+        case pComment:
+            if (ch == '\n')
+                state = pNewline;
+            break;
+        case pDescription:
+            switch (ch) {
+            case ':':
+                state = pDefault;
+                break;
+            case '\n':
+                state = pNewline;
+                break;
+            }
+            break;
+        case pEscaped:
+            if (ch != '\n') {
+                my_blob[k++] = (char) ch;
+                state = pDefault;
+            } else {
+                state = pNewline;
+            }
+            break;
+        case pName:
+            switch (ch) {
+            case '\n':
+                state = pNewline;
+                continue;
+            case ' ':
+            case ':':
+                state = pDefault;
+                break;
+            case '#':
+                state = pNumber;
+                break;
+            case '|':
+                state = pDescription;
+                continue;
+            }
+            my_blob[k++] = (char) ch;
+            break;
+        case pNumber:
+            switch (ch) {
+            case '\n':
+                state = pNewline;
+                continue;
+            case ':':
+                state = pDefault;
+                break;
+            case ' ':
+                state = pDefault;
+                continue;
+            }
+            my_blob[k++] = (char) ch;
+            break;
+        case pString:
+            switch (ch) {
+            case '\\':
+                if (my_blob[j + 1] == '\0') {
+                    state = pDefault;
+                    continue;
+                }
+                break;
+            case '\n':
+                state = pNewline;
+                continue;
+            case ':':
+                state = pDefault;
+                break;
+            }
+            my_blob[k++] = (char) ch;
+            break;
+        default:
+            /* not used */
+            break;
+        }
     }
     my_blob[k] = '\0';
 
@@ -571,105 +571,105 @@ parse_description(const char *input_name)
      */
     state = pDefault;
     for (j = 0; my_blob[j] != '\0'; ++j) {
-	switch (state) {
-	case pDefault:
-	    switch (my_blob[j]) {
-	    case '\\':
-		state = pEscaped;
-		break;
-	    case ':':
-		my_blob[j] = '\0';
-		if (my_blob[j + 1] != '\0' && my_blob[j + 1] != ':')
-		    state = pName;
-		break;
-	    case ' ':
-		break;
-	    default:
-		break;
-	    }
-	case pEscaped:
-	    break;
-	case pName:
-	    state = pDefault;
-	    /*
-	     * Commented-out capabilities might be accessible (they are in
-	     * ncurses).
-	     */
-	    if (my_blob[j] == '.' && my_blob[j + 1] == '.') {
-		j += 2;
-	    }
-	    if (my_blob[j + 1] != '\0') {
-		switch (my_blob[j + 2]) {
-		case '#':
-		    my_numvalues[count_nums] = &my_blob[j + 3];
-		    my_numcodes[count_nums++] = &my_blob[j];
-		    my_blob[j + 2] = '\0';
-		    state = pNumber;
-		    j += 2;
-		    break;
-		case '=':
-		    my_strvalues[count_strs] = &my_blob[j + 3];
-		    my_strcodes[count_strs++] = &my_blob[j];
-		    my_blob[j + 2] = '\0';
-		    state = pString;
-		    j += 2;
-		    break;
-		default:
-		    if (my_blob[j + 2] == '@') {
-			/*
-			 * We cannot get the type for a cancelled item
-			 * directly, but can infer it assuming the input
-			 * came from infocmp, which puts the data in a
-			 * known order.
-			 */
-			if (count_strs) {
-			    my_strvalues[count_strs] = empty;
-			    my_strcodes[count_strs++] = &my_blob[j];
-			} else if (count_nums) {
-			    my_numvalues[count_nums] = empty;
-			    my_numcodes[count_nums++] = &my_blob[j];
-			} else {
-			    my_boolcodes[count_bools++] = &my_blob[j];
-			}
-		    } else {
-			my_boolcodes[count_bools++] = &my_blob[j];
-		    }
-		    j++;
-		    break;
-		}
-	    }
-	    break;
-	case pNumber:
-	    if (!isdigit(UChar(my_blob[j]))) {
-		--j;
-		state = pDefault;
-	    }
-	    break;
-	case pString:
-	    switch (my_blob[j]) {
-	    case '\\':
-		if (my_blob[j + 1] == '\0') {
-		    state = pDefault;
-		    continue;
-		} else {
-		    ++j;
-		}
-		break;
-	    case '\n':
-		state = pNewline;
-		continue;
-	    case ':':
-		--j;
-		state = pDefault;
-		break;
-	    }
-	    break;
-	case pNewline:
-	case pComment:
-	case pDescription:
-	default:
-	    break;
-	}
+        switch (state) {
+        case pDefault:
+            switch (my_blob[j]) {
+            case '\\':
+                state = pEscaped;
+                break;
+            case ':':
+                my_blob[j] = '\0';
+                if (my_blob[j + 1] != '\0' && my_blob[j + 1] != ':')
+                    state = pName;
+                break;
+            case ' ':
+                break;
+            default:
+                break;
+            }
+        case pEscaped:
+            break;
+        case pName:
+            state = pDefault;
+            /*
+             * Commented-out capabilities might be accessible (they are in
+             * ncurses).
+             */
+            if (my_blob[j] == '.' && my_blob[j + 1] == '.') {
+                j += 2;
+            }
+            if (my_blob[j + 1] != '\0') {
+                switch (my_blob[j + 2]) {
+                case '#':
+                    my_numvalues[count_nums] = &my_blob[j + 3];
+                    my_numcodes[count_nums++] = &my_blob[j];
+                    my_blob[j + 2] = '\0';
+                    state = pNumber;
+                    j += 2;
+                    break;
+                case '=':
+                    my_strvalues[count_strs] = &my_blob[j + 3];
+                    my_strcodes[count_strs++] = &my_blob[j];
+                    my_blob[j + 2] = '\0';
+                    state = pString;
+                    j += 2;
+                    break;
+                default:
+                    if (my_blob[j + 2] == '@') {
+                        /*
+                         * We cannot get the type for a cancelled item
+                         * directly, but can infer it assuming the input
+                         * came from infocmp, which puts the data in a
+                         * known order.
+                         */
+                        if (count_strs) {
+                            my_strvalues[count_strs] = empty;
+                            my_strcodes[count_strs++] = &my_blob[j];
+                        } else if (count_nums) {
+                            my_numvalues[count_nums] = empty;
+                            my_numcodes[count_nums++] = &my_blob[j];
+                        } else {
+                            my_boolcodes[count_bools++] = &my_blob[j];
+                        }
+                    } else {
+                        my_boolcodes[count_bools++] = &my_blob[j];
+                    }
+                    j++;
+                    break;
+                }
+            }
+            break;
+        case pNumber:
+            if (!isdigit(UChar(my_blob[j]))) {
+                --j;
+                state = pDefault;
+            }
+            break;
+        case pString:
+            switch (my_blob[j]) {
+            case '\\':
+                if (my_blob[j + 1] == '\0') {
+                    state = pDefault;
+                    continue;
+                } else {
+                    ++j;
+                }
+                break;
+            case '\n':
+                state = pNewline;
+                continue;
+            case ':':
+                --j;
+                state = pDefault;
+                break;
+            }
+            break;
+        case pNewline:
+        case pComment:
+        case pDescription:
+        default:
+            break;
+        }
     }
     my_boolcodes[count_bools] = 0;
     my_numcodes[count_nums] = 0;
@@ -680,15 +680,15 @@ parse_description(const char *input_name)
 #if 0
     printf("bools:%d\n", (int) count_bools);
     for (j = 0; my_boolcodes[j]; ++j)
-	printf("%5d:%s\n", (int) j, my_boolcodes[j]);
+        printf("%5d:%s\n", (int) j, my_boolcodes[j]);
 
     printf("numbers:%d\n", (int) count_nums);
     for (j = 0; my_numcodes[j]; ++j)
-	printf("%5d:%s(%s)\n", (int) j, my_numcodes[j], my_numvalues[j]);
+        printf("%5d:%s(%s)\n", (int) j, my_numcodes[j], my_numvalues[j]);
 
     printf("strings:%d\n", (int) count_strs);
     for (j = 0; my_strcodes[j]; ++j)
-	printf("%5d:%s(%s)\n", (int) j, my_strcodes[j], my_strvalues[j]);
+        printf("%5d:%s(%s)\n", (int) j, my_strcodes[j], my_strvalues[j]);
 #endif
 }
 
@@ -703,23 +703,23 @@ copy_code_list(NCURSES_CONST char *const *list)
     char *unused = 0;
 
     for (pass = 0; pass < 2; ++pass) {
-	for (count = 0; list[count] != 0; ++count) {
-	    size_t chunk = strlen(list[count]) + 1;
-	    if (pass == 0) {
-		length += chunk;
-	    } else {
-		result[count] = unused;
-		_nc_STRCPY(unused, list[count], length);
-		unused += chunk;
-	    }
-	}
-	if (pass == 0) {
-	    char *blob = malloc(length);
-	    result = typeCalloc(char *, count + 1);
-	    unused = blob;
-	    if (blob == 0 || result == 0)
-		failed("copy_code_list failed");
-	}
+        for (count = 0; list[count] != 0; ++count) {
+            size_t chunk = strlen(list[count]) + 1;
+            if (pass == 0) {
+                length += chunk;
+            } else {
+                result[count] = unused;
+                _nc_STRCPY(unused, list[count], length);
+                unused += chunk;
+            }
+        }
+        if (pass == 0) {
+            char *blob = malloc(length);
+            result = typeCalloc(char *, count + 1);
+            unused = blob;
+            if (blob == 0 || result == 0)
+                failed("copy_code_list failed");
+        }
     }
 
     return result;
@@ -730,8 +730,8 @@ static void
 free_code_list(char **list)
 {
     if (list) {
-	free(list[0]);
-	free(list);
+        free(list[0]);
+        free(list);
     }
 }
 #endif /* NO_LEAKS */
@@ -742,29 +742,29 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: demo_termcap [options] [terminal]",
-	"",
-	"If no options are given, print all (boolean, numeric, string)",
-	"capabilities for the given terminal, using short names.",
-	"",
-	"Options:",
-	" -a       try all names, print capabilities found",
-	" -b       print boolean-capabilities",
-	" -d LIST  colon-separated list of databases to use",
-	" -e NAME  environment variable to set with -d option",
-	" -i NAME  terminal description to use as names for \"-a\" option, etc.",
-	" -n       print numeric-capabilities",
-	" -q       quiet (prints only counts)",
-	" -r COUNT repeat for given count",
-	" -s       print string-capabilities",
-	" -v       print termcap-variables",
+        "Usage: demo_termcap [options] [terminal]",
+        "",
+        "If no options are given, print all (boolean, numeric, string)",
+        "capabilities for the given terminal, using short names.",
+        "",
+        "Options:",
+        " -a       try all names, print capabilities found",
+        " -b       print boolean-capabilities",
+        " -d LIST  colon-separated list of databases to use",
+        " -e NAME  environment variable to set with -d option",
+        " -i NAME  terminal description to use as names for \"-a\" option, etc.",
+        " -n       print numeric-capabilities",
+        " -q       quiet (prints only counts)",
+        " -r COUNT repeat for given count",
+        " -s       print string-capabilities",
+        " -v       print termcap-variables",
 #ifdef NCURSES_VERSION
-	" -x       print extended capabilities",
+        " -x       print extended capabilities",
 #endif
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
     }
     ExitProgram(EXIT_FAILURE);
 }
@@ -784,55 +784,55 @@ main(int argc, char *argv[])
     int r_opt = 1;
 
     while ((n = getopt(argc, argv, "abd:e:i:nqr:svxy")) != -1) {
-	switch (n) {
-	case 'a':
-	    a_opt = TRUE;
-	    break;
-	case 'b':
-	    b_opt = TRUE;
-	    break;
-	case 'd':
-	    d_opt = optarg;
-	    break;
-	case 'e':
-	    e_opt = optarg;
-	    break;
-	case 'i':
-	    input_name = optarg;
-	    break;
-	case 'n':
-	    n_opt = TRUE;
-	    break;
-	case 'q':
-	    q_opt = TRUE;
-	    break;
-	case 'r':
-	    if ((r_opt = atoi(optarg)) <= 0)
-		usage();
-	    break;
-	case 's':
-	    s_opt = TRUE;
-	    break;
+        switch (n) {
+        case 'a':
+            a_opt = TRUE;
+            break;
+        case 'b':
+            b_opt = TRUE;
+            break;
+        case 'd':
+            d_opt = optarg;
+            break;
+        case 'e':
+            e_opt = optarg;
+            break;
+        case 'i':
+            input_name = optarg;
+            break;
+        case 'n':
+            n_opt = TRUE;
+            break;
+        case 'q':
+            q_opt = TRUE;
+            break;
+        case 'r':
+            if ((r_opt = atoi(optarg)) <= 0)
+                usage();
+            break;
+        case 's':
+            s_opt = TRUE;
+            break;
 #if defined(NCURSES_VERSION) || defined(HAVE_CURSES_DATA_OSPEED)
-	case 'v':
-	    v_opt = TRUE;
-	    break;
+        case 'v':
+            v_opt = TRUE;
+            break;
 #endif
 #ifdef NCURSES_VERSION
 #if NCURSES_XNAMES
-	case 'x':
-	    x_opt = TRUE;
-	    break;
-	case 'y':
-	    y_opt = TRUE;
-	    x_opt = TRUE;
-	    break;
+        case 'x':
+            x_opt = TRUE;
+            break;
+        case 'y':
+            y_opt = TRUE;
+            x_opt = TRUE;
+            break;
 #endif
 #endif
-	default:
-	    usage();
-	    break;
-	}
+        default:
+            usage();
+            break;
+        }
     }
 
 #if HAVE_USE_EXTENDED_NAMES
@@ -840,64 +840,64 @@ main(int argc, char *argv[])
 #endif
 
     if (!(b_opt || n_opt || s_opt)) {
-	b_opt = TRUE;
-	n_opt = TRUE;
-	s_opt = TRUE;
+        b_opt = TRUE;
+        n_opt = TRUE;
+        s_opt = TRUE;
     }
 
     make_dblist();
 
     if (a_opt) {
-	for (repeat = 0; repeat < r_opt; ++repeat) {
-	    if (optind < argc) {
-		for (n = optind; n < argc; ++n) {
-		    brute_force(argv[n]);
-		}
-	    } else if ((name = getenv("TERM")) != 0) {
-		brute_force(name);
-	    } else {
-		static char dumb[] = "dumb";
-		brute_force(dumb);
-	    }
-	}
+        for (repeat = 0; repeat < r_opt; ++repeat) {
+            if (optind < argc) {
+                for (n = optind; n < argc; ++n) {
+                    brute_force(argv[n]);
+                }
+            } else if ((name = getenv("TERM")) != 0) {
+                brute_force(name);
+            } else {
+                static char dumb[] = "dumb";
+                brute_force(dumb);
+            }
+        }
     } else {
-	if (input_name != 0) {
-	    parse_description(input_name);
-	}
+        if (input_name != 0) {
+            parse_description(input_name);
+        }
 #if USE_CODE_LISTS
-	else {
-	    my_boolcodes = copy_code_list(boolcodes);
-	    my_numcodes = copy_code_list(numcodes);
-	    my_strcodes = copy_code_list(strcodes);
-	}
+        else {
+            my_boolcodes = copy_code_list(boolcodes);
+            my_numcodes = copy_code_list(numcodes);
+            my_strcodes = copy_code_list(strcodes);
+        }
 #else
-	else {
-	    failed("no capability-lists available (use -i option)");
-	}
+        else {
+            failed("no capability-lists available (use -i option)");
+        }
 #endif /* USE_CODE_LISTS */
-	for (repeat = 0; repeat < r_opt; ++repeat) {
-	    if (optind < argc) {
-		for (n = optind; n < argc; ++n) {
-		    demo_termcap(argv[n]);
-		}
-	    } else if ((name = getenv("TERM")) != 0) {
-		demo_termcap(name);
-	    } else {
-		static char dumb[] = "dumb";
-		demo_termcap(dumb);
-	    }
-	}
+        for (repeat = 0; repeat < r_opt; ++repeat) {
+            if (optind < argc) {
+                for (n = optind; n < argc; ++n) {
+                    demo_termcap(argv[n]);
+                }
+            } else if ((name = getenv("TERM")) != 0) {
+                demo_termcap(name);
+            } else {
+                static char dumb[] = "dumb";
+                demo_termcap(dumb);
+            }
+        }
     }
 
     printf("%ld values (%ld booleans, %ld numbers, %ld strings)\n",
-	   total_values, total_b_values, total_n_values, total_s_values);
+           total_values, total_b_values, total_n_values, total_s_values);
 
 #if defined(NCURSES_VERSION) || defined(HAVE_CURSES_DATA_OSPEED)
     if (v_opt) {
-	show_number("PC", PC);
-	show_string("UP", UP);
-	show_string("BC", BC);
-	show_number("ospeed", (int) ospeed);
+        show_number("PC", PC);
+        show_string("UP", UP);
+        show_string("BC", BC);
+        show_number("ospeed", (int) ospeed);
     }
 #endif
 

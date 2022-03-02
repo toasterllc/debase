@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_endwin.c
+**      lib_endwin.c
 **
-**	The routine endwin().
+**      The routine endwin().
 **
 */
 
@@ -54,18 +54,18 @@ NCURSES_SP_NAME(endwin) (NCURSES_SP_DCL0)
 
     if (SP_PARM) {
 #ifdef USE_TERM_DRIVER
-	TERMINAL_CONTROL_BLOCK *TCB = TCBOf(SP_PARM);
+        TERMINAL_CONTROL_BLOCK *TCB = TCBOf(SP_PARM);
 
-	SP_PARM->_endwin = ewSuspend;
-	if (TCB && TCB->drv && TCB->drv->td_scexit)
-	    TCB->drv->td_scexit(SP_PARM);
+        SP_PARM->_endwin = ewSuspend;
+        if (TCB && TCB->drv && TCB->drv->td_scexit)
+            TCB->drv->td_scexit(SP_PARM);
 #else
-	SP_PARM->_endwin = ewSuspend;
-	SP_PARM->_mouse_wrap(SP_PARM);
-	_nc_screen_wrap();
-	_nc_mvcur_wrap();	/* wrap up cursor addressing */
+        SP_PARM->_endwin = ewSuspend;
+        SP_PARM->_mouse_wrap(SP_PARM);
+        _nc_screen_wrap();
+        _nc_mvcur_wrap();       /* wrap up cursor addressing */
 #endif
-	code = NCURSES_SP_NAME(reset_shell_mode) (NCURSES_SP_ARG);
+        code = NCURSES_SP_NAME(reset_shell_mode) (NCURSES_SP_ARG);
     }
 
     returnCode(code);

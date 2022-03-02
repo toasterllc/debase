@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_instr.c
+**      lib_instr.c
 **
-**	The routine winnstr().
+**      The routine winnstr().
 **
 */
 
@@ -52,70 +52,70 @@ winnstr(WINDOW *win, char *str, int n)
     T((T_CALLED("winnstr(%p,%p,%d)"), (void *) win, str, n));
 
     if (!win || !str) {
-	i = ERR;
+        i = ERR;
     } else {
-	int row = win->_cury;
-	int col = win->_curx;
-	NCURSES_CH_T *text = win->_line[row].text;
+        int row = win->_cury;
+        int col = win->_curx;
+        NCURSES_CH_T *text = win->_line[row].text;
 
-	if (n < 0)
-	    n = win->_maxx - col + 1;
+        if (n < 0)
+            n = win->_maxx - col + 1;
 
-	for (; i < n;) {
+        for (; i < n;) {
 #if USE_WIDEC_SUPPORT
-	    cchar_t *cell = &(text[col]);
-	    attr_t attrs;
-	    NCURSES_PAIRS_T pair;
-	    char *tmp;
+            cchar_t *cell = &(text[col]);
+            attr_t attrs;
+            NCURSES_PAIRS_T pair;
+            char *tmp;
 
-	    if (!isWidecExt(*cell)) {
-		wchar_t *wch;
-		int n2;
+            if (!isWidecExt(*cell)) {
+                wchar_t *wch;
+                int n2;
 
-		n2 = getcchar(cell, 0, 0, 0, 0);
-		if (n2 > 0
-		    && (wch = typeCalloc(wchar_t, (unsigned) n2 + 1)) != 0) {
-		    bool done = FALSE;
+                n2 = getcchar(cell, 0, 0, 0, 0);
+                if (n2 > 0
+                    && (wch = typeCalloc(wchar_t, (unsigned) n2 + 1)) != 0) {
+                    bool done = FALSE;
 
-		    if (getcchar(cell, wch, &attrs, &pair, 0) == OK) {
-			mbstate_t state;
-			size_t n3;
+                    if (getcchar(cell, wch, &attrs, &pair, 0) == OK) {
+                        mbstate_t state;
+                        size_t n3;
 
-			init_mb(state);
-			n3 = wcstombs(0, wch, (size_t) 0);
-			if (!isEILSEQ(n3) && (n3 != 0)) {
-			    size_t need = n3 + 10 + (size_t) i;
-			    int have = (int) n3 + i;
+                        init_mb(state);
+                        n3 = wcstombs(0, wch, (size_t) 0);
+                        if (!isEILSEQ(n3) && (n3 != 0)) {
+                            size_t need = n3 + 10 + (size_t) i;
+                            int have = (int) n3 + i;
 
-			    /* check for loop-done as well as overflow */
-			    if (have > n || (int) need <= 0) {
-				done = TRUE;
-			    } else if ((tmp = typeCalloc(char, need)) == 0) {
-				done = TRUE;
-			    } else {
-				size_t i3;
+                            /* check for loop-done as well as overflow */
+                            if (have > n || (int) need <= 0) {
+                                done = TRUE;
+                            } else if ((tmp = typeCalloc(char, need)) == 0) {
+                                done = TRUE;
+                            } else {
+                                size_t i3;
 
-				init_mb(state);
-				wcstombs(tmp, wch, n3);
-				for (i3 = 0; i3 < n3; ++i3)
-				    str[i++] = tmp[i3];
-				free(tmp);
-			    }
-			}
-		    }
-		    free(wch);
-		    if (done)
-			break;
-		}
-	    }
+                                init_mb(state);
+                                wcstombs(tmp, wch, n3);
+                                for (i3 = 0; i3 < n3; ++i3)
+                                    str[i++] = tmp[i3];
+                                free(tmp);
+                            }
+                        }
+                    }
+                    free(wch);
+                    if (done)
+                        break;
+                }
+            }
 #else
-	    str[i++] = (char) CharOf(text[col]);
+            str[i++] = (char) CharOf(text[col]);
 #endif
-	    if (++col > win->_maxx) {
-		break;
-	    }
-	}
-	str[i] = '\0';		/* SVr4 does not seem to count the null */
+            if (++col > win->_maxx) {
+                break;
+            }
+        }
+        str[i] = '\0';          /* SVr4 does not seem to count the null */
     }
     T(("winnstr returns %s", _nc_visbuf(str)));
     returnCode(i);

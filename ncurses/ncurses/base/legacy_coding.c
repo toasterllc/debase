@@ -43,8 +43,8 @@ NCURSES_SP_NAME(use_legacy_coding) (NCURSES_SP_DCLx int level)
 
     T((T_CALLED("use_legacy_coding(%p,%d)"), (void *) SP_PARM, level));
     if (level >= 0 && level <= 2 && SP_PARM != 0) {
-	result = SP_PARM->_legacy_coding;
-	SP_PARM->_legacy_coding = level;
+        result = SP_PARM->_legacy_coding;
+        SP_PARM->_legacy_coding = level;
     }
     returnCode(result);
 }

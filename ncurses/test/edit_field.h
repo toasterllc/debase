@@ -39,10 +39,10 @@
 
 #define EDIT_FIELD(c) (MAX_FORM_COMMAND + c)
 
-#define MY_HELP		EDIT_FIELD('h')
-#define MY_QUIT		EDIT_FIELD('q')
-#define MY_EDT_MODE	EDIT_FIELD('e')
-#define MY_INS_MODE	EDIT_FIELD('t')
+#define MY_HELP         EDIT_FIELD('h')
+#define MY_QUIT         EDIT_FIELD('q')
+#define MY_EDT_MODE     EDIT_FIELD('e')
+#define MY_INS_MODE     EDIT_FIELD('t')
 
 typedef struct {
     chtype background;

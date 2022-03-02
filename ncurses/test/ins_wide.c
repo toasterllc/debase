@@ -80,27 +80,27 @@ legend(WINDOW *win, int level, Options state, wchar_t *buffer, int length)
     switch (state) {
     default:
     case oDefault:
-	showstate = "";
-	break;
+        showstate = "";
+        break;
     case oMove:
-	showstate = " (mvXXX)";
-	break;
+        showstate = " (mvXXX)";
+        break;
     case oWindow:
-	showstate = " (winXXX)";
-	break;
+        showstate = " (winXXX)";
+        break;
     case oMoveWindow:
-	showstate = " (mvwinXXX)";
-	break;
+        showstate = " (mvwinXXX)";
+        break;
     }
 
     wmove(win, 0, 0);
     wprintw(win,
-	    "The Strings/Chars displays should match.  Enter any characters, except:\n");
+            "The Strings/Chars displays should match.  Enter any characters, except:\n");
     wprintw(win,
-	    "down-arrow or ^N to repeat on next line, ^W for inner window, ESC to exit.\n");
+            "down-arrow or ^N to repeat on next line, ^W for inner window, ESC to exit.\n");
     wclrtoeol(win);
     wprintw(win, "Level %d,%s inserted %d characters <", level,
-	    showstate, length);
+            showstate, length);
     waddwstr(win, buffer);
     waddstr(win, ">");
 }
@@ -112,32 +112,32 @@ ColOf(wchar_t *buffer, int length, int margin)
     int result;
 
     for (n = 0, result = margin + 1; n < length; ++n) {
-	int ch = buffer[n];
-	switch (ch) {
-	case '\n':
-	    /* actually newline should clear the remainder of the line
-	     * and move to the next line - but that seems a little awkward
-	     * in this example.
-	     */
-	case '\r':
-	    result = 0;
-	    break;
-	case '\b':
-	    if (result > 0)
-		--result;
-	    break;
-	case '\t':
-	    result += (MY_TABSIZE - (result % MY_TABSIZE));
-	    break;
-	case '\177':
-	    result += 2;
-	    break;
-	default:
-	    result += wcwidth((wchar_t) ch);
-	    if (ch < 32)
-		++result;
-	    break;
-	}
+        int ch = buffer[n];
+        switch (ch) {
+        case '\n':
+            /* actually newline should clear the remainder of the line
+             * and move to the next line - but that seems a little awkward
+             * in this example.
+             */
+        case '\r':
+            result = 0;
+            break;
+        case '\b':
+            if (result > 0)
+                --result;
+            break;
+        case '\t':
+            result += (MY_TABSIZE - (result % MY_TABSIZE));
+            break;
+        case '\177':
+            result += 2;
+            break;
+        default:
+            result += wcwidth((wchar_t) ch);
+            if (ch < 32)
+                ++result;
+            break;
+        }
     }
     return result;
 }
@@ -150,8 +150,8 @@ ConvertCh(chtype source, cchar_t *target)
     tmp_wchar[0] = (wchar_t) source;
     tmp_wchar[1] = 0;
     if (setcchar(target, tmp_wchar, A_NORMAL, 0, (void *) 0) == ERR) {
-	beep();
-	return FALSE;
+        beep();
+        return FALSE;
     }
     return TRUE;
 }
@@ -163,9 +163,9 @@ MvWInsCh(WINDOW *win, int y, int x, chtype ch)
     cchar_t tmp_cchar;
 
     if (ConvertCh(ch, &tmp_cchar)) {
-	code = mvwins_wch(win, y, x, &tmp_cchar);
+        code = mvwins_wch(win, y, x, &tmp_cchar);
     } else {
-	code = mvwinsch(win, y, x, ch);
+        code = mvwinsch(win, y, x, ch);
     }
     return code;
 }
@@ -177,9 +177,9 @@ MvInsCh(int y, int x, chtype ch)
     cchar_t tmp_cchar;
 
     if (ConvertCh(ch, &tmp_cchar)) {
-	code = mvins_wch(y, x, &tmp_cchar);
+        code = mvins_wch(y, x, &tmp_cchar);
     } else {
-	code = mvinsch(y, x, ch);
+        code = mvinsch(y, x, ch);
     }
     return code;
 }
@@ -191,9 +191,9 @@ WInsCh(WINDOW *win, chtype ch)
     cchar_t tmp_cchar;
 
     if (ConvertCh(ch, &tmp_cchar)) {
-	code = wins_wch(win, &tmp_cchar);
+        code = wins_wch(win, &tmp_cchar);
     } else {
-	code = winsch(win, ch);
+        code = winsch(win, ch);
     }
     return code;
 }
@@ -205,9 +205,9 @@ InsCh(chtype ch)
     cchar_t tmp_cchar;
 
     if (ConvertCh(ch, &tmp_cchar)) {
-	code = ins_wch(&tmp_cchar);
+        code = ins_wch(&tmp_cchar);
     } else {
-	code = insch(ch);
+        code = insch(ch);
     }
     return code;
 }
@@ -230,47 +230,47 @@ test_inserts(int level)
     WINDOW *show = 0;
     int margin = (2 * MY_TABSIZE) - 1;
     Options option = (Options) ((int) (m_opt ? oMove : oDefault)
-				| (int) ((w_opt || (level > 0))
-					 ? oWindow : oDefault));
+                                | (int) ((w_opt || (level > 0))
+                                         ? oWindow : oDefault));
 
     if (first) {
-	static char cmd[80];
-	setlocale(LC_ALL, "");
+        static char cmd[80];
+        setlocale(LC_ALL, "");
 
-	_nc_STRCPY(cmd, "TABSIZE=8", sizeof(cmd));
-	putenv(cmd);
+        _nc_STRCPY(cmd, "TABSIZE=8", sizeof(cmd));
+        putenv(cmd);
 
-	initscr();
-	(void) cbreak();	/* take input chars one at a time, no wait for \n */
-	(void) noecho();	/* don't echo input */
-	keypad(stdscr, TRUE);
+        initscr();
+        (void) cbreak();        /* take input chars one at a time, no wait for \n */
+        (void) noecho();        /* don't echo input */
+        keypad(stdscr, TRUE);
 
-	/*
-	 * Show the characters inserted in color, to distinguish from those
-	 * that are shifted.
-	 */
-	if (has_colors()) {
-	    start_color();
-	    init_pair(1, COLOR_WHITE, COLOR_BLUE);
-	}
+        /*
+         * Show the characters inserted in color, to distinguish from those
+         * that are shifted.
+         */
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_WHITE, COLOR_BLUE);
+        }
     }
 
     limit = LINES - 5;
     if (level > 0) {
-	look = newwin(limit, COLS - (2 * (level - 1)), 0, level - 1);
-	work = newwin(limit - 2, COLS - (2 * level), 1, level);
-	show = newwin(4, COLS, limit + 1, 0);
-	box(look, 0, 0);
-	wnoutrefresh(look);
-	limit -= 2;
+        look = newwin(limit, COLS - (2 * (level - 1)), 0, level - 1);
+        work = newwin(limit - 2, COLS - (2 * level), 1, level);
+        show = newwin(4, COLS, limit + 1, 0);
+        box(look, 0, 0);
+        wnoutrefresh(look);
+        limit -= 2;
     } else {
-	work = stdscr;
-	show = derwin(stdscr, 4, COLS, limit + 1, 0);
+        work = stdscr;
+        show = derwin(stdscr, 4, COLS, limit + 1, 0);
     }
     keypad(work, TRUE);
 
     for (col = margin + 1; col < COLS; col += MY_TABSIZE)
-	MvWVLine(work, row, col, '.', limit - 2);
+        MvWVLine(work, row, col, '.', limit - 2);
 
     MvWVLine(work, row, margin, ACS_VLINE, limit - 2);
     MvWVLine(work, row, margin + 1, ACS_VLINE, limit - 2);
@@ -287,169 +287,169 @@ test_inserts(int level)
     doupdate();
 
     if (has_colors()) {
-	wbkgdset(work, (chtype) (COLOR_PAIR(1) | ' '));
+        wbkgdset(work, (chtype) (COLOR_PAIR(1) | ' '));
     }
 
     while ((ch = read_linedata(work)) != ERR && !isQUIT(ch)) {
-	wmove(work, row, margin + 1);
-	switch (ch) {
-	case key_RECUR:
-	    test_inserts(level + 1);
+        wmove(work, row, margin + 1);
+        switch (ch) {
+        case key_RECUR:
+            test_inserts(level + 1);
 
-	    if (look)
-		touchwin(look);
-	    touchwin(work);
-	    touchwin(show);
+            if (look)
+                touchwin(look);
+            touchwin(work);
+            touchwin(show);
 
-	    if (look)
-		wnoutrefresh(look);
-	    wnoutrefresh(work);
-	    wnoutrefresh(show);
+            if (look)
+                wnoutrefresh(look);
+            wnoutrefresh(work);
+            wnoutrefresh(show);
 
-	    doupdate();
-	    break;
-	case key_NEWLINE:
-	    if (row < limit) {
-		++row;
-		/* put the whole string in, all at once */
-		col2 = margin + 1;
-		switch (option) {
-		case oDefault:
-		    if (n_opt > 1) {
-			for (col = 0; col < length; col += n_opt) {
-			    col2 = ColOf(buffer, col, margin);
-			    if (move(row, col2) != ERR) {
-				InsNStr(buffer + col, LEN(col));
-			    }
-			}
-		    } else {
-			if (move(row, col2) != ERR) {
-			    InsStr(buffer);
-			}
-		    }
-		    break;
-		case oMove:
-		    if (n_opt > 1) {
-			for (col = 0; col < length; col += n_opt) {
-			    col2 = ColOf(buffer, col, margin);
-			    MvInsNStr(row, col2, buffer + col, LEN(col));
-			}
-		    } else {
-			MvInsStr(row, col2, buffer);
-		    }
-		    break;
-		case oWindow:
-		    if (n_opt > 1) {
-			for (col = 0; col < length; col += n_opt) {
-			    col2 = ColOf(buffer, col, margin);
-			    if (wmove(work, row, col2) != ERR) {
-				WInsNStr(work, buffer + col, LEN(col));
-			    }
-			}
-		    } else {
-			if (wmove(work, row, col2) != ERR) {
-			    WInsStr(work, buffer);
-			}
-		    }
-		    break;
-		case oMoveWindow:
-		    if (n_opt > 1) {
-			for (col = 0; col < length; col += n_opt) {
-			    col2 = ColOf(buffer, col, margin);
-			    MvWInsNStr(work, row, col2, buffer + col, LEN(col));
-			}
-		    } else {
-			MvWInsStr(work, row, col2, buffer);
-		    }
-		    break;
-		}
+            doupdate();
+            break;
+        case key_NEWLINE:
+            if (row < limit) {
+                ++row;
+                /* put the whole string in, all at once */
+                col2 = margin + 1;
+                switch (option) {
+                case oDefault:
+                    if (n_opt > 1) {
+                        for (col = 0; col < length; col += n_opt) {
+                            col2 = ColOf(buffer, col, margin);
+                            if (move(row, col2) != ERR) {
+                                InsNStr(buffer + col, LEN(col));
+                            }
+                        }
+                    } else {
+                        if (move(row, col2) != ERR) {
+                            InsStr(buffer);
+                        }
+                    }
+                    break;
+                case oMove:
+                    if (n_opt > 1) {
+                        for (col = 0; col < length; col += n_opt) {
+                            col2 = ColOf(buffer, col, margin);
+                            MvInsNStr(row, col2, buffer + col, LEN(col));
+                        }
+                    } else {
+                        MvInsStr(row, col2, buffer);
+                    }
+                    break;
+                case oWindow:
+                    if (n_opt > 1) {
+                        for (col = 0; col < length; col += n_opt) {
+                            col2 = ColOf(buffer, col, margin);
+                            if (wmove(work, row, col2) != ERR) {
+                                WInsNStr(work, buffer + col, LEN(col));
+                            }
+                        }
+                    } else {
+                        if (wmove(work, row, col2) != ERR) {
+                            WInsStr(work, buffer);
+                        }
+                    }
+                    break;
+                case oMoveWindow:
+                    if (n_opt > 1) {
+                        for (col = 0; col < length; col += n_opt) {
+                            col2 = ColOf(buffer, col, margin);
+                            MvWInsNStr(work, row, col2, buffer + col, LEN(col));
+                        }
+                    } else {
+                        MvWInsStr(work, row, col2, buffer);
+                    }
+                    break;
+                }
 
-		/* do the corresponding single-character insertion */
-		row2 = limit + row;
-		for (col = 0; col < length; ++col) {
-		    col2 = ColOf(buffer, col, margin);
-		    switch (option) {
-		    case oDefault:
-			if (move(row2, col2) != ERR) {
-			    InsCh((chtype) buffer[col]);
-			}
-			break;
-		    case oMove:
-			MvInsCh(row2, col2, (chtype) buffer[col]);
-			break;
-		    case oWindow:
-			if (wmove(work, row2, col2) != ERR) {
-			    WInsCh(work, (chtype) buffer[col]);
-			}
-			break;
-		    case oMoveWindow:
-			MvWInsCh(work, row2, col2, (chtype) buffer[col]);
-			break;
-		    }
-		}
-	    } else {
-		beep();
-	    }
-	    break;
-	default:
-	    if (length >= BUFSIZ - 2)
-		break;
-	    buffer[length++] = (wchar_t) ch;
-	    buffer[length] = '\0';
+                /* do the corresponding single-character insertion */
+                row2 = limit + row;
+                for (col = 0; col < length; ++col) {
+                    col2 = ColOf(buffer, col, margin);
+                    switch (option) {
+                    case oDefault:
+                        if (move(row2, col2) != ERR) {
+                            InsCh((chtype) buffer[col]);
+                        }
+                        break;
+                    case oMove:
+                        MvInsCh(row2, col2, (chtype) buffer[col]);
+                        break;
+                    case oWindow:
+                        if (wmove(work, row2, col2) != ERR) {
+                            WInsCh(work, (chtype) buffer[col]);
+                        }
+                        break;
+                    case oMoveWindow:
+                        MvWInsCh(work, row2, col2, (chtype) buffer[col]);
+                        break;
+                    }
+                }
+            } else {
+                beep();
+            }
+            break;
+        default:
+            if (length >= BUFSIZ - 2)
+                break;
+            buffer[length++] = (wchar_t) ch;
+            buffer[length] = '\0';
 
-	    /* put the string in, one character at a time */
-	    col = ColOf(buffer, length - 1, margin);
-	    switch (option) {
-	    case oDefault:
-		if (move(row, col) != ERR) {
-		    InsStr(buffer + length - 1);
-		}
-		break;
-	    case oMove:
-		MvInsStr(row, col, buffer + length - 1);
-		break;
-	    case oWindow:
-		if (wmove(work, row, col) != ERR) {
-		    WInsStr(work, buffer + length - 1);
-		}
-		break;
-	    case oMoveWindow:
-		MvWInsStr(work, row, col, buffer + length - 1);
-		break;
-	    }
+            /* put the string in, one character at a time */
+            col = ColOf(buffer, length - 1, margin);
+            switch (option) {
+            case oDefault:
+                if (move(row, col) != ERR) {
+                    InsStr(buffer + length - 1);
+                }
+                break;
+            case oMove:
+                MvInsStr(row, col, buffer + length - 1);
+                break;
+            case oWindow:
+                if (wmove(work, row, col) != ERR) {
+                    WInsStr(work, buffer + length - 1);
+                }
+                break;
+            case oMoveWindow:
+                MvWInsStr(work, row, col, buffer + length - 1);
+                break;
+            }
 
-	    /* do the corresponding single-character insertion */
-	    switch (option) {
-	    case oDefault:
-		if (move(limit + row, col) != ERR) {
-		    InsCh((chtype) ch);
-		}
-		break;
-	    case oMove:
-		MvInsCh(limit + row, col, (chtype) ch);
-		break;
-	    case oWindow:
-		if (wmove(work, limit + row, col) != ERR) {
-		    WInsCh(work, (chtype) ch);
-		}
-		break;
-	    case oMoveWindow:
-		MvWInsCh(work, limit + row, col, (chtype) ch);
-		break;
-	    }
+            /* do the corresponding single-character insertion */
+            switch (option) {
+            case oDefault:
+                if (move(limit + row, col) != ERR) {
+                    InsCh((chtype) ch);
+                }
+                break;
+            case oMove:
+                MvInsCh(limit + row, col, (chtype) ch);
+                break;
+            case oWindow:
+                if (wmove(work, limit + row, col) != ERR) {
+                    WInsCh(work, (chtype) ch);
+                }
+                break;
+            case oMoveWindow:
+                MvWInsCh(work, limit + row, col, (chtype) ch);
+                break;
+            }
 
-	    wnoutrefresh(work);
+            wnoutrefresh(work);
 
-	    legend(show, level, option, buffer, length);
-	    wnoutrefresh(show);
+            legend(show, level, option, buffer, length);
+            wnoutrefresh(show);
 
-	    doupdate();
-	    break;
-	}
+            doupdate();
+            break;
+        }
     }
     if (level > 0) {
-	delwin(work);
-	delwin(look);
+        delwin(work);
+        delwin(look);
     }
     delwin(show);
 }
@@ -459,17 +459,17 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: ins_wide [options]"
-	,""
-	,"Options:"
-	,"  -f FILE read data from given file"
-	,"  -n NUM  limit string-inserts to NUM bytes on ^N replay"
-	,"  -m      perform wmove/move separately from insert-functions"
-	,"  -w      use window-parameter even when stdscr would be implied"
+        "Usage: ins_wide [options]"
+        ,""
+        ,"Options:"
+        ,"  -f FILE read data from given file"
+        ,"  -n NUM  limit string-inserts to NUM bytes on ^N replay"
+        ,"  -m      perform wmove/move separately from insert-functions"
+        ,"  -w      use window-parameter even when stdscr would be implied"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -481,28 +481,28 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     setlocale(LC_ALL, "");
 
     while ((ch = getopt(argc, argv, "f:mn:w")) != -1) {
-	switch (ch) {
-	case 'f':
-	    init_linedata(optarg);
-	    break;
-	case 'm':
-	    m_opt = TRUE;
-	    break;
-	case 'n':
-	    n_opt = atoi(optarg);
-	    if (n_opt == 0)
-		n_opt = -1;
-	    break;
-	case 'w':
-	    w_opt = TRUE;
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+        switch (ch) {
+        case 'f':
+            init_linedata(optarg);
+            break;
+        case 'm':
+            m_opt = TRUE;
+            break;
+        case 'n':
+            n_opt = atoi(optarg);
+            if (n_opt == 0)
+                n_opt = -1;
+            break;
+        case 'w':
+            w_opt = TRUE;
+            break;
+        default:
+            usage();
+            break;
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     test_inserts(0);
     endwin();

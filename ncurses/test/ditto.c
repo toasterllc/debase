@@ -40,7 +40,7 @@
  *
  * If openpty() is not supported, you must invoke the program by specifying
  * another terminal on the same machine by specifying its device, e.g.,
- *	ditto /dev/ttyp1
+ *      ditto /dev/ttyp1
  */
 #include <test.priv.h>
 #include <sys/stat.h>
@@ -79,14 +79,14 @@ typedef struct {
 typedef struct {
     FILE *input;
     FILE *output;
-    SCREEN *screen;		/* this screen - curses internal data */
-    int which1;			/* this screen's index in DITTO[] array */
-    int length;			/* length of windows[] and peeks[] */
-    char **titles;		/* per-window titles */
-    WINDOW **parents;		/* display boxes around each screen's data */
-    WINDOW **windows;		/* display data from each screen */
-    PEEK *peeks;		/* indices for each screen's fifo */
-    FIFO fifo;			/* fifo for this screen */
+    SCREEN *screen;             /* this screen - curses internal data */
+    int which1;                 /* this screen's index in DITTO[] array */
+    int length;                 /* length of windows[] and peeks[] */
+    char **titles;              /* per-window titles */
+    WINDOW **parents;           /* display boxes around each screen's data */
+    WINDOW **windows;           /* display data from each screen */
+    PEEK *peeks;                /* indices for each screen's fifo */
+    FIFO fifo;                  /* fifo for this screen */
 #ifdef USE_PTHREADS
     pthread_t thread;
 #endif
@@ -97,9 +97,9 @@ typedef struct {
  * single-parameter interface.
  */
 typedef struct {
-    int source;			/* which screen did character come from */
-    int target;			/* which screen is character going to */
-    DITTO *ditto;		/* data for all screens */
+    int source;                 /* which screen did character come from */
+    int target;                 /* which screen is character going to */
+    DITTO *ditto;               /* data for all screens */
 } DDATA;
 
 static GCC_NORETURN void failed(const char *);
@@ -125,7 +125,7 @@ put_fifo(FIFO * fifo, int value)
 {
     int next = NEXT_FIFO(fifo->head);
     if (next == fifo->tail)
-	fifo->tail = NEXT_FIFO(fifo->tail);
+        fifo->tail = NEXT_FIFO(fifo->tail);
     fifo->data[next] = value;
     fifo->head = next;
     fifo->sequence += 1;
@@ -143,8 +143,8 @@ peek_fifo(FIFO * fifo, PEEK * peek)
 {
     int result = -1;
     if (peek->sequence < fifo->sequence) {
-	result = fifo->data[THIS_FIFO(peek->sequence)];
-	peek->sequence += 1;
+        result = fifo->data[THIS_FIFO(peek->sequence)];
+        peek->sequence += 1;
     }
     return result;
 }
@@ -161,36 +161,36 @@ open_tty(char *path)
     const char *xterm_prog = 0;
 
     if ((xterm_prog = getenv("XTERM_PROG")) == 0)
-	xterm_prog = "xterm";
+        xterm_prog = "xterm";
 
     if (openpty(&amaster, &aslave, slave_name, 0, 0) != 0
-	|| strlen(slave_name) > sizeof(slave_name) - 1)
-	failed("openpty");
+        || strlen(slave_name) > sizeof(slave_name) - 1)
+        failed("openpty");
     if (strrchr(slave_name, '/') == 0) {
-	errno = EISDIR;
-	failed(slave_name);
+        errno = EISDIR;
+        failed(slave_name);
     }
     _nc_SPRINTF(s_option, _nc_SLIMIT(sizeof(s_option))
-		"-S%s/%d", slave_name, aslave);
+                "-S%s/%d", slave_name, aslave);
     if (fork()) {
-	execlp(xterm_prog, xterm_prog, s_option, "-title", path, (char *) 0);
-	_exit(0);
+        execlp(xterm_prog, xterm_prog, s_option, "-title", path, (char *) 0);
+        _exit(0);
     }
     fp = fdopen(amaster, "r+");
     if (fp == 0)
-	failed(path);
+        failed(path);
 #else
     struct stat sb;
 
     if (stat(path, &sb) == -1)
-	failed(path);
+        failed(path);
     if ((sb.st_mode & S_IFMT) != S_IFCHR) {
-	errno = ENOTTY;
-	failed(path);
+        errno = ENOTTY;
+        failed(path);
     }
     fp = fopen(path, "r+");
     if (fp == 0)
-	failed(path);
+        failed(path);
     printf("opened %s\n", path);
 #endif
     assert(fp != 0);
@@ -200,9 +200,9 @@ open_tty(char *path)
 static int
 init_screen(
 #if HAVE_USE_WINDOW
-	       SCREEN *sp GCC_UNUSED,
+               SCREEN *sp GCC_UNUSED,
 #endif
-	       void *arg)
+               void *arg)
 {
     DITTO *target = (DITTO *) arg;
     int high, wide;
@@ -220,21 +220,21 @@ init_screen(
     high = (LINES - 2) / target->length;
     wide = (COLS - 2);
     for (k = 0; k < target->length; ++k) {
-	WINDOW *outer = newwin(high, wide, 1 + (high * k), 1);
-	WINDOW *inner = derwin(outer, high - 2, wide - 2, 1, 1);
+        WINDOW *outer = newwin(high, wide, 1 + (high * k), 1);
+        WINDOW *inner = derwin(outer, high - 2, wide - 2, 1, 1);
 
-	box(outer, 0, 0);
-	MvWAddStr(outer, 0, 2, target->titles[k]);
-	wnoutrefresh(outer);
+        box(outer, 0, 0);
+        MvWAddStr(outer, 0, 2, target->titles[k]);
+        wnoutrefresh(outer);
 
-	scrollok(inner, TRUE);
-	keypad(inner, TRUE);
+        scrollok(inner, TRUE);
+        keypad(inner, TRUE);
 #ifndef USE_PTHREADS
-	nodelay(inner, TRUE);
+        nodelay(inner, TRUE);
 #endif
 
-	target->parents[k] = outer;
-	target->windows[k] = inner;
+        target->parents[k] = outer;
+        target->windows[k] = inner;
     }
     doupdate();
     return TRUE;
@@ -244,23 +244,23 @@ static void
 open_screen(DITTO * target, char **source, int length, int which1)
 {
     if (which1 != 0) {
-	target->input =
-	    target->output = open_tty(source[which1]);
+        target->input =
+            target->output = open_tty(source[which1]);
     } else {
-	target->input = stdin;
-	target->output = stdout;
+        target->input = stdin;
+        target->output = stdout;
     }
 
     target->which1 = which1;
     target->titles = source;
     target->length = length;
     target->fifo.head = -1;
-    target->screen = newterm((char *) 0,	/* assume $TERM is the same */
-			     target->output,
-			     target->input);
+    target->screen = newterm((char *) 0,        /* assume $TERM is the same */
+                             target->output,
+                             target->input);
 
     if (target->screen == 0)
-	failed("newterm");
+        failed("newterm");
 
     (void) USING_SCREEN(target->screen, init_screen, target);
 }
@@ -268,9 +268,9 @@ open_screen(DITTO * target, char **source, int length, int which1)
 static int
 close_screen(
 #if HAVE_USE_WINDOW
-		SCREEN *sp GCC_UNUSED,
+                SCREEN *sp GCC_UNUSED,
 #endif
-		void *arg GCC_UNUSED)
+                void *arg GCC_UNUSED)
 {
 #if HAVE_USE_WINDOW
     (void) sp;
@@ -285,9 +285,9 @@ close_screen(
 static int
 read_screen(
 #if HAVE_USE_WINDOW
-	       SCREEN *sp GCC_UNUSED,
+               SCREEN *sp GCC_UNUSED,
 #endif
-	       void *arg)
+               void *arg)
 {
     DDATA *data = (DDATA *) arg;
     DITTO *ditto = &(data->ditto[data->source]);
@@ -295,9 +295,9 @@ read_screen(
     int ch = wgetch(win);
 
     if (ch > 0 && ch < 256)
-	put_fifo(&(ditto->fifo), ch);
+        put_fifo(&(ditto->fifo), ch);
     else
-	ch = ERR;
+        ch = ERR;
 
     return ch;
 }
@@ -308,9 +308,9 @@ read_screen(
 static int
 write_screen(
 #if HAVE_USE_WINDOW
-		SCREEN *sp GCC_UNUSED,
+                SCREEN *sp GCC_UNUSED,
 #endif
-		void *arg GCC_UNUSED)
+                void *arg GCC_UNUSED)
 {
     DDATA *data = (DDATA *) arg;
     DITTO *ditto = &(data->ditto[data->target]);
@@ -318,21 +318,21 @@ write_screen(
     int which;
 
     for (which = 0; which < ditto->length; ++which) {
-	WINDOW *win = ditto->windows[which];
-	FIFO *fifo = &(data->ditto[which].fifo);
-	PEEK *peek = &(ditto->peeks[which]);
-	int ch;
+        WINDOW *win = ditto->windows[which];
+        FIFO *fifo = &(data->ditto[which].fifo);
+        PEEK *peek = &(ditto->peeks[which]);
+        int ch;
 
-	while ((ch = peek_fifo(fifo, peek)) > 0) {
-	    changed = TRUE;
+        while ((ch = peek_fifo(fifo, peek)) > 0) {
+            changed = TRUE;
 
-	    waddch(win, (chtype) ch);
-	    wnoutrefresh(win);
-	}
+            waddch(win, (chtype) ch);
+            wnoutrefresh(win);
+        }
     }
 
     if (changed)
-	doupdate();
+        doupdate();
     return OK;
 }
 
@@ -343,8 +343,8 @@ show_ditto(DITTO * data, int count, DDATA * ddata)
 
     (void) data;
     for (n = 0; n < count; n++) {
-	ddata->target = n;
-	USING_SCREEN(data[n].screen, write_screen, (void *) ddata);
+        ddata->target = n;
+        USING_SCREEN(data[n].screen, write_screen, (void *) ddata);
     }
 }
 
@@ -357,25 +357,25 @@ handle_screen(void *arg)
     memset(&ddata, 0, sizeof(ddata));
     ddata.ditto = (DITTO *) arg;
     ddata.source = ddata.ditto->which1;
-    ddata.ditto -= ddata.source;	/* -> base of array */
+    ddata.ditto -= ddata.source;        /* -> base of array */
 
     for (;;) {
-	int ch = read_screen(ddata.ditto->screen, &ddata);
-	if (ch == CTRL('D')) {
-	    int later = (ddata.source ? ddata.source : -1);
-	    int j;
+        int ch = read_screen(ddata.ditto->screen, &ddata);
+        if (ch == CTRL('D')) {
+            int later = (ddata.source ? ddata.source : -1);
+            int j;
 
-	    for (j = ddata.ditto->length - 1; j > 0; --j) {
-		if (j != later) {
-		    pthread_cancel(ddata.ditto[j].thread);
-		}
-	    }
-	    if (later > 0) {
-		pthread_cancel(ddata.ditto[later].thread);
-	    }
-	    break;
-	}
-	show_ditto(ddata.ditto, ddata.ditto->length, &ddata);
+            for (j = ddata.ditto->length - 1; j > 0; --j) {
+                if (j != later) {
+                    pthread_cancel(ddata.ditto[j].thread);
+                }
+            }
+            if (later > 0) {
+                pthread_cancel(ddata.ditto[later].thread);
+            }
+            break;
+        }
+        show_ditto(ddata.ditto, ddata.ditto->length, &ddata);
     }
     return NULL;
 }
@@ -391,15 +391,15 @@ main(int argc, char *argv[])
 #endif
 
     if (argc <= 1)
-	usage();
+        usage();
 
     if ((data = typeCalloc(DITTO, (size_t) argc)) == 0)
-	failed("calloc data");
+        failed("calloc data");
 
     assert(data != 0);
 
     for (j = 0; j < argc; j++) {
-	open_screen(&data[j], argv, argc, j);
+        open_screen(&data[j], argv, argc, j);
     }
 
 #ifdef USE_PTHREADS
@@ -409,7 +409,7 @@ main(int argc, char *argv[])
      * napms() are needed.
      */
     for (j = 0; j < argc; j++) {
-	(void) pthread_create(&(data[j].thread), NULL, handle_screen, &data[j]);
+        (void) pthread_create(&(data[j].thread), NULL, handle_screen, &data[j]);
     }
     pthread_join(data[1].thread, NULL);
 #else
@@ -418,21 +418,21 @@ main(int argc, char *argv[])
      * of the screens.
      */
     for (count = 0;; ++count) {
-	DDATA ddata;
-	int ch;
-	int which = (count % argc);
+        DDATA ddata;
+        int ch;
+        int which = (count % argc);
 
-	napms(20);
+        napms(20);
 
-	ddata.source = which;
-	ddata.ditto = data;
+        ddata.source = which;
+        ddata.ditto = data;
 
-	ch = USING_SCREEN(data[which].screen, read_screen, &ddata);
-	if (ch == CTRL('D')) {
-	    break;
-	} else if (ch != ERR) {
-	    show_ditto(data, argc, &ddata);
-	}
+        ch = USING_SCREEN(data[which].screen, read_screen, &ddata);
+        if (ch == CTRL('D')) {
+            break;
+        } else if (ch != ERR) {
+            show_ditto(data, argc, &ddata);
+        }
     }
 #endif
 
@@ -440,16 +440,16 @@ main(int argc, char *argv[])
      * Cleanup and exit
      */
     for (j = argc - 1; j >= 0; j--) {
-	USING_SCREEN(data[j].screen, close_screen, 0);
-	fprintf(data[j].output, "**Closed\r\n");
+        USING_SCREEN(data[j].screen, close_screen, 0);
+        fprintf(data[j].output, "**Closed\r\n");
 
-	/*
-	 * Closing before a delscreen() helps ncurses determine that there
-	 * is no valid output buffer, and can remove the setbuf() data.
-	 */
-	fflush(data[j].output);
-	fclose(data[j].output);
-	delscreen(data[j].screen);
+        /*
+         * Closing before a delscreen() helps ncurses determine that there
+         * is no valid output buffer, and can remove the setbuf() data.
+         */
+        fflush(data[j].output);
+        fclose(data[j].output);
+        delscreen(data[j].screen);
     }
     ExitProgram(EXIT_SUCCESS);
 }

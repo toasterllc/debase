@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_mvwin.c
+**      lib_mvwin.c
 **
-**	The routine mvwin().
+**      The routine mvwin().
 **
 */
 
@@ -55,7 +55,7 @@ mvwin(WINDOW *win, int by, int bx)
     T((T_CALLED("mvwin(%p,%d,%d)"), (void *) win, by, bx));
 
     if (!win || (win->_flags & _ISPAD))
-	returnCode(ERR);
+        returnCode(ERR);
 
     /*
      * mvwin() should only modify the indices.  See test/demo_menus.c and
@@ -64,50 +64,50 @@ mvwin(WINDOW *win, int by, int bx)
 #if 0
     /* Copying subwindows is allowed, but it is expensive... */
     if (win->_flags & _SUBWIN) {
-	int err = ERR;
-	WINDOW *parent = win->_parent;
-	if (parent) {		/* Now comes the complicated and costly part, you should really
-				 * try to avoid to move subwindows. Because a subwindow shares
-				 * the text buffers with its parent, one can't do a simple
-				 * memmove of the text buffers. One has to create a copy, then
-				 * to relocate the subwindow and then to do a copy.
-				 */
-	    if ((by - parent->_begy == win->_pary) &&
-		(bx - parent->_begx == win->_parx))
-		err = OK;	/* we don't actually move */
-	    else {
-		WINDOW *clone = dupwin(win);
-		if (clone) {
-		    /* now we have the clone, so relocate win */
+        int err = ERR;
+        WINDOW *parent = win->_parent;
+        if (parent) {           /* Now comes the complicated and costly part, you should really
+                                 * try to avoid to move subwindows. Because a subwindow shares
+                                 * the text buffers with its parent, one can't do a simple
+                                 * memmove of the text buffers. One has to create a copy, then
+                                 * to relocate the subwindow and then to do a copy.
+                                 */
+            if ((by - parent->_begy == win->_pary) &&
+                (bx - parent->_begx == win->_parx))
+                err = OK;       /* we don't actually move */
+            else {
+                WINDOW *clone = dupwin(win);
+                if (clone) {
+                    /* now we have the clone, so relocate win */
 
-		    werase(win);	/* Erase the original place     */
-		    /* fill with parents background */
-		    wbkgrnd(win, CHREF(parent->_nc_bkgd));
-		    wsyncup(win);	/* Tell the parent(s)           */
+                    werase(win);        /* Erase the original place     */
+                    /* fill with parents background */
+                    wbkgrnd(win, CHREF(parent->_nc_bkgd));
+                    wsyncup(win);       /* Tell the parent(s)           */
 
-		    err = mvderwin(win,
-				   by - parent->_begy,
-				   bx - parent->_begx);
-		    if (err != ERR) {
-			err = copywin(clone, win,
-				      0, 0, 0, 0, win->_maxy, win->_maxx, 0);
-			if (ERR != err)
-			    wsyncup(win);
-		    }
-		    if (ERR == delwin(clone))
-			err = ERR;
-		}
-	    }
-	}
-	returnCode(err);
+                    err = mvderwin(win,
+                                   by - parent->_begy,
+                                   bx - parent->_begx);
+                    if (err != ERR) {
+                        err = copywin(clone, win,
+                                      0, 0, 0, 0, win->_maxy, win->_maxx, 0);
+                        if (ERR != err)
+                            wsyncup(win);
+                    }
+                    if (ERR == delwin(clone))
+                        err = ERR;
+                }
+            }
+        }
+        returnCode(err);
     }
 #endif
 
     if (by + win->_maxy > screen_lines(SP_PARM) - 1
-	|| bx + win->_maxx > screen_columns(SP_PARM) - 1
-	|| by < 0
-	|| bx < 0)
-	returnCode(ERR);
+        || bx + win->_maxx > screen_columns(SP_PARM) - 1
+        || by < 0
+        || bx < 0)
+        returnCode(ERR);
 
     /*
      * Whether or not the window is moved, touch the window's contents so

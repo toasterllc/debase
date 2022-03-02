@@ -48,17 +48,17 @@ ground_panel(SCREEN * sp)
     {
       struct panelhook *ph = NCURSES_SP_NAME(_nc_panelhook) (sp);
 
-      if (_nc_bottom_panel)	/* this is the pseudo panel */
-	returnPanel(_nc_bottom_panel->above);
+      if (_nc_bottom_panel)     /* this is the pseudo panel */
+        returnPanel(_nc_bottom_panel->above);
       else
-	returnPanel(0);
+        returnPanel(0);
     }
   else
     {
       if (0 == CURRENT_SCREEN)
-	returnPanel(0);
+        returnPanel(0);
       else
-	returnPanel(ground_panel(CURRENT_SCREEN));
+        returnPanel(ground_panel(CURRENT_SCREEN));
     }
 }
 #endif

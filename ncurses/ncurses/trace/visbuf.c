@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 /*
- *	visbuf.c - Tracing/Debugging support routines
+ *      visbuf.c - Tracing/Debugging support routines
  */
 
 #define NEED_NCURSES_CH_T
@@ -61,44 +61,44 @@ static const char r_brace[] = StringOf(R_BRACE);
 #define LIMIT_ARG ,size_t limit
 #else
 #define VisChar(tp, chr, limit) _nc_vischar(tp, chr)
-#define LIMIT_ARG		/* nothing */
+#define LIMIT_ARG               /* nothing */
 #endif
 
 static char *
 _nc_vischar(char *tp, unsigned c LIMIT_ARG)
 {
     if (c == '"' || c == '\\') {
-	*tp++ = '\\';
-	*tp++ = (char) c;
+        *tp++ = '\\';
+        *tp++ = (char) c;
     } else if (is7bits((int) c) && (isgraph((int) c) || c == ' ')) {
-	*tp++ = (char) c;
+        *tp++ = (char) c;
     } else if (c == '\n') {
-	*tp++ = '\\';
-	*tp++ = 'n';
+        *tp++ = '\\';
+        *tp++ = 'n';
     } else if (c == '\r') {
-	*tp++ = '\\';
-	*tp++ = 'r';
+        *tp++ = '\\';
+        *tp++ = 'r';
     } else if (c == '\b') {
-	*tp++ = '\\';
-	*tp++ = 'b';
+        *tp++ = '\\';
+        *tp++ = 'b';
     } else if (c == '\t') {
-	*tp++ = '\\';
-	*tp++ = 't';
+        *tp++ = '\\';
+        *tp++ = 't';
     } else if (c == '\033') {
-	*tp++ = '\\';
-	*tp++ = 'e';
+        *tp++ = '\\';
+        *tp++ = 'e';
     } else if (UChar(c) == 0x7f) {
-	*tp++ = '\\';
-	*tp++ = '^';
-	*tp++ = '?';
+        *tp++ = '\\';
+        *tp++ = '^';
+        *tp++ = '?';
     } else if (is7bits(c) && iscntrl(UChar(c))) {
-	*tp++ = '\\';
-	*tp++ = '^';
-	*tp++ = (char) ('@' + c);
+        *tp++ = '\\';
+        *tp++ = '^';
+        *tp++ = (char) ('@' + c);
     } else {
-	_nc_SPRINTF(tp, _nc_SLIMIT(limit)
-		    "\\%03lo", (unsigned long) ChCharOf(c));
-	tp += strlen(tp);
+        _nc_SPRINTF(tp, _nc_SLIMIT(limit)
+                    "\\%03lo", (unsigned long) ChCharOf(c));
+        tp += strlen(tp);
     }
     *tp = 0;
     return tp;
@@ -112,43 +112,43 @@ _nc_visbuf2n(int bufnum, const char *buf, int len)
     int count;
 
     if (buf == 0)
-	return ("(null)");
+        return ("(null)");
     if (buf == CANCELLED_STRING)
-	return ("(cancelled)");
+        return ("(cancelled)");
 
     if (len < 0)
-	len = (int) strlen(buf);
+        len = (int) strlen(buf);
 
     count = len;
 #ifdef TRACE
     vbuf = tp = _nc_trace_buf(bufnum, NormalLen(len));
 #else
     {
-	static char *mybuf[NUM_VISBUFS];
-	int c;
+        static char *mybuf[NUM_VISBUFS];
+        int c;
 
-	if (bufnum < 0) {
-	    for (c = 0; c < NUM_VISBUFS; ++c) {
-		FreeAndNull(mybuf[c]);
-	    }
-	    tp = 0;
-	} else {
-	    mybuf[bufnum] = typeRealloc(char, NormalLen(len), mybuf[bufnum]);
-	    vbuf = tp = mybuf[bufnum];
-	}
+        if (bufnum < 0) {
+            for (c = 0; c < NUM_VISBUFS; ++c) {
+                FreeAndNull(mybuf[c]);
+            }
+            tp = 0;
+        } else {
+            mybuf[bufnum] = typeRealloc(char, NormalLen(len), mybuf[bufnum]);
+            vbuf = tp = mybuf[bufnum];
+        }
     }
 #endif
     if (tp != 0) {
-	int c;
+        int c;
 
-	*tp++ = D_QUOTE;
-	while ((--count >= 0) && (c = *buf++) != '\0') {
-	    tp = VisChar(tp, UChar(c), NormalLen(len));
-	}
-	*tp++ = D_QUOTE;
-	*tp = '\0';
+        *tp++ = D_QUOTE;
+        while ((--count >= 0) && (c = *buf++) != '\0') {
+            tp = VisChar(tp, UChar(c), NormalLen(len));
+        }
+        *tp++ = D_QUOTE;
+        *tp = '\0';
     } else {
-	vbuf = ("(_nc_visbuf2n failed)");
+        vbuf = ("(_nc_visbuf2n failed)");
     }
     return (vbuf);
 }
@@ -181,7 +181,7 @@ _nc_wchstrlen(const cchar_t *s)
 {
     int result = 0;
     while (CharOf(s[result]) != L'\0') {
-	result++;
+        result++;
     }
     return result;
 }
@@ -195,41 +195,41 @@ _nc_viswbuf2n(int bufnum, const wchar_t *buf, int len)
     int count;
 
     if (buf == 0)
-	return ("(null)");
+        return ("(null)");
 
     if (len < 0)
-	len = (int) wcslen(buf);
+        len = (int) wcslen(buf);
 
     count = len;
 #ifdef TRACE
     vbuf = tp = _nc_trace_buf(bufnum, WideLen(len));
 #else
     {
-	static char *mybuf[NUM_VISBUFS];
-	mybuf[bufnum] = typeRealloc(char, WideLen(len), mybuf[bufnum]);
-	vbuf = tp = mybuf[bufnum];
+        static char *mybuf[NUM_VISBUFS];
+        mybuf[bufnum] = typeRealloc(char, WideLen(len), mybuf[bufnum]);
+        vbuf = tp = mybuf[bufnum];
     }
 #endif
     if (tp != 0) {
-	wchar_t c;
+        wchar_t c;
 
-	*tp++ = D_QUOTE;
-	while ((--count >= 0) && (c = *buf++) != '\0') {
-	    char temp[CCHARW_MAX + 80];
-	    int j = wctomb(temp, c), k;
-	    if (j <= 0) {
-		_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
-			    "\\u%08X", (unsigned) c);
-		j = (int) strlen(temp);
-	    }
-	    for (k = 0; k < j; ++k) {
-		tp = VisChar(tp, UChar(temp[k]), WideLen(len));
-	    }
-	}
-	*tp++ = D_QUOTE;
-	*tp = '\0';
+        *tp++ = D_QUOTE;
+        while ((--count >= 0) && (c = *buf++) != '\0') {
+            char temp[CCHARW_MAX + 80];
+            int j = wctomb(temp, c), k;
+            if (j <= 0) {
+                _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
+                            "\\u%08X", (unsigned) c);
+                j = (int) strlen(temp);
+            }
+            for (k = 0; k < j; ++k) {
+                tp = VisChar(tp, UChar(temp[k]), WideLen(len));
+            }
+        }
+        *tp++ = D_QUOTE;
+        *tp = '\0';
     } else {
-	vbuf = ("(_nc_viswbuf2n failed)");
+        vbuf = ("(_nc_viswbuf2n failed)");
     }
     return (vbuf);
 }
@@ -261,20 +261,20 @@ _nc_viswibuf(const wint_t *buf)
     unsigned n;
 
     for (n = 0; buf[n] != 0; ++n) {
-	;			/* empty */
+        ;                       /* empty */
     }
     if (mylen < ++n) {
-	mylen = n + 80;
-	if (mybuf != 0)
-	    mybuf = typeRealloc(wchar_t, mylen, mybuf);
-	else
-	    mybuf = typeMalloc(wchar_t, mylen);
+        mylen = n + 80;
+        if (mybuf != 0)
+            mybuf = typeRealloc(wchar_t, mylen, mybuf);
+        else
+            mybuf = typeMalloc(wchar_t, mylen);
     }
     if (mybuf != 0) {
-	for (n = 0; buf[n] != 0; ++n) {
-	    mybuf[n] = (wchar_t) buf[n];
-	}
-	mybuf[n] = L'\0';
+        for (n = 0; buf[n] != 0; ++n) {
+            mybuf[n] = (wchar_t) buf[n];
+        }
+        mybuf[n] = L'\0';
     }
 
     return _nc_viswbuf2(0, mybuf);
@@ -288,84 +288,84 @@ _nc_viscbuf2(int bufnum, const NCURSES_CH_T *buf, int len)
     char *result = _nc_trace_buf(bufnum, (size_t) BUFSIZ);
 
     if (result != 0) {
-	int first = 0;
+        int first = 0;
 
 #if USE_WIDEC_SUPPORT
-	if (len < 0)
-	    len = _nc_wchstrlen(buf);
+        if (len < 0)
+            len = _nc_wchstrlen(buf);
 #endif /* USE_WIDEC_SUPPORT */
 
-	/*
-	 * Display one or more strings followed by attributes.
-	 */
-	while (first < len) {
-	    attr_t attr = AttrOf(buf[first]);
-	    int last = len - 1;
-	    int j;
+        /*
+         * Display one or more strings followed by attributes.
+         */
+        while (first < len) {
+            attr_t attr = AttrOf(buf[first]);
+            int last = len - 1;
+            int j;
 
-	    for (j = first + 1; j < len; ++j) {
-		if (!SameAttrOf(buf[j], buf[first])) {
-		    last = j - 1;
-		    break;
-		}
-	    }
+            for (j = first + 1; j < len; ++j) {
+                if (!SameAttrOf(buf[j], buf[first])) {
+                    last = j - 1;
+                    break;
+                }
+            }
 
-	    (void) _nc_trace_bufcat(bufnum, l_brace);
-	    (void) _nc_trace_bufcat(bufnum, d_quote);
-	    for (j = first; j <= last; ++j) {
-		const char *found = _nc_altcharset_name(attr, (chtype)
-							CharOf(buf[j]));
-		if (found != 0) {
-		    (void) _nc_trace_bufcat(bufnum, found);
-		    attr &= ~A_ALTCHARSET;
-		} else
+            (void) _nc_trace_bufcat(bufnum, l_brace);
+            (void) _nc_trace_bufcat(bufnum, d_quote);
+            for (j = first; j <= last; ++j) {
+                const char *found = _nc_altcharset_name(attr, (chtype)
+                                                        CharOf(buf[j]));
+                if (found != 0) {
+                    (void) _nc_trace_bufcat(bufnum, found);
+                    attr &= ~A_ALTCHARSET;
+                } else
 #if USE_WIDEC_SUPPORT
-		if (!isWidecExt(buf[j])) {
-		    PUTC_DATA;
+                if (!isWidecExt(buf[j])) {
+                    PUTC_DATA;
 
-		    for (PUTC_i = 0; PUTC_i < CCHARW_MAX; ++PUTC_i) {
-			int k;
-			char temp[80];
+                    for (PUTC_i = 0; PUTC_i < CCHARW_MAX; ++PUTC_i) {
+                        int k;
+                        char temp[80];
 
-			PUTC_ch = buf[j].chars[PUTC_i];
-			if (PUTC_ch == L'\0') {
-			    if (PUTC_i == 0)
-				(void) _nc_trace_bufcat(bufnum, "\\000");
-			    break;
-			}
-			PUTC_INIT;
-			PUTC_n = (int) wcrtomb(PUTC_buf,
-					       buf[j].chars[PUTC_i], &PUT_st);
-			if (PUTC_n <= 0 || buf[j].chars[PUTC_i] > 255) {
-			    _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
-					"{%d:\\u%lx}",
-					_nc_wacs_width(buf[j].chars[PUTC_i]),
-					(unsigned long) buf[j].chars[PUTC_i]);
-			    (void) _nc_trace_bufcat(bufnum, temp);
-			    break;
-			}
-			for (k = 0; k < PUTC_n; k++) {
-			    VisChar(temp, UChar(PUTC_buf[k]), sizeof(temp));
-			    (void) _nc_trace_bufcat(bufnum, temp);
-			}
-		    }
-		}
+                        PUTC_ch = buf[j].chars[PUTC_i];
+                        if (PUTC_ch == L'\0') {
+                            if (PUTC_i == 0)
+                                (void) _nc_trace_bufcat(bufnum, "\\000");
+                            break;
+                        }
+                        PUTC_INIT;
+                        PUTC_n = (int) wcrtomb(PUTC_buf,
+                                               buf[j].chars[PUTC_i], &PUT_st);
+                        if (PUTC_n <= 0 || buf[j].chars[PUTC_i] > 255) {
+                            _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
+                                        "{%d:\\u%lx}",
+                                        _nc_wacs_width(buf[j].chars[PUTC_i]),
+                                        (unsigned long) buf[j].chars[PUTC_i]);
+                            (void) _nc_trace_bufcat(bufnum, temp);
+                            break;
+                        }
+                        for (k = 0; k < PUTC_n; k++) {
+                            VisChar(temp, UChar(PUTC_buf[k]), sizeof(temp));
+                            (void) _nc_trace_bufcat(bufnum, temp);
+                        }
+                    }
+                }
 #else
-		{
-		    char temp[80];
-		    VisChar(temp, UChar(buf[j]), sizeof(temp));
-		    (void) _nc_trace_bufcat(bufnum, temp);
-		}
+                {
+                    char temp[80];
+                    VisChar(temp, UChar(buf[j]), sizeof(temp));
+                    (void) _nc_trace_bufcat(bufnum, temp);
+                }
 #endif /* USE_WIDEC_SUPPORT */
-	    }
-	    (void) _nc_trace_bufcat(bufnum, d_quote);
-	    if (attr != A_NORMAL) {
-		(void) _nc_trace_bufcat(bufnum, " | ");
-		(void) _nc_trace_bufcat(bufnum, _traceattr2(bufnum + 20, attr));
-	    }
-	    result = _nc_trace_bufcat(bufnum, r_brace);
-	    first = last + 1;
-	}
+            }
+            (void) _nc_trace_bufcat(bufnum, d_quote);
+            if (attr != A_NORMAL) {
+                (void) _nc_trace_bufcat(bufnum, " | ");
+                (void) _nc_trace_bufcat(bufnum, _traceattr2(bufnum + 20, attr));
+            }
+            result = _nc_trace_bufcat(bufnum, r_brace);
+            first = last + 1;
+        }
     }
     return result;
 }

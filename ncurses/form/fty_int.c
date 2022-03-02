@@ -80,10 +80,10 @@ Generic_This_Type(void *arg)
       argp = typeMalloc(thisARG, 1);
 
       if (argp)
-	{
-	  T((T_CREATE("thisARG %p"), (void *)argp));
-	  *argp = *param;
-	}
+        {
+          T((T_CREATE("thisARG %p"), (void *)argp));
+          *argp = *param;
+        }
     }
   return (void *)argp;
 }
@@ -127,10 +127,10 @@ Copy_This_Type(const void *argp)
       result = typeMalloc(thisARG, 1);
 
       if (result)
-	{
-	  T((T_CREATE("thisARG %p"), (void *)result));
-	  *result = *ap;
-	}
+        {
+          T((T_CREATE("thisARG %p"), (void *)result));
+          *result = *ap;
+        }
     }
   return (void *)result;
 }
@@ -177,71 +177,71 @@ Check_This_Field(FIELD *field, const void *argp)
   if (*bp)
     {
       if (*bp == '-')
-	bp++;
+        bp++;
 #if USE_WIDEC_SUPPORT
       if (*bp)
-	{
-	  int len;
-	  wchar_t *list = _nc_Widen_String((char *)bp, &len);
+        {
+          int len;
+          wchar_t *list = _nc_Widen_String((char *)bp, &len);
 
-	  if (list != 0)
-	    {
-	      bool blank = FALSE;
-	      int n;
+          if (list != 0)
+            {
+              bool blank = FALSE;
+              int n;
 
-	      result = TRUE;
-	      for (n = 0; n < len; ++n)
-		{
-		  if (blank)
-		    {
-		      if (list[n] != ' ')
-			{
-			  result = FALSE;
-			  break;
-			}
-		    }
-		  else if (list[n] == ' ')
-		    {
-		      blank = TRUE;
-		    }
-		  else if (!isDigit(list[n]))
-		    {
-		      result = FALSE;
-		      break;
-		    }
-		}
-	      free(list);
-	    }
-	}
+              result = TRUE;
+              for (n = 0; n < len; ++n)
+                {
+                  if (blank)
+                    {
+                      if (list[n] != ' ')
+                        {
+                          result = FALSE;
+                          break;
+                        }
+                    }
+                  else if (list[n] == ' ')
+                    {
+                      blank = TRUE;
+                    }
+                  else if (!isDigit(list[n]))
+                    {
+                      result = FALSE;
+                      break;
+                    }
+                }
+              free(list);
+            }
+        }
 #else
       while (*bp)
-	{
-	  if (!isdigit(UChar(*bp)))
-	    break;
-	  bp++;
-	}
+        {
+          if (!isdigit(UChar(*bp)))
+            break;
+          bp++;
+        }
       while (*bp && *bp == ' ')
-	bp++;
+        bp++;
       result = (*bp == '\0');
 #endif
       if (result)
-	{
-	  long val = atol(s);
+        {
+          long val = atol(s);
 
-	  if (low < high)
-	    {
-	      if (val < low || val > high)
-		result = FALSE;
-	    }
-	  if (result)
-	    {
-	      char buf[100];
+          if (low < high)
+            {
+              if (val < low || val > high)
+                result = FALSE;
+            }
+          if (result)
+            {
+              char buf[100];
 
-	      _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-			  "%.*ld", (prec > 0 ? prec : 0), val);
-	      set_field_buffer(field, 0, buf);
-	    }
-	}
+              _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                          "%.*ld", (prec > 0 ? prec : 0), val);
+              set_field_buffer(field, 0, buf);
+            }
+        }
     }
   return (result);
 }
@@ -266,7 +266,7 @@ Check_This_Character(int c, const void *argp GCC_UNUSED)
 static FIELDTYPE typeTHIS =
 {
   _HAS_ARGS | _RESIDENT,
-  1,				/* this is mutable, so we can't be const */
+  1,                            /* this is mutable, so we can't be const */
   (FIELDTYPE *)0,
   (FIELDTYPE *)0,
   Make_This_Type,

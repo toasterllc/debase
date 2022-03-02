@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_inchstr.c
+**      lib_inchstr.c
 **
-**	The routine winchnstr().
+**      The routine winchnstr().
 **
 */
 
@@ -52,17 +52,17 @@ winchnstr(WINDOW *win, chtype *str, int n)
     T((T_CALLED("winchnstr(%p,%p,%d)"), (void *) win, (void *) str, n));
 
     if (!win || !str) {
-	i = ERR;
+        i = ERR;
     } else {
-	int row = win->_cury;
-	int col = win->_curx;
-	NCURSES_CH_T *text = win->_line[row].text;
+        int row = win->_cury;
+        int col = win->_curx;
+        NCURSES_CH_T *text = win->_line[row].text;
 
-	for (; (n < 0 || (i < n)) && (col + i <= win->_maxx); i++) {
-	    str[i] = (((chtype) CharOf(text[col + i]) & A_CHARTEXT) |
-		      AttrOf(text[col + i]));
-	}
-	str[i] = (chtype) 0;
+        for (; (n < 0 || (i < n)) && (col + i <= win->_maxx); i++) {
+            str[i] = (((chtype) CharOf(text[col + i]) & A_CHARTEXT) |
+                      AttrOf(text[col + i]));
+        }
+        str[i] = (chtype) 0;
     }
 
     returnCode(i);

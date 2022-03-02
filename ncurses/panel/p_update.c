@@ -54,17 +54,17 @@ NCURSES_SP_NAME(update_panels) (NCURSES_SP_DCL0)
 
       pan = _nc_bottom_panel;
       while (pan && pan->above)
-	{
-	  PANEL_UPDATE(pan, pan->above);
-	  pan = pan->above;
-	}
+        {
+          PANEL_UPDATE(pan, pan->above);
+          pan = pan->above;
+        }
 
       pan = _nc_bottom_panel;
       while (pan)
-	{
-	  Wnoutrefresh(pan);
-	  pan = pan->above;
-	}
+        {
+          Wnoutrefresh(pan);
+          pan = pan->above;
+        }
     }
 
   returnVoid;

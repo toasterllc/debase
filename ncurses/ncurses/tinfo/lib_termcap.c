@@ -105,8 +105,8 @@ NCURSES_SP_NAME(tgetent) (NCURSES_SP_DCLx char *bufp, const char *name)
 
 #ifdef USE_TERM_DRIVER
     if (termp == 0 ||
-	!((TERMINAL_CONTROL_BLOCK *) termp)->drv->isTerminfo)
-	returnCode(rc);
+        !((TERMINAL_CONTROL_BLOCK *) termp)->drv->isTerminfo)
+        returnCode(rc);
 #endif
 
     /*
@@ -122,77 +122,77 @@ NCURSES_SP_NAME(tgetent) (NCURSES_SP_DCLx char *bufp, const char *name)
      * use at a given time.
      */
     for (n = 0; n < TGETENT_MAX; ++n) {
-	bool same_result = (MyCache[n].last_used && MyCache[n].last_bufp == bufp);
-	if (same_result) {
-	    CacheInx = n;
-	    if (FIX_SGR0 != 0) {
-		FreeAndNull(FIX_SGR0);
-	    }
-	    /*
-	     * Also free the terminfo data that we loaded (much bigger leak).
-	     */
-	    if (LAST_TRM != 0 && LAST_TRM != TerminalOf(SP_PARM)) {
-		TERMINAL *trm = LAST_TRM;
-		NCURSES_SP_NAME(del_curterm) (NCURSES_SP_ARGx LAST_TRM);
-		for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx)
-		    if (LAST_TRM == trm)
-			LAST_TRM = 0;
-		CacheInx = n;
-	    }
-	    found_cache = TRUE;
-	    break;
-	}
+        bool same_result = (MyCache[n].last_used && MyCache[n].last_bufp == bufp);
+        if (same_result) {
+            CacheInx = n;
+            if (FIX_SGR0 != 0) {
+                FreeAndNull(FIX_SGR0);
+            }
+            /*
+             * Also free the terminfo data that we loaded (much bigger leak).
+             */
+            if (LAST_TRM != 0 && LAST_TRM != TerminalOf(SP_PARM)) {
+                TERMINAL *trm = LAST_TRM;
+                NCURSES_SP_NAME(del_curterm) (NCURSES_SP_ARGx LAST_TRM);
+                for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx)
+                    if (LAST_TRM == trm)
+                        LAST_TRM = 0;
+                CacheInx = n;
+            }
+            found_cache = TRUE;
+            break;
+        }
     }
     if (!found_cache) {
-	int best = 0;
+        int best = 0;
 
-	for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx) {
-	    if (LAST_SEQ < MyCache[best].sequence) {
-		best = CacheInx;
-	    }
-	}
-	CacheInx = best;
+        for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx) {
+            if (LAST_SEQ < MyCache[best].sequence) {
+                best = CacheInx;
+            }
+        }
+        CacheInx = best;
     }
     if (rc == 1) {
-	LAST_TRM = TerminalOf(SP_PARM);
-	LAST_SEQ = ++CacheSeq;
+        LAST_TRM = TerminalOf(SP_PARM);
+        LAST_SEQ = ++CacheSeq;
     } else {
-	LAST_TRM = 0;
+        LAST_TRM = 0;
     }
 
     PC = 0;
     UP = 0;
     BC = 0;
-    FIX_SGR0 = 0;		/* don't free it - application may still use */
+    FIX_SGR0 = 0;               /* don't free it - application may still use */
 
     if (rc == 1) {
 
-	if (cursor_left)
-	    if ((backspaces_with_bs = (char) !strcmp(cursor_left, "\b")) == 0)
-		backspace_if_not_bs = cursor_left;
+        if (cursor_left)
+            if ((backspaces_with_bs = (char) !strcmp(cursor_left, "\b")) == 0)
+                backspace_if_not_bs = cursor_left;
 
-	/* we're required to export these */
-	if (pad_char != NULL)
-	    PC = pad_char[0];
-	if (cursor_up != NULL)
-	    UP = cursor_up;
-	if (backspace_if_not_bs != NULL)
-	    BC = backspace_if_not_bs;
+        /* we're required to export these */
+        if (pad_char != NULL)
+            PC = pad_char[0];
+        if (cursor_up != NULL)
+            UP = cursor_up;
+        if (backspace_if_not_bs != NULL)
+            BC = backspace_if_not_bs;
 
-	if ((FIX_SGR0 = _nc_trim_sgr0(&TerminalType(TerminalOf(SP_PARM))))
-	    != 0) {
-	    if (!strcmp(FIX_SGR0, exit_attribute_mode)) {
-		if (FIX_SGR0 != exit_attribute_mode) {
-		    free(FIX_SGR0);
-		}
-		FIX_SGR0 = 0;
-	    }
-	}
-	LAST_BUF = bufp;
-	LAST_USE = TRUE;
+        if ((FIX_SGR0 = _nc_trim_sgr0(&TerminalType(TerminalOf(SP_PARM))))
+            != 0) {
+            if (!strcmp(FIX_SGR0, exit_attribute_mode)) {
+                if (FIX_SGR0 != exit_attribute_mode) {
+                    free(FIX_SGR0);
+                }
+                FIX_SGR0 = 0;
+            }
+        }
+        LAST_BUF = bufp;
+        LAST_USE = TRUE;
 
-	SetNoPadding(SP_PARM);
-	(void) NCURSES_SP_NAME(baudrate) (NCURSES_SP_ARG);	/* sets ospeed as a side-effect */
+        SetNoPadding(SP_PARM);
+        (void) NCURSES_SP_NAME(baudrate) (NCURSES_SP_ARG);      /* sets ospeed as a side-effect */
 
 /* LINT_PREPRO
 #if 0*/
@@ -237,34 +237,34 @@ same_tcname(const char *a, const char *b)
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(tgetflag) (NCURSES_SP_DCLx const char *id)
 {
-    int result = 0;		/* Solaris returns zero for missing flag */
+    int result = 0;             /* Solaris returns zero for missing flag */
 
     T((T_CALLED("tgetflag(%p, %s)"), (void *) SP_PARM, id));
     if (HasTInfoTerminal(SP_PARM) && ValidCap(id)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(id, BOOLEAN, TRUE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(id, BOOLEAN, TRUE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_boolean(i, tp) {
-		const char *capname = ExtBoolname(tp, i, boolcodes);
-		if (same_tcname(id, capname) && ValidExt(capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_boolean(i, tp) {
+                const char *capname = ExtBoolname(tp, i, boolcodes);
+                if (same_tcname(id, capname) && ValidExt(capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    /* note: setupterm forces invalid booleans to false */
-	    result = tp->Booleans[j];
-	}
+        if (j >= 0) {
+            /* note: setupterm forces invalid booleans to false */
+            result = tp->Booleans[j];
+        }
     }
     returnCode(result);
 }
@@ -293,30 +293,30 @@ NCURSES_SP_NAME(tgetnum) (NCURSES_SP_DCLx const char *id)
 
     T((T_CALLED("tgetnum(%p, %s)"), (void *) SP_PARM, id));
     if (HasTInfoTerminal(SP_PARM) && ValidCap(id)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(id, NUMBER, TRUE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(id, NUMBER, TRUE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_number(i, tp) {
-		const char *capname = ExtNumname(tp, i, numcodes);
-		if (same_tcname(id, capname) && ValidExt(capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_number(i, tp) {
+                const char *capname = ExtNumname(tp, i, numcodes);
+                if (same_tcname(id, capname) && ValidExt(capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    if (VALID_NUMERIC(tp->Numbers[j]))
-		result = tp->Numbers[j];
-	}
+        if (j >= 0) {
+            if (VALID_NUMERIC(tp->Numbers[j]))
+                result = tp->Numbers[j];
+        }
     }
     returnCode(result);
 }
@@ -345,44 +345,44 @@ NCURSES_SP_NAME(tgetstr) (NCURSES_SP_DCLx const char *id, char **area)
 
     T((T_CALLED("tgetstr(%s,%p)"), id, (void *) area));
     if (HasTInfoTerminal(SP_PARM) && ValidCap(id)) {
-	TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
-	struct name_table_entry const *entry_ptr;
-	int j = -1;
+        TERMTYPE2 *tp = &TerminalType(TerminalOf(SP_PARM));
+        struct name_table_entry const *entry_ptr;
+        int j = -1;
 
-	entry_ptr = _nc_find_type_entry(id, STRING, TRUE);
-	if (entry_ptr != 0) {
-	    j = entry_ptr->nte_index;
-	}
+        entry_ptr = _nc_find_type_entry(id, STRING, TRUE);
+        if (entry_ptr != 0) {
+            j = entry_ptr->nte_index;
+        }
 #if NCURSES_XNAMES
-	else {
-	    int i;
-	    for_each_ext_string(i, tp) {
-		const char *capname = ExtStrname(tp, i, strcodes);
-		if (same_tcname(id, capname) && ValidExt(capname)) {
-		    j = i;
-		    break;
-		}
-	    }
-	}
+        else {
+            int i;
+            for_each_ext_string(i, tp) {
+                const char *capname = ExtStrname(tp, i, strcodes);
+                if (same_tcname(id, capname) && ValidExt(capname)) {
+                    j = i;
+                    break;
+                }
+            }
+        }
 #endif
-	if (j >= 0) {
-	    result = tp->Strings[j];
-	    TR(TRACE_DATABASE, ("found match %d: %s", j, _nc_visbuf(result)));
-	    /* setupterm forces canceled strings to null */
-	    if (VALID_STRING(result)) {
-		if (result == exit_attribute_mode
-		    && FIX_SGR0 != 0) {
-		    result = FIX_SGR0;
-		    TR(TRACE_DATABASE, ("altered to : %s", _nc_visbuf(result)));
-		}
-		if (area != 0
-		    && *area != 0) {
-		    _nc_STRCPY(*area, result, 1024);
-		    result = *area;
-		    *area += strlen(*area) + 1;
-		}
-	    }
-	}
+        if (j >= 0) {
+            result = tp->Strings[j];
+            TR(TRACE_DATABASE, ("found match %d: %s", j, _nc_visbuf(result)));
+            /* setupterm forces canceled strings to null */
+            if (VALID_STRING(result)) {
+                if (result == exit_attribute_mode
+                    && FIX_SGR0 != 0) {
+                    result = FIX_SGR0;
+                    TR(TRACE_DATABASE, ("altered to : %s", _nc_visbuf(result)));
+                }
+                if (area != 0
+                    && *area != 0) {
+                    _nc_STRCPY(*area, result, 1024);
+                    result = *area;
+                    *area += strlen(*area) + 1;
+                }
+            }
+        }
     }
     returnPtr(result);
 }
@@ -402,16 +402,16 @@ NCURSES_EXPORT(void)
 _nc_tgetent_leak(TERMINAL *termp)
 {
     if (termp != 0) {
-	int num;
-	for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx) {
-	    if (LAST_TRM == termp) {
-		FreeAndNull(FIX_SGR0);
-		if (LAST_TRM != 0) {
-		    LAST_TRM = 0;
-		}
-		break;
-	    }
-	}
+        int num;
+        for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx) {
+            if (LAST_TRM == termp) {
+                FreeAndNull(FIX_SGR0);
+                if (LAST_TRM != 0) {
+                    LAST_TRM = 0;
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -420,10 +420,10 @@ _nc_tgetent_leaks(void)
 {
     int num;
     for (CacheInx = 0; CacheInx < TGETENT_MAX; ++CacheInx) {
-	if (LAST_TRM != 0) {
-	    del_curterm(LAST_TRM);
-	    _nc_tgetent_leak(LAST_TRM);
-	}
+        if (LAST_TRM != 0) {
+            del_curterm(LAST_TRM);
+            _nc_tgetent_leak(LAST_TRM);
+        }
     }
 }
 #endif

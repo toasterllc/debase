@@ -73,47 +73,47 @@ Generic_Enum_Type(void *arg)
       argp = typeMalloc(enumARG, 1);
 
       if (argp)
-	{
-	  int cnt = 0;
-	  char **kp = (char **)0;
-	  char **kwds = (char **)0;
-	  int ccase, cunique;
+        {
+          int cnt = 0;
+          char **kp = (char **)0;
+          char **kwds = (char **)0;
+          int ccase, cunique;
 
-	  T((T_CREATE("enumARG %p"), (void *)argp));
-	  kwds = params->kwds;
-	  ccase = params->ccase;
-	  cunique = params->cunique;
+          T((T_CREATE("enumARG %p"), (void *)argp));
+          kwds = params->kwds;
+          ccase = params->ccase;
+          cunique = params->cunique;
 
-	  argp->checkcase = ccase ? TRUE : FALSE;
-	  argp->checkunique = cunique ? TRUE : FALSE;
-	  argp->kwds = (char **)0;
+          argp->checkcase = ccase ? TRUE : FALSE;
+          argp->checkunique = cunique ? TRUE : FALSE;
+          argp->kwds = (char **)0;
 
-	  kp = kwds;
-	  while (kp && (*kp++))
-	    cnt++;
-	  argp->count = cnt;
+          kp = kwds;
+          while (kp && (*kp++))
+            cnt++;
+          argp->count = cnt;
 
-	  if (cnt > 0)
-	    {
-	      char **kptarget;
+          if (cnt > 0)
+            {
+              char **kptarget;
 
-	      /* We copy the keywords, because we can't rely on the fact
-	         that the caller doesn't relocate or free the memory used
-	         for the keywords (maybe he has GC)
-	       */
-	      argp->kwds = typeMalloc(char *, cnt + 1);
+              /* We copy the keywords, because we can't rely on the fact
+                 that the caller doesn't relocate or free the memory used
+                 for the keywords (maybe he has GC)
+               */
+              argp->kwds = typeMalloc(char *, cnt + 1);
 
-	      kp = kwds;
-	      if ((kptarget = argp->kwds) != 0)
-		{
-		  while (kp && (*kp))
-		    {
-		      (*kptarget++) = strdup(*kp++);
-		    }
-		  *kptarget = (char *)0;
-		}
-	    }
-	}
+              kp = kwds;
+              if ((kptarget = argp->kwds) != 0)
+                {
+                  while (kp && (*kp))
+                    {
+                      (*kptarget++) = strdup(*kp++);
+                    }
+                  *kptarget = (char *)0;
+                }
+            }
+        }
     }
   return (void *)argp;
 }
@@ -158,26 +158,26 @@ Copy_Enum_Type(const void *argp)
       result = typeMalloc(enumARG, 1);
 
       if (result)
-	{
-	  T((T_CREATE("enumARG %p"), (void *)result));
-	  *result = *ap;
+        {
+          T((T_CREATE("enumARG %p"), (void *)result));
+          *result = *ap;
 
-	  if (ap->count > 0)
-	    {
-	      char **kptarget;
-	      char **kp = ap->kwds;
-	      result->kwds = typeMalloc(char *, 1 + ap->count);
+          if (ap->count > 0)
+            {
+              char **kptarget;
+              char **kp = ap->kwds;
+              result->kwds = typeMalloc(char *, 1 + ap->count);
 
-	      if ((kptarget = result->kwds) != 0)
-		{
-		  while (kp && (*kp))
-		    {
-		      (*kptarget++) = strdup(*kp++);
-		    }
-		  *kptarget = (char *)0;
-		}
-	    }
-	}
+              if ((kptarget = result->kwds) != 0)
+                {
+                  while (kp && (*kp))
+                    {
+                      (*kptarget++) = strdup(*kp++);
+                    }
+                  *kptarget = (char *)0;
+                }
+            }
+        }
     }
   return (void *)result;
 }
@@ -198,18 +198,18 @@ Free_Enum_Type(void *argp)
       const enumARG *ap = (const enumARG *)argp;
 
       if (ap->kwds && ap->count > 0)
-	{
-	  char **kp = ap->kwds;
-	  int cnt = 0;
+        {
+          char **kp = ap->kwds;
+          int cnt = 0;
 
-	  while (kp && (*kp))
-	    {
-	      free(*kp++);
-	      cnt++;
-	    }
-	  assert(cnt == ap->count);
-	  free(ap->kwds);
-	}
+          while (kp && (*kp))
+            {
+              free(*kp++);
+              cnt++;
+            }
+          assert(cnt == ap->count);
+          free(ap->kwds);
+        }
       free(argp);
     }
 }
@@ -234,9 +234,9 @@ Free_Enum_Type(void *argp)
 +--------------------------------------------------------------------------*/
 static int
 Compare(const unsigned char *s, const unsigned char *buf,
-	bool ccase)
+        bool ccase)
 {
-  SKIP_SPACE(buf);		/* Skip leading spaces in both texts */
+  SKIP_SPACE(buf);              /* Skip leading spaces in both texts */
   SKIP_SPACE(s);
 
   if (*buf == '\0')
@@ -246,21 +246,21 @@ Compare(const unsigned char *s, const unsigned char *buf,
   else
     {
       if (ccase)
-	{
-	  while (*s++ == *buf)
-	    {
-	      if (*buf++ == '\0')
-		return EXACT;
-	    }
-	}
+        {
+          while (*s++ == *buf)
+            {
+              if (*buf++ == '\0')
+                return EXACT;
+            }
+        }
       else
-	{
-	  while (toupper(*s++) == toupper(*buf))
-	    {
-	      if (*buf++ == '\0')
-		return EXACT;
-	    }
-	}
+        {
+          while (toupper(*s++) == toupper(*buf))
+            {
+              if (*buf++ == '\0')
+                return EXACT;
+            }
+        }
     }
   /* At this location buf points to the first character where it no longer
      matches with s. So if only blanks are following, we have a partial
@@ -299,32 +299,32 @@ Check_Enum_Field(FIELD *field, const void *argp)
       int res;
 
       if ((res = Compare((unsigned char *)s, bp, ccase)) != NOMATCH)
-	{
-	  p = t = s;		/* t is at least a partial match */
-	  if ((unique && res != EXACT))
-	    {
-	      while (kwds && (p = *kwds++))
-		{
-		  if ((res = Compare((unsigned char *)p, bp, ccase)) != NOMATCH)
-		    {
-		      if (res == EXACT)
-			{
-			  t = p;
-			  break;
-			}
-		      else
-			t = (char *)0;
-		    }
-		}
-	    }
-	  if (t)
-	    {
-	      set_field_buffer(field, 0, t);
-	      return TRUE;
-	    }
-	  if (!p)
-	    break;
-	}
+        {
+          p = t = s;            /* t is at least a partial match */
+          if ((unique && res != EXACT))
+            {
+              while (kwds && (p = *kwds++))
+                {
+                  if ((res = Compare((unsigned char *)p, bp, ccase)) != NOMATCH)
+                    {
+                      if (res == EXACT)
+                        {
+                          t = p;
+                          break;
+                        }
+                      else
+                        t = (char *)0;
+                    }
+                }
+            }
+          if (t)
+            {
+              set_field_buffer(field, 0, t);
+              return TRUE;
+            }
+          if (!p)
+            break;
+        }
     }
   return FALSE;
 }
@@ -354,17 +354,17 @@ Next_Enum(FIELD *field, const void *argp)
   if (kwds)
     {
       while (cnt--)
-	{
-	  if (Compare((unsigned char *)(*kwds++), bp, ccase) == EXACT)
-	    break;
-	}
+        {
+          if (Compare((unsigned char *)(*kwds++), bp, ccase) == EXACT)
+            break;
+        }
       if (cnt <= 0)
-	kwds = args->kwds;
+        kwds = args->kwds;
       if ((cnt >= 0) || (Compare((const unsigned char *)dummy, bp, ccase) == EXACT))
-	{
-	  set_field_buffer(field, 0, *kwds);
-	  return TRUE;
-	}
+        {
+          set_field_buffer(field, 0, *kwds);
+          return TRUE;
+        }
     }
   return FALSE;
 }
@@ -392,19 +392,19 @@ Previous_Enum(FIELD *field, const void *argp)
   if (kwds)
     {
       while (cnt--)
-	{
-	  if (Compare((unsigned char *)(*kwds--), bp, ccase) == EXACT)
-	    break;
-	}
+        {
+          if (Compare((unsigned char *)(*kwds--), bp, ccase) == EXACT)
+            break;
+        }
 
       if (cnt <= 0)
-	kwds = &args->kwds[args->count - 1];
+        kwds = &args->kwds[args->count - 1];
 
       if ((cnt >= 0) || (Compare((const unsigned char *)dummy, bp, ccase) == EXACT))
-	{
-	  set_field_buffer(field, 0, *kwds);
-	  return TRUE;
-	}
+        {
+          set_field_buffer(field, 0, *kwds);
+          return TRUE;
+        }
     }
   return FALSE;
 }
@@ -412,7 +412,7 @@ Previous_Enum(FIELD *field, const void *argp)
 static FIELDTYPE typeENUM =
 {
   _HAS_ARGS | _HAS_CHOICE | _RESIDENT,
-  1,				/* this is mutable, so we can't be const */
+  1,                            /* this is mutable, so we can't be const */
   (FIELDTYPE *)0,
   (FIELDTYPE *)0,
   Make_Enum_Type,

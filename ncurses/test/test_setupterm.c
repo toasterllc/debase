@@ -50,43 +50,43 @@ test_rc(NCURSES_CONST char *name, int actual_rc, int actual_err)
     int expect_err = -1;
 
     if (name == 0)
-	name = getenv("TERM");
+        name = getenv("TERM");
     if (name == 0)
-	name = "?";
+        name = "?";
 
     switch (*name) {
-    case 'v':			/* vt100 is normal */
-    case 'd':			/* dumb has no special flags */
-	expect_rc = 0;
-	expect_err = 1;
-	break;
-    case 'l':			/* lpr is hardcopy */
-	expect_err = 1;
-	break;
-    case 'u':			/* unknown is generic */
-	expect_err = 0;
-	break;
+    case 'v':                   /* vt100 is normal */
+    case 'd':                   /* dumb has no special flags */
+        expect_rc = 0;
+        expect_err = 1;
+        break;
+    case 'l':                   /* lpr is hardcopy */
+        expect_err = 1;
+        break;
+    case 'u':                   /* unknown is generic */
+        expect_err = 0;
+        break;
     default:
-	break;
+        break;
     }
     if (n_opt) {
-	expect_rc = -1;
-	expect_err = -1;
+        expect_rc = -1;
+        expect_err = -1;
     }
     printf("%s",
-	   ((actual_rc == expect_rc && actual_err == expect_err)
-	    ? "OK"
-	    : "ERR"));
+           ((actual_rc == expect_rc && actual_err == expect_err)
+            ? "OK"
+            : "ERR"));
     printf(" '%s'", name);
     if (actual_rc == expect_rc) {
-	printf(" rc=%d", actual_rc);
+        printf(" rc=%d", actual_rc);
     } else {
-	printf(" rc=%d (%d)", actual_rc, expect_rc);
+        printf(" rc=%d (%d)", actual_rc, expect_rc);
     }
     if (actual_err == expect_err) {
-	printf(" err=%d", actual_err);
+        printf(" err=%d", actual_err);
     } else {
-	printf(" err=%d (%d)", actual_err, expect_err);
+        printf(" err=%d (%d)", actual_err, expect_err);
     }
     printf("\n");
 }
@@ -99,10 +99,10 @@ test_setupterm(NCURSES_CONST char *name)
 
 #if HAVE_RESTARTTERM
     if (r_opt)
-	rc = restartterm(name, 0, f_opt ? NULL : &err);
+        rc = restartterm(name, 0, f_opt ? NULL : &err);
     else
 #endif
-	rc = setupterm(name, 0, f_opt ? NULL : &err);
+        rc = setupterm(name, 0, f_opt ? NULL : &err);
     test_rc(name, rc, err);
 }
 
@@ -111,22 +111,22 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: test_setupterm [options] [terminal]",
-	"",
-	"Demonstrate error-checking for setupterm and restartterm.",
-	"",
-	"Options:",
-	" -a       automatic test for each success/error code",
-	" -f       treat errors as fatal",
-	" -n       set environment to disable terminfo database, assuming",
-	"          the compiled-in paths for database also fail",
+        "Usage: test_setupterm [options] [terminal]",
+        "",
+        "Demonstrate error-checking for setupterm and restartterm.",
+        "",
+        "Options:",
+        " -a       automatic test for each success/error code",
+        " -f       treat errors as fatal",
+        " -n       set environment to disable terminfo database, assuming",
+        "          the compiled-in paths for database also fail",
 #if HAVE_RESTARTTERM
-	" -r       test restartterm rather than setupterm",
+        " -r       test restartterm rather than setupterm",
 #endif
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
     }
     ExitProgram(EXIT_FAILURE);
 }
@@ -137,70 +137,70 @@ main(int argc, char *argv[])
     int n;
 
     while ((n = getopt(argc, argv, "afnr")) != -1) {
-	switch (n) {
-	case 'a':
-	    a_opt = TRUE;
-	    break;
-	case 'f':
-	    f_opt = TRUE;
-	    break;
-	case 'n':
-	    n_opt = TRUE;
-	    break;
+        switch (n) {
+        case 'a':
+            a_opt = TRUE;
+            break;
+        case 'f':
+            f_opt = TRUE;
+            break;
+        case 'n':
+            n_opt = TRUE;
+            break;
 #if HAVE_RESTARTTERM
-	case 'r':
-	    r_opt = TRUE;
-	    break;
+        case 'r':
+            r_opt = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	    break;
-	}
+        default:
+            usage();
+            break;
+        }
     }
 
     if (n_opt) {
-	static char none[][25] =
-	{
-	    "HOME=/GUI",
-	    "TERMINFO=/GUI",
-	    "TERMINFO_DIRS=/GUI"
-	};
-	/*
-	 * We can turn this off, but not on again, because ncurses caches the
-	 * directory locations.
-	 */
-	printf("** without database\n");
-	for (n = 0; n < 3; ++n)
-	    putenv(none[n]);
+        static char none[][25] =
+        {
+            "HOME=/GUI",
+            "TERMINFO=/GUI",
+            "TERMINFO_DIRS=/GUI"
+        };
+        /*
+         * We can turn this off, but not on again, because ncurses caches the
+         * directory locations.
+         */
+        printf("** without database\n");
+        for (n = 0; n < 3; ++n)
+            putenv(none[n]);
     } else {
-	printf("** with database\n");
+        printf("** with database\n");
     }
 
     /*
      * The restartterm relies on an existing screen, so we make one here.
      */
     if (r_opt) {
-	newterm("ansi", stdout, stdin);
-	reset_shell_mode();
+        newterm("ansi", stdout, stdin);
+        reset_shell_mode();
     }
 
     if (a_opt) {
-	static char predef[][9] =
-	{"vt100", "dumb", "lpr", "unknown", "none-such"};
-	if (optind < argc) {
-	    usage();
-	}
-	for (n = 0; n < 4; ++n) {
-	    test_setupterm(predef[n]);
-	}
+        static char predef[][9] =
+        {"vt100", "dumb", "lpr", "unknown", "none-such"};
+        if (optind < argc) {
+            usage();
+        }
+        for (n = 0; n < 4; ++n) {
+            test_setupterm(predef[n]);
+        }
     } else {
-	if (optind < argc) {
-	    for (n = optind; n < argc; ++n) {
-		test_setupterm(argv[n]);
-	    }
-	} else {
-	    test_setupterm(NULL);
-	}
+        if (optind < argc) {
+            for (n = optind; n < argc; ++n) {
+                test_setupterm(argv[n]);
+            }
+        } else {
+            test_setupterm(NULL);
+        }
     }
 
     ExitProgram(EXIT_SUCCESS);

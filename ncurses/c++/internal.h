@@ -42,7 +42,7 @@
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;
 #else
-#define MODULE_ID(id)		/*nothing */
+#define MODULE_ID(id)           /*nothing */
 #endif
 
 #if (defined(_WIN32) || defined(_WIN64))

@@ -43,7 +43,7 @@
 /* $Id: unctrl.h.in,v 1.12 2020/02/02 23:34:34 tom Exp $ */
 
 #ifndef NCURSES_UNCTRL_H_incl
-#define NCURSES_UNCTRL_H_incl	1
+#define NCURSES_UNCTRL_H_incl   1
 
 #undef  NCURSES_VERSION
 #define NCURSES_VERSION "6.3"

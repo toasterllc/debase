@@ -55,18 +55,18 @@ Check_IPV4_Field(FIELD *field, const void *argp GCC_UNUSED)
   int num = 0, len;
   unsigned int d1 = 0, d2 = 0, d3 = 0, d4 = 0;
 
-  if (isdigit(UChar(*bp)))	/* Must start with digit */
+  if (isdigit(UChar(*bp)))      /* Must start with digit */
     {
       num = sscanf(bp, "%u.%u.%u.%u%n", &d1, &d2, &d3, &d4, &len);
       if (num == 4)
-	{
-	  bp += len;		/* Make bp point to what sscanf() left */
-	  while (isspace(UChar(*bp)))
-	    bp++;		/* Allow trailing whitespace */
-	}
+        {
+          bp += len;            /* Make bp point to what sscanf() left */
+          while (isspace(UChar(*bp)))
+            bp++;               /* Allow trailing whitespace */
+        }
     }
   return ((num != 4 || *bp || d1 > 255 || d2 > 255
-	   || d3 > 255 || d4 > 255) ? FALSE : TRUE);
+           || d3 > 255 || d4 > 255) ? FALSE : TRUE);
 }
 
 /*---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ Check_IPV4_Character(int c, const void *argp GCC_UNUSED)
 static FIELDTYPE typeIPV4 =
 {
   _RESIDENT,
-  1,				/* this is mutable, so we can't be const */
+  1,                            /* this is mutable, so we can't be const */
   (FIELDTYPE *)0,
   (FIELDTYPE *)0,
   NULL,

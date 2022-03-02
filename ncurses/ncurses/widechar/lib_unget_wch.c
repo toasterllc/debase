@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_unget_wch.c
+**      lib_unget_wch.c
 **
-**	The routine unget_wch().
+**      The routine unget_wch().
 **
 */
 
@@ -52,16 +52,16 @@ _nc_wcrtomb(char *target, wchar_t source, mbstate_t * state)
     int result;
 
     if (target == 0) {
-	wchar_t temp[2];
-	const wchar_t *tempp = temp;
-	temp[0] = source;
-	temp[1] = 0;
-	result = (int) wcsrtombs(NULL, &tempp, (size_t) 0, state);
+        wchar_t temp[2];
+        const wchar_t *tempp = temp;
+        temp[0] = source;
+        temp[1] = 0;
+        result = (int) wcsrtombs(NULL, &tempp, (size_t) 0, state);
     } else {
-	result = (int) wcrtomb(target, source, state);
+        result = (int) wcrtomb(target, source, state);
     }
     if (!isEILSEQ(result) && (result == 0))
-	result = 1;
+        result = 1;
     return (size_t) result;
 }
 
@@ -78,29 +78,29 @@ NCURSES_SP_NAME(unget_wch) (NCURSES_SP_DCLx const wchar_t wch)
     length = _nc_wcrtomb(0, wch, &state);
 
     if (length != (size_t) (-1)
-	&& length != 0) {
-	char *string;
+        && length != 0) {
+        char *string;
 
-	if ((string = (char *) malloc(length)) != 0) {
-	    int n;
+        if ((string = (char *) malloc(length)) != 0) {
+            int n;
 
-	    init_mb(state);
-	    /* ignore the result, since we already validated the character */
-	    IGNORE_RC((int) wcrtomb(string, wch, &state));
+            init_mb(state);
+            /* ignore the result, since we already validated the character */
+            IGNORE_RC((int) wcrtomb(string, wch, &state));
 
-	    for (n = (int) (length - 1); n >= 0; --n) {
-		if (NCURSES_SP_NAME(ungetch) (NCURSES_SP_ARGx
-					      UChar(string[n])) !=OK) {
-		    result = ERR;
-		    break;
-		}
-	    }
-	    free(string);
-	} else {
-	    result = ERR;
-	}
+            for (n = (int) (length - 1); n >= 0; --n) {
+                if (NCURSES_SP_NAME(ungetch) (NCURSES_SP_ARGx
+                                              UChar(string[n])) !=OK) {
+                    result = ERR;
+                    break;
+                }
+            }
+            free(string);
+        } else {
+            result = ERR;
+        }
     } else {
-	result = ERR;
+        result = ERR;
     }
 
     returnCode(result);

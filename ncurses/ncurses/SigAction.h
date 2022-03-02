@@ -56,7 +56,7 @@
 typedef struct sigaction sigaction_t;
 #endif
 
-#else	/* !HAVE_SIGACTION */
+#else   /* !HAVE_SIGACTION */
 
 #if HAVE_SIGVEC
 
@@ -69,10 +69,10 @@ typedef struct sigaction sigaction_t;
 #undef  SIG_SETMASK
 #define SIG_SETMASK     02
 
- 	/*
-	 * <bsd/signal.h> is in the Linux 1.2.8 + gcc 2.7.0 configuration,
-	 * and is useful for testing this header file.
-	 */
+        /*
+         * <bsd/signal.h> is in the Linux 1.2.8 + gcc 2.7.0 configuration,
+         * and is useful for testing this header file.
+         */
 #if HAVE_BSD_SIGNAL_H
 #include <bsd/signal.h>
 #endif

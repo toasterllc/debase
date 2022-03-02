@@ -51,10 +51,10 @@ clear_cmd(bool legacy)
 {
     int retval = tputs(clear_screen, lines > 0 ? lines : 1, putch);
     if (!legacy) {
-	/* Clear the scrollback buffer if possible. */
-	char *E3 = tigetstr("E3");
-	if (E3)
-	    (void) tputs(E3, lines > 0 ? lines : 1, putch);
+        /* Clear the scrollback buffer if possible. */
+        char *E3 = tigetstr("E3");
+        if (E3)
+            (void) tputs(E3, lines > 0 ? lines : 1, putch);
     }
     return retval;
 }

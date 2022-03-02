@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
- *	lib_refresh.c
+ *      lib_refresh.c
  *
- *	The routines wrefresh() and wnoutrefresh().
+ *      The routines wrefresh() and wnoutrefresh().
  *
  */
 
@@ -56,21 +56,21 @@ wrefresh(WINDOW *win)
     T((T_CALLED("wrefresh(%p)"), (void *) win));
 
     if (win == 0) {
-	code = ERR;
+        code = ERR;
     } else if (win == CurScreen(SP_PARM)) {
-	CurScreen(SP_PARM)->_clear = TRUE;
-	code = NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG);
+        CurScreen(SP_PARM)->_clear = TRUE;
+        code = NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG);
     } else if ((code = wnoutrefresh(win)) == OK) {
-	if (win->_clear)
-	    NewScreen(SP_PARM)->_clear = TRUE;
-	code = NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG);
-	/*
-	 * Reset the clearok() flag in case it was set for the special
-	 * case in hardscroll.c (if we don't reset it here, we'll get 2
-	 * refreshes because the flag is copied from stdscr to newscr).
-	 * Resetting the flag shouldn't do any harm, anyway.
-	 */
-	win->_clear = FALSE;
+        if (win->_clear)
+            NewScreen(SP_PARM)->_clear = TRUE;
+        code = NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG);
+        /*
+         * Reset the clearok() flag in case it was set for the special
+         * case in hardscroll.c (if we don't reset it here, we'll get 2
+         * refreshes because the flag is copied from stdscr to newscr).
+         * Resetting the flag shouldn't do any harm, anyway.
+         */
+        win->_clear = FALSE;
     }
     returnCode(code);
 }
@@ -96,13 +96,13 @@ wnoutrefresh(WINDOW *win)
      * This function will break badly if we try to refresh a pad.
      */
     if ((win == 0)
-	|| (win->_flags & _ISPAD))
-	returnCode(ERR);
+        || (win->_flags & _ISPAD))
+        returnCode(ERR);
 
 #ifdef TRACE
     if (USE_TRACEF(TRACE_UPDATE)) {
-	_tracedump("...win", win);
-	_nc_unlock_global(tracef);
+        _tracedump("...win", win);
+        _nc_unlock_global(tracef);
     }
 #endif /* TRACE */
 
@@ -147,152 +147,152 @@ wnoutrefresh(WINDOW *win)
     limit_x = win->_maxx;
     /* limit(src_col) */
     if (limit_x > NewScreen(SP_PARM)->_maxx - begx)
-	limit_x = NewScreen(SP_PARM)->_maxx - begx;
+        limit_x = NewScreen(SP_PARM)->_maxx - begx;
 
     for (src_row = 0, dst_row = begy + win->_yoffset;
-	 src_row <= win->_maxy && dst_row <= NewScreen(SP_PARM)->_maxy;
-	 src_row++, dst_row++) {
-	struct ldat *nline = &(NewScreen(SP_PARM)->_line[dst_row]);
-	struct ldat *oline = &win->_line[src_row];
+         src_row <= win->_maxy && dst_row <= NewScreen(SP_PARM)->_maxy;
+         src_row++, dst_row++) {
+        struct ldat *nline = &(NewScreen(SP_PARM)->_line[dst_row]);
+        struct ldat *oline = &win->_line[src_row];
 
-	if (oline->firstchar != _NOCHANGE) {
-	    int last_src = oline->lastchar;
+        if (oline->firstchar != _NOCHANGE) {
+            int last_src = oline->lastchar;
 
-	    if (last_src > limit_x)
-		last_src = limit_x;
+            if (last_src > limit_x)
+                last_src = limit_x;
 
-	    src_col = oline->firstchar;
-	    dst_col = src_col + begx;
+            src_col = oline->firstchar;
+            dst_col = src_col + begx;
 
-	    if_WIDEC({
-		int j;
+            if_WIDEC({
+                int j;
 
-		/*
-		 * Ensure that we will copy complete multi-column characters
-		 * on the left-boundary.
-		 */
-		if (isWidecExt(oline->text[src_col])) {
-		    j = 1 + dst_col - WidecExt(oline->text[src_col]);
-		    if (j < 0)
-			j = 0;
-		    if (dst_col > j) {
-			src_col -= (dst_col - j);
-			dst_col = j;
-		    }
-		}
+                /*
+                 * Ensure that we will copy complete multi-column characters
+                 * on the left-boundary.
+                 */
+                if (isWidecExt(oline->text[src_col])) {
+                    j = 1 + dst_col - WidecExt(oline->text[src_col]);
+                    if (j < 0)
+                        j = 0;
+                    if (dst_col > j) {
+                        src_col -= (dst_col - j);
+                        dst_col = j;
+                    }
+                }
 
-		/*
-		 * Ensure that we will copy complete multi-column characters
-		 * on the right-boundary.
-		 */
-		j = last_src;
-		if (WidecExt(oline->text[j])) {
-		    ++j;
-		    while (j <= limit_x) {
-			if (isWidecBase(oline->text[j])) {
-			    break;
-			} else {
-			    last_src = j;
-			}
-			++j;
-		    }
-		}
-	    });
+                /*
+                 * Ensure that we will copy complete multi-column characters
+                 * on the right-boundary.
+                 */
+                j = last_src;
+                if (WidecExt(oline->text[j])) {
+                    ++j;
+                    while (j <= limit_x) {
+                        if (isWidecBase(oline->text[j])) {
+                            break;
+                        } else {
+                            last_src = j;
+                        }
+                        ++j;
+                    }
+                }
+            });
 
-	    if_WIDEC({
-		static cchar_t blank = BLANK;
-		int last_dst = begx + ((last_src < win->_maxx)
-				       ? last_src
-				       : win->_maxx);
-		int fix_left = dst_col;
-		int fix_right = last_dst;
-		int j;
+            if_WIDEC({
+                static cchar_t blank = BLANK;
+                int last_dst = begx + ((last_src < win->_maxx)
+                                       ? last_src
+                                       : win->_maxx);
+                int fix_left = dst_col;
+                int fix_right = last_dst;
+                int j;
 
-		/*
-		 * Check for boundary cases where we may overwrite part of a
-		 * multi-column character.  For those, wipe the remainder of
-		 * the character to blanks.
-		 */
-		j = dst_col;
-		if (isWidecExt(nline->text[j])) {
-		    /*
-		     * On the left, we only care about multi-column characters
-		     * that extend into the changed region.
-		     */
-		    fix_left = 1 + j - WidecExt(nline->text[j]);
-		    if (fix_left < 0)
-			fix_left = 0;	/* only if cell is corrupt */
-		}
+                /*
+                 * Check for boundary cases where we may overwrite part of a
+                 * multi-column character.  For those, wipe the remainder of
+                 * the character to blanks.
+                 */
+                j = dst_col;
+                if (isWidecExt(nline->text[j])) {
+                    /*
+                     * On the left, we only care about multi-column characters
+                     * that extend into the changed region.
+                     */
+                    fix_left = 1 + j - WidecExt(nline->text[j]);
+                    if (fix_left < 0)
+                        fix_left = 0;   /* only if cell is corrupt */
+                }
 
-		j = last_dst;
-		if (WidecExt(nline->text[j]) != 0) {
-		    /*
-		     * On the right, any multi-column character is a problem,
-		     * unless it happens to be contained in the change, and
-		     * ending at the right boundary of the change.  The
-		     * computation for 'fix_left' accounts for the left-side of
-		     * this character.  Find the end of the character.
-		     */
-		    ++j;
-		    while (j <= NewScreen(SP_PARM)->_maxx &&
-			   isWidecExt(nline->text[j])) {
-			fix_right = j++;
-		    }
-		}
+                j = last_dst;
+                if (WidecExt(nline->text[j]) != 0) {
+                    /*
+                     * On the right, any multi-column character is a problem,
+                     * unless it happens to be contained in the change, and
+                     * ending at the right boundary of the change.  The
+                     * computation for 'fix_left' accounts for the left-side of
+                     * this character.  Find the end of the character.
+                     */
+                    ++j;
+                    while (j <= NewScreen(SP_PARM)->_maxx &&
+                           isWidecExt(nline->text[j])) {
+                        fix_right = j++;
+                    }
+                }
 
-		/*
-		 * The analysis is simpler if we do the clearing afterwards.
-		 * Do that now.
-		 */
-		if (fix_left < dst_col || fix_right > last_dst) {
-		    for (j = fix_left; j <= fix_right; ++j) {
-			nline->text[j] = blank;
-			CHANGED_CELL(nline, j);
-		    }
-		}
-	    });
+                /*
+                 * The analysis is simpler if we do the clearing afterwards.
+                 * Do that now.
+                 */
+                if (fix_left < dst_col || fix_right > last_dst) {
+                    for (j = fix_left; j <= fix_right; ++j) {
+                        nline->text[j] = blank;
+                        CHANGED_CELL(nline, j);
+                    }
+                }
+            });
 
-	    /*
-	     * Copy the changed text.
-	     */
-	    for (; src_col <= last_src; src_col++, dst_col++) {
-		if (!CharEq(oline->text[src_col], nline->text[dst_col])) {
-		    nline->text[dst_col] = oline->text[src_col];
-		    CHANGED_CELL(nline, dst_col);
-		}
-	    }
+            /*
+             * Copy the changed text.
+             */
+            for (; src_col <= last_src; src_col++, dst_col++) {
+                if (!CharEq(oline->text[src_col], nline->text[dst_col])) {
+                    nline->text[dst_col] = oline->text[src_col];
+                    CHANGED_CELL(nline, dst_col);
+                }
+            }
 
-	}
+        }
 #if USE_SCROLL_HINTS
-	if (wide) {
-	    int oind = oline->oldindex;
+        if (wide) {
+            int oind = oline->oldindex;
 
-	    nline->oldindex = ((oind == _NEWINDEX)
-			       ? _NEWINDEX
-			       : (begy + oind + win->_yoffset));
-	}
+            nline->oldindex = ((oind == _NEWINDEX)
+                               ? _NEWINDEX
+                               : (begy + oind + win->_yoffset));
+        }
 #endif /* USE_SCROLL_HINTS */
 
-	oline->firstchar = oline->lastchar = _NOCHANGE;
-	if_USE_SCROLL_HINTS(oline->oldindex = src_row);
+        oline->firstchar = oline->lastchar = _NOCHANGE;
+        if_USE_SCROLL_HINTS(oline->oldindex = src_row);
     }
 
     if (win->_clear) {
-	win->_clear = FALSE;
-	NewScreen(SP_PARM)->_clear = TRUE;
+        win->_clear = FALSE;
+        NewScreen(SP_PARM)->_clear = TRUE;
     }
 
     if (!win->_leaveok) {
-	NewScreen(SP_PARM)->_cury = (NCURSES_SIZE_T) (win->_cury +
-						      win->_begy + win->_yoffset);
-	NewScreen(SP_PARM)->_curx = (NCURSES_SIZE_T) (win->_curx + win->_begx);
+        NewScreen(SP_PARM)->_cury = (NCURSES_SIZE_T) (win->_cury +
+                                                      win->_begy + win->_yoffset);
+        NewScreen(SP_PARM)->_curx = (NCURSES_SIZE_T) (win->_curx + win->_begx);
     }
     NewScreen(SP_PARM)->_leaveok = win->_leaveok;
 
 #ifdef TRACE
     if (USE_TRACEF(TRACE_UPDATE)) {
-	_tracedump("newscr", NewScreen(SP_PARM));
-	_nc_unlock_global(tracef);
+        _tracedump("newscr", NewScreen(SP_PARM));
+        _nc_unlock_global(tracef);
     }
 #endif /* TRACE */
     returnCode(OK);

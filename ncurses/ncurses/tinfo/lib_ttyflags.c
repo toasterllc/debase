@@ -28,12 +28,12 @@
  ****************************************************************************/
 
 /*
- *		def_prog_mode()
- *		def_shell_mode()
- *		reset_prog_mode()
- *		reset_shell_mode()
- *		savetty()
- *		resetty()
+ *              def_prog_mode()
+ *              def_shell_mode()
+ *              reset_prog_mode()
+ *              reset_shell_mode()
+ *              savetty()
+ *              resetty()
  */
 
 #include <curses.priv.h>
@@ -51,32 +51,32 @@ NCURSES_SP_NAME(_nc_get_tty_mode) (NCURSES_SP_DCLx TTY * buf)
     int result = OK;
 
     if (buf == 0 || termp == 0) {
-	result = ERR;
+        result = ERR;
     } else {
 
 #ifdef USE_TERM_DRIVER
-	if (SP_PARM != 0) {
-	    result = CallDriver_2(SP_PARM, td_sgmode, FALSE, buf);
-	} else {
-	    result = ERR;
-	}
+        if (SP_PARM != 0) {
+            result = CallDriver_2(SP_PARM, td_sgmode, FALSE, buf);
+        } else {
+            result = ERR;
+        }
 #else
-	for (;;) {
-	    if (GET_TTY(termp->Filedes, buf) != 0) {
-		if (errno == EINTR)
-		    continue;
-		result = ERR;
-	    }
-	    break;
-	}
+        for (;;) {
+            if (GET_TTY(termp->Filedes, buf) != 0) {
+                if (errno == EINTR)
+                    continue;
+                result = ERR;
+            }
+            break;
+        }
 #endif
 
-	TR(TRACE_BITS, ("_nc_get_tty_mode(%d): %s",
-			termp ? termp->Filedes : -1,
-			_nc_trace_ttymode(buf)));
+        TR(TRACE_BITS, ("_nc_get_tty_mode(%d): %s",
+                        termp ? termp->Filedes : -1,
+                        _nc_trace_ttymode(buf)));
     }
     if (result == ERR && buf != 0)
-	memset(buf, 0, sizeof(*buf));
+        memset(buf, 0, sizeof(*buf));
 
     return (result);
 }
@@ -95,35 +95,35 @@ NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_DCLx TTY * buf)
     int result = OK;
 
     if (buf == 0 || SP_PARM == 0) {
-	result = ERR;
+        result = ERR;
     } else {
-	TERMINAL *termp = TerminalOf(SP_PARM);
+        TERMINAL *termp = TerminalOf(SP_PARM);
 
-	if (0 == termp) {
-	    result = ERR;
-	} else {
+        if (0 == termp) {
+            result = ERR;
+        } else {
 #ifdef USE_TERM_DRIVER
-	    result = CallDriver_2(SP_PARM, td_sgmode, TRUE, buf);
+            result = CallDriver_2(SP_PARM, td_sgmode, TRUE, buf);
 #else
-	    for (;;) {
-		if ((SET_TTY(termp->Filedes, buf) != 0)
+            for (;;) {
+                if ((SET_TTY(termp->Filedes, buf) != 0)
 #if USE_KLIBC_KBD
-		    && !NC_ISATTY(termp->Filedes)
+                    && !NC_ISATTY(termp->Filedes)
 #endif
-		    ) {
-		    if (errno == EINTR)
-			continue;
-		    if ((errno == ENOTTY) && (SP_PARM != 0))
-			SP_PARM->_notty = TRUE;
-		    result = ERR;
-		}
-		break;
-	    }
+                    ) {
+                    if (errno == EINTR)
+                        continue;
+                    if ((errno == ENOTTY) && (SP_PARM != 0))
+                        SP_PARM->_notty = TRUE;
+                    result = ERR;
+                }
+                break;
+            }
 #endif
-	}
-	TR(TRACE_BITS, ("_nc_set_tty_mode(%d): %s",
-			termp ? termp->Filedes : -1,
-			_nc_trace_ttymode(buf)));
+        }
+        TR(TRACE_BITS, ("_nc_set_tty_mode(%d): %s",
+                        termp ? termp->Filedes : -1,
+                        _nc_trace_ttymode(buf)));
     }
     return (result);
 }
@@ -147,23 +147,23 @@ NCURSES_SP_NAME(def_shell_mode) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef USE_TERM_DRIVER
-	rc = CallDriver_2(SP_PARM, td_mode, FALSE, TRUE);
+        rc = CallDriver_2(SP_PARM, td_mode, FALSE, TRUE);
 #else
-	/*
-	 * If XTABS was on, remove the tab and backtab capabilities.
-	 */
-	if (_nc_get_tty_mode(&termp->Ottyb) == OK) {
+        /*
+         * If XTABS was on, remove the tab and backtab capabilities.
+         */
+        if (_nc_get_tty_mode(&termp->Ottyb) == OK) {
 #ifdef TERMIOS
-	    if (termp->Ottyb.c_oflag & OFLAGS_TABS)
-		tab = back_tab = NULL;
+            if (termp->Ottyb.c_oflag & OFLAGS_TABS)
+                tab = back_tab = NULL;
 #elif defined(EXP_WIN32_DRIVER)
-	    /* noop */
+            /* noop */
 #else
-	    if (termp->Ottyb.sg_flags & XTABS)
-		tab = back_tab = NULL;
+            if (termp->Ottyb.sg_flags & XTABS)
+                tab = back_tab = NULL;
 #endif
-	    rc = OK;
-	}
+            rc = OK;
+        }
 #endif
     }
     returnCode(rc);
@@ -187,21 +187,21 @@ NCURSES_SP_NAME(def_prog_mode) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef USE_TERM_DRIVER
-	rc = CallDriver_2(SP_PARM, td_mode, TRUE, TRUE);
+        rc = CallDriver_2(SP_PARM, td_mode, TRUE, TRUE);
 #else
-	/*
-	 * Turn off the XTABS bit in the tty structure if it was on.
-	 */
-	if (_nc_get_tty_mode(&termp->Nttyb) == OK) {
+        /*
+         * Turn off the XTABS bit in the tty structure if it was on.
+         */
+        if (_nc_get_tty_mode(&termp->Nttyb) == OK) {
 #ifdef TERMIOS
-	    termp->Nttyb.c_oflag &= (unsigned) (~OFLAGS_TABS);
+            termp->Nttyb.c_oflag &= (unsigned) (~OFLAGS_TABS);
 #elif defined(EXP_WIN32_DRIVER)
-	    /* noop */
+            /* noop */
 #else
-	    termp->Nttyb.sg_flags &= (unsigned) (~XTABS);
+            termp->Nttyb.sg_flags &= (unsigned) (~XTABS);
 #endif
-	    rc = OK;
-	}
+            rc = OK;
+        }
 #endif
     }
     returnCode(rc);
@@ -225,15 +225,15 @@ NCURSES_SP_NAME(reset_prog_mode) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef USE_TERM_DRIVER
-	rc = CallDriver_2(SP_PARM, td_mode, TRUE, FALSE);
+        rc = CallDriver_2(SP_PARM, td_mode, TRUE, FALSE);
 #else
-	if (_nc_set_tty_mode(&termp->Nttyb) == OK) {
-	    if (SP_PARM) {
-		if (SP_PARM->_keypad_on)
-		    _nc_keypad(SP_PARM, TRUE);
-	    }
-	    rc = OK;
-	}
+        if (_nc_set_tty_mode(&termp->Nttyb) == OK) {
+            if (SP_PARM) {
+                if (SP_PARM->_keypad_on)
+                    _nc_keypad(SP_PARM, TRUE);
+            }
+            rc = OK;
+        }
 #endif
     }
     returnCode(rc);
@@ -258,13 +258,13 @@ NCURSES_SP_NAME(reset_shell_mode) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef USE_TERM_DRIVER
-	rc = CallDriver_2(SP_PARM, td_mode, FALSE, FALSE);
+        rc = CallDriver_2(SP_PARM, td_mode, FALSE, FALSE);
 #else
-	if (SP_PARM) {
-	    _nc_keypad(SP_PARM, FALSE);
-	    _nc_flush();
-	}
-	rc = _nc_set_tty_mode(&termp->Ottyb);
+        if (SP_PARM) {
+            _nc_keypad(SP_PARM, FALSE);
+            _nc_flush();
+        }
+        rc = _nc_set_tty_mode(&termp->Ottyb);
 #endif
     }
     returnCode(rc);
@@ -284,18 +284,18 @@ saved_tty(NCURSES_SP_DCL0)
     TTY *result = 0;
 
     if (SP_PARM != 0) {
-	result = (TTY *) & (SP_PARM->_saved_tty);
+        result = (TTY *) & (SP_PARM->_saved_tty);
     } else {
-	if (_nc_prescreen.saved_tty == 0) {
-	    _nc_prescreen.saved_tty = typeCalloc(TTY, 1);
-	}
-	result = _nc_prescreen.saved_tty;
+        if (_nc_prescreen.saved_tty == 0) {
+            _nc_prescreen.saved_tty = typeCalloc(TTY, 1);
+        }
+        result = _nc_prescreen.saved_tty;
     }
     return result;
 }
 
 /*
-**	savetty()  and  resetty()
+**      savetty()  and  resetty()
 **
 */
 

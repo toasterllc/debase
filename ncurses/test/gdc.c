@@ -41,10 +41,10 @@
 
 #include <time.h>
 
-#define YBASE	10
-#define XBASE	10
-#define XLENGTH	54
-#define YDEPTH	5
+#define YBASE   10
+#define XBASE   10
+#define XLENGTH 54
+#define YDEPTH  5
 
 #define PAIR_DIGITS 1
 #define PAIR_OTHERS 2
@@ -67,8 +67,8 @@ sighndl(int signo)
     signal(signo, sighndl);
     sigtermed = signo;
     if (redirected) {
-	stop_curses();
-	ExitProgram(EXIT_FAILURE);
+        stop_curses();
+        ExitProgram(EXIT_FAILURE);
     }
 }
 
@@ -76,10 +76,10 @@ static void
 check_term(void)
 {
     if (sigtermed) {
-	(void) standend();
-	stop_curses();
-	fprintf(stderr, "gdc terminated by signal %d\n", sigtermed);
-	ExitProgram(EXIT_FAILURE);
+        (void) standend();
+        stop_curses();
+        fprintf(stderr, "gdc terminated by signal %d\n", sigtermed);
+        ExitProgram(EXIT_FAILURE);
     }
 }
 
@@ -89,7 +89,7 @@ drawbox(bool scrolling)
     chtype bottom[XLENGTH + 1];
 
     if (hascolor)
-	(void) attrset(AttrArg(COLOR_PAIR(PAIR_FRAMES), 0));
+        (void) attrset(AttrArg(COLOR_PAIR(PAIR_FRAMES), 0));
 
     MvAddCh(YBASE - 1, XBASE - 1, ACS_ULCORNER);
     hline(ACS_HLINE, XLENGTH);
@@ -97,13 +97,13 @@ drawbox(bool scrolling)
 
     MvAddCh(YBASE + YDEPTH, XBASE - 1, ACS_LLCORNER);
     if ((mvinchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH)) != ERR) {
-	int n;
-	for (n = 0; n < XLENGTH; n++) {
-	    if (!scrolling)
-		bottom[n] &= ~A_COLOR;
-	    bottom[n] = ACS_HLINE | (bottom[n] & (A_ATTRIBUTES | A_COLOR));
-	}
-	(void) mvaddchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH);
+        int n;
+        for (n = 0; n < XLENGTH; n++) {
+            if (!scrolling)
+                bottom[n] &= ~A_COLOR;
+            bottom[n] = ACS_HLINE | (bottom[n] & (A_ATTRIBUTES | A_COLOR));
+        }
+        (void) mvaddchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH);
     }
     MvAddCh(YBASE + YDEPTH, XBASE + XLENGTH, ACS_LRCORNER);
 
@@ -114,24 +114,24 @@ drawbox(bool scrolling)
     vline(ACS_VLINE, YDEPTH);
 
     if (hascolor)
-	(void) attrset(AttrArg(COLOR_PAIR(PAIR_OTHERS), 0));
+        (void) attrset(AttrArg(COLOR_PAIR(PAIR_OTHERS), 0));
 }
 
 static void
 standt(int on)
 {
     if (on) {
-	if (hascolor) {
-	    attron(COLOR_PAIR(PAIR_DIGITS));
-	} else {
-	    attron(A_STANDOUT);
-	}
+        if (hascolor) {
+            attron(COLOR_PAIR(PAIR_DIGITS));
+        } else {
+            attron(A_STANDOUT);
+        }
     } else {
-	if (hascolor) {
-	    attron(COLOR_PAIR(PAIR_OTHERS));
-	} else {
-	    attroff(A_STANDOUT);
-	}
+        if (hascolor) {
+            attron(COLOR_PAIR(PAIR_OTHERS));
+        } else {
+            attroff(A_STANDOUT);
+        }
     }
 }
 
@@ -142,11 +142,11 @@ set(int t, int n)
 
     m = 7 << n;
     for (i = 0; i < 5; i++) {
-	next[i] |= ((disp[t] >> ((4 - i) * 3)) & 07) << n;
-	mask |= (next[i] ^ older[i]) & m;
+        next[i] |= ((disp[t] >> ((4 - i) * 3)) & 07) << n;
+        mask |= (next[i] ^ older[i]) & m;
     }
     if (mask & m)
-	mask |= m;
+        mask |= m;
 }
 
 static void
@@ -154,21 +154,21 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: gdc [options] [count]"
-	,""
-	,"Options:"
+        "Usage: gdc [options] [count]"
+        ,""
+        ,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
-	,"  -d       invoke use_default_colors"
+        ,"  -d       invoke use_default_colors"
 #endif
-	,"  -n       redirect input to /dev/null"
-	,"  -s       scroll each number into place, rather than flipping"
-	,"  -t hh:mm:ss specify starting time (default is ``now'')"
-	,""
-	,"If you specify a count, gdc runs for that number of seconds"
+        ,"  -n       redirect input to /dev/null"
+        ,"  -s       scroll each number into place, rather than flipping"
+        ,"  -t hh:mm:ss specify starting time (default is ``now'')"
+        ,""
+        ,"If you specify a count, gdc runs for that number of seconds"
     };
     unsigned j;
     for (j = 0; j < SIZEOF(msg); j++)
-	fprintf(stderr, "%s\n", msg[j]);
+        fprintf(stderr, "%s\n", msg[j]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -182,29 +182,29 @@ parse_time(const char *value)
     struct tm *tm;
 
     if (sscanf(value, "%d:%d:%d%c", &hh, &mm, &ss, &c) != 3) {
-	if (sscanf(value, "%02d%02d%02d%c", &hh, &mm, &ss, &c) != 3) {
-	    usage();
-	}
+        if (sscanf(value, "%02d%02d%02d%c", &hh, &mm, &ss, &c) != 3) {
+            usage();
+        }
     }
 
     if ((hh < 0) || (hh >= 24) ||
-	(mm < 0) || (mm >= 60) ||
-	(ss < 0) || (ss >= 60)) {
-	usage();
+        (mm < 0) || (mm >= 60) ||
+        (ss < 0) || (ss >= 60)) {
+        usage();
     }
 
     /* adjust so that the localtime in the main loop will give usable time */
     result = (hh * 3600) + ((mm * 60) + ss);
     for (check = 0; check < 24; ++check) {
-	tm = localtime(&result);
-	if (tm->tm_hour == hh)
-	    break;
-	result += 3600;
+        tm = localtime(&result);
+        if (tm->tm_hour == hh)
+            break;
+        result += 3600;
     }
 
     if (tm->tm_hour != hh) {
-	fprintf(stderr, "Cannot find local time for %s!\n", value);
-	usage();
+        fprintf(stderr, "Cannot find local time for %s!\n", value);
+        usage();
     }
     return result;
 }
@@ -229,44 +229,44 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     while ((k = getopt(argc, argv, "dnst:")) != -1) {
-	switch (k) {
+        switch (k) {
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    d_option = TRUE;
-	    break;
+        case 'd':
+            d_option = TRUE;
+            break;
 #endif
-	case 'n':
-	    ifp = fopen("/dev/null", "r");
-	    redirected = TRUE;
-	    break;
-	case 's':
-	    smooth = TRUE;
-	    break;
-	case 't':
-	    starts = parse_time(optarg);
-	    break;
-	default:
-	    usage();
-	}
+        case 'n':
+            ifp = fopen("/dev/null", "r");
+            redirected = TRUE;
+            break;
+        case 's':
+            smooth = TRUE;
+            break;
+        case 't':
+            starts = parse_time(optarg);
+            break;
+        default:
+            usage();
+        }
     }
     if (optind < argc) {
-	count = atoi(argv[optind++]);
-	assert(count >= 0);
-	if (optind < argc)
-	    usage();
+        count = atoi(argv[optind++]);
+        assert(count >= 0);
+        if (optind < argc)
+            usage();
     }
 
     InitAndCatch({
-	if (redirected) {
-	    char *name = getenv("TERM");
-	    if (name == 0
-		|| newterm(name, ofp, ifp) == 0) {
-		fprintf(stderr, "cannot open terminal\n");
-		ExitProgram(EXIT_FAILURE);
-	    }
-	} else {
-	    initscr();
-	}
+        if (redirected) {
+            char *name = getenv("TERM");
+            if (name == 0
+                || newterm(name, ofp, ifp) == 0) {
+                fprintf(stderr, "cannot open terminal\n");
+                ExitProgram(EXIT_FAILURE);
+            }
+        } else {
+            initscr();
+        }
     }
     ,sighndl);
 
@@ -278,174 +278,174 @@ main(int argc, char *argv[])
     hascolor = has_colors();
 
     if (hascolor) {
-	short bg = COLOR_BLACK;
-	start_color();
+        short bg = COLOR_BLACK;
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (d_option && (use_default_colors() == OK))
-	    bg = -1;
+        if (d_option && (use_default_colors() == OK))
+            bg = -1;
 #endif
-	init_pair(PAIR_DIGITS, COLOR_BLACK, COLOR_RED);
-	init_pair(PAIR_OTHERS, COLOR_RED, bg);
-	init_pair(PAIR_FRAMES, COLOR_WHITE, bg);
-	(void) attrset(AttrArg(COLOR_PAIR(PAIR_OTHERS), 0));
+        init_pair(PAIR_DIGITS, COLOR_BLACK, COLOR_RED);
+        init_pair(PAIR_OTHERS, COLOR_RED, bg);
+        init_pair(PAIR_FRAMES, COLOR_WHITE, bg);
+        (void) attrset(AttrArg(COLOR_PAIR(PAIR_OTHERS), 0));
     }
 
   restart:
     for (j = 0; j < 5; j++)
-	older[j] = newer[j] = next[j] = 0;
+        older[j] = newer[j] = next[j] = 0;
 
     clear();
     drawbox(FALSE);
 
     do {
-	char buf[40];
+        char buf[40];
 
-	if (starts != 0) {
-	    now = ++starts;
-	} else {
-	    time(&now);
-	}
-	tm = localtime(&now);
+        if (starts != 0) {
+            now = ++starts;
+        } else {
+            time(&now);
+        }
+        tm = localtime(&now);
 
-	mask = 0;
-	set(tm->tm_sec % 10, 0);
-	set(tm->tm_sec / 10, 4);
-	set(tm->tm_min % 10, 10);
-	set(tm->tm_min / 10, 14);
-	set(tm->tm_hour % 10, 20);
-	set(tm->tm_hour / 10, 24);
-	set(10, 7);
-	set(10, 17);
+        mask = 0;
+        set(tm->tm_sec % 10, 0);
+        set(tm->tm_sec / 10, 4);
+        set(tm->tm_min % 10, 10);
+        set(tm->tm_min / 10, 14);
+        set(tm->tm_hour % 10, 20);
+        set(tm->tm_hour / 10, 24);
+        set(10, 7);
+        set(10, 17);
 
-	for (k = 0; k < 6; k++) {
-	    if (smooth) {
-		for (i = 0; i < 5; i++)
-		    newer[i] = (newer[i] & ~mask) | (newer[i + 1] & mask);
-		newer[5] = (newer[5] & ~mask) | (next[k] & mask);
-	    } else {
-		newer[k] = (newer[k] & ~mask) | (next[k] & mask);
-	    }
-	    next[k] = 0;
-	    for (s = 1; s >= 0; s--) {
-		standt(s);
-		for (i = 0; i < 6; i++) {
-		    if ((a = (newer[i] ^ older[i]) & (s ? newer : older)[i])
-			!= 0) {
-			for (j = 0, t = 1 << 26; t; t >>= 1, j++) {
-			    if (a & t) {
-				if (!(a & (t << 1))) {
-				    move(YBASE + i, XBASE + 2 * j);
-				}
-				addstr("  ");
-			    }
-			}
-		    }
-		    if (!s) {
-			older[i] = newer[i];
-		    }
-		}
-		if (!s) {
-		    if (smooth)
-			drawbox(TRUE);
-		    refresh();
-		    /*
-		     * If we're scrolling, space out the refreshes to fake
-		     * movement.  That's 7 frames, or 6 intervals, which would
-		     * be 166 msec if we spread it out over a second.  It looks
-		     * better (but will work on a slow terminal, e.g., less
-		     * than 9600bd) to squeeze that into a half-second, and use
-		     * half of 170 msec to ensure that the program doesn't eat
-		     * a lot of time when asking what time it is, at the top of
-		     * this loop -T.Dickey
-		     */
-		    if (smooth)
-			napms(85);
-		    if (stages) {
-			stages = FALSE;
-			switch (wgetch(stdscr)) {
-			case 'q':
-			    count = 1;
-			    break;
-			case 'S':
-			    stages = TRUE;
-			    /* FALLTHRU */
-			case 's':
-			    nodelay(stdscr, FALSE);
-			    break;
-			case ' ':
-			    nodelay(stdscr, TRUE);
-			    break;
+        for (k = 0; k < 6; k++) {
+            if (smooth) {
+                for (i = 0; i < 5; i++)
+                    newer[i] = (newer[i] & ~mask) | (newer[i + 1] & mask);
+                newer[5] = (newer[5] & ~mask) | (next[k] & mask);
+            } else {
+                newer[k] = (newer[k] & ~mask) | (next[k] & mask);
+            }
+            next[k] = 0;
+            for (s = 1; s >= 0; s--) {
+                standt(s);
+                for (i = 0; i < 6; i++) {
+                    if ((a = (newer[i] ^ older[i]) & (s ? newer : older)[i])
+                        != 0) {
+                        for (j = 0, t = 1 << 26; t; t >>= 1, j++) {
+                            if (a & t) {
+                                if (!(a & (t << 1))) {
+                                    move(YBASE + i, XBASE + 2 * j);
+                                }
+                                addstr("  ");
+                            }
+                        }
+                    }
+                    if (!s) {
+                        older[i] = newer[i];
+                    }
+                }
+                if (!s) {
+                    if (smooth)
+                        drawbox(TRUE);
+                    refresh();
+                    /*
+                     * If we're scrolling, space out the refreshes to fake
+                     * movement.  That's 7 frames, or 6 intervals, which would
+                     * be 166 msec if we spread it out over a second.  It looks
+                     * better (but will work on a slow terminal, e.g., less
+                     * than 9600bd) to squeeze that into a half-second, and use
+                     * half of 170 msec to ensure that the program doesn't eat
+                     * a lot of time when asking what time it is, at the top of
+                     * this loop -T.Dickey
+                     */
+                    if (smooth)
+                        napms(85);
+                    if (stages) {
+                        stages = FALSE;
+                        switch (wgetch(stdscr)) {
+                        case 'q':
+                            count = 1;
+                            break;
+                        case 'S':
+                            stages = TRUE;
+                            /* FALLTHRU */
+                        case 's':
+                            nodelay(stdscr, FALSE);
+                            break;
+                        case ' ':
+                            nodelay(stdscr, TRUE);
+                            break;
 #ifdef KEY_RESIZE
-			case KEY_RESIZE:
+                        case KEY_RESIZE:
 #endif
-			case '?':
-			    goto restart;
-			case ERR:
-			    check_term();
-			    /* FALLTHRU */
-			default:
-			    continue;
-			}
-		    }
-		}
-	    }
-	}
+                        case '?':
+                            goto restart;
+                        case ERR:
+                            check_term();
+                            /* FALLTHRU */
+                        default:
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
 
-	/* this depends on the detailed format of ctime(3) */
-	_nc_STRNCPY(buf, ctime(&now), (size_t) 30);
-	{
-	    char *d2 = buf + 10;
-	    char *s2 = buf + 19;
-	    while ((*d2++ = *s2++) != '\0') ;
-	}
-	MvAddStr(16, 30, buf);
+        /* this depends on the detailed format of ctime(3) */
+        _nc_STRNCPY(buf, ctime(&now), (size_t) 30);
+        {
+            char *d2 = buf + 10;
+            char *s2 = buf + 19;
+            while ((*d2++ = *s2++) != '\0') ;
+        }
+        MvAddStr(16, 30, buf);
 
-	move(6, 0);
-	drawbox(FALSE);
-	refresh();
+        move(6, 0);
+        drawbox(FALSE);
+        refresh();
 
-	/*
-	 * If we're not smooth-scrolling, wait 1000 msec (1 sec).  Use napms()
-	 * rather than sleep() because the latter does odd things on some
-	 * systems, e.g., suspending output as well.
-	 */
-	if (smooth)
-	    napms(500);
-	else
-	    napms(1000);
+        /*
+         * If we're not smooth-scrolling, wait 1000 msec (1 sec).  Use napms()
+         * rather than sleep() because the latter does odd things on some
+         * systems, e.g., suspending output as well.
+         */
+        if (smooth)
+            napms(500);
+        else
+            napms(1000);
 
-	/*
-	 * This is a safe way to check if we're interrupted - making the signal
-	 * handler set a flag that we can check.  Since we're running
-	 * nodelay(), the wgetch() call returns immediately, and in particular
-	 * will return an error if interrupted.  This works only if we can
-	 * read from the input, of course.
-	 */
-	stages = FALSE;
-	switch (wgetch(stdscr)) {
-	case 'q':
-	    count = 1;
-	    break;
-	case 'S':
-	    stages = TRUE;
-	    /* FALLTHRU */
-	case 's':
-	    nodelay(stdscr, FALSE);
-	    break;
-	case ' ':
-	    nodelay(stdscr, TRUE);
-	    break;
+        /*
+         * This is a safe way to check if we're interrupted - making the signal
+         * handler set a flag that we can check.  Since we're running
+         * nodelay(), the wgetch() call returns immediately, and in particular
+         * will return an error if interrupted.  This works only if we can
+         * read from the input, of course.
+         */
+        stages = FALSE;
+        switch (wgetch(stdscr)) {
+        case 'q':
+            count = 1;
+            break;
+        case 'S':
+            stages = TRUE;
+            /* FALLTHRU */
+        case 's':
+            nodelay(stdscr, FALSE);
+            break;
+        case ' ':
+            nodelay(stdscr, TRUE);
+            break;
 #ifdef KEY_RESIZE
-	case KEY_RESIZE:
+        case KEY_RESIZE:
 #endif
-	case '?':
-	    goto restart;
-	case ERR:
-	    check_term();
-	    /* FALLTHRU */
-	default:
-	    continue;
-	}
+        case '?':
+            goto restart;
+        case ERR:
+            check_term();
+            /* FALLTHRU */
+        default:
+            continue;
+        }
     } while (--count);
     (void) standend();
     stop_curses();

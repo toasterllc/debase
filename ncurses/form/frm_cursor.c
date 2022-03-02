@@ -61,9 +61,9 @@ pos_form_cursor(FORM *form)
   else
     {
       if (!(form->status & _POSTED))
-	res = E_NOT_POSTED;
+        res = E_NOT_POSTED;
       else
-	res = _nc_Position_Form_Cursor(form);
+        res = _nc_Position_Form_Cursor(form);
     }
   RETURN(res);
 }

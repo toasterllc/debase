@@ -100,67 +100,67 @@ void NCursesPad::operator()(void)
 
       switch (req) {
       case REQ_PAD_REFRESH:
-	// ================
-	changed = TRUE;
-	break;
+        // ================
+        changed = TRUE;
+        break;
       case REQ_PAD_LEFT:
-	// =============
-	if (min_col > 0) {
-	  changed = TRUE;
-	  if (min_col < h_gridsize)
-	    min_col = 0;
-	  else
-	    min_col -= h_gridsize;
-	}
-	else
-	  OnNavigationError(req);
-	break;
+        // =============
+        if (min_col > 0) {
+          changed = TRUE;
+          if (min_col < h_gridsize)
+            min_col = 0;
+          else
+            min_col -= h_gridsize;
+        }
+        else
+          OnNavigationError(req);
+        break;
       case REQ_PAD_RIGHT:
-	// ==============
-	if (min_col < (width() - Width - 1)) {
-	  changed = TRUE;
-	  if (min_col > (width() - Width - h_gridsize - 1))
-	    min_col = width() - Width - 1;
-	  else
-	    min_col += h_gridsize;
-	}
-	else
-	  OnNavigationError(req);
-	break;
+        // ==============
+        if (min_col < (width() - Width - 1)) {
+          changed = TRUE;
+          if (min_col > (width() - Width - h_gridsize - 1))
+            min_col = width() - Width - 1;
+          else
+            min_col += h_gridsize;
+        }
+        else
+          OnNavigationError(req);
+        break;
       case REQ_PAD_UP:
-	// ===========
-	if (min_row > 0) {
-	  changed = TRUE;
-	  if (min_row < v_gridsize)
-	    min_row = 0;
-	  else
-	    min_row -= v_gridsize;
-	}
-	else
-	  OnNavigationError(req);
-	break;
+        // ===========
+        if (min_row > 0) {
+          changed = TRUE;
+          if (min_row < v_gridsize)
+            min_row = 0;
+          else
+            min_row -= v_gridsize;
+        }
+        else
+          OnNavigationError(req);
+        break;
       case REQ_PAD_DOWN:
-	// =============
-	if (min_row < (height() - Height - 1)) {
-	  changed = TRUE;
-	  if (min_row > (height() - Height - v_gridsize - 1))
-	    min_row = height() - Height - 1;
-	  else
-	    min_row += v_gridsize;
-	}
-	else
-	  OnNavigationError(req);
-	break;
+        // =============
+        if (min_row < (height() - Height - 1)) {
+          changed = TRUE;
+          if (min_row > (height() - Height - v_gridsize - 1))
+            min_row = height() - Height - 1;
+          else
+            min_row += v_gridsize;
+        }
+        else
+          OnNavigationError(req);
+        break;
 
       default:
-	OnUnknownOperation(req);
+        OnUnknownOperation(req);
       }
 
       if (changed) {
-	noutrefresh();
-	W->syncup();
-	OnOperation(req);
-	viewWin->refresh();
+        noutrefresh();
+        W->syncup();
+        OnOperation(req);
+        viewWin->refresh();
       }
     } while( (req=driver(W->getch())) != REQ_PAD_EXIT );
   }
@@ -184,8 +184,8 @@ int NCursesPad::noutrefresh()
     int high = W->maxy();
     int wide = W->maxx();
     res = copywin(*W, min_row, min_col,
-		  0, 0, high, wide,
-		  FALSE);
+                  0, 0, high, wide,
+                  FALSE);
     if (res==OK) {
       W->syncup();
       res = viewWin->noutrefresh();
@@ -195,8 +195,8 @@ int NCursesPad::noutrefresh()
 }
 
 void NCursesPad::setWindow(NCursesWindow& view,
-			   int v_grid NCURSES_PARAM_INIT(1),
-			   int h_grid NCURSES_PARAM_INIT(1))
+                           int v_grid NCURSES_PARAM_INIT(1),
+                           int h_grid NCURSES_PARAM_INIT(1))
 {
   viewWin = &view;
   min_row = min_col = 0;
@@ -234,9 +234,9 @@ void NCursesFramedPad::OnOperation(int pad_req)
     if (my_width != 0) {
       h_len = (Width*Width + my_width - 1) / my_width;
       if (h_len==0)
-	h_len = 1;
+        h_len = 1;
       if (h_len > Width)
-	h_len = Width;
+        h_len = Width;
     } else {
       h_len = 1;
     }
@@ -246,9 +246,9 @@ void NCursesFramedPad::OnOperation(int pad_req)
     if (my_height != 0) {
       v_len = (Height*Height + my_height - 1) / my_height;
       if (v_len==0)
-	v_len = 1;
+        v_len = 1;
       if (v_len > Height)
-	v_len = Height;
+        v_len = Height;
     } else {
       v_len = 1;
     }
@@ -274,12 +274,12 @@ void NCursesFramedPad::OnOperation(int pad_req)
     if (v_len>=2) {
       W2->addch(row+1,Width+1,ACS_UARROW);
       for(i=2;i<v_len;i++)
-	W2->addch(row+i,Width+1,' ');
+        W2->addch(row+i,Width+1,' ');
       W2->addch(row+v_len,Width+1,ACS_DARROW);
     }
     else {
       for(i=1;i<=v_len;i++)
-	W2->addch(row+i,Width+1,' ');
+        W2->addch(row+i,Width+1,' ');
     }
     W2->attroff(A_REVERSE);
 
@@ -288,12 +288,12 @@ void NCursesFramedPad::OnOperation(int pad_req)
     if (h_len >= 2) {
       W2->addch(Height+1,col+1,ACS_LARROW);
       for(i=2;i<h_len;i++)
-	W2->addch(Height+1,col+i,' ');
+        W2->addch(Height+1,col+i,' ');
       W2->addch(Height+1,col+h_len,ACS_RARROW);
     }
     else {
       for(i=1;i<=h_len;i++)
-	W2->addch(Height+1,col+i,' ');
+        W2->addch(Height+1,col+i,' ');
     }
     W2->attroff(A_REVERSE);
   }

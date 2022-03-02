@@ -34,16 +34,16 @@
  ****************************************************************************/
 
 /*
-**	lib_initscr.c
+**      lib_initscr.c
 **
-**	The routines initscr(), and termname().
+**      The routines initscr(), and termname().
 **
 */
 
 #include <curses.priv.h>
 
 #if HAVE_SYS_TERMIO_H
-#include <sys/termio.h>		/* needed for ISC */
+#include <sys/termio.h>         /* needed for ISC */
 #endif
 
 MODULE_ID("$Id: lib_initscr.c,v 1.48 2020/09/07 14:26:48 tom Exp $")
@@ -61,47 +61,47 @@ initscr(void)
 
     /* Portable applications must not call initscr() more than once */
     if (!_nc_globals.init_screen) {
-	const char *env;
-	char *name;
+        const char *env;
+        char *name;
 
-	_nc_globals.init_screen = TRUE;
+        _nc_globals.init_screen = TRUE;
 
-	env = getenv("TERM");
-	(void) VALID_TERM_ENV(env, "unknown");
+        env = getenv("TERM");
+        (void) VALID_TERM_ENV(env, "unknown");
 
-	if ((name = strdup(env)) == NULL) {
-	    fprintf(stderr, "Error opening allocating $TERM.\n");
-	    ExitProgram(EXIT_FAILURE);
-	}
+        if ((name = strdup(env)) == NULL) {
+            fprintf(stderr, "Error opening allocating $TERM.\n");
+            ExitProgram(EXIT_FAILURE);
+        }
 #ifdef __CYGWIN__
-	/*
-	 * 2002/9/21
-	 * Work around a bug in Cygwin.  Full-screen subprocesses run from
-	 * bash, in turn spawned from another full-screen process, will dump
-	 * core when attempting to write to stdout.  Opening /dev/tty
-	 * explicitly seems to fix the problem.
-	 */
-	if (NC_ISATTY(fileno(stdout))) {
-	    FILE *fp = fopen("/dev/tty", "w");
-	    if (fp != 0 && NC_ISATTY(fileno(fp))) {
-		fclose(stdout);
-		dup2(fileno(fp), STDOUT_FILENO);
-		stdout = fdopen(STDOUT_FILENO, "w");
-	    }
-	}
+        /*
+         * 2002/9/21
+         * Work around a bug in Cygwin.  Full-screen subprocesses run from
+         * bash, in turn spawned from another full-screen process, will dump
+         * core when attempting to write to stdout.  Opening /dev/tty
+         * explicitly seems to fix the problem.
+         */
+        if (NC_ISATTY(fileno(stdout))) {
+            FILE *fp = fopen("/dev/tty", "w");
+            if (fp != 0 && NC_ISATTY(fileno(fp))) {
+                fclose(stdout);
+                dup2(fileno(fp), STDOUT_FILENO);
+                stdout = fdopen(STDOUT_FILENO, "w");
+            }
+        }
 #endif
-	if (newterm(name, stdout, stdin) == 0) {
-	    fprintf(stderr, "Error opening terminal: %s.\n", name);
-	    ExitProgram(EXIT_FAILURE);
-	}
+        if (newterm(name, stdout, stdin) == 0) {
+            fprintf(stderr, "Error opening terminal: %s.\n", name);
+            ExitProgram(EXIT_FAILURE);
+        }
 
-	/* def_shell_mode - done in newterm/_nc_setupscreen */
+        /* def_shell_mode - done in newterm/_nc_setupscreen */
 #if NCURSES_SP_FUNCS
-	NCURSES_SP_NAME(def_prog_mode) (CURRENT_SCREEN);
+        NCURSES_SP_NAME(def_prog_mode) (CURRENT_SCREEN);
 #else
-	def_prog_mode();
+        def_prog_mode();
 #endif
-	free(name);
+        free(name);
     }
     result = stdscr;
     _nc_unlock_global(curses);

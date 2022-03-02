@@ -48,24 +48,24 @@
 #include <langinfo.h>
 #endif
 
-#define NOCARD		(-1)
+#define NOCARD          (-1)
 
-#define ACE		0
-#define KING		12
-#define SUIT_LENGTH	13
+#define ACE             0
+#define KING            12
+#define SUIT_LENGTH     13
 
-#define HEARTS		0
-#define SPADES		1
-#define DIAMONDS	2
-#define CLUBS		3
-#define NSUITS		4
+#define HEARTS          0
+#define SPADES          1
+#define DIAMONDS        2
+#define CLUBS           3
+#define NSUITS          4
 
-#define GRID_WIDTH	14	/*    13+1  */
-#define GRID_LENGTH	56	/* 4*(13+1) */
-#define PACK_SIZE	52
+#define GRID_WIDTH      14      /*    13+1  */
+#define GRID_LENGTH     56      /* 4*(13+1) */
+#define PACK_SIZE       52
 
-#define BASEROW		1
-#define PROMPTROW	11
+#define BASEROW         1
+#define PROMPTROW       11
 
 #define RED_ON_WHITE    1
 #define BLACK_ON_WHITE  2
@@ -73,11 +73,11 @@
 
 static GCC_NORETURN void die(int onsig);
 
-static int deck_size = PACK_SIZE;	/* initial deck */
+static int deck_size = PACK_SIZE;       /* initial deck */
 static int deck[PACK_SIZE];
 
-static int grid[GRID_LENGTH];	/* card layout grid */
-static int freeptr[4];		/* free card space pointers */
+static int grid[GRID_LENGTH];   /* card layout grid */
+static int freeptr[4];          /* free card space pointers */
 
 static int deal_number = 0;
 
@@ -100,10 +100,10 @@ static chtype ranks[SUIT_LENGTH][2] =
 
 static int letters[4] =
 {
-    'h',			/* hearts */
-    's',			/* spades */
-    'd',			/* diamonds */
-    'c',			/* clubs */
+    'h',                        /* hearts */
+    's',                        /* spades */
+    'd',                        /* diamonds */
+    'c',                        /* clubs */
 };
 
 #if HAVE_LANGINFO_CODESET
@@ -111,25 +111,25 @@ static int letters[4] =
 #if HAVE_TIGETSTR
 static int glyphs[] =
 {
-    '\003',			/* hearts */
-    '\006',			/* spades */
-    '\004',			/* diamonds */
-    '\005',			/* clubs */
+    '\003',                     /* hearts */
+    '\006',                     /* spades */
+    '\004',                     /* diamonds */
+    '\005',                     /* clubs */
 };
 #endif
 
 #if USE_WIDEC_SUPPORT
 static int uglyphs[] =
 {
-    0x2665,			/* hearts */
-    0x2660,			/* spades */
-    0x2666,			/* diamonds */
-    0x2663			/* clubs */
+    0x2665,                     /* hearts */
+    0x2660,                     /* spades */
+    0x2666,                     /* diamonds */
+    0x2663                      /* clubs */
 };
 #endif
 #endif /* HAVE_LANGINFO_CODESET */
 
-static int *suits = letters;	/* this may change to glyphs below */
+static int *suits = letters;    /* this may change to glyphs below */
 
 static void
 die(int onsig)
@@ -146,9 +146,9 @@ init_vars(void)
 
     deck_size = PACK_SIZE;
     for (i = 0; i < PACK_SIZE; i++)
-	deck[i] = i;
+        deck[i] = i;
     for (i = 0; i < 4; i++)
-	freeptr[i] = i * GRID_WIDTH;
+        freeptr[i] = i * GRID_WIDTH;
 }
 
 static void
@@ -156,14 +156,14 @@ shuffle(int size)
 {
     int numswaps, swapnum;
 
-    numswaps = size * 10;	/* an arbitrary figure */
+    numswaps = size * 10;       /* an arbitrary figure */
 
     for (swapnum = 0; swapnum < numswaps; swapnum++) {
-	int i = rand() % size;
-	int j = rand() % size;
-	int temp = deck[i];
-	deck[i] = deck[j];
-	deck[j] = temp;
+        int i = rand() % size;
+        int j = rand() % size;
+        int temp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = temp;
     }
 }
 
@@ -174,24 +174,24 @@ deal_cards(void)
 
     memset(aces, 0, sizeof(aces));
     for (suit = HEARTS; suit <= CLUBS; suit++) {
-	int ptr = freeptr[suit];
-	grid[ptr++] = NOCARD;	/* 1st card space is blank */
-	while ((ptr % GRID_WIDTH) != 0) {
-	    value = deck[card++];
-	    crank = value % SUIT_LENGTH;
-	    csuit = value / SUIT_LENGTH;
-	    if (crank == ACE)
-		aces[csuit] = ptr;
-	    grid[ptr++] = value;
-	}
+        int ptr = freeptr[suit];
+        grid[ptr++] = NOCARD;   /* 1st card space is blank */
+        while ((ptr % GRID_WIDTH) != 0) {
+            value = deck[card++];
+            crank = value % SUIT_LENGTH;
+            csuit = value / SUIT_LENGTH;
+            if (crank == ACE)
+                aces[csuit] = ptr;
+            grid[ptr++] = value;
+        }
     }
 
-    if (deal_number == 1)	/* shift the aces down to the 1st column */
-	for (suit = HEARTS; suit <= CLUBS; suit++) {
-	    grid[suit * GRID_WIDTH] = suit * SUIT_LENGTH;
-	    grid[aces[suit]] = NOCARD;
-	    freeptr[suit] = aces[suit];
-	}
+    if (deal_number == 1)       /* shift the aces down to the 1st column */
+        for (suit = HEARTS; suit <= CLUBS; suit++) {
+            grid[suit * GRID_WIDTH] = suit * SUIT_LENGTH;
+            grid[aces[suit]] = NOCARD;
+            freeptr[suit] = aces[suit];
+        }
 }
 
 static void
@@ -199,36 +199,36 @@ printcard(int value)
 {
     AddCh(' ');
     if (value == NOCARD) {
-	(void) addstr("   ");
+        (void) addstr("   ");
     } else {
-	int which = (value / SUIT_LENGTH);
-	int isuit = (value % SUIT_LENGTH);
-	chtype color = (chtype) COLOR_PAIR(((which % 2) == 0)
-					   ? RED_ON_WHITE
-					   : BLACK_ON_WHITE);
+        int which = (value / SUIT_LENGTH);
+        int isuit = (value % SUIT_LENGTH);
+        chtype color = (chtype) COLOR_PAIR(((which % 2) == 0)
+                                           ? RED_ON_WHITE
+                                           : BLACK_ON_WHITE);
 
-	AddCh(ranks[isuit][0] | (chtype) COLOR_PAIR(BLUE_ON_WHITE));
-	AddCh(ranks[isuit][1] | (chtype) COLOR_PAIR(BLUE_ON_WHITE));
+        AddCh(ranks[isuit][0] | (chtype) COLOR_PAIR(BLUE_ON_WHITE));
+        AddCh(ranks[isuit][1] | (chtype) COLOR_PAIR(BLUE_ON_WHITE));
 
 #ifdef NCURSES_VERSION
-	(attron) ((int) color);	/* quieter compiler warnings */
+        (attron) ((int) color); /* quieter compiler warnings */
 #else
-	attron(color);		/* PDCurses, etc., either no macro or wrong */
+        attron(color);          /* PDCurses, etc., either no macro or wrong */
 #endif
 #if USE_WIDEC_SUPPORT
-	{
-	    wchar_t values[2];
-	    values[0] = (wchar_t) suits[which];
-	    values[1] = 0;
-	    addwstr(values);
-	}
+        {
+            wchar_t values[2];
+            values[0] = (wchar_t) suits[which];
+            values[1] = 0;
+            addwstr(values);
+        }
 #else
-	AddCh(suits[which]);
+        AddCh(suits[which]);
 #endif
 #ifdef NCURSES_VERSION
-	(attroff) ((int) color);
+        (attroff) ((int) color);
 #else
-	attroff(color);
+        attroff(color);
 #endif
     }
     AddCh(' ');
@@ -241,17 +241,17 @@ display_cards(int deal)
 
     clear();
     (void) printw(
-		     "Blue Moon 2.1 - by Tim Lister & Eric Raymond - Deal %d.\n",
-		     deal);
+                     "Blue Moon 2.1 - by Tim Lister & Eric Raymond - Deal %d.\n",
+                     deal);
     for (row = HEARTS; row <= CLUBS; row++) {
-	move(BASEROW + row + row + 2, 1);
-	for (card = 0; card < GRID_WIDTH; card++)
-	    printcard(grid[row * GRID_WIDTH + card]);
+        move(BASEROW + row + row + 2, 1);
+        for (card = 0; card < GRID_WIDTH; card++)
+            printcard(grid[row * GRID_WIDTH + card]);
     }
 
     move(PROMPTROW + 2, 0);
     refresh();
-#define P(x)	(void)printw("%s\n", x)
+#define P(x)    (void)printw("%s\n", x)
     P("   This 52-card solitaire starts with  the entire deck shuffled and dealt");
     P("out in four rows.  The aces are then moved to the left end of the layout,");
     P("making 4 initial free spaces.  You may move to a space only the card that");
@@ -273,10 +273,10 @@ find(int card)
     int i;
 
     if ((card < 0) || (card >= PACK_SIZE))
-	return (NOCARD);
+        return (NOCARD);
     for (i = 0; i < GRID_LENGTH; i++)
-	if (grid[i] == card)
-	    return i;
+        if (grid[i] == card)
+            return i;
     return (NOCARD);
 }
 
@@ -303,80 +303,80 @@ play_game(void)
     int selection[4], card;
 
     while (dead < 4) {
-	dead = 0;
-	for (i = 0; i < 4; i++) {
-	    card = grid[freeptr[i] - 1];
+        dead = 0;
+        for (i = 0; i < 4; i++) {
+            card = grid[freeptr[i] - 1];
 
-	    if (((card % SUIT_LENGTH) == KING)
-		||
-		(card == NOCARD))
-		selection[i] = NOCARD;
-	    else
-		selection[i] = find(card + 1);
+            if (((card % SUIT_LENGTH) == KING)
+                ||
+                (card == NOCARD))
+                selection[i] = NOCARD;
+            else
+                selection[i] = find(card + 1);
 
-	    if (selection[i] == NOCARD)
-		dead++;
-	};
+            if (selection[i] == NOCARD)
+                dead++;
+        };
 
-	if (dead < 4) {
-	    char live[NSUITS + 1], *lp = live;
+        if (dead < 4) {
+            char live[NSUITS + 1], *lp = live;
 
-	    for (i = 0; i < 4; i++) {
-		if (selection[i] != NOCARD) {
-		    move(BASEROW + (selection[i] / GRID_WIDTH) * 2 + 3,
-			 (selection[i] % GRID_WIDTH) * 5);
-		    (void) printw("   %c ", (*lp++ = (char) ('a' + i)));
-		}
-	    };
-	    *lp = '\0';
+            for (i = 0; i < 4; i++) {
+                if (selection[i] != NOCARD) {
+                    move(BASEROW + (selection[i] / GRID_WIDTH) * 2 + 3,
+                         (selection[i] % GRID_WIDTH) * 5);
+                    (void) printw("   %c ", (*lp++ = (char) ('a' + i)));
+                }
+            };
+            *lp = '\0';
 
-	    if (strlen(live) == 1) {
-		move(PROMPTROW, 0);
-		(void) printw(
-				 "Making forced moves...                                 ");
-		refresh();
-		(void) sleep(1);
-		c = live[0];
-	    } else {
-		char buf[BUFSIZ];
+            if (strlen(live) == 1) {
+                move(PROMPTROW, 0);
+                (void) printw(
+                                 "Making forced moves...                                 ");
+                refresh();
+                (void) sleep(1);
+                c = live[0];
+            } else {
+                char buf[BUFSIZ];
 
-		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-			    "Type [%s] to move, r to redraw, q or INTR to quit: ",
-			    live);
+                _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                            "Type [%s] to move, r to redraw, q or INTR to quit: ",
+                            live);
 
-		do {
-		    move(PROMPTROW, 0);
-		    (void) addstr(buf);
-		    move(PROMPTROW, (int) strlen(buf));
-		    clrtoeol();
-		    AddCh(' ');
-		} while
-		    (((c = (char) getch()) < 'a' || c > 'd')
-		     && (c != 'r')
-		     && (c != 'q'));
-	    }
+                do {
+                    move(PROMPTROW, 0);
+                    (void) addstr(buf);
+                    move(PROMPTROW, (int) strlen(buf));
+                    clrtoeol();
+                    AddCh(' ');
+                } while
+                    (((c = (char) getch()) < 'a' || c > 'd')
+                     && (c != 'r')
+                     && (c != 'q'));
+            }
 
-	    for (j = 0; j < 4; j++)
-		if (selection[j] != NOCARD) {
-		    move(BASEROW + (selection[j] / GRID_WIDTH) * 2 + 3,
-			 (selection[j] % GRID_WIDTH) * 5);
-		    (void) printw("     ");
-		}
+            for (j = 0; j < 4; j++)
+                if (selection[j] != NOCARD) {
+                    move(BASEROW + (selection[j] / GRID_WIDTH) * 2 + 3,
+                         (selection[j] % GRID_WIDTH) * 5);
+                    (void) printw("     ");
+                }
 
-	    if (c == 'r')
-		display_cards(deal_number);
-	    else if (c == 'q')
-		die(SIGINT);
-	    else {
-		i = c - 'a';
-		if (selection[i] == NOCARD)
-		    beep();
-		else {
-		    movecard(selection[i], freeptr[i]);
-		    freeptr[i] = selection[i];
-		}
-	    }
-	}
+            if (c == 'r')
+                display_cards(deal_number);
+            else if (c == 'q')
+                die(SIGINT);
+            else {
+                i = c - 'a';
+                if (selection[i] == NOCARD)
+                    beep();
+                else {
+                    movecard(selection[i], freeptr[i]);
+                    freeptr[i] = selection[i];
+                }
+            }
+        }
     }
 
     move(PROMPTROW, 0);
@@ -392,18 +392,18 @@ collect_discards(void)
     int row, col, cardno = 0, gridno;
 
     for (row = HEARTS; row <= CLUBS; row++) {
-	int finish = 0;
-	for (col = 1; col < GRID_WIDTH; col++) {
-	    gridno = row * GRID_WIDTH + col;
+        int finish = 0;
+        for (col = 1; col < GRID_WIDTH; col++) {
+            gridno = row * GRID_WIDTH + col;
 
-	    if ((grid[gridno] != (grid[gridno - 1] + 1)) && (finish == 0)) {
-		finish = 1;
-		freeptr[row] = gridno;
-	    };
+            if ((grid[gridno] != (grid[gridno - 1] + 1)) && (finish == 0)) {
+                finish = 1;
+                freeptr[row] = gridno;
+            };
 
-	    if ((finish != 0) && (grid[gridno] != NOCARD))
-		deck[cardno++] = grid[gridno];
-	}
+            if ((finish != 0) && (grid[gridno] != NOCARD))
+                deck[cardno++] = grid[gridno];
+        }
     }
     return cardno;
 }
@@ -415,13 +415,13 @@ game_finished(int deal)
     (void) printw("You finished the game in %d deals. This is ", deal);
     (void) standout();
     if (deal < 2)
-	(void) addstr("excellent");
+        (void) addstr("excellent");
     else if (deal < 4)
-	(void) addstr("good");
+        (void) addstr("good");
     else if (deal < 8)
-	(void) addstr("average");
+        (void) addstr("average");
     else
-	(void) addstr("poor");
+        (void) addstr("poor");
     (void) standend();
     (void) addstr(".         ");
     refresh();
@@ -440,29 +440,29 @@ use_pc_display(void)
     char *check = nl_langinfo(CODESET);
     if (!strcmp(check, "UTF-8")) {
 #if USE_WIDEC_SUPPORT
-	suits = uglyphs;
+        suits = uglyphs;
 #endif
     } else {
 #if HAVE_TIGETSTR
-	if (!strcmp(check, "IBM437") ||
-	    !strcmp(check, "CP437") ||
-	    !strcmp(check, "IBM850") ||
-	    !strcmp(check, "CP850")) {
-	    char *smacs = tigetstr("smacs");
-	    char *smpch = tigetstr("smpch");
-	    /*
-	     * The ncurses library makes this check to decide whether to allow
-	     * the alternate character set for the (normally) nonprinting codes.
-	     */
-	    if (smacs != 0 && smpch != 0 && !strcmp(smacs, smpch)) {
-		suits = glyphs;
-	    }
-	}
+        if (!strcmp(check, "IBM437") ||
+            !strcmp(check, "CP437") ||
+            !strcmp(check, "IBM850") ||
+            !strcmp(check, "CP850")) {
+            char *smacs = tigetstr("smacs");
+            char *smpch = tigetstr("smpch");
+            /*
+             * The ncurses library makes this check to decide whether to allow
+             * the alternate character set for the (normally) nonprinting codes.
+             */
+            if (smacs != 0 && smpch != 0 && !strcmp(smacs, smpch)) {
+                suits = glyphs;
+            }
+        }
 #endif
     }
 }
 #else
-#define use_pc_display()	/* nothing */
+#define use_pc_display()        /* nothing */
 #endif /* HAVE_LANGINFO_CODESET */
 
 int
@@ -482,21 +482,21 @@ main(int argc, char *argv[])
     cbreak();
 
     if (argc == 2)
-	srand((unsigned) atoi(argv[1]));
+        srand((unsigned) atoi(argv[1]));
     else
-	srand((unsigned) time((time_t *) 0));
+        srand((unsigned) time((time_t *) 0));
 
     init_vars();
 
     do {
-	deal_number++;
-	shuffle(deck_size);
-	deal_cards();
-	display_cards(deal_number);
-	play_game();
+        deal_number++;
+        shuffle(deck_size);
+        deal_cards();
+        display_cards(deal_number);
+        play_game();
     }
     while
-	((deck_size = collect_discards()) != 0);
+        ((deck_size = collect_discards()) != 0);
 
     game_finished(deal_number);
 

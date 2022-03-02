@@ -37,7 +37,7 @@
 #if HAVE_NC_FREEALL
 
 #if HAVE_LIBDBMALLOC
-extern int malloc_errfd;	/* FIXME */
+extern int malloc_errfd;        /* FIXME */
 #endif
 
 MODULE_ID("$Id: lib_freeall.c,v 1.74 2021/03/20 22:57:53 tom Exp $")
@@ -55,65 +55,65 @@ NCURSES_SP_NAME(_nc_freeall) (NCURSES_SP_DCL0)
 #if NO_LEAKS
     _nc_globals.leak_checking = TRUE;
     if (SP_PARM != 0) {
-	if (SP_PARM->_oldnum_list != 0) {
-	    FreeAndNull(SP_PARM->_oldnum_list);
-	}
-	if (SP_PARM->_panelHook.destroy != 0) {
-	    SP_PARM->_panelHook.destroy(SP_PARM->_panelHook.stdscr_pseudo_panel);
-	}
+        if (SP_PARM->_oldnum_list != 0) {
+            FreeAndNull(SP_PARM->_oldnum_list);
+        }
+        if (SP_PARM->_panelHook.destroy != 0) {
+            SP_PARM->_panelHook.destroy(SP_PARM->_panelHook.stdscr_pseudo_panel);
+        }
 #if NCURSES_EXT_COLORS
-	_nc_new_pair_leaks(SP_PARM);
+        _nc_new_pair_leaks(SP_PARM);
 #endif
     }
 #endif
     if (SP_PARM != 0) {
-	_nc_lock_global(curses);
+        _nc_lock_global(curses);
 
-	while (WindowList(SP_PARM) != 0) {
-	    WINDOWLIST *p, *q;
-	    bool deleted = FALSE;
+        while (WindowList(SP_PARM) != 0) {
+            WINDOWLIST *p, *q;
+            bool deleted = FALSE;
 
-	    /* Delete only windows that're not a parent */
-	    for (each_window(SP_PARM, p)) {
-		WINDOW *p_win = &(p->win);
-		bool found = FALSE;
-
-#ifndef USE_SP_WINDOWLIST
-		if (p->screen != SP_PARM)
-		    continue;
-#endif
-
-		for (each_window(SP_PARM, q)) {
-		    WINDOW *q_win = &(q->win);
+            /* Delete only windows that're not a parent */
+            for (each_window(SP_PARM, p)) {
+                WINDOW *p_win = &(p->win);
+                bool found = FALSE;
 
 #ifndef USE_SP_WINDOWLIST
-		    if (q->screen != SP_PARM)
-			continue;
+                if (p->screen != SP_PARM)
+                    continue;
 #endif
 
-		    if ((p != q)
-			&& (q_win->_flags & _SUBWIN)
-			&& (p_win == q_win->_parent)) {
-			found = TRUE;
-			break;
-		    }
-		}
+                for (each_window(SP_PARM, q)) {
+                    WINDOW *q_win = &(q->win);
 
-		if (!found) {
-		    if (delwin(p_win) != ERR)
-			deleted = TRUE;
-		    break;
-		}
-	    }
+#ifndef USE_SP_WINDOWLIST
+                    if (q->screen != SP_PARM)
+                        continue;
+#endif
 
-	    /*
-	     * Don't continue to loop if the list is trashed.
-	     */
-	    if (!deleted)
-		break;
-	}
-	delscreen(SP_PARM);
-	_nc_unlock_global(curses);
+                    if ((p != q)
+                        && (q_win->_flags & _SUBWIN)
+                        && (p_win == q_win->_parent)) {
+                        found = TRUE;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    if (delwin(p_win) != ERR)
+                        deleted = TRUE;
+                    break;
+                }
+            }
+
+            /*
+             * Don't continue to loop if the list is trashed.
+             */
+            if (!deleted)
+                break;
+        }
+        delscreen(SP_PARM);
+        _nc_unlock_global(curses);
     }
 
     (void) _nc_printf_string(0, empty_va);
@@ -151,10 +151,10 @@ NCURSES_SP_NAME(_nc_free_and_exit) (NCURSES_SP_DCLx int code)
     NCURSES_SP_NAME(_nc_flush) (NCURSES_SP_ARG);
     NCURSES_SP_NAME(_nc_freeall) (NCURSES_SP_ARG);
 #ifdef TRACE
-    curses_trace(0);		/* close trace file, freeing its setbuf */
+    curses_trace(0);            /* close trace file, freeing its setbuf */
     {
-	static va_list fake;
-	free(_nc_varargs("?", fake));
+        static va_list fake;
+        free(_nc_varargs("?", fake));
     }
 #endif
     exit(code);
@@ -170,7 +170,7 @@ NCURSES_EXPORT(void)
 NCURSES_SP_NAME(_nc_free_and_exit) (NCURSES_SP_DCLx int code)
 {
     if (SP_PARM) {
-	delscreen(SP_PARM);
+        delscreen(SP_PARM);
     }
     exit(code);
 }
@@ -191,7 +191,7 @@ exit_curses(int code)
 #if NCURSES_SP_FUNCS
     NCURSES_SP_NAME(_nc_free_and_exit) (CURRENT_SCREEN, code);
 #else
-    _nc_free_and_exit(code);	/* deprecated... */
+    _nc_free_and_exit(code);    /* deprecated... */
 #endif
 #endif
     exit(code);

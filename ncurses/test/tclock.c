@@ -59,7 +59,7 @@ dline(int pair, int from_x, int from_y, int x2, int y2, int ch)
     int d;
 
     if (has_colors())
-	(void) attrset(AttrArg(COLOR_PAIR(pair), 0));
+        (void) attrset(AttrArg(COLOR_PAIR(pair), 0));
 
     dx = x2 - from_x;
     dy = y2 - from_y;
@@ -74,35 +74,35 @@ dline(int pair, int from_x, int from_y, int x2, int y2, int ch)
     y = from_y;
 
     if (ax > ay) {
-	d = ay - (ax / 2);
+        d = ay - (ax / 2);
 
-	while (1) {
-	    plot(x, y, ch);
-	    if (x == x2)
-		return;
+        while (1) {
+            plot(x, y, ch);
+            if (x == x2)
+                return;
 
-	    if (d >= 0) {
-		y += sy;
-		d -= ax;
-	    }
-	    x += sx;
-	    d += ay;
-	}
+            if (d >= 0) {
+                y += sy;
+                d -= ax;
+            }
+            x += sx;
+            d += ay;
+        }
     } else {
-	d = ax - (ay / 2);
+        d = ax - (ay / 2);
 
-	while (1) {
-	    plot(x, y, ch);
-	    if (y == y2)
-		return;
+        while (1) {
+            plot(x, y, ch);
+            if (y == y2)
+                return;
 
-	    if (d >= 0) {
-		x += sx;
-		d -= ay;
-	    }
-	    y += sy;
-	    d += ax;
-	}
+            if (d >= 0) {
+                x += sx;
+                d -= ay;
+            }
+            y += sy;
+            d += ax;
+        }
     }
 }
 
@@ -111,17 +111,17 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: tclock [options]"
-	,""
-	,"Options:"
+        "Usage: tclock [options]"
+        ,""
+        ,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors"
+        ," -d       invoke use_default_colors"
 #endif
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -152,19 +152,19 @@ main(int argc, char *argv[])
 #endif
 
     while ((ch = getopt(argc, argv, "d")) != -1) {
-	switch (ch) {
+        switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    d_option = TRUE;
-	    break;
+        case 'd':
+            d_option = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     setlocale(LC_ALL, "");
 
@@ -175,110 +175,110 @@ main(int argc, char *argv[])
     curs_set(0);
 
     if (has_colors()) {
-	start_color();
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (d_option && (use_default_colors() == OK))
-	    my_bg = -1;
+        if (d_option && (use_default_colors() == OK))
+            my_bg = -1;
 #endif
-	init_pair(1, COLOR_RED, my_bg);
-	init_pair(2, COLOR_MAGENTA, my_bg);
-	init_pair(3, COLOR_GREEN, my_bg);
-	init_pair(4, COLOR_WHITE, COLOR_BLUE);
+        init_pair(1, COLOR_RED, my_bg);
+        init_pair(2, COLOR_MAGENTA, my_bg);
+        init_pair(3, COLOR_GREEN, my_bg);
+        init_pair(4, COLOR_WHITE, COLOR_BLUE);
     }
 #ifdef KEY_RESIZE
     keypad(stdscr, TRUE);
   restart:
 #endif
-    cx = (COLS - 1) / 2;	/* 39 */
-    cy = LINES / 2;		/* 12 */
+    cx = (COLS - 1) / 2;        /* 39 */
+    cy = LINES / 2;             /* 12 */
     if (cx / ASPECT < cy)
-	cr = cx / ASPECT;
+        cr = cx / ASPECT;
     else
-	cr = cy;
-    sradius = (5 * cr) / 6;	/* 10 */
-    mradius = (3 * cr) / 4;	/* 9 */
-    hradius = cr / 2;		/* 6 */
+        cr = cy;
+    sradius = (5 * cr) / 6;     /* 10 */
+    mradius = (3 * cr) / 4;     /* 9 */
+    hradius = cr / 2;           /* 6 */
 
     for (i = 0; i < 12; i++) {
-	sangle = (i + 1) * (2.0 * PI) / 12.0;
-	sdx = A2X(sangle, sradius);
-	sdy = A2Y(sangle, sradius);
-	_nc_SPRINTF(szChar, _nc_SLIMIT(sizeof(szChar)) "%d", i + 1);
+        sangle = (i + 1) * (2.0 * PI) / 12.0;
+        sdx = A2X(sangle, sradius);
+        sdy = A2Y(sangle, sradius);
+        _nc_SPRINTF(szChar, _nc_SLIMIT(sizeof(szChar)) "%d", i + 1);
 
-	MvAddStr(cy - sdy, cx + sdx, szChar);
+        MvAddStr(cy - sdy, cx + sdx, szChar);
     }
 
     MvAddStr(0, 0, "ASCII Clock by Howard Jones (ha.jones@ic.ac.uk),1994");
 
     sradius = (4 * sradius) / 5;
     for (;;) {
-	napms(100);
+        napms(100);
 
-	tim = time(0);
-	t = localtime(&tim);
+        tim = time(0);
+        t = localtime(&tim);
 
-	hours = (t->tm_hour + (t->tm_min / 60.0));
-	if (hours > 12.0)
-	    hours -= 12.0;
+        hours = (t->tm_hour + (t->tm_min / 60.0));
+        if (hours > 12.0)
+            hours -= 12.0;
 
-	mangle = ((t->tm_min + (t->tm_sec / 60.0)) * (2 * PI) / 60.0);
-	mdx = A2X(mangle, mradius);
-	mdy = A2Y(mangle, mradius);
+        mangle = ((t->tm_min + (t->tm_sec / 60.0)) * (2 * PI) / 60.0);
+        mdx = A2X(mangle, mradius);
+        mdy = A2Y(mangle, mradius);
 
-	hangle = ((hours) * (2.0 * PI) / 12.0);
-	hdx = A2X(hangle, hradius);
-	hdy = A2Y(hangle, hradius);
+        hangle = ((hours) * (2.0 * PI) / 12.0);
+        hdx = A2X(hangle, hradius);
+        hdy = A2Y(hangle, hradius);
 
 #if HAVE_GETTIMEOFDAY
-	gettimeofday(&current, 0);
-	fraction = ((double) current.tv_usec / 1.0e6);
+        gettimeofday(&current, 0);
+        fraction = ((double) current.tv_usec / 1.0e6);
 #endif
-	sangle = ((t->tm_sec + fraction) * (2.0 * PI) / 60.0);
-	sdx = A2X(sangle, sradius);
-	sdy = A2Y(sangle, sradius);
+        sangle = ((t->tm_sec + fraction) * (2.0 * PI) / 60.0);
+        sdx = A2X(sangle, sradius);
+        sdy = A2Y(sangle, sradius);
 
-	dline(3, cx, cy, cx + mdx, cy - mdy, '#');
+        dline(3, cx, cy, cx + mdx, cy - mdy, '#');
 
-	(void) attrset(A_REVERSE);
-	dline(2, cx, cy, cx + hdx, cy - hdy, '.');
-	attroff(A_REVERSE);
+        (void) attrset(A_REVERSE);
+        dline(2, cx, cy, cx + hdx, cy - hdy, '.');
+        attroff(A_REVERSE);
 
-	if (has_colors())
-	    (void) attrset(AttrArg(COLOR_PAIR(1), 0));
+        if (has_colors())
+            (void) attrset(AttrArg(COLOR_PAIR(1), 0));
 
-	dline(1, cx, cy, cx + sdx, cy - sdy, 'O');
+        dline(1, cx, cy, cx + sdx, cy - sdy, 'O');
 
-	if (has_colors())
-	    (void) attrset(AttrArg(COLOR_PAIR(0), 0));
+        if (has_colors())
+            (void) attrset(AttrArg(COLOR_PAIR(0), 0));
 
-	text = ctime(&tim);
-	MvPrintw(2, 0, "%.*s", (int) (strlen(text) - 1), text);
-	refresh();
-	if ((t->tm_sec % 5) == 0
-	    && t->tm_sec != lastbeep) {
-	    lastbeep = t->tm_sec;
-	    if (has_colors()) {
-		odd = !odd;
-		bkgd((chtype) (odd ? COLOR_PAIR(4) : COLOR_PAIR(0)));
-	    }
-	    beep();
-	}
+        text = ctime(&tim);
+        MvPrintw(2, 0, "%.*s", (int) (strlen(text) - 1), text);
+        refresh();
+        if ((t->tm_sec % 5) == 0
+            && t->tm_sec != lastbeep) {
+            lastbeep = t->tm_sec;
+            if (has_colors()) {
+                odd = !odd;
+                bkgd((chtype) (odd ? COLOR_PAIR(4) : COLOR_PAIR(0)));
+            }
+            beep();
+        }
 
-	if ((ch = getch()) != ERR) {
+        if ((ch = getch()) != ERR) {
 #ifdef KEY_RESIZE
-	    if (ch == KEY_RESIZE) {
-		flash();
-		erase();
-		wrefresh(curscr);
-		goto restart;
-	    }
+            if (ch == KEY_RESIZE) {
+                flash();
+                erase();
+                wrefresh(curscr);
+                goto restart;
+            }
 #endif
-	    break;
-	}
+            break;
+        }
 
-	dline(0, cx, cy, cx + hdx, cy - hdy, ' ');
-	dline(0, cx, cy, cx + mdx, cy - mdy, ' ');
-	dline(0, cx, cy, cx + sdx, cy - sdy, ' ');
+        dline(0, cx, cy, cx + hdx, cy - hdy, ' ');
+        dline(0, cx, cy, cx + mdx, cy - mdy, ' ');
+        dline(0, cx, cy, cx + sdx, cy - sdy, ' ');
 
     }
 

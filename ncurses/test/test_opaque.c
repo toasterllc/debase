@@ -69,8 +69,8 @@ static bool
 test_opaque_cleared(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	if (mode)
-	    wclear(win);
+        if (mode)
+            wclear(win);
     }
     return is_cleared(win);
 }
@@ -79,7 +79,7 @@ static bool
 test_opaque_idcok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	idcok(win, mode);
+        idcok(win, mode);
     }
     return is_idcok(win);
 }
@@ -88,7 +88,7 @@ static bool
 test_opaque_idlok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	idlok(win, mode);
+        idlok(win, mode);
     }
     return is_idlok(win);
 }
@@ -97,7 +97,7 @@ static bool
 test_opaque_immedok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	immedok(win, mode);
+        immedok(win, mode);
     }
     return is_immedok(win);
 }
@@ -106,7 +106,7 @@ static bool
 test_opaque_keypad(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	keypad(win, mode);
+        keypad(win, mode);
     }
     return is_keypad(win);
 }
@@ -115,7 +115,7 @@ static bool
 test_opaque_leaveok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	leaveok(win, mode);
+        leaveok(win, mode);
     }
     return is_leaveok(win);
 }
@@ -124,7 +124,7 @@ static bool
 test_opaque_nodelay(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	nodelay(win, mode);
+        nodelay(win, mode);
     }
     return is_nodelay(win);
 }
@@ -133,7 +133,7 @@ static bool
 test_opaque_notimeout(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	notimeout(win, mode);
+        notimeout(win, mode);
     }
     return is_notimeout(win);
 }
@@ -142,7 +142,7 @@ static bool
 test_opaque_scrollok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	scrollok(win, mode);
+        scrollok(win, mode);
     }
     return is_scrollok(win);
 }
@@ -151,7 +151,7 @@ static bool
 test_opaque_syncok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	syncok(win, mode);
+        syncok(win, mode);
     }
     return is_syncok(win);
 }
@@ -180,7 +180,7 @@ to_result(WINDOW *stswin, int cell, bool before)
     int y = status_y(stswin, cell);
     int x = status_x(stswin, cell) + 11;
     if (!before)
-	++x;
+        ++x;
     wmove(stswin, y, x);
 }
 
@@ -189,10 +189,10 @@ show_keyword(WINDOW *stswin, int cell, int active, const char *name)
 {
     to_keyword(stswin, cell);
     if (active == cell)
-	(void) wstandout(stswin);
+        (void) wstandout(stswin);
     wprintw(stswin, "%s:", name);
     if (active == cell)
-	(void) wstandend(stswin);
+        (void) wstandend(stswin);
 }
 /* *INDENT-OFF* */
 static struct {
@@ -226,13 +226,13 @@ show_opaque(WINDOW *stswin, WINDOW *txtwin, bool before, int active)
     int top, bottom;
 
     if (before) {
-	werase(stswin);
+        werase(stswin);
     }
     for (n = 0; n < (int) SIZEOF(bool_funcs); ++n) {
-	show_keyword(stswin, n, active, bool_funcs[n].name);
+        show_keyword(stswin, n, active, bool_funcs[n].name);
 
-	to_result(stswin, n, before);
-	wprintw(stswin, "%c", bool2c(bool_funcs[n].func(txtwin, -1)));
+        to_result(stswin, n, before);
+        wprintw(stswin, "%c", bool2c(bool_funcs[n].func(txtwin, -1)));
     }
 
     show_keyword(stswin, n, active, "is_pad");
@@ -258,9 +258,9 @@ show_opaque(WINDOW *stswin, WINDOW *txtwin, bool before, int active)
     show_keyword(stswin, n, active, "wgetscrreg");
     to_result(stswin, n, TRUE);
     if (wgetscrreg(txtwin, &top, &bottom) == OK)
-	wprintw(stswin, "%d,%d", top, bottom);
+        wprintw(stswin, "%d,%d", top, bottom);
     else
-	wprintw(stswin, "none");
+        wprintw(stswin, "none");
 
     wnoutrefresh(stswin);
     return active;
@@ -279,140 +279,140 @@ test_opaque(int level, char **argv, WINDOW *stswin)
     int active = 0;
 
     if (argv[level] == 0) {
-	beep();
-	return FALSE;
+        beep();
+        return FALSE;
     }
 
     if (level > 1) {
-	txtbox = newwin(LINES - BASE_Y, COLS - level, BASE_Y, level);
-	box(txtbox, 0, 0);
-	wnoutrefresh(txtbox);
+        txtbox = newwin(LINES - BASE_Y, COLS - level, BASE_Y, level);
+        box(txtbox, 0, 0);
+        wnoutrefresh(txtbox);
 
-	txtwin = derwin(txtbox,
-			getmaxy(txtbox) - 2,
-			getmaxx(txtbox) - 2,
-			1, 1);
-	base_y = 0;
+        txtwin = derwin(txtbox,
+                        getmaxy(txtbox) - 2,
+                        getmaxx(txtbox) - 2,
+                        1, 1);
+        base_y = 0;
     } else {
-	txtwin = stdscr;
-	base_y = BASE_Y;
+        txtwin = stdscr;
+        base_y = BASE_Y;
     }
 
-    keypad(txtwin, TRUE);	/* enable keyboard mapping */
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    keypad(txtwin, TRUE);       /* enable keyboard mapping */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     txt_y = base_y;
     txt_x = 0;
     wmove(txtwin, txt_y, txt_x);
 
     if ((fp = fopen(argv[level], "r")) != 0) {
-	while ((ch = fgetc(fp)) != EOF) {
-	    if (waddch(txtwin, UChar(ch)) != OK) {
-		break;
-	    }
-	}
-	fclose(fp);
+        while ((ch = fgetc(fp)) != EOF) {
+            if (waddch(txtwin, UChar(ch)) != OK) {
+                break;
+            }
+        }
+        fclose(fp);
     } else {
-	wprintw(txtwin, "Cannot open:\n%s", argv[1]);
+        wprintw(txtwin, "Cannot open:\n%s", argv[1]);
     }
 
     for (;;) {
-	if (in_status) {
-	    to_keyword(stswin, active);
+        if (in_status) {
+            to_keyword(stswin, active);
 
-	    ch = wgetch(stswin);
-	    show_opaque(stswin, txtwin, TRUE, active);
-	    if (Quit(ch))
-		break;
+            ch = wgetch(stswin);
+            show_opaque(stswin, txtwin, TRUE, active);
+            if (Quit(ch))
+                break;
 
-	    switch (ch) {
-	    case '\t':
-		in_status = FALSE;
-		break;
-	    case KEY_DOWN:
-	    case 'j':
-		if (active < (int) SIZEOF(bool_funcs) - 1)
-		    active++;
-		else
-		    beep();
-		break;
-	    case KEY_UP:
-	    case 'k':
-		if (active > 0)
-		    active--;
-		else
-		    beep();
-		break;
-	    case ' ':
-		bool_funcs[active].func(txtwin,
-					!bool_funcs[active].func(txtwin, -1));
-		break;
-	    default:
-		beep();
-		break;
-	    }
-	    show_opaque(stswin, txtwin, FALSE, in_status ? active : -1);
-	} else {
-	    ch = mvwgetch(txtwin, txt_y, txt_x);
-	    show_opaque(stswin, txtwin, TRUE, -1);
-	    if (Quit(ch))
-		break;
+            switch (ch) {
+            case '\t':
+                in_status = FALSE;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (active < (int) SIZEOF(bool_funcs) - 1)
+                    active++;
+                else
+                    beep();
+                break;
+            case KEY_UP:
+            case 'k':
+                if (active > 0)
+                    active--;
+                else
+                    beep();
+                break;
+            case ' ':
+                bool_funcs[active].func(txtwin,
+                                        !bool_funcs[active].func(txtwin, -1));
+                break;
+            default:
+                beep();
+                break;
+            }
+            show_opaque(stswin, txtwin, FALSE, in_status ? active : -1);
+        } else {
+            ch = mvwgetch(txtwin, txt_y, txt_x);
+            show_opaque(stswin, txtwin, TRUE, -1);
+            if (Quit(ch))
+                break;
 
-	    switch (ch) {
-	    case '\t':
-		in_status = TRUE;
-		break;
-	    case KEY_DOWN:
-	    case 'j':
-		if (txt_y < getmaxy(txtwin) - 1)
-		    txt_y++;
-		else
-		    beep();
-		break;
-	    case KEY_UP:
-	    case 'k':
-		if (txt_y > base_y)
-		    txt_y--;
-		else
-		    beep();
-		break;
-	    case KEY_LEFT:
-	    case 'h':
-		if (txt_x > 0)
-		    txt_x--;
-		else
-		    beep();
-		break;
-	    case KEY_RIGHT:
-	    case 'l':
-		if (txt_x < getmaxx(txtwin) - 1)
-		    txt_x++;
-		else
-		    beep();
-		break;
-	    case 'w':
-		test_opaque(level + 1, argv, stswin);
-		if (txtbox != 0) {
-		    touchwin(txtbox);
-		    wnoutrefresh(txtbox);
-		} else {
-		    touchwin(txtwin);
-		    wnoutrefresh(txtwin);
-		}
-		break;
-	    default:
-		beep();
-		napms(100);
-		break;
-	    }
+            switch (ch) {
+            case '\t':
+                in_status = TRUE;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (txt_y < getmaxy(txtwin) - 1)
+                    txt_y++;
+                else
+                    beep();
+                break;
+            case KEY_UP:
+            case 'k':
+                if (txt_y > base_y)
+                    txt_y--;
+                else
+                    beep();
+                break;
+            case KEY_LEFT:
+            case 'h':
+                if (txt_x > 0)
+                    txt_x--;
+                else
+                    beep();
+                break;
+            case KEY_RIGHT:
+            case 'l':
+                if (txt_x < getmaxx(txtwin) - 1)
+                    txt_x++;
+                else
+                    beep();
+                break;
+            case 'w':
+                test_opaque(level + 1, argv, stswin);
+                if (txtbox != 0) {
+                    touchwin(txtbox);
+                    wnoutrefresh(txtbox);
+                } else {
+                    touchwin(txtwin);
+                    wnoutrefresh(txtwin);
+                }
+                break;
+            default:
+                beep();
+                napms(100);
+                break;
+            }
 
-	    show_opaque(stswin, txtwin, FALSE, -1);
-	}
+            show_opaque(stswin, txtwin, FALSE, -1);
+        }
     }
     if (level > 1) {
-	delwin(txtwin);
-	delwin(txtbox);
+        delwin(txtwin);
+        delwin(txtbox);
     }
     return TRUE;
 }
@@ -430,23 +430,23 @@ test_set_tabsize(void)
     int y, x;
     int save_tabsize = TABSIZE;
 
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     for (y = 0; y < LINES; ++y) {
-	set_tabsize(y + 1);
-	if (move(y, 0) == ERR)
-	    break;
-	for (x = 0; x < COLS;) {
-	    addch('\t');
-	    if (addch('*') == ERR) {
-		break;
-	    }
-	    getyx(stdscr, y0, x0);
-	    if (y0 != y || x0 == x) {
-		break;
-	    }
-	}
+        set_tabsize(y + 1);
+        if (move(y, 0) == ERR)
+            break;
+        for (x = 0; x < COLS;) {
+            addch('\t');
+            if (addch('*') == ERR) {
+                break;
+            }
+            getyx(stdscr, y0, x0);
+            if (y0 != y || x0 == x) {
+                break;
+            }
+        }
     }
     getch();
     erase();
@@ -463,8 +463,8 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     if (argc < 2) {
-	fprintf(stderr, "usage: %s file\n", argv[0]);
-	return EXIT_FAILURE;
+        fprintf(stderr, "usage: %s file\n", argv[0]);
+        return EXIT_FAILURE;
     }
 
     initscr();

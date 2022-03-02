@@ -66,9 +66,9 @@
 
 #include "form.h"
 
-	/***********************
-	*   Default objects    *
-	***********************/
+        /***********************
+        *   Default objects    *
+        ***********************/
 extern FORM_EXPORT_VAR(FORM *)      _nc_Default_Form;
 extern FORM_EXPORT_VAR(FIELD *)     _nc_Default_Field;
 extern FORM_EXPORT_VAR(FIELDTYPE *) _nc_Default_FieldType;
@@ -149,27 +149,27 @@ TypeArgument;
 #define FIRST_ACTIVE_MAGIC (-291056)
 
 #define ALL_FORM_OPTS  (                \
-			O_NL_OVERLOAD  |\
-			O_BS_OVERLOAD   )
+                        O_NL_OVERLOAD  |\
+                        O_BS_OVERLOAD   )
 
 #define STD_FIELD_OPTS (Field_Options)( \
-			O_VISIBLE |\
-			O_ACTIVE  |\
-			O_PUBLIC  |\
-			O_EDIT    |\
-			O_WRAP    |\
-			O_BLANK   |\
-			O_AUTOSKIP|\
-			O_NULLOK  |\
-			O_PASSOK  |\
-			O_STATIC)
+                        O_VISIBLE |\
+                        O_ACTIVE  |\
+                        O_PUBLIC  |\
+                        O_EDIT    |\
+                        O_WRAP    |\
+                        O_BLANK   |\
+                        O_AUTOSKIP|\
+                        O_NULLOK  |\
+                        O_PASSOK  |\
+                        O_STATIC)
 
 #define ALL_FIELD_OPTS (Field_Options)( \
-			STD_FIELD_OPTS |\
-			O_DYNAMIC_JUSTIFY |\
-			O_NO_LEFT_STRIP |\
-			O_EDGE_INSERT_STAY |\
-			O_INPUT_LIMIT)
+                        STD_FIELD_OPTS |\
+                        O_DYNAMIC_JUSTIFY |\
+                        O_NO_LEFT_STRIP |\
+                        O_EDGE_INSERT_STAY |\
+                        O_INPUT_LIMIT)
 
 #define C_BLANK ' '
 #define is_blank(c) ((c)==C_BLANK)
@@ -203,15 +203,15 @@ extern FORM_EXPORT(FIELDTYPE *) _nc_TYPE_IPV4(void);
 
 extern FORM_EXPORT(FIELDTYPE *)
 _nc_generic_fieldtype(bool (*const field_check) (FORM*,
-						 FIELD *,
-						 const void *),
-		      bool (*const char_check)  (int,
-						 FORM*,
-						 FIELD*,
-						 const void *),
-		      bool (*const next)(FORM*,FIELD*,const void*),
-		      bool (*const prev)(FORM*,FIELD*,const void*),
-		      void (*freecallback)(void*));
+                                                 FIELD *,
+                                                 const void *),
+                      bool (*const char_check)  (int,
+                                                 FORM*,
+                                                 FIELD*,
+                                                 const void *),
+                      bool (*const next)(FORM*,FIELD*,const void*),
+                      bool (*const prev)(FORM*,FIELD*,const void*),
+                      void (*freecallback)(void*));
 extern FORM_EXPORT(int) _nc_set_generic_fieldtype(FIELD*, FIELDTYPE*, int (*)(void**));
 extern FORM_EXPORT(WINDOW*) _nc_form_cursor(const FORM* , int* , int* );
 
@@ -228,25 +228,25 @@ extern FORM_EXPORT(wchar_t *) _nc_Widen_String(char *, int *);
 
 #ifdef TRACE
 
-#define returnField(code)	TRACE_RETURN1(code,field)
-#define returnFieldPtr(code)	TRACE_RETURN1(code,field_ptr)
-#define returnForm(code)	TRACE_RETURN1(code,form)
-#define returnFieldType(code)	TRACE_RETURN1(code,field_type)
-#define returnFormHook(code)	TRACE_RETURN1(code,form_hook)
+#define returnField(code)       TRACE_RETURN1(code,field)
+#define returnFieldPtr(code)    TRACE_RETURN1(code,field_ptr)
+#define returnForm(code)        TRACE_RETURN1(code,form)
+#define returnFieldType(code)   TRACE_RETURN1(code,field_type)
+#define returnFormHook(code)    TRACE_RETURN1(code,form_hook)
 
-extern FORM_EXPORT(FIELD **)	    _nc_retrace_field_ptr (FIELD **);
-extern FORM_EXPORT(FIELD *)	    _nc_retrace_field (FIELD *);
+extern FORM_EXPORT(FIELD **)        _nc_retrace_field_ptr (FIELD **);
+extern FORM_EXPORT(FIELD *)         _nc_retrace_field (FIELD *);
 extern FORM_EXPORT(FIELDTYPE *)  _nc_retrace_field_type (FIELDTYPE *);
 extern FORM_EXPORT(FORM *)       _nc_retrace_form (FORM *);
 extern FORM_EXPORT(Form_Hook)    _nc_retrace_form_hook (Form_Hook);
 
 #else /* !TRACE */
 
-#define returnFieldPtr(code)	return code
-#define returnFieldType(code)	return code
-#define returnField(code)	return code
-#define returnForm(code)	return code
-#define returnFormHook(code)	return code
+#define returnFieldPtr(code)    return code
+#define returnFieldType(code)   return code
+#define returnField(code)       return code
+#define returnForm(code)        return code
+#define returnFormHook(code)    return code
 
 #endif /* TRACE/!TRACE */
 
@@ -265,31 +265,31 @@ extern FORM_EXPORT(Form_Hook)    _nc_retrace_form_hook (Form_Hook);
       int n; \
       wchar_t *list = _nc_Widen_String((char *)buffer, &len); \
       if (list != 0) \
-	{ \
-	  result = TRUE; \
-	  for (n = 0; n < len; ++n) \
-	    { \
-	      if (blank) \
-		{ \
-		  if (list[n] != ' ') \
-		    { \
-		      result = FALSE; \
-		      break; \
-		    } \
-		} \
-	      else if (list[n] == ' ') \
-		{ \
-		  blank = TRUE; \
-		  result = (n + 1 >= width); \
-		} \
-	      else if (!ccheck(list[n], NULL)) \
-		{ \
-		  result = FALSE; \
-		  break; \
-		} \
-	    } \
-	  free(list); \
-	} \
+        { \
+          result = TRUE; \
+          for (n = 0; n < len; ++n) \
+            { \
+              if (blank) \
+                { \
+                  if (list[n] != ' ') \
+                    { \
+                      result = FALSE; \
+                      break; \
+                    } \
+                } \
+              else if (list[n] == ' ') \
+                { \
+                  blank = TRUE; \
+                  result = (n + 1 >= width); \
+                } \
+              else if (!ccheck(list[n], NULL)) \
+                { \
+                  result = FALSE; \
+                  break; \
+                } \
+            } \
+          free(list); \
+        } \
     }
 #else
 #define Check_CTYPE_Field(result, buffer, width, ccheck) \
@@ -300,10 +300,10 @@ extern FORM_EXPORT(Form_Hook)    _nc_retrace_form_hook (Form_Hook);
       unsigned char *s = buffer; \
       int l = -1; \
       while (*buffer && ccheck(*buffer, NULL)) \
-	buffer++; \
+        buffer++; \
       l = (int)(buffer - s); \
       while (*buffer && *buffer == ' ') \
-	buffer++; \
+        buffer++; \
       result = ((*buffer || (l < width)) ? FALSE : TRUE); \
     }
 #endif

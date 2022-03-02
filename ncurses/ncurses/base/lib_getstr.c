@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_getstr.c
+**      lib_getstr.c
 **
-**	The routine wgetstr().
+**      The routine wgetstr().
 **
 */
 
@@ -52,29 +52,29 @@ static char *
 WipeOut(WINDOW *win, int y, int x, char *first, char *last, int echoed)
 {
     if (last > first) {
-	*--last = '\0';
-	if (echoed) {
-	    int y1 = win->_cury;
-	    int x1 = win->_curx;
+        *--last = '\0';
+        if (echoed) {
+            int y1 = win->_cury;
+            int x1 = win->_curx;
 
-	    wmove(win, y, x);
-	    waddstr(win, first);
-	    getyx(win, y, x);
-	    while (win->_cury < y1
-		   || (win->_cury == y1 && win->_curx < x1))
-		waddch(win, (chtype) ' ');
+            wmove(win, y, x);
+            waddstr(win, first);
+            getyx(win, y, x);
+            while (win->_cury < y1
+                   || (win->_cury == y1 && win->_curx < x1))
+                waddch(win, (chtype) ' ');
 
-	    wmove(win, y, x);
-	}
+            wmove(win, y, x);
+        }
     }
     return last;
 }
 
 NCURSES_EXPORT(int)
 wgetnstr_events(WINDOW *win,
-		char *str,
-		int maxlen,
-		EVENTLIST_1st(_nc_eventlist * evl))
+                char *str,
+                int maxlen,
+                EVENTLIST_1st(_nc_eventlist * evl))
 {
     SCREEN *sp = _nc_screen_of(win);
     TTY buf;
@@ -88,7 +88,7 @@ wgetnstr_events(WINDOW *win,
     T((T_CALLED("wgetnstr(%p,%p,%d)"), (void *) win, (void *) str, maxlen));
 
     if (!win || !str)
-	returnCode(ERR);
+        returnCode(ERR);
 
     maxlen = _nc_getstr_limit(maxlen);
 
@@ -109,82 +109,82 @@ wgetnstr_events(WINDOW *win,
     getyx(win, y, x);
 
     if (is_wintouched(win) || (win->_flags & _HASMOVED))
-	wrefresh(win);
+        wrefresh(win);
 
     while ((ch = wgetch_events(win, evl)) != ERR) {
-	/*
-	 * Some terminals (the Wyse-50 is the most common) generate
-	 * a \n from the down-arrow key.  With this logic, it is the
-	 * user's choice whether to set kcud=\n for wgetch();
-	 * terminating *getstr() with \n should work either way.
-	 */
-	if (ch == '\n'
-	    || ch == '\r'
-	    || ch == KEY_DOWN
-	    || ch == KEY_ENTER) {
-	    if (oldecho == TRUE
-		&& win->_cury == win->_maxy
-		&& win->_scroll)
-		wechochar(win, (chtype) '\n');
-	    break;
-	}
+        /*
+         * Some terminals (the Wyse-50 is the most common) generate
+         * a \n from the down-arrow key.  With this logic, it is the
+         * user's choice whether to set kcud=\n for wgetch();
+         * terminating *getstr() with \n should work either way.
+         */
+        if (ch == '\n'
+            || ch == '\r'
+            || ch == KEY_DOWN
+            || ch == KEY_ENTER) {
+            if (oldecho == TRUE
+                && win->_cury == win->_maxy
+                && win->_scroll)
+                wechochar(win, (chtype) '\n');
+            break;
+        }
 #ifdef KEY_EVENT
-	if (ch == KEY_EVENT)
-	    break;
+        if (ch == KEY_EVENT)
+            break;
 #endif
 #ifdef KEY_RESIZE
-	if (ch == KEY_RESIZE)
-	    break;
+        if (ch == KEY_RESIZE)
+            break;
 #endif
-	if (ch == erasec || ch == KEY_LEFT || ch == KEY_BACKSPACE) {
-	    if (str > oldstr) {
-		str = WipeOut(win, y, x, oldstr, str, oldecho);
-	    }
-	} else if (ch == killc) {
-	    while (str > oldstr) {
-		str = WipeOut(win, y, x, oldstr, str, oldecho);
-	    }
-	} else if (ch >= KEY_MIN
-		   || (str - oldstr >= maxlen)) {
-	    NCURSES_SP_NAME(beep) (NCURSES_SP_ARG);
-	} else {
-	    *str++ = (char) ch;
-	    if (oldecho == TRUE) {
-		int oldy = win->_cury;
-		if (waddch(win, (chtype) ch) == ERR) {
-		    /*
-		     * We can't really use the lower-right
-		     * corner for input, since it'll mess
-		     * up bookkeeping for erases.
-		     */
-		    win->_flags &= ~_WRAPPED;
-		    waddch(win, (chtype) ' ');
-		    str = WipeOut(win, y, x, oldstr, str, oldecho);
-		    continue;
-		} else if (win->_flags & _WRAPPED) {
-		    /*
-		     * If the last waddch forced a wrap &
-		     * scroll, adjust our reference point
-		     * for erasures.
-		     */
-		    if (win->_scroll
-			&& oldy == win->_maxy
-			&& win->_cury == win->_maxy) {
-			if (--y <= 0) {
-			    y = 0;
-			}
-		    }
-		    win->_flags &= ~_WRAPPED;
-		}
-		wrefresh(win);
-	    }
-	}
+        if (ch == erasec || ch == KEY_LEFT || ch == KEY_BACKSPACE) {
+            if (str > oldstr) {
+                str = WipeOut(win, y, x, oldstr, str, oldecho);
+            }
+        } else if (ch == killc) {
+            while (str > oldstr) {
+                str = WipeOut(win, y, x, oldstr, str, oldecho);
+            }
+        } else if (ch >= KEY_MIN
+                   || (str - oldstr >= maxlen)) {
+            NCURSES_SP_NAME(beep) (NCURSES_SP_ARG);
+        } else {
+            *str++ = (char) ch;
+            if (oldecho == TRUE) {
+                int oldy = win->_cury;
+                if (waddch(win, (chtype) ch) == ERR) {
+                    /*
+                     * We can't really use the lower-right
+                     * corner for input, since it'll mess
+                     * up bookkeeping for erases.
+                     */
+                    win->_flags &= ~_WRAPPED;
+                    waddch(win, (chtype) ' ');
+                    str = WipeOut(win, y, x, oldstr, str, oldecho);
+                    continue;
+                } else if (win->_flags & _WRAPPED) {
+                    /*
+                     * If the last waddch forced a wrap &
+                     * scroll, adjust our reference point
+                     * for erasures.
+                     */
+                    if (win->_scroll
+                        && oldy == win->_maxy
+                        && win->_cury == win->_maxy) {
+                        if (--y <= 0) {
+                            y = 0;
+                        }
+                    }
+                    win->_flags &= ~_WRAPPED;
+                }
+                wrefresh(win);
+            }
+        }
     }
 
     win->_curx = 0;
     win->_flags &= ~_WRAPPED;
     if (win->_cury < win->_maxy)
-	win->_cury++;
+        win->_cury++;
     wrefresh(win);
 
     /* Restore with a single I/O call, to fix minor asymmetry between
@@ -199,17 +199,17 @@ wgetnstr_events(WINDOW *win,
 
     *str = '\0';
     if (ch == ERR)
-	returnCode(ch);
+        returnCode(ch);
 
     T(("wgetnstr returns %s", _nc_visbuf(oldstr)));
 
 #ifdef KEY_EVENT
     if (ch == KEY_EVENT)
-	returnCode(ch);
+        returnCode(ch);
 #endif
 #ifdef KEY_RESIZE
     if (ch == KEY_RESIZE)
-	returnCode(ch);
+        returnCode(ch);
 #endif
 
     returnCode(OK);
@@ -220,8 +220,8 @@ NCURSES_EXPORT(int)
 wgetnstr(WINDOW *win, char *str, int maxlen)
 {
     returnCode(wgetnstr_events(win,
-			       str,
-			       maxlen,
-			       EVENTLIST_1st((_nc_eventlist *) 0)));
+                               str,
+                               maxlen,
+                               EVENTLIST_1st((_nc_eventlist *) 0)));
 }
 #endif

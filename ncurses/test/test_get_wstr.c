@@ -103,30 +103,30 @@ ShowFlavor(WINDOW *strwin, WINDOW *txtwin, int flavor, int limit)
 
     switch (flavor) {
     case eGetStr:
-	name = wins ? "wget_wstr" : "get_wstr";
-	break;
+        name = wins ? "wget_wstr" : "get_wstr";
+        break;
     case eGetNStr:
-	limited = TRUE;
-	name = wins ? "wgetn_wstr" : "getn_wstr";
-	break;
+        limited = TRUE;
+        name = wins ? "wgetn_wstr" : "getn_wstr";
+        break;
     case eMvGetStr:
-	name = wins ? "mvwget_wstr" : "mvget_wstr";
-	break;
+        name = wins ? "mvwget_wstr" : "mvget_wstr";
+        break;
     case eMvGetNStr:
-	limited = TRUE;
-	name = wins ? "mvwgetn_wstr" : "mvgetn_wstr";
-	break;
+        limited = TRUE;
+        name = wins ? "mvwgetn_wstr" : "mvgetn_wstr";
+        break;
     case eMaxFlavor:
-	break;
+        break;
     }
 
     wmove(strwin, 0, 0);
     werase(strwin);
 
     if (limited) {
-	wprintw(strwin, "%s(%d):", name, limit);
+        wprintw(strwin, "%s(%d):", name, limit);
     } else {
-	wprintw(strwin, "%s:", name);
+        wprintw(strwin, "%s:", name);
     }
     result = limited ? limit : Remainder(txtwin);
     ShowPrompt(txtwin, result);
@@ -140,25 +140,25 @@ recursive_test(int level, char **argv, WINDOW *strwin)
 {
     static const char *help[] =
     {
-	"Commands:",
-	"  q,^Q,ESC       - quit this program",
-	"  ^Q,ESC         - quit help-screen",
-	"",
-	"  p,<Up>         - move beginning of prompt one up row",
-	"  j,<Down>       - move beginning of prompt one down row",
-	"  h,<Left>       - move beginning of prompt one left column",
-	"  l,<Right>      - move beginning of prompt one right column",
-	"",
-	"  -              - reduce getnstr buffer-size one column",
-	"  +              - increase getnstr buffer-size one column",
-	"  :              - prompt for input-text",
-	"",
-	"  <              - scroll \"left\" through getstr-functions",
-	"  >              - scroll \"right\" through getstr-functions",
-	"",
-	"  w              - recur to subwindow",
-	"  ?,<F1>         - show help-screen",
-	0
+        "Commands:",
+        "  q,^Q,ESC       - quit this program",
+        "  ^Q,ESC         - quit help-screen",
+        "",
+        "  p,<Up>         - move beginning of prompt one up row",
+        "  j,<Down>       - move beginning of prompt one down row",
+        "  h,<Left>       - move beginning of prompt one left column",
+        "  l,<Right>      - move beginning of prompt one right column",
+        "",
+        "  -              - reduce getnstr buffer-size one column",
+        "  +              - increase getnstr buffer-size one column",
+        "  :              - prompt for input-text",
+        "",
+        "  <              - scroll \"left\" through getstr-functions",
+        "  >              - scroll \"right\" through getstr-functions",
+        "",
+        "  w              - recur to subwindow",
+        "  ?,<F1>         - show help-screen",
+        0
     };
     WINDOW *txtbox = 0;
     WINDOW *txtwin = 0;
@@ -173,184 +173,184 @@ recursive_test(int level, char **argv, WINDOW *strwin)
     wint_t buffer[MAX_COLS];
 
     if (argv[level] == 0) {
-	beep();
-	return FALSE;
+        beep();
+        return FALSE;
     }
 
     if (level > 1) {
-	txtbox = newwin(LINES - BASE_Y, COLS - level, BASE_Y, level);
-	box(txtbox, 0, 0);
-	wnoutrefresh(txtbox);
+        txtbox = newwin(LINES - BASE_Y, COLS - level, BASE_Y, level);
+        box(txtbox, 0, 0);
+        wnoutrefresh(txtbox);
 
-	txtwin = derwin(txtbox,
-			getmaxy(txtbox) - 2,
-			getmaxx(txtbox) - 2,
-			1, 1);
-	base_y = 0;
+        txtwin = derwin(txtbox,
+                        getmaxy(txtbox) - 2,
+                        getmaxx(txtbox) - 2,
+                        1, 1);
+        base_y = 0;
     } else {
-	txtwin = stdscr;
-	base_y = BASE_Y;
+        txtwin = stdscr;
+        base_y = BASE_Y;
     }
 
-    keypad(txtwin, TRUE);	/* enable keyboard mapping */
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    keypad(txtwin, TRUE);       /* enable keyboard mapping */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     txt_y = base_y;
     txt_x = 0;
     wmove(txtwin, txt_y, txt_x);
 
     if ((fp = fopen(argv[level], "r")) != 0) {
-	while ((ch = fgetc(fp)) != EOF) {
-	    if (waddch(txtwin, UChar(ch)) != OK) {
-		break;
-	    }
-	}
-	fclose(fp);
+        while ((ch = fgetc(fp)) != EOF) {
+            if (waddch(txtwin, UChar(ch)) != OK) {
+                break;
+            }
+        }
+        fclose(fp);
     } else {
-	wprintw(txtwin, "Cannot open:\n%s", argv[1]);
+        wprintw(txtwin, "Cannot open:\n%s", argv[1]);
     }
 
     wmove(txtwin, txt_y, txt_x);
     actual = ShowFlavor(strwin, txtwin, flavor, limit);
     while (!Quit(ch = mvwgetch(txtwin, txt_y, txt_x))) {
-	switch (ch) {
-	case KEY_DOWN:
-	case 'j':
-	    if (txt_y < getmaxy(txtwin) - 1) {
-		MovePrompt(txtwin, actual, ++txt_y, txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
-	case KEY_UP:
-	case 'k':
-	    if (txt_y > base_y) {
-		MovePrompt(txtwin, actual, --txt_y, txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
-	case KEY_LEFT:
-	case 'h':
-	    if (txt_x > 0) {
-		MovePrompt(txtwin, actual, txt_y, --txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
-	case KEY_RIGHT:
-	case 'l':
-	    if (txt_x < getmaxx(txtwin) - 1) {
-		MovePrompt(txtwin, actual, txt_y, ++txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
+        switch (ch) {
+        case KEY_DOWN:
+        case 'j':
+            if (txt_y < getmaxy(txtwin) - 1) {
+                MovePrompt(txtwin, actual, ++txt_y, txt_x);
+            } else {
+                beep();
+            }
+            break;
+        case KEY_UP:
+        case 'k':
+            if (txt_y > base_y) {
+                MovePrompt(txtwin, actual, --txt_y, txt_x);
+            } else {
+                beep();
+            }
+            break;
+        case KEY_LEFT:
+        case 'h':
+            if (txt_x > 0) {
+                MovePrompt(txtwin, actual, txt_y, --txt_x);
+            } else {
+                beep();
+            }
+            break;
+        case KEY_RIGHT:
+        case 'l':
+            if (txt_x < getmaxx(txtwin) - 1) {
+                MovePrompt(txtwin, actual, txt_y, ++txt_x);
+            } else {
+                beep();
+            }
+            break;
 
-	case 'w':
-	    recursive_test(level + 1, argv, strwin);
-	    if (txtbox != 0) {
-		touchwin(txtbox);
-		wnoutrefresh(txtbox);
-	    } else {
-		touchwin(txtwin);
-		wnoutrefresh(txtwin);
-	    }
-	    break;
+        case 'w':
+            recursive_test(level + 1, argv, strwin);
+            if (txtbox != 0) {
+                touchwin(txtbox);
+                wnoutrefresh(txtbox);
+            } else {
+                touchwin(txtwin);
+                wnoutrefresh(txtwin);
+            }
+            break;
 
-	case '-':
-	    if (limit > 0) {
-		actual = ShowFlavor(strwin, txtwin, flavor, --limit);
-		MovePrompt(txtwin, actual, txt_y, txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
+        case '-':
+            if (limit > 0) {
+                actual = ShowFlavor(strwin, txtwin, flavor, --limit);
+                MovePrompt(txtwin, actual, txt_y, txt_x);
+            } else {
+                beep();
+            }
+            break;
 
-	case '+':
-	    actual = ShowFlavor(strwin, txtwin, flavor, ++limit);
-	    MovePrompt(txtwin, actual, txt_y, txt_x);
-	    break;
+        case '+':
+            actual = ShowFlavor(strwin, txtwin, flavor, ++limit);
+            MovePrompt(txtwin, actual, txt_y, txt_x);
+            break;
 
-	case '<':
-	    if (flavor > 0) {
-		actual = ShowFlavor(strwin, txtwin, --flavor, limit);
-		MovePrompt(txtwin, actual, txt_y, txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
+        case '<':
+            if (flavor > 0) {
+                actual = ShowFlavor(strwin, txtwin, --flavor, limit);
+                MovePrompt(txtwin, actual, txt_y, txt_x);
+            } else {
+                beep();
+            }
+            break;
 
-	case '>':
-	    if (flavor + 1 < eMaxFlavor) {
-		actual = ShowFlavor(strwin, txtwin, ++flavor, limit);
-		MovePrompt(txtwin, actual, txt_y, txt_x);
-	    } else {
-		beep();
-	    }
-	    break;
+        case '>':
+            if (flavor + 1 < eMaxFlavor) {
+                actual = ShowFlavor(strwin, txtwin, ++flavor, limit);
+                MovePrompt(txtwin, actual, txt_y, txt_x);
+            } else {
+                beep();
+            }
+            break;
 
-	case ':':
-	    actual = ShowFlavor(strwin, txtwin, flavor, limit);
-	    *buffer = '\0';
-	    rc = ERR;
-	    echo();
-	    (void) wattrset(txtwin, A_REVERSE);
-	    switch (flavor) {
-	    case eGetStr:
-		if (txtwin != stdscr) {
-		    wmove(txtwin, txt_y, txt_x);
-		    rc = wget_wstr(txtwin, buffer);
-		} else {
-		    move(txt_y, txt_x);
-		    rc = get_wstr(buffer);
-		}
-		break;
-	    case eGetNStr:
-		if (txtwin != stdscr) {
-		    wmove(txtwin, txt_y, txt_x);
-		    rc = wgetn_wstr(txtwin, buffer, limit);
-		} else {
-		    move(txt_y, txt_x);
-		    rc = getn_wstr(buffer, limit);
-		}
-		break;
-	    case eMvGetStr:
-		if (txtwin != stdscr) {
-		    rc = mvwget_wstr(txtwin, txt_y, txt_x, buffer);
-		} else {
-		    rc = mvget_wstr(txt_y, txt_x, buffer);
-		}
-		break;
-	    case eMvGetNStr:
-		if (txtwin != stdscr) {
-		    rc = mvwgetn_wstr(txtwin, txt_y, txt_x, buffer, limit);
-		} else {
-		    rc = mvgetn_wstr(txt_y, txt_x, buffer, limit);
-		}
-		break;
-	    case eMaxFlavor:
-		break;
-	    }
-	    noecho();
-	    (void) wattrset(txtwin, A_NORMAL);
-	    wprintw(strwin, "%s:", (rc == OK) ? "OK" : "ERR");
-	    (void) waddwstr(strwin, (wchar_t *) buffer);
-	    wnoutrefresh(strwin);
-	    break;
-	case HELP_KEY_1:
-	    popup_msg(stdscr, help);
-	    break;
-	default:
-	    beep();
-	    break;
-	}
-	doupdate();
+        case ':':
+            actual = ShowFlavor(strwin, txtwin, flavor, limit);
+            *buffer = '\0';
+            rc = ERR;
+            echo();
+            (void) wattrset(txtwin, A_REVERSE);
+            switch (flavor) {
+            case eGetStr:
+                if (txtwin != stdscr) {
+                    wmove(txtwin, txt_y, txt_x);
+                    rc = wget_wstr(txtwin, buffer);
+                } else {
+                    move(txt_y, txt_x);
+                    rc = get_wstr(buffer);
+                }
+                break;
+            case eGetNStr:
+                if (txtwin != stdscr) {
+                    wmove(txtwin, txt_y, txt_x);
+                    rc = wgetn_wstr(txtwin, buffer, limit);
+                } else {
+                    move(txt_y, txt_x);
+                    rc = getn_wstr(buffer, limit);
+                }
+                break;
+            case eMvGetStr:
+                if (txtwin != stdscr) {
+                    rc = mvwget_wstr(txtwin, txt_y, txt_x, buffer);
+                } else {
+                    rc = mvget_wstr(txt_y, txt_x, buffer);
+                }
+                break;
+            case eMvGetNStr:
+                if (txtwin != stdscr) {
+                    rc = mvwgetn_wstr(txtwin, txt_y, txt_x, buffer, limit);
+                } else {
+                    rc = mvgetn_wstr(txt_y, txt_x, buffer, limit);
+                }
+                break;
+            case eMaxFlavor:
+                break;
+            }
+            noecho();
+            (void) wattrset(txtwin, A_NORMAL);
+            wprintw(strwin, "%s:", (rc == OK) ? "OK" : "ERR");
+            (void) waddwstr(strwin, (wchar_t *) buffer);
+            wnoutrefresh(strwin);
+            break;
+        case HELP_KEY_1:
+            popup_msg(stdscr, help);
+            break;
+        default:
+            beep();
+            break;
+        }
+        doupdate();
     }
     if (level > 1) {
-	delwin(txtwin);
-	delwin(txtbox);
+        delwin(txtwin);
+        delwin(txtbox);
     }
     return TRUE;
 }
@@ -364,8 +364,8 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     if (argc < 2) {
-	fprintf(stderr, "usage: %s file\n", argv[0]);
-	return EXIT_FAILURE;
+        fprintf(stderr, "usage: %s file\n", argv[0]);
+        return EXIT_FAILURE;
     }
 
     initscr();

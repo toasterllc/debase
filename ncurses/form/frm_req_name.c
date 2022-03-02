@@ -155,23 +155,23 @@ form_request_by_name(const char *str)
 
   if (str != 0 && (i = strlen(str)) != 0)
     {
-      char buf[16];		/* longest name is 10 chars */
+      char buf[16];             /* longest name is 10 chars */
 
       if (i > sizeof(buf) - 2)
-	i = sizeof(buf) - 2;
+        i = sizeof(buf) - 2;
       memcpy(buf, str, i);
       buf[i] = '\0';
 
       for (i = 0; buf[i] != '\0'; ++i)
-	{
-	  buf[i] = (char)toupper(UChar(buf[i]));
-	}
+        {
+          buf[i] = (char)toupper(UChar(buf[i]));
+        }
 
       for (i = 0; i < A_SIZE; i++)
-	{
-	  if (strcmp(request_names[i], buf) == 0)
-	    returnCode(MIN_FORM_COMMAND + (int)i);
-	}
+        {
+          if (strcmp(request_names[i], buf) == 0)
+            returnCode(MIN_FORM_COMMAND + (int)i);
+        }
     }
   RETURN(E_NO_MATCH);
 }

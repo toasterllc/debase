@@ -33,9 +33,9 @@
 /*
  * $Id: progs.priv.h,v 1.53 2021/06/26 20:43:19 tom Exp $
  *
- *	progs.priv.h
+ *      progs.priv.h
  *
- *	Header file for curses utility programs
+ *      Header file for curses utility programs
  */
 
 #ifndef PROGS_PRIV_H
@@ -46,7 +46,7 @@
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;
 #else
-#define MODULE_ID(id)		/*nothing */
+#define MODULE_ID(id)           /*nothing */
 #endif
 
 #include <stdlib.h>
@@ -69,12 +69,12 @@
 # define NAMLEN(dirent) strlen((dirent)->d_name)
 # if defined(_FILE_OFFSET_BITS) && defined(HAVE_STRUCT_DIRENT64)
 #  if !defined(_LP64) && (_FILE_OFFSET_BITS == 64)
-#   define	DIRENT	struct dirent64
+#   define      DIRENT  struct dirent64
 #  else
-#   define	DIRENT	struct dirent
+#   define      DIRENT  struct dirent
 #  endif
 # else
-#  define	DIRENT	struct dirent
+#  define       DIRENT  struct dirent
 # endif
 #else
 # define DIRENT struct direct
@@ -126,7 +126,7 @@ extern int optind;
 #include <curses.h>
 
 #if !(defined(NCURSES_WGETCH_EVENTS) && defined(NEED_KEY_EVENT))
-#undef KEY_EVENT		/* reduce compiler-warnings with Visual C++ */
+#undef KEY_EVENT                /* reduce compiler-warnings with Visual C++ */
 #endif
 
 #include <term_entry.h>
@@ -150,10 +150,10 @@ extern int optind;
 #define VtoTrace(opt) (unsigned) ((opt > 0) ? opt : (opt == 0))
 
 /* error-returns for tput */
-#define ErrUsage	2
-#define ErrTermType	3
-#define ErrCapName	4
-#define ErrSystem(n)	(4 + (n))
+#define ErrUsage        2
+#define ErrTermType     3
+#define ErrCapName      4
+#define ErrSystem(n)    (4 + (n))
 
 #if defined(__GNUC__) && defined(_FORTIFY_SOURCE)
 #define IGNORE_RC(func) errno = (int) func
@@ -183,19 +183,19 @@ extern int optind;
 #endif
 
 #ifndef R_OK
-#define	R_OK	4		/* Test for readable.  */
+#define R_OK    4               /* Test for readable.  */
 #endif
 
 #ifndef W_OK
-#define	W_OK	2		/* Test for writable.  */
+#define W_OK    2               /* Test for writable.  */
 #endif
 
 #ifndef X_OK
-#define	X_OK	1		/* Test for executable.  */
+#define X_OK    1               /* Test for executable.  */
 #endif
 
 #ifndef F_OK
-#define	F_OK	0		/* Test for existence.  */
+#define F_OK    0               /* Test for existence.  */
 #endif
 
 /* usually in <unistd.h> */
@@ -214,7 +214,7 @@ extern int optind;
 # elif defined(MAXPATHLEN)
 #  define PATH_MAX MAXPATHLEN
 # else
-#  define PATH_MAX 255		/* the Posix minimum pathsize */
+#  define PATH_MAX 255          /* the Posix minimum pathsize */
 # endif
 #endif
 
@@ -226,7 +226,7 @@ extern int optind;
 # if ('z'-'a' == 25) && ('z' < 127) && ('Z'-'A' == 25) && ('Z' < 127) && ('9' < 127)
 #  define isascii(c) (UChar(c) <= 127)
 # else
-#  define isascii(c) 1		/* not really ascii anyway */
+#  define isascii(c) 1          /* not really ascii anyway */
 # endif
 #endif
 

@@ -65,26 +65,26 @@ MODULE_ID("$Id: m_driver.c,v 1.37 2021/03/27 23:46:29 tom Exp $")
 +--------------------------------------------------------------------------*/
 static bool
 Is_Sub_String(
-	       bool IgnoreCaseFlag,
-	       const char *part,
-	       const char *string
+               bool IgnoreCaseFlag,
+               const char *part,
+               const char *string
 )
 {
   assert(part && string);
   if (IgnoreCaseFlag)
     {
       while (*string && *part)
-	{
-	  if (toupper(UChar(*string++)) != toupper(UChar(*part)))
-	    break;
-	  part++;
-	}
+        {
+          if (toupper(UChar(*string++)) != toupper(UChar(*part)))
+            break;
+          part++;
+        }
     }
   else
     {
       while (*string && *part)
-	if (*part != *string++)
-	  break;
+        if (*part != *string++)
+          break;
       part++;
     }
   return ((*part) ? FALSE : TRUE);
@@ -133,7 +133,7 @@ _nc_Match_Next_Character_In_Item_Name
       /* if we become to long, we need no further checking : there can't be
          a match ! */
       if ((menu->pindex + 1) > menu->namelen)
-	RETURN(E_NO_MATCH);
+        RETURN(E_NO_MATCH);
 
       Add_Character_To_Pattern(menu, ch);
       /* we artificially position one item back, because in the do...while
@@ -142,40 +142,40 @@ _nc_Match_Next_Character_In_Item_Name
          we do a NEXT_PATTERN or PREV_PATTERN search, we start with the
          one after or before the actual item. */
       if (--idx < 0)
-	idx = menu->nitems - 1;
+        idx = menu->nitems - 1;
     }
 
-  last = idx;			/* this closes the cycle */
+  last = idx;                   /* this closes the cycle */
 
   do
     {
       if (ch == BS)
-	{			/* we have to go backward */
-	  if (--idx < 0)
-	    idx = menu->nitems - 1;
-	}
+        {                       /* we have to go backward */
+          if (--idx < 0)
+            idx = menu->nitems - 1;
+        }
       else
-	{			/* otherwise we always go forward */
-	  if (++idx >= menu->nitems)
-	    idx = 0;
-	}
+        {                       /* otherwise we always go forward */
+          if (++idx >= menu->nitems)
+            idx = 0;
+        }
       if (Is_Sub_String((bool)((menu->opt & O_IGNORECASE) != 0),
-			menu->pattern,
-			menu->items[idx]->name.str)
-	)
-	found = TRUE;
+                        menu->pattern,
+                        menu->items[idx]->name.str)
+        )
+        found = TRUE;
       else
-	passed = TRUE;
+        passed = TRUE;
     }
   while (!found && (idx != last));
 
   if (found)
     {
       if (!((idx == (*item)->index) && passed))
-	{
-	  *item = menu->items[idx];
-	  RETURN(E_OK);
-	}
+        {
+          *item = menu->items[idx];
+          RETURN(E_OK);
+        }
       /* This point is reached, if we fully cycled through the item list
          and the only match we found is the starting item. With a NEXT_PATTERN
          or PREV_PATTERN scan this means, that there was no additional match.
@@ -189,10 +189,10 @@ _nc_Match_Next_Character_In_Item_Name
   else
     {
       if (ch && ch != BS && menu->pindex > 0)
-	{
-	  /* if we had no match with a new pattern, we have to restore it */
-	  Remove_Character_From_Pattern(menu);
-	}
+        {
+          /* if we had no match with a new pattern, we have to restore it */
+          Remove_Character_From_Pattern(menu);
+        }
     }
   RETURN(E_NO_MATCH);
 }
@@ -242,310 +242,310 @@ menu_driver(MENU *menu, int c)
       int rdiff;
 
       if (!((c == REQ_BACK_PATTERN)
-	    || (c == REQ_NEXT_MATCH) || (c == REQ_PREV_MATCH)))
-	{
-	  assert(menu->pattern);
-	  Reset_Pattern(menu);
-	}
+            || (c == REQ_NEXT_MATCH) || (c == REQ_PREV_MATCH)))
+        {
+          assert(menu->pattern);
+          Reset_Pattern(menu);
+        }
 
       switch (c)
-	{
-	case REQ_LEFT_ITEM:
-	    /*=================*/
-	  NAVIGATE(left);
-	  break;
+        {
+        case REQ_LEFT_ITEM:
+            /*=================*/
+          NAVIGATE(left);
+          break;
 
-	case REQ_RIGHT_ITEM:
-	    /*==================*/
-	  NAVIGATE(right);
-	  break;
+        case REQ_RIGHT_ITEM:
+            /*==================*/
+          NAVIGATE(right);
+          break;
 
-	case REQ_UP_ITEM:
-	    /*===============*/
-	  NAVIGATE(up);
-	  break;
+        case REQ_UP_ITEM:
+            /*===============*/
+          NAVIGATE(up);
+          break;
 
-	case REQ_DOWN_ITEM:
-	    /*=================*/
-	  NAVIGATE(down);
-	  break;
+        case REQ_DOWN_ITEM:
+            /*=================*/
+          NAVIGATE(down);
+          break;
 
-	case REQ_SCR_ULINE:
-	    /*=================*/
-	  if (my_top_row == 0 || !(item->up))
-	    result = E_REQUEST_DENIED;
-	  else
-	    {
-	      --my_top_row;
-	      item = item->up;
-	    }
-	  break;
+        case REQ_SCR_ULINE:
+            /*=================*/
+          if (my_top_row == 0 || !(item->up))
+            result = E_REQUEST_DENIED;
+          else
+            {
+              --my_top_row;
+              item = item->up;
+            }
+          break;
 
-	case REQ_SCR_DLINE:
-	    /*=================*/
-	  if ((my_top_row + menu->arows >= menu->rows) || !(item->down))
-	    {
-	      /* only if the menu has less items than rows, we can deny the
-	         request. Otherwise the epilogue of this routine adjusts the
-	         top row if necessary */
-	      result = E_REQUEST_DENIED;
-	    }
-	  else
-	    {
-	      my_top_row++;
-	      item = item->down;
-	    }
-	  break;
+        case REQ_SCR_DLINE:
+            /*=================*/
+          if ((my_top_row + menu->arows >= menu->rows) || !(item->down))
+            {
+              /* only if the menu has less items than rows, we can deny the
+                 request. Otherwise the epilogue of this routine adjusts the
+                 top row if necessary */
+              result = E_REQUEST_DENIED;
+            }
+          else
+            {
+              my_top_row++;
+              item = item->down;
+            }
+          break;
 
-	case REQ_SCR_DPAGE:
-	    /*=================*/
-	  rdiff = menu->rows - (menu->arows + my_top_row);
-	  if (rdiff > menu->arows)
-	    rdiff = menu->arows;
-	  if (rdiff <= 0)
-	    result = E_REQUEST_DENIED;
-	  else
-	    {
-	      my_top_row += rdiff;
-	      while (rdiff-- > 0 && item != 0 && item->down != 0)
-		item = item->down;
-	    }
-	  break;
+        case REQ_SCR_DPAGE:
+            /*=================*/
+          rdiff = menu->rows - (menu->arows + my_top_row);
+          if (rdiff > menu->arows)
+            rdiff = menu->arows;
+          if (rdiff <= 0)
+            result = E_REQUEST_DENIED;
+          else
+            {
+              my_top_row += rdiff;
+              while (rdiff-- > 0 && item != 0 && item->down != 0)
+                item = item->down;
+            }
+          break;
 
-	case REQ_SCR_UPAGE:
-	    /*=================*/
-	  rdiff = (menu->arows < my_top_row) ? menu->arows : my_top_row;
-	  if (rdiff <= 0)
-	    result = E_REQUEST_DENIED;
-	  else
-	    {
-	      my_top_row -= rdiff;
-	      while (rdiff-- > 0 && item != 0 && item->up != 0)
-		item = item->up;
-	    }
-	  break;
+        case REQ_SCR_UPAGE:
+            /*=================*/
+          rdiff = (menu->arows < my_top_row) ? menu->arows : my_top_row;
+          if (rdiff <= 0)
+            result = E_REQUEST_DENIED;
+          else
+            {
+              my_top_row -= rdiff;
+              while (rdiff-- > 0 && item != 0 && item->up != 0)
+                item = item->up;
+            }
+          break;
 
-	case REQ_FIRST_ITEM:
-	    /*==================*/
-	  item = menu->items[0];
-	  break;
+        case REQ_FIRST_ITEM:
+            /*==================*/
+          item = menu->items[0];
+          break;
 
-	case REQ_LAST_ITEM:
-	    /*=================*/
-	  item = menu->items[menu->nitems - 1];
-	  break;
+        case REQ_LAST_ITEM:
+            /*=================*/
+          item = menu->items[menu->nitems - 1];
+          break;
 
-	case REQ_NEXT_ITEM:
-	    /*=================*/
-	  if ((item->index + 1) >= menu->nitems)
-	    {
-	      if (menu->opt & O_NONCYCLIC)
-		result = E_REQUEST_DENIED;
-	      else
-		item = menu->items[0];
-	    }
-	  else
-	    item = menu->items[item->index + 1];
-	  break;
+        case REQ_NEXT_ITEM:
+            /*=================*/
+          if ((item->index + 1) >= menu->nitems)
+            {
+              if (menu->opt & O_NONCYCLIC)
+                result = E_REQUEST_DENIED;
+              else
+                item = menu->items[0];
+            }
+          else
+            item = menu->items[item->index + 1];
+          break;
 
-	case REQ_PREV_ITEM:
-	    /*=================*/
-	  if (item->index <= 0)
-	    {
-	      if (menu->opt & O_NONCYCLIC)
-		result = E_REQUEST_DENIED;
-	      else
-		item = menu->items[menu->nitems - 1];
-	    }
-	  else
-	    item = menu->items[item->index - 1];
-	  break;
+        case REQ_PREV_ITEM:
+            /*=================*/
+          if (item->index <= 0)
+            {
+              if (menu->opt & O_NONCYCLIC)
+                result = E_REQUEST_DENIED;
+              else
+                item = menu->items[menu->nitems - 1];
+            }
+          else
+            item = menu->items[item->index - 1];
+          break;
 
-	case REQ_TOGGLE_ITEM:
-	    /*===================*/
-	  if (menu->opt & O_ONEVALUE)
-	    {
-	      result = E_REQUEST_DENIED;
-	    }
-	  else
-	    {
-	      if (menu->curitem->opt & O_SELECTABLE)
-		{
-		  menu->curitem->value = !menu->curitem->value;
-		  Move_And_Post_Item(menu, menu->curitem);
-		  _nc_Show_Menu(menu);
-		}
-	      else
-		result = E_NOT_SELECTABLE;
-	    }
-	  break;
+        case REQ_TOGGLE_ITEM:
+            /*===================*/
+          if (menu->opt & O_ONEVALUE)
+            {
+              result = E_REQUEST_DENIED;
+            }
+          else
+            {
+              if (menu->curitem->opt & O_SELECTABLE)
+                {
+                  menu->curitem->value = !menu->curitem->value;
+                  Move_And_Post_Item(menu, menu->curitem);
+                  _nc_Show_Menu(menu);
+                }
+              else
+                result = E_NOT_SELECTABLE;
+            }
+          break;
 
-	case REQ_CLEAR_PATTERN:
-	    /*=====================*/
-	  /* already cleared in prologue */
-	  break;
+        case REQ_CLEAR_PATTERN:
+            /*=====================*/
+          /* already cleared in prologue */
+          break;
 
-	case REQ_BACK_PATTERN:
-	    /*====================*/
-	  if (menu->pindex > 0)
-	    {
-	      assert(menu->pattern);
-	      Remove_Character_From_Pattern(menu);
-	      pos_menu_cursor(menu);
-	    }
-	  else
-	    result = E_REQUEST_DENIED;
-	  break;
+        case REQ_BACK_PATTERN:
+            /*====================*/
+          if (menu->pindex > 0)
+            {
+              assert(menu->pattern);
+              Remove_Character_From_Pattern(menu);
+              pos_menu_cursor(menu);
+            }
+          else
+            result = E_REQUEST_DENIED;
+          break;
 
-	case REQ_NEXT_MATCH:
-	    /*==================*/
-	  assert(menu->pattern);
-	  if (menu->pattern[0])
-	    result = _nc_Match_Next_Character_In_Item_Name(menu, 0, &item);
-	  else
-	    {
-	      if ((item->index + 1) < menu->nitems)
-		item = menu->items[item->index + 1];
-	      else
-		{
-		  if (menu->opt & O_NONCYCLIC)
-		    result = E_REQUEST_DENIED;
-		  else
-		    item = menu->items[0];
-		}
-	    }
-	  break;
+        case REQ_NEXT_MATCH:
+            /*==================*/
+          assert(menu->pattern);
+          if (menu->pattern[0])
+            result = _nc_Match_Next_Character_In_Item_Name(menu, 0, &item);
+          else
+            {
+              if ((item->index + 1) < menu->nitems)
+                item = menu->items[item->index + 1];
+              else
+                {
+                  if (menu->opt & O_NONCYCLIC)
+                    result = E_REQUEST_DENIED;
+                  else
+                    item = menu->items[0];
+                }
+            }
+          break;
 
-	case REQ_PREV_MATCH:
-	    /*==================*/
-	  assert(menu->pattern);
-	  if (menu->pattern[0])
-	    result = _nc_Match_Next_Character_In_Item_Name(menu, BS, &item);
-	  else
-	    {
-	      if (item->index)
-		item = menu->items[item->index - 1];
-	      else
-		{
-		  if (menu->opt & O_NONCYCLIC)
-		    result = E_REQUEST_DENIED;
-		  else
-		    item = menu->items[menu->nitems - 1];
-		}
-	    }
-	  break;
+        case REQ_PREV_MATCH:
+            /*==================*/
+          assert(menu->pattern);
+          if (menu->pattern[0])
+            result = _nc_Match_Next_Character_In_Item_Name(menu, BS, &item);
+          else
+            {
+              if (item->index)
+                item = menu->items[item->index - 1];
+              else
+                {
+                  if (menu->opt & O_NONCYCLIC)
+                    result = E_REQUEST_DENIED;
+                  else
+                    item = menu->items[menu->nitems - 1];
+                }
+            }
+          break;
 
-	default:
-	    /*======*/
-	  result = E_UNKNOWN_COMMAND;
-	  break;
-	}
+        default:
+            /*======*/
+          result = E_UNKNOWN_COMMAND;
+          break;
+        }
     }
   else
-    {				/* not a command */
+    {                           /* not a command */
       if (!(c & ~((int)MAX_REGULAR_CHARACTER)) && isprint(UChar(c)))
-	result = _nc_Match_Next_Character_In_Item_Name(menu, c, &item);
+        result = _nc_Match_Next_Character_In_Item_Name(menu, c, &item);
 #ifdef NCURSES_MOUSE_VERSION
       else if (KEY_MOUSE == c)
-	{
-	  MEVENT event;
-	  WINDOW *uwin = Get_Menu_UserWin(menu);
+        {
+          MEVENT event;
+          WINDOW *uwin = Get_Menu_UserWin(menu);
 
-	  getmouse(&event);
-	  if ((event.bstate & (BUTTON1_CLICKED |
-			       BUTTON1_DOUBLE_CLICKED |
-			       BUTTON1_TRIPLE_CLICKED))
-	      && wenclose(uwin, event.y, event.x))
-	    {			/* we react only if the click was in the userwin, that means
-				 * inside the menu display area or at the decoration window.
-				 */
-	      WINDOW *sub = Get_Menu_Window(menu);
-	      int ry = event.y, rx = event.x;	/* screen coordinates */
+          getmouse(&event);
+          if ((event.bstate & (BUTTON1_CLICKED |
+                               BUTTON1_DOUBLE_CLICKED |
+                               BUTTON1_TRIPLE_CLICKED))
+              && wenclose(uwin, event.y, event.x))
+            {                   /* we react only if the click was in the userwin, that means
+                                 * inside the menu display area or at the decoration window.
+                                 */
+              WINDOW *sub = Get_Menu_Window(menu);
+              int ry = event.y, rx = event.x;   /* screen coordinates */
 
-	      result = E_REQUEST_DENIED;
-	      if (mouse_trafo(&ry, &rx, FALSE))
-		{		/* rx, ry are now "curses" coordinates */
-		  if (ry < sub->_begy)
-		    {		/* we clicked above the display region; this is
-				 * interpreted as "scroll up" request
-				 */
-		      if (event.bstate & BUTTON1_CLICKED)
-			result = menu_driver(menu, REQ_SCR_ULINE);
-		      else if (event.bstate & BUTTON1_DOUBLE_CLICKED)
-			result = menu_driver(menu, REQ_SCR_UPAGE);
-		      else if (event.bstate & BUTTON1_TRIPLE_CLICKED)
-			result = menu_driver(menu, REQ_FIRST_ITEM);
-		      RETURN(result);
-		    }
-		  else if (ry > sub->_begy + sub->_maxy)
-		    {		/* we clicked below the display region; this is
-				 * interpreted as "scroll down" request
-				 */
-		      if (event.bstate & BUTTON1_CLICKED)
-			result = menu_driver(menu, REQ_SCR_DLINE);
-		      else if (event.bstate & BUTTON1_DOUBLE_CLICKED)
-			result = menu_driver(menu, REQ_SCR_DPAGE);
-		      else if (event.bstate & BUTTON1_TRIPLE_CLICKED)
-			result = menu_driver(menu, REQ_LAST_ITEM);
-		      RETURN(result);
-		    }
-		  else if (wenclose(sub, event.y, event.x))
-		    {		/* Inside the area we try to find the hit item */
-		      int x, y;
+              result = E_REQUEST_DENIED;
+              if (mouse_trafo(&ry, &rx, FALSE))
+                {               /* rx, ry are now "curses" coordinates */
+                  if (ry < sub->_begy)
+                    {           /* we clicked above the display region; this is
+                                 * interpreted as "scroll up" request
+                                 */
+                      if (event.bstate & BUTTON1_CLICKED)
+                        result = menu_driver(menu, REQ_SCR_ULINE);
+                      else if (event.bstate & BUTTON1_DOUBLE_CLICKED)
+                        result = menu_driver(menu, REQ_SCR_UPAGE);
+                      else if (event.bstate & BUTTON1_TRIPLE_CLICKED)
+                        result = menu_driver(menu, REQ_FIRST_ITEM);
+                      RETURN(result);
+                    }
+                  else if (ry > sub->_begy + sub->_maxy)
+                    {           /* we clicked below the display region; this is
+                                 * interpreted as "scroll down" request
+                                 */
+                      if (event.bstate & BUTTON1_CLICKED)
+                        result = menu_driver(menu, REQ_SCR_DLINE);
+                      else if (event.bstate & BUTTON1_DOUBLE_CLICKED)
+                        result = menu_driver(menu, REQ_SCR_DPAGE);
+                      else if (event.bstate & BUTTON1_TRIPLE_CLICKED)
+                        result = menu_driver(menu, REQ_LAST_ITEM);
+                      RETURN(result);
+                    }
+                  else if (wenclose(sub, event.y, event.x))
+                    {           /* Inside the area we try to find the hit item */
+                      int x, y;
 
-		      ry = event.y;
-		      rx = event.x;
-		      if (wmouse_trafo(sub, &ry, &rx, FALSE))
-			{
-			  int i;
+                      ry = event.y;
+                      rx = event.x;
+                      if (wmouse_trafo(sub, &ry, &rx, FALSE))
+                        {
+                          int i;
 
-			  for (i = 0; i < menu->nitems; i++)
-			    {
-			      int err = _nc_menu_cursor_pos(menu,
-							    menu->items[i],
-							    &y, &x);
+                          for (i = 0; i < menu->nitems; i++)
+                            {
+                              int err = _nc_menu_cursor_pos(menu,
+                                                            menu->items[i],
+                                                            &y, &x);
 
-			      if (E_OK == err)
-				{
-				  if ((ry == y) &&
-				      (rx >= x) &&
-				      (rx < x + menu->itemlen))
-				    {
-				      item = menu->items[i];
-				      result = E_OK;
-				      break;
-				    }
-				}
-			    }
-			  if (E_OK == result)
-			    {	/* We found an item, now we can handle the click.
-				 * A single click just positions the menu cursor
-				 * to the clicked item. A double click toggles
-				 * the item.
-				 */
-			      if (event.bstate & BUTTON1_DOUBLE_CLICKED)
-				{
-				  _nc_New_TopRow_and_CurrentItem(menu,
-								 my_top_row,
-								 item);
-				  menu_driver(menu, REQ_TOGGLE_ITEM);
-				  result = E_UNKNOWN_COMMAND;
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	  else
-	    {
-	      if (menu->opt & O_MOUSE_MENU)
-		ungetmouse(&event);	/* let someone else handle this */
-	      result = E_REQUEST_DENIED;
-	    }
-	}
+                              if (E_OK == err)
+                                {
+                                  if ((ry == y) &&
+                                      (rx >= x) &&
+                                      (rx < x + menu->itemlen))
+                                    {
+                                      item = menu->items[i];
+                                      result = E_OK;
+                                      break;
+                                    }
+                                }
+                            }
+                          if (E_OK == result)
+                            {   /* We found an item, now we can handle the click.
+                                 * A single click just positions the menu cursor
+                                 * to the clicked item. A double click toggles
+                                 * the item.
+                                 */
+                              if (event.bstate & BUTTON1_DOUBLE_CLICKED)
+                                {
+                                  _nc_New_TopRow_and_CurrentItem(menu,
+                                                                 my_top_row,
+                                                                 item);
+                                  menu_driver(menu, REQ_TOGGLE_ITEM);
+                                  result = E_UNKNOWN_COMMAND;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+          else
+            {
+              if (menu->opt & O_MOUSE_MENU)
+                ungetmouse(&event);     /* let someone else handle this */
+              result = E_REQUEST_DENIED;
+            }
+        }
 #endif /* NCURSES_MOUSE_VERSION */
       else
-	result = E_UNKNOWN_COMMAND;
+        result = E_UNKNOWN_COMMAND;
     }
 
   if (item == 0)
@@ -557,9 +557,9 @@ menu_driver(MENU *menu, int c)
       /* Adjust the top row if it turns out that the current item unfortunately
          doesn't appear in the menu window */
       if (item->y < my_top_row)
-	my_top_row = item->y;
+        my_top_row = item->y;
       else if (item->y >= (my_top_row + menu->arows))
-	my_top_row = item->y - menu->arows + 1;
+        my_top_row = item->y - menu->arows + 1;
 
       _nc_New_TopRow_and_CurrentItem(menu, my_top_row, item);
 

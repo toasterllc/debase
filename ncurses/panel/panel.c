@@ -40,7 +40,7 @@
 MODULE_ID("$Id: panel.c,v 1.30 2020/09/26 18:05:17 tom Exp $")
 
 /*+-------------------------------------------------------------------------
-	_nc_retrace_panel (pan)
+        _nc_retrace_panel (pan)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(PANEL *)
@@ -52,7 +52,7 @@ _nc_retrace_panel(PANEL * pan)
 #endif
 
 /*+-------------------------------------------------------------------------
-	_nc_my_visbuf(ptr)
+        _nc_my_visbuf(ptr)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 #ifndef TRACE_TXT
@@ -71,22 +71,22 @@ _nc_my_visbuf(const void *ptr, int n)
 #endif
 
 /*+-------------------------------------------------------------------------
-	dPanel(text,pan)
+        dPanel(text,pan)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(void)
 _nc_dPanel(const char *text, const PANEL * pan)
 {
   _tracef("%s id=%s b=%s a=%s y=%d x=%d",
-	  text, USER_PTR(pan->user, 1),
-	  (pan->below) ? USER_PTR(pan->below->user, 2) : "--",
-	  (pan->above) ? USER_PTR(pan->above->user, 3) : "--",
-	  PSTARTY(pan), PSTARTX(pan));
+          text, USER_PTR(pan->user, 1),
+          (pan->below) ? USER_PTR(pan->below->user, 2) : "--",
+          (pan->above) ? USER_PTR(pan->above->user, 3) : "--",
+          PSTARTY(pan), PSTARTX(pan));
 }
 #endif
 
 /*+-------------------------------------------------------------------------
-	dStack(fmt,num,pan)
+        dStack(fmt,num,pan)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(void)
@@ -98,8 +98,8 @@ _nc_dStack(const char *fmt, int num, const PANEL * pan)
 
   _nc_SPRINTF(s80, _nc_SLIMIT(sizeof(s80)) fmt, num, pan);
   _tracef("%s b=%s t=%s", s80,
-	  (_nc_bottom_panel) ? USER_PTR(_nc_bottom_panel->user, 1) : "--",
-	  (_nc_top_panel) ? USER_PTR(_nc_top_panel->user, 2) : "--");
+          (_nc_bottom_panel) ? USER_PTR(_nc_bottom_panel->user, 1) : "--",
+          (_nc_top_panel) ? USER_PTR(_nc_top_panel->user, 2) : "--");
   if (pan)
     _tracef("pan id=%s", USER_PTR(pan->user, 1));
   pan = _nc_bottom_panel;
@@ -112,7 +112,7 @@ _nc_dStack(const char *fmt, int num, const PANEL * pan)
 #endif
 
 /*+-------------------------------------------------------------------------
-	Wnoutrefresh(pan) - debugging hook for wnoutrefresh
+        Wnoutrefresh(pan) - debugging hook for wnoutrefresh
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(void)
@@ -124,7 +124,7 @@ _nc_Wnoutrefresh(const PANEL * pan)
 #endif
 
 /*+-------------------------------------------------------------------------
-	Touchpan(pan)
+        Touchpan(pan)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(void)
@@ -136,7 +136,7 @@ _nc_Touchpan(const PANEL * pan)
 #endif
 
 /*+-------------------------------------------------------------------------
-	Touchline(pan,start,count)
+        Touchline(pan,start,count)
 --------------------------------------------------------------------------*/
 #ifdef TRACE
 PANEL_EXPORT(void)

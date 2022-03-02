@@ -62,21 +62,21 @@ set_item_value(ITEM *item, bool value)
       MENU *menu = item->imenu;
 
       if ((!(item->opt & O_SELECTABLE)) ||
-	  (menu && (menu->opt & O_ONEVALUE)))
-	RETURN(E_REQUEST_DENIED);
+          (menu && (menu->opt & O_ONEVALUE)))
+        RETURN(E_REQUEST_DENIED);
 
       if (item->value ^ value)
-	{
-	  item->value = value ? TRUE : FALSE;
-	  if (menu)
-	    {
-	      if (menu->status & _POSTED)
-		{
-		  Move_And_Post_Item(menu, item);
-		  _nc_Show_Menu(menu);
-		}
-	    }
-	}
+        {
+          item->value = value ? TRUE : FALSE;
+          if (menu)
+            {
+              if (menu->status & _POSTED)
+                {
+                  Move_And_Post_Item(menu, item);
+                  _nc_Show_Menu(menu);
+                }
+            }
+        }
     }
   else
     _nc_Default_Item.value = value;

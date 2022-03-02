@@ -58,11 +58,11 @@ _nc_menu_cursor_pos(const MENU *menu, const ITEM *item, int *pY, int *pX)
   else
     {
       if ((ITEM *)0 == item)
-	item = menu->curitem;
+        item = menu->curitem;
       assert(item != (ITEM *)0);
 
       if (!(menu->status & _POSTED))
-	return (E_NOT_POSTED);
+        return (E_NOT_POSTED);
 
       *pX = item->x * (menu->spc_cols + menu->itemlen);
       *pY = (item->y - menu->toprow) * menu->spc_rows;
@@ -96,16 +96,16 @@ pos_menu_cursor(const MENU *menu)
       assert(win && sub);
 
       if ((menu->opt & O_SHOWMATCH) && (menu->pindex > 0))
-	x += (menu->pindex + menu->marklen - 1);
+        x += (menu->pindex + menu->marklen - 1);
 
       wmove(sub, y, x);
 
       if (win != sub)
-	{
-	  wcursyncup(sub);
-	  wsyncup(sub);
-	  untouchwin(sub);
-	}
+        {
+          wcursyncup(sub);
+          wsyncup(sub);
+          untouchwin(sub);
+        }
     }
   RETURN(err);
 }

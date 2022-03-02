@@ -34,10 +34,10 @@
 /*
  * $Id: build.priv.h,v 1.12 2020/02/02 23:34:34 tom Exp $
  *
- *	build.priv.h
+ *      build.priv.h
  *
- *	This is a reduced version of curses.priv.h, for build-time utilities.
- *	Because it has fewer dependencies, this simplifies cross-compiling.
+ *      This is a reduced version of curses.priv.h, for build-time utilities.
+ *      Because it has fewer dependencies, this simplifies cross-compiling.
  *
  */
 
@@ -55,7 +55,7 @@ extern "C" {
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;
 #else
-#define MODULE_ID(id)		/*nothing */
+#define MODULE_ID(id)           /*nothing */
 #endif
 
 #include <stdlib.h>
@@ -67,7 +67,7 @@ extern "C" {
 
 #include <errno.h>
 
-#include <curses.h>		/* we'll use -Ipath directive to get the right one! */
+#include <curses.h>             /* we'll use -Ipath directive to get the right one! */
 
 /* usually in <unistd.h> */
 #ifndef EXIT_SUCCESS
@@ -88,7 +88,7 @@ extern "C" {
 /* declare these, to avoid needing term.h */
 #if BROKEN_LINKER || USE_REENTRANT
 #define NCURSES_ARRAY(name) \
-	NCURSES_WRAPPED_VAR(NCURSES_CONST char * const *, name)
+        NCURSES_WRAPPED_VAR(NCURSES_CONST char * const *, name)
 
     NCURSES_ARRAY(boolnames);
     NCURSES_ARRAY(boolfnames);
@@ -105,4 +105,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif				/* CURSES_PRIV_H */
+#endif                          /* CURSES_PRIV_H */

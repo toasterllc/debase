@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /*
- *	getenv_num.c -- obtain a number from the environment
+ *      getenv_num.c -- obtain a number from the environment
  */
 
 #include <curses.priv.h>
@@ -47,11 +47,11 @@ _nc_getenv_num(const char *name)
     long value;
 
     if ((src == 0)
-	|| (value = strtol(src, &dst, 0)) < 0
-	|| (dst == src)
-	|| (*dst != '\0')
-	|| (int) value < value)
-	value = -1;
+        || (value = strtol(src, &dst, 0)) < 0
+        || (dst == src)
+        || (*dst != '\0')
+        || (int) value < value)
+        value = -1;
 
     return (int) value;
 }
@@ -60,15 +60,15 @@ NCURSES_EXPORT(void)
 _nc_setenv_num(const char *name, int value)
 {
     if (name != 0 && value >= 0) {
-	char buffer[128];
+        char buffer[128];
 #if HAVE_SETENV
-	_nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer)) "%d", value);
-	setenv(name, buffer, 1);
+        _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer)) "%d", value);
+        setenv(name, buffer, 1);
 #elif HAVE_PUTENV
-	char *s;
-	_nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer)) "%s=%d", name, value);
-	if ((s = strdup(buffer)) != 0)
-	    putenv(s);
+        char *s;
+        _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer)) "%s=%d", name, value);
+        if ((s = strdup(buffer)) != 0)
+            putenv(s);
 #else
 #error expected setenv/putenv functions
 #endif

@@ -55,18 +55,18 @@ showit(void)
     napms(120);
     if ((ch = getch()) != ERR) {
 #ifdef KEY_RESIZE
-	if (ch == KEY_RESIZE) {
-	    erase();
-	} else
+        if (ch == KEY_RESIZE) {
+            erase();
+        } else
 #endif
-	if (ch == 'q') {
-	    cleanup();
-	    ExitProgram(EXIT_SUCCESS);
-	} else if (ch == 's') {
-	    nodelay(stdscr, FALSE);
-	} else if (ch == ' ') {
-	    nodelay(stdscr, TRUE);
-	}
+        if (ch == 'q') {
+            cleanup();
+            ExitProgram(EXIT_SUCCESS);
+        } else if (ch == 's') {
+            nodelay(stdscr, FALSE);
+        } else if (ch == ' ') {
+            nodelay(stdscr, TRUE);
+        }
     }
 }
 
@@ -78,8 +78,8 @@ get_colour(chtype *bold)
 
     *bold = A_NORMAL;
     if (attr > 8) {
-	*bold = A_BOLD;
-	attr &= 7;
+        *bold = A_BOLD;
+        attr &= 7;
     }
     return (short) (attr);
 }
@@ -142,17 +142,17 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: firework [options]"
-	,""
-	,"Options:"
+        "Usage: firework [options]"
+        ,""
+        ,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors, repeat to use in init_pair"
+        ," -d       invoke use_default_colors, repeat to use in init_pair"
 #endif
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -171,18 +171,18 @@ main(int argc, char *argv[])
 #endif
 
     while ((ch = getopt(argc, argv, "d")) != -1) {
-	switch (ch) {
+        switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    d_option = TRUE;
-	    break;
+        case 'd':
+            d_option = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	}
+        default:
+            usage();
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     InitAndCatch(initscr(), onsig);
     noecho();
@@ -191,10 +191,10 @@ main(int argc, char *argv[])
     nodelay(stdscr, TRUE);
 
     if (has_colors()) {
-	start_color();
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (d_option && (use_default_colors() == OK))
-	    my_bg = -1;
+        if (d_option && (use_default_colors() == OK))
+            my_bg = -1;
 #endif
     }
     curs_set(0);
@@ -202,32 +202,32 @@ main(int argc, char *argv[])
     seed = (unsigned) time((time_t *) 0);
     srand(seed);
     for (;;) {
-	do {
-	    start = rand() % (COLS - 3);
-	    end = rand() % (COLS - 3);
-	    start = (start < 2) ? 2 : start;
-	    end = (end < 2) ? 2 : end;
-	    direction = (start > end) ? -1 : 1;
-	    diff = abs(start - end);
-	} while (diff < 2 || diff >= LINES - 2);
-	(void) attrset(AttrArg(0, A_NORMAL));
-	for (row = 1; row < diff; row++) {
-	    MvPrintw(LINES - row, start + (row * direction),
-		     (direction < 0) ? "\\" : "/");
-	    if (flag++) {
-		showit();
-		erase();
-		flag = 0;
-	    }
-	}
-	if (flag++) {
-	    showit();
-	    flag = 0;
-	}
-	seed = (unsigned) time((time_t *) 0);
-	srand(seed);
-	explode(LINES - row, start + (diff * direction));
-	erase();
-	showit();
+        do {
+            start = rand() % (COLS - 3);
+            end = rand() % (COLS - 3);
+            start = (start < 2) ? 2 : start;
+            end = (end < 2) ? 2 : end;
+            direction = (start > end) ? -1 : 1;
+            diff = abs(start - end);
+        } while (diff < 2 || diff >= LINES - 2);
+        (void) attrset(AttrArg(0, A_NORMAL));
+        for (row = 1; row < diff; row++) {
+            MvPrintw(LINES - row, start + (row * direction),
+                     (direction < 0) ? "\\" : "/");
+            if (flag++) {
+                showit();
+                erase();
+                flag = 0;
+            }
+        }
+        if (flag++) {
+            showit();
+            flag = 0;
+        }
+        seed = (unsigned) time((time_t *) 0);
+        srand(seed);
+        explode(LINES - row, start + (diff * direction));
+        erase();
+        showit();
     }
 }

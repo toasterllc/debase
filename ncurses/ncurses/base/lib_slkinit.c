@@ -35,8 +35,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slkinit.c
- *	Soft key routines.
+ *      lib_slkinit.c
+ *      Soft key routines.
  *      Initialize soft labels.  Called by the user before initscr().
  */
 #include <curses.priv.h>
@@ -58,16 +58,16 @@ NCURSES_SP_NAME(slk_init) (NCURSES_SP_DCLx int format)
     T((T_CALLED("slk_init(%p,%d)"), (void *) SP_PARM, format));
 
     if (format >= 0
-	&& format <= 3
+        && format <= 3
 #ifdef USE_SP_RIPOFF
-	&& SP_PARM
-	&& SP_PARM->_prescreen
+        && SP_PARM
+        && SP_PARM->_prescreen
 #endif
-	&& !SoftkeyFormat) {
-	SoftkeyFormat = 1 + format;
-	code = NCURSES_SP_NAME(_nc_ripoffline) (NCURSES_SP_ARGx
-						-SLK_LINES(SoftkeyFormat),
-						_nc_slk_initialize);
+        && !SoftkeyFormat) {
+        SoftkeyFormat = 1 + format;
+        code = NCURSES_SP_NAME(_nc_ripoffline) (NCURSES_SP_ARGx
+                                                -SLK_LINES(SoftkeyFormat),
+                                                _nc_slk_initialize);
     }
     returnCode(code);
 }

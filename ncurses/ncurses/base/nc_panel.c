@@ -39,10 +39,10 @@ NCURSES_EXPORT(struct panelhook *)
 NCURSES_SP_NAME(_nc_panelhook) (NCURSES_SP_DCL0)
 {
     return (SP_PARM
-	    ? &(SP_PARM->_panelHook)
-	    : (CURRENT_SCREEN
-	       ? &(CURRENT_SCREEN->_panelHook)
-	       : 0));
+            ? &(SP_PARM->_panelHook)
+            : (CURRENT_SCREEN
+               ? &(CURRENT_SCREEN->_panelHook)
+               : 0));
 }
 
 #if NCURSES_SP_FUNCS

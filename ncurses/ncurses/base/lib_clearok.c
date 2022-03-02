@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_clearok.c
+**      lib_clearok.c
 **
-**	The routine clearok.
+**      The routine clearok.
 **
 */
 
@@ -49,8 +49,8 @@ clearok(WINDOW *win, bool flag)
     T((T_CALLED("clearok(%p,%d)"), (void *) win, flag));
 
     if (win) {
-	win->_clear = flag;
-	returnCode(OK);
+        win->_clear = flag;
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

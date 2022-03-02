@@ -62,12 +62,12 @@ TPUTS_PROTO(outc, c)
     int rc = OK;
 
     if (interrupted) {
-	char tmp = (char) c;
-	if (write(STDOUT_FILENO, &tmp, (size_t) 1) == -1)
-	    rc = ERR;
+        char tmp = (char) c;
+        if (write(STDOUT_FILENO, &tmp, (size_t) 1) == -1)
+            rc = ERR;
     } else {
-	if (putc(c, stdout) == EOF)
-	    rc = ERR;
+        if (putc(c, stdout) == EOF)
+            rc = ERR;
     }
     TPUTS_RETURN(rc);
 }
@@ -77,7 +77,7 @@ PutChar(int ch)
 {
     putchar(ch);
     fflush(stdout);
-    napms(moveit ? 10 : 50);	/* not really termcap... */
+    napms(moveit ? 10 : 50);    /* not really termcap... */
 }
 
 static void
@@ -90,7 +90,7 @@ static void
 MyShowCursor(int flag)
 {
     if (startC != 0 && finisC != 0) {
-	tputs(flag ? startC : finisC, 1, outc);
+        tputs(flag ? startC : finisC, 1, outc);
     }
 }
 
@@ -98,7 +98,7 @@ static void
 StandOut(int flag)
 {
     if (startS != 0 && finisS != 0) {
-	tputs(flag ? startS : finisS, 1, outc);
+        tputs(flag ? startS : finisS, 1, outc);
     }
 }
 
@@ -106,7 +106,7 @@ static void
 Underline(int flag)
 {
     if (startU != 0 && finisU != 0) {
-	tputs(flag ? startU : finisU, 1, outc);
+        tputs(flag ? startU : finisU, 1, outc);
     }
 }
 
@@ -117,52 +117,52 @@ ShowSign(char *string)
     int first, last;
 
     if (moveit != 0) {
-	tputs(tgoto(moveit, 0, height - 1), 1, outc);
-	tputs(wipeit, 1, outc);
+        tputs(tgoto(moveit, 0, height - 1), 1, outc);
+        tputs(wipeit, 1, outc);
     }
 
     while (*string != 0) {
-	int ch = *string;
-	if (ch != ' ') {
-	    if (moveit != 0) {
-		for (first = length - 2; first >= (string - base); first--) {
-		    if (first < length - 1) {
-			tputs(tgoto(moveit, first + 1, height - 1), 1, outc);
-			PutChar(' ');
-		    }
-		    tputs(tgoto(moveit, first, height - 1), 1, outc);
-		    PutChar(ch);
-		}
-	    } else {
-		last = ch;
-		if (isalpha(ch)) {
-		    first = isupper(ch) ? 'A' : 'a';
-		} else if (isdigit(ch)) {
-		    first = '0';
-		} else {
-		    first = ch;
-		}
-		if (first < last) {
-		    Underline(1);
-		    while (first < last) {
-			PutChar(first);
-			Backup();
-			first++;
-		    }
-		    Underline(0);
-		}
-	    }
-	    if (moveit != 0)
-		Backup();
-	}
-	StandOut(1);
-	PutChar(ch);
-	StandOut(0);
-	fflush(stdout);
-	string++;
+        int ch = *string;
+        if (ch != ' ') {
+            if (moveit != 0) {
+                for (first = length - 2; first >= (string - base); first--) {
+                    if (first < length - 1) {
+                        tputs(tgoto(moveit, first + 1, height - 1), 1, outc);
+                        PutChar(' ');
+                    }
+                    tputs(tgoto(moveit, first, height - 1), 1, outc);
+                    PutChar(ch);
+                }
+            } else {
+                last = ch;
+                if (isalpha(ch)) {
+                    first = isupper(ch) ? 'A' : 'a';
+                } else if (isdigit(ch)) {
+                    first = '0';
+                } else {
+                    first = ch;
+                }
+                if (first < last) {
+                    Underline(1);
+                    while (first < last) {
+                        PutChar(first);
+                        Backup();
+                        first++;
+                    }
+                    Underline(0);
+                }
+            }
+            if (moveit != 0)
+                Backup();
+        }
+        StandOut(1);
+        PutChar(ch);
+        StandOut(0);
+        fflush(stdout);
+        string++;
     }
     if (moveit != 0)
-	tputs(wipeit, 1, outc);
+        tputs(wipeit, 1, outc);
     putchar('\n');
 }
 
@@ -192,46 +192,46 @@ railroad(char **args)
 
     if (name == 0)
 #ifdef EXP_WIN32_DRIVER
-	name = "ms-terminal";
+        name = "ms-terminal";
 #else
-	name = "dumb";
+        name = "dumb";
 #endif
 
     InitAndCatch(z = tgetent(buffer, name), onsig);
     if (z >= 0) {
 
-	wipeit = tgetstr("ce", &ap);
-	height = tgetnum("li");
-	length = tgetnum("co");
-	moveit = tgetstr("cm", &ap);
+        wipeit = tgetstr("ce", &ap);
+        height = tgetnum("li");
+        length = tgetnum("co");
+        moveit = tgetstr("cm", &ap);
 
-	if (wipeit == 0
-	    || moveit == 0
-	    || height <= 0
-	    || length <= 0) {
-	    wipeit = 0;
-	    moveit = 0;
-	    height = 0;
-	    length = 0;
-	}
+        if (wipeit == 0
+            || moveit == 0
+            || height <= 0
+            || length <= 0) {
+            wipeit = 0;
+            moveit = 0;
+            height = 0;
+            length = 0;
+        }
 
-	startS = tgetstr("so", &ap);
-	finisS = tgetstr("se", &ap);
+        startS = tgetstr("so", &ap);
+        finisS = tgetstr("se", &ap);
 
-	startU = tgetstr("us", &ap);
-	finisU = tgetstr("ue", &ap);
+        startU = tgetstr("us", &ap);
+        finisU = tgetstr("ue", &ap);
 
-	backup = tgetstr("le", &ap);
+        backup = tgetstr("le", &ap);
 
-	startC = tgetstr("ve", &ap);
-	finisC = tgetstr("vi", &ap);
+        startC = tgetstr("ve", &ap);
+        finisC = tgetstr("vi", &ap);
 
-	MyShowCursor(0);
+        MyShowCursor(0);
 
-	while (*args) {
-	    ShowSign(*args++);
-	}
-	MyShowCursor(1);
+        while (*args) {
+            ShowSign(*args++);
+        }
+        MyShowCursor(1);
     }
 }
 
@@ -239,12 +239,12 @@ int
 main(int argc, char *argv[])
 {
     if (argc > 1) {
-	railroad(argv + 1);
+        railroad(argv + 1);
     } else {
-	static char world[] = "Hello World";
-	static char *hello[] =
-	{world, 0};
-	railroad(hello);
+        static char world[] = "Hello World";
+        static char *hello[] =
+        {world, 0};
+        railroad(hello);
     }
     ExitProgram(EXIT_SUCCESS);
 }

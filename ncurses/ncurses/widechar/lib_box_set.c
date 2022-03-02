@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_box_set.c
+**      lib_box_set.c
 **
-**	The routine wborder_set().
+**      The routine wborder_set().
 **
 */
 
@@ -44,10 +44,10 @@ MODULE_ID("$Id: lib_box_set.c,v 1.7 2020/02/02 23:34:34 tom Exp $")
 
 NCURSES_EXPORT(int)
 wborder_set(WINDOW *win,
-	    const ARG_CH_T ls, const ARG_CH_T rs,
-	    const ARG_CH_T ts, const ARG_CH_T bs,
-	    const ARG_CH_T tl, const ARG_CH_T tr,
-	    const ARG_CH_T bl, const ARG_CH_T br)
+            const ARG_CH_T ls, const ARG_CH_T rs,
+            const ARG_CH_T ts, const ARG_CH_T bs,
+            const ARG_CH_T tl, const ARG_CH_T tr,
+            const ARG_CH_T bl, const ARG_CH_T br)
 {
     NCURSES_SIZE_T i;
     NCURSES_SIZE_T endx, endy;
@@ -65,7 +65,7 @@ wborder_set(WINDOW *win,
        _tracech_t2(8, br)));
 
     if (!win)
-	returnCode(ERR);
+        returnCode(ERR);
 
 #define RENDER_WITH_DEFAULT(ch,def) w ##ch = _nc_render(win, (ch == 0) ? *(const ARG_CH_T)def : *ch)
 
@@ -92,17 +92,17 @@ wborder_set(WINDOW *win,
     endy = win->_maxy;
 
     for (i = 0; i <= endx; i++) {
-	win->_line[0].text[i] = wts;
-	win->_line[endy].text[i] = wbs;
+        win->_line[0].text[i] = wts;
+        win->_line[endy].text[i] = wbs;
     }
     win->_line[endy].firstchar = win->_line[0].firstchar = 0;
     win->_line[endy].lastchar = win->_line[0].lastchar = endx;
 
     for (i = 0; i <= endy; i++) {
-	win->_line[i].text[0] = wls;
-	win->_line[i].text[endx] = wrs;
-	win->_line[i].firstchar = 0;
-	win->_line[i].lastchar = endx;
+        win->_line[i].text[0] = wls;
+        win->_line[i].text[endx] = wrs;
+        win->_line[i].firstchar = 0;
+        win->_line[i].lastchar = endx;
     }
     win->_line[0].text[0] = wtl;
     win->_line[0].text[endx] = wtr;

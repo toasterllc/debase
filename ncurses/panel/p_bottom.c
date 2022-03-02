@@ -50,23 +50,23 @@ bottom_panel(PANEL * pan)
     {
       GetHook(pan);
       if (!Is_Bottom(pan))
-	{
+        {
 
-	  dBug(("--> bottom_panel %s", USER_PTR(pan->user, 1)));
+          dBug(("--> bottom_panel %s", USER_PTR(pan->user, 1)));
 
-	  HIDE_PANEL(pan, err, OK);
-	  assert(_nc_bottom_panel == _nc_stdscr_pseudo_panel);
+          HIDE_PANEL(pan, err, OK);
+          assert(_nc_bottom_panel == _nc_stdscr_pseudo_panel);
 
-	  dStack("<lb%d>", 1, pan);
+          dStack("<lb%d>", 1, pan);
 
-	  pan->below = _nc_bottom_panel;
-	  pan->above = _nc_bottom_panel->above;
-	  if (pan->above)
-	    pan->above->below = pan;
-	  _nc_bottom_panel->above = pan;
+          pan->below = _nc_bottom_panel;
+          pan->above = _nc_bottom_panel->above;
+          if (pan->above)
+            pan->above->below = pan;
+          _nc_bottom_panel->above = pan;
 
-	  dStack("<lb%d>", 9, pan);
-	}
+          dStack("<lb%d>", 9, pan);
+        }
     }
   else
     err = ERR;

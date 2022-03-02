@@ -35,8 +35,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slkclear.c
- *	Soft key routines.
+ *      lib_slkclear.c
+ *      Soft key routines.
  *      Remove soft labels from the screen.
  */
 #include <curses.priv.h>
@@ -51,17 +51,17 @@ NCURSES_SP_NAME(slk_clear) (NCURSES_SP_DCL0)
     T((T_CALLED("slk_clear(%p)"), (void *) SP_PARM));
 
     if (SP_PARM != 0 && SP_PARM->_slk != 0) {
-	SP_PARM->_slk->hidden = TRUE;
-	/* For simulated SLK's it looks much more natural to
-	   inherit those attributes from the standard screen */
-	SP_PARM->_slk->win->_nc_bkgd = StdScreen(SP_PARM)->_nc_bkgd;
-	WINDOW_ATTRS(SP_PARM->_slk->win) = WINDOW_ATTRS(StdScreen(SP_PARM));
-	if (SP_PARM->_slk->win == StdScreen(SP_PARM)) {
-	    rc = OK;
-	} else {
-	    werase(SP_PARM->_slk->win);
-	    rc = wrefresh(SP_PARM->_slk->win);
-	}
+        SP_PARM->_slk->hidden = TRUE;
+        /* For simulated SLK's it looks much more natural to
+           inherit those attributes from the standard screen */
+        SP_PARM->_slk->win->_nc_bkgd = StdScreen(SP_PARM)->_nc_bkgd;
+        WINDOW_ATTRS(SP_PARM->_slk->win) = WINDOW_ATTRS(StdScreen(SP_PARM));
+        if (SP_PARM->_slk->win == StdScreen(SP_PARM)) {
+            rc = OK;
+        } else {
+            werase(SP_PARM->_slk->win);
+            rc = wrefresh(SP_PARM->_slk->win);
+        }
     }
     returnCode(rc);
 }

@@ -57,9 +57,9 @@
 #define TRACE
 #endif
 
-#endif	/* broken compiler */
+#endif  /* broken compiler */
 
-#endif	/* MingW */
+#endif  /* MingW */
 
 /*
  * For reentrant code, we map the various global variables into SCREEN by
@@ -82,7 +82,7 @@
  * These symbols hide dllimport/dllexport, for compilers which care about it.
  */
 #if defined(__CYGWIN__) || (defined(_WIN32) || defined(_WIN64))
-# if defined(NCURSES_STATIC)	/* "static" here only implies "not-a-DLL" */
+# if defined(NCURSES_STATIC)    /* "static" here only implies "not-a-DLL" */
 #   define NCURSES_EXPORT_GENERAL_IMPORT
 #   define NCURSES_EXPORT_GENERAL_EXPORT
 # else

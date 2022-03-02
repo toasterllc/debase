@@ -56,7 +56,7 @@ static void
 cleanup(void)
 {
     while (connections != 0) {
-	_nc_db_close(connections->db);
+        _nc_db_close(connections->db);
     }
 }
 
@@ -67,10 +67,10 @@ find_connection(const char *path, bool modify)
     MYCONN *p;
 
     for (p = connections; p != 0; p = p->next) {
-	if (!strcmp(p->path, path) && p->modify == modify) {
-	    result = p->db;
-	    break;
-	}
+        if (!strcmp(p->path, path) && p->modify == modify) {
+            result = p->db;
+            break;
+        }
     }
 
     return result;
@@ -82,15 +82,15 @@ drop_connection(DB * db)
     MYCONN *p, *q;
 
     for (p = connections, q = 0; p != 0; q = p, p = p->next) {
-	if (p->db == db) {
-	    if (q != 0)
-		q->next = p->next;
-	    else
-		connections = p->next;
-	    free(p->path);
-	    free(p);
-	    break;
-	}
+        if (p->db == db) {
+            if (q != 0)
+                q->next = p->next;
+            else
+                connections = p->next;
+            free(p->path);
+            free(p);
+            break;
+        }
     }
 }
 
@@ -100,15 +100,15 @@ make_connection(DB * db, const char *path, bool modify)
     MYCONN *p = typeCalloc(MYCONN, 1);
 
     if (p != 0) {
-	p->db = db;
-	p->path = strdup(path);
-	p->modify = modify;
-	if (p->path != 0) {
-	    p->next = connections;
-	    connections = p;
-	} else {
-	    free(p);
-	}
+        p->db = db;
+        p->path = strdup(path);
+        p->modify = modify;
+        if (p->path != 0) {
+            p->next = connections;
+            connections = p;
+        } else {
+            free(p);
+        }
     }
 }
 
@@ -122,56 +122,56 @@ _nc_db_open(const char *path, bool modify)
     int code;
 
     if (connections == 0)
-	atexit(cleanup);
+        atexit(cleanup);
 
     if ((result = find_connection(path, modify)) == 0) {
 
 #if HASHED_DB_API >= 4
-	db_create(&result, NULL, 0);
-	if ((code = result->open(result,
-				 NULL,
-				 path,
-				 NULL,
-				 DB_HASH,
-				 modify ? DB_CREATE : DB_RDONLY,
-				 0644)) != 0) {
-	    result = 0;
-	}
+        db_create(&result, NULL, 0);
+        if ((code = result->open(result,
+                                 NULL,
+                                 path,
+                                 NULL,
+                                 DB_HASH,
+                                 modify ? DB_CREATE : DB_RDONLY,
+                                 0644)) != 0) {
+            result = 0;
+        }
 #elif HASHED_DB_API >= 3
-	db_create(&result, NULL, 0);
-	if ((code = result->open(result,
-				 path,
-				 NULL,
-				 DB_HASH,
-				 modify ? DB_CREATE : DB_RDONLY,
-				 0644)) != 0) {
-	    result = 0;
-	}
+        db_create(&result, NULL, 0);
+        if ((code = result->open(result,
+                                 path,
+                                 NULL,
+                                 DB_HASH,
+                                 modify ? DB_CREATE : DB_RDONLY,
+                                 0644)) != 0) {
+            result = 0;
+        }
 #elif HASHED_DB_API >= 2
-	if ((code = db_open(path,
-			    DB_HASH,
-			    modify ? DB_CREATE : DB_RDONLY,
-			    0644,
-			    (DB_ENV *) 0,
-			    (DB_INFO *) 0,
-			    &result)) != 0) {
-	    result = 0;
-	}
+        if ((code = db_open(path,
+                            DB_HASH,
+                            modify ? DB_CREATE : DB_RDONLY,
+                            0644,
+                            (DB_ENV *) 0,
+                            (DB_INFO *) 0,
+                            &result)) != 0) {
+            result = 0;
+        }
 #else
-	if ((result = dbopen(path,
-			     modify ? (O_CREAT | O_RDWR) : O_RDONLY,
-			     0644,
-			     DB_HASH,
-			     NULL)) == 0) {
-	    code = errno;
-	}
+        if ((result = dbopen(path,
+                             modify ? (O_CREAT | O_RDWR) : O_RDONLY,
+                             0644,
+                             DB_HASH,
+                             NULL)) == 0) {
+            code = errno;
+        }
 #endif
-	if (result != 0) {
-	    make_connection(result, path, modify);
-	    T(("opened %s", path));
-	} else {
-	    T(("cannot open %s: %s", path, strerror(code)));
-	}
+        if (result != 0) {
+            make_connection(result, path, modify);
+            T(("opened %s", path));
+        } else {
+            T(("cannot open %s: %s", path, strerror(code)));
+        }
     }
     return result;
 }
@@ -248,7 +248,7 @@ _nc_db_first(DB * db, DBT * key, DBT * data)
     memset(data, 0, sizeof(*data));
 #if HASHED_DB_API >= 2
     if ((result = db->cursor(db, NULL, &cursor, 0)) == 0) {
-	result = cursor->c_get(cursor, key, data, DB_FIRST);
+        result = cursor->c_get(cursor, key, data, DB_FIRST);
     }
 #else
     result = db->seq(db, key, data, 0);
@@ -269,9 +269,9 @@ _nc_db_next(DB * db, DBT * key, DBT * data)
 #if HASHED_DB_API >= 2
     (void) db;
     if (cursor != 0) {
-	result = cursor->c_get(cursor, key, data, DB_NEXT);
+        result = cursor->c_get(cursor, key, data, DB_NEXT);
     } else {
-	result = -1;
+        result = -1;
     }
 #else
     result = db->seq(db, key, data, R_NEXT);
@@ -292,7 +292,7 @@ _nc_db_have_index(DBT * key, DBT * data, char **buffer, int *size)
 
     (void) key;
     if (*have++ == 2) {
-	result = TRUE;
+        result = TRUE;
     }
     /*
      * Update params in any case for consistency with _nc_db_have_data().
@@ -314,10 +314,10 @@ _nc_db_have_data(DBT * key, DBT * data, char **buffer, int *size)
     char *have = (char *) data->data;
 
     if (*have++ == 0) {
-	if (data->size > key->size
-	    && IS_TIC_MAGIC(have)) {
-	    result = TRUE;
-	}
+        if (data->size > key->size
+            && IS_TIC_MAGIC(have)) {
+            result = TRUE;
+        }
     }
     /*
      * Update params in any case to make it simple to follow a index record

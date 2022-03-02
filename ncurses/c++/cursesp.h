@@ -101,9 +101,9 @@ protected:
 
 public:
   NCursesPanel(int nlines,
-	       int ncols,
-	       int begin_y = 0,
-	       int begin_x = 0)
+               int ncols,
+               int begin_y = 0,
+               int begin_x = 0)
     : NCursesWindow(nlines,ncols,begin_y,begin_x), p(0)
   {
     init();
@@ -207,16 +207,16 @@ public:
 
   // decorations
   virtual void frame(const char* title=NULL,
-		     const char* btitle=NULL);
+                     const char* btitle=NULL);
   // Put a frame around the panel and put the title centered in the top line
   // and btitle in the bottom line.
 
   virtual void boldframe(const char* title=NULL,
-			 const char* btitle=NULL);
+                         const char* btitle=NULL);
   // Same as frame(), but use highlighted attributes.
 
   virtual void label(const char* topLabel,
-		     const char* bottomLabel);
+                     const char* bottomLabel);
   // Put the title centered in the top line and btitle in the bottom line.
 
   virtual void centertext(int row,const char* label);
@@ -231,15 +231,15 @@ template<class T> class NCursesUserPanel : public NCursesPanel
 {
 public:
   NCursesUserPanel (int nlines,
-		    int ncols,
-		    int begin_y = 0,
-		    int begin_x = 0,
-		    const T* p_UserData = STATIC_CAST(T*)(0))
+                    int ncols,
+                    int begin_y = 0,
+                    int begin_x = 0,
+                    const T* p_UserData = STATIC_CAST(T*)(0))
     : NCursesPanel (nlines, ncols, begin_y, begin_x)
   {
       if (p)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>
-				     (p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>
+                                     (p_UserData)));
   };
   // This creates an user panel of the requested size with associated
   // user data pointed to by p_UserData.

@@ -83,8 +83,8 @@ Generic_This_Type(void *arg)
 |   Function      :  FIELDTYPE *_nc_generic_fieldtype(
 |                       bool (* const field_check)(FIELD *,const void *),
 |                       bool (* const char_check) (int, const void *),
-|   		        bool (*const next)(FORM*,FIELD*,const void*),
-|		        bool (*const prev)(FORM*,FIELD*,const void*),
+|                       bool (*const next)(FORM*,FIELD*,const void*),
+|                       bool (*const prev)(FORM*,FIELD*,const void*),
 |                       void (*freecallback)(void*))
 |
 |   Description   :  Create a new fieldtype. The application programmer must
@@ -102,11 +102,11 @@ Generic_This_Type(void *arg)
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(FIELDTYPE *)
 _nc_generic_fieldtype(bool (*const field_check) (FORM *, FIELD *, const void *),
-		      bool (*const char_check) (int, FORM *, FIELD *, const
-						void *),
-		      bool (*const next) (FORM *, FIELD *, const void *),
-		      bool (*const prev) (FORM *, FIELD *, const void *),
-		      void (*freecallback) (void *))
+                      bool (*const char_check) (int, FORM *, FIELD *, const
+                                                void *),
+                      bool (*const next) (FORM *, FIELD *, const void *),
+                      bool (*const prev) (FORM *, FIELD *, const void *),
+                      void (*freecallback) (void *))
 {
   int code = E_SYSTEM_ERROR;
   FIELDTYPE *res = (FIELDTYPE *)0;
@@ -125,17 +125,17 @@ _nc_generic_fieldtype(bool (*const field_check) (FORM *, FIELD *, const void *),
       res = typeMalloc(FIELDTYPE, 1);
 
       if (res)
-	{
-	  *res = *_nc_Default_FieldType;
-	  SetStatus(res, (_HAS_ARGS | _GENERIC));
-	  res->fieldcheck.gfcheck = field_check;
-	  res->charcheck.gccheck = char_check;
-	  res->genericarg = Generic_This_Type;
-	  res->freearg = freecallback;
-	  res->enum_next.gnext = next;
-	  res->enum_prev.gprev = prev;
-	  code = E_OK;
-	}
+        {
+          *res = *_nc_Default_FieldType;
+          SetStatus(res, (_HAS_ARGS | _GENERIC));
+          res->fieldcheck.gfcheck = field_check;
+          res->charcheck.gccheck = char_check;
+          res->genericarg = Generic_This_Type;
+          res->freearg = freecallback;
+          res->enum_next.gnext = next;
+          res->enum_prev.gprev = prev;
+          code = E_OK;
+        }
     }
   else
     code = E_BAD_ARGUMENT;
@@ -166,43 +166,43 @@ _nc_generic_fieldtype(bool (*const field_check) (FORM *, FIELD *, const void *),
 +--------------------------------------------------------------------------*/
 static TypeArgument *
 GenericArgument(const FIELDTYPE *typ,
-		int (*argiterator) (void **), int *err)
+                int (*argiterator) (void **), int *err)
 {
   TypeArgument *res = (TypeArgument *)0;
 
   if (typ != 0 && (typ->status & _HAS_ARGS) != 0 && err != 0 && argiterator != 0)
     {
       if (typ->status & _LINKED_TYPE)
-	{
-	  /* Composite fieldtypes keep track internally of their own memory */
-	  TypeArgument *p = typeMalloc(TypeArgument, 1);
+        {
+          /* Composite fieldtypes keep track internally of their own memory */
+          TypeArgument *p = typeMalloc(TypeArgument, 1);
 
-	  if (p)
-	    {
-	      p->left = GenericArgument(typ->left, argiterator, err);
-	      p->right = GenericArgument(typ->right, argiterator, err);
-	      return p;
-	    }
-	  else
-	    *err += 1;
-	}
+          if (p)
+            {
+              p->left = GenericArgument(typ->left, argiterator, err);
+              p->right = GenericArgument(typ->right, argiterator, err);
+              return p;
+            }
+          else
+            *err += 1;
+        }
       else
-	{
-	  assert(typ->genericarg != (void *)0);
-	  if (typ->genericarg == 0)
-	    *err += 1;
-	  else
-	    {
-	      void *argp;
-	      int valid = argiterator(&argp);
+        {
+          assert(typ->genericarg != (void *)0);
+          if (typ->genericarg == 0)
+            *err += 1;
+          else
+            {
+              void *argp;
+              int valid = argiterator(&argp);
 
-	      if (valid == 0 || argp == 0 ||
-		  !(res = (TypeArgument *)typ->genericarg(argp)))
-		{
-		  *err += 1;
-		}
-	    }
-	}
+              if (valid == 0 || argp == 0 ||
+                  !(res = (TypeArgument *)typ->genericarg(argp)))
+                {
+                  *err += 1;
+                }
+            }
+        }
     }
   return res;
 }
@@ -223,8 +223,8 @@ GenericArgument(const FIELDTYPE *typ,
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(int)
 _nc_set_generic_fieldtype(FIELD *field,
-			  FIELDTYPE *ftyp,
-			  int (*argiterator) (void **))
+                          FIELDTYPE *ftyp,
+                          int (*argiterator) (void **))
 {
   int code = E_SYSTEM_ERROR;
   int err = 0;
@@ -232,35 +232,35 @@ _nc_set_generic_fieldtype(FIELD *field,
   if (field)
     {
       if (field && field->type)
-	_nc_Free_Type(field);
+        _nc_Free_Type(field);
 
       field->type = ftyp;
       if (ftyp)
-	{
-	  if (argiterator)
-	    {
-	      /* The precondition is that the iterator is reset */
-	      field->arg = (void *)GenericArgument(field->type, argiterator, &err);
+        {
+          if (argiterator)
+            {
+              /* The precondition is that the iterator is reset */
+              field->arg = (void *)GenericArgument(field->type, argiterator, &err);
 
-	      if (err)
-		{
-		  _nc_Free_Argument(field->type, (TypeArgument *)(field->arg));
-		  field->type = (FIELDTYPE *)0;
-		  field->arg = (void *)0;
-		}
-	      else
-		{
-		  code = E_OK;
-		  if (field->type)
-		    field->type->ref++;
-		}
-	    }
-	}
+              if (err)
+                {
+                  _nc_Free_Argument(field->type, (TypeArgument *)(field->arg));
+                  field->type = (FIELDTYPE *)0;
+                  field->arg = (void *)0;
+                }
+              else
+                {
+                  code = E_OK;
+                  if (field->type)
+                    field->type->ref++;
+                }
+            }
+        }
       else
-	{
-	  field->arg = (void *)0;
-	  code = E_OK;
-	}
+        {
+          field->arg = (void *)0;
+          code = E_OK;
+        }
     }
   return code;
 }

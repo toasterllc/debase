@@ -42,68 +42,68 @@ _nc_init_wacs(void)
 {
     /* *INDENT-OFF* */
     static const struct {
-	unsigned map;
-	int	value[2];
+        unsigned map;
+        int     value[2];
     } table[] = {
-	/* VT100 symbols */
-	{ 'l',	{ '+',	0x250c }},	/* upper left corner */
-	{ 'm',	{ '+',	0x2514 }},	/* lower left corner */
-	{ 'k',	{ '+',	0x2510 }},	/* upper right corner */
-	{ 'j',	{ '+',	0x2518 }},	/* lower right corner */
-	{ 't',	{ '+',	0x251c }},	/* tee pointing left */
-	{ 'u',	{ '+',	0x2524 }},	/* tee pointing right */
-	{ 'v',	{ '+',	0x2534 }},	/* tee pointing up */
-	{ 'w',	{ '+',	0x252c }},	/* tee pointing down */
-	{ 'q',	{ '-',	0x2500 }},	/* horizontal line */
-	{ 'x',	{ '|',	0x2502 }},	/* vertical line */
-	{ 'n',	{ '+',	0x253c }},	/* large plus or crossover */
-	{ 'o',	{ '~',	0x23ba }},	/* scan line 1 */
-	{ 's',	{ '_',	0x23bd }},	/* scan line 9 */
-	{ '`',	{ '+',	0x25c6 }},	/* diamond */
-	{ 'a',	{ ':',	0x2592 }},	/* checker board (stipple) */
-	{ 'f',	{ '\'',	0x00b0 }},	/* degree symbol */
-	{ 'g',	{ '#',	0x00b1 }},	/* plus/minus */
-	{ '~',	{ 'o',	0x00b7 }},	/* bullet */
-	/* Teletype 5410v1 symbols */
-	{ ',',	{ '<',	0x2190 }},	/* arrow pointing left */
-	{ '+',	{ '>',	0x2192 }},	/* arrow pointing right */
-	{ '.',	{ 'v',	0x2193 }},	/* arrow pointing down */
-	{ '-',	{ '^',	0x2191 }},	/* arrow pointing up */
-	{ 'h',	{ '#',	0x2592 }},	/* board of squares */
-	{ 'i',	{ '#',	0x2603 }},	/* lantern symbol */
-	{ '0',	{ '#',	0x25ae }},	/* solid square block */
-	/* these defaults were invented for ncurses */
-	{ 'p',	{ '-',	0x23bb }},	/* scan line 3 */
-	{ 'r',	{ '-',	0x23bc }},	/* scan line 7 */
-	{ 'y',	{ '<',	0x2264 }},	/* less-than-or-equal-to */
-	{ 'z',	{ '>',	0x2265 }},	/* greater-than-or-equal-to */
-	{ '{',	{ '*',	0x03c0 }},	/* greek pi */
-	{ '|',	{ '!',	0x2260 }},	/* not-equal */
-	{ '}',	{ 'f',	0x00a3 }},	/* pound-sterling symbol */
-	/* thick-line-drawing */
-	{ 'L',	{ '+',	0x250f }},	/* upper left corner */
-	{ 'M',	{ '+',	0x2517 }},	/* lower left corner */
-	{ 'K',	{ '+',	0x2513 }},	/* upper right corner */
-	{ 'J',	{ '+',	0x251b }},	/* lower right corner */
-	{ 'T',	{ '+',	0x2523 }},	/* tee pointing left */
-	{ 'U',	{ '+',	0x252b }},	/* tee pointing right */
-	{ 'V',	{ '+',	0x253b }},	/* tee pointing up */
-	{ 'W',	{ '+',	0x2533 }},	/* tee pointing down */
-	{ 'Q',	{ '-',	0x2501 }},	/* horizontal line */
-	{ 'X',	{ '|',	0x2503 }},	/* vertical line */
-	{ 'N',	{ '+',	0x254b }},	/* large plus or crossover */
-	/* double-line-drawing */
-	{ 'C',	{ '+',	0x2554 }},	/* upper left corner */
-	{ 'D',	{ '+',	0x255a }},	/* lower left corner */
-	{ 'B',	{ '+',	0x2557 }},	/* upper right corner */
-	{ 'A',	{ '+',	0x255d }},	/* lower right corner */
-	{ 'G',	{ '+',	0x2563 }},	/* tee pointing left */
-	{ 'F',	{ '+',	0x2560 }},	/* tee pointing right */
-	{ 'H',	{ '+',	0x2569 }},	/* tee pointing up */
-	{ 'I',	{ '+',	0x2566 }},	/* tee pointing down */
-	{ 'R',	{ '-',	0x2550 }},	/* horizontal line */
-	{ 'Y',	{ '|',	0x2551 }},	/* vertical line */
-	{ 'E',	{ '+',	0x256c }},	/* large plus or crossover */
+        /* VT100 symbols */
+        { 'l',  { '+',  0x250c }},      /* upper left corner */
+        { 'm',  { '+',  0x2514 }},      /* lower left corner */
+        { 'k',  { '+',  0x2510 }},      /* upper right corner */
+        { 'j',  { '+',  0x2518 }},      /* lower right corner */
+        { 't',  { '+',  0x251c }},      /* tee pointing left */
+        { 'u',  { '+',  0x2524 }},      /* tee pointing right */
+        { 'v',  { '+',  0x2534 }},      /* tee pointing up */
+        { 'w',  { '+',  0x252c }},      /* tee pointing down */
+        { 'q',  { '-',  0x2500 }},      /* horizontal line */
+        { 'x',  { '|',  0x2502 }},      /* vertical line */
+        { 'n',  { '+',  0x253c }},      /* large plus or crossover */
+        { 'o',  { '~',  0x23ba }},      /* scan line 1 */
+        { 's',  { '_',  0x23bd }},      /* scan line 9 */
+        { '`',  { '+',  0x25c6 }},      /* diamond */
+        { 'a',  { ':',  0x2592 }},      /* checker board (stipple) */
+        { 'f',  { '\'', 0x00b0 }},      /* degree symbol */
+        { 'g',  { '#',  0x00b1 }},      /* plus/minus */
+        { '~',  { 'o',  0x00b7 }},      /* bullet */
+        /* Teletype 5410v1 symbols */
+        { ',',  { '<',  0x2190 }},      /* arrow pointing left */
+        { '+',  { '>',  0x2192 }},      /* arrow pointing right */
+        { '.',  { 'v',  0x2193 }},      /* arrow pointing down */
+        { '-',  { '^',  0x2191 }},      /* arrow pointing up */
+        { 'h',  { '#',  0x2592 }},      /* board of squares */
+        { 'i',  { '#',  0x2603 }},      /* lantern symbol */
+        { '0',  { '#',  0x25ae }},      /* solid square block */
+        /* these defaults were invented for ncurses */
+        { 'p',  { '-',  0x23bb }},      /* scan line 3 */
+        { 'r',  { '-',  0x23bc }},      /* scan line 7 */
+        { 'y',  { '<',  0x2264 }},      /* less-than-or-equal-to */
+        { 'z',  { '>',  0x2265 }},      /* greater-than-or-equal-to */
+        { '{',  { '*',  0x03c0 }},      /* greek pi */
+        { '|',  { '!',  0x2260 }},      /* not-equal */
+        { '}',  { 'f',  0x00a3 }},      /* pound-sterling symbol */
+        /* thick-line-drawing */
+        { 'L',  { '+',  0x250f }},      /* upper left corner */
+        { 'M',  { '+',  0x2517 }},      /* lower left corner */
+        { 'K',  { '+',  0x2513 }},      /* upper right corner */
+        { 'J',  { '+',  0x251b }},      /* lower right corner */
+        { 'T',  { '+',  0x2523 }},      /* tee pointing left */
+        { 'U',  { '+',  0x252b }},      /* tee pointing right */
+        { 'V',  { '+',  0x253b }},      /* tee pointing up */
+        { 'W',  { '+',  0x2533 }},      /* tee pointing down */
+        { 'Q',  { '-',  0x2501 }},      /* horizontal line */
+        { 'X',  { '|',  0x2503 }},      /* vertical line */
+        { 'N',  { '+',  0x254b }},      /* large plus or crossover */
+        /* double-line-drawing */
+        { 'C',  { '+',  0x2554 }},      /* upper left corner */
+        { 'D',  { '+',  0x255a }},      /* lower left corner */
+        { 'B',  { '+',  0x2557 }},      /* upper right corner */
+        { 'A',  { '+',  0x255d }},      /* lower right corner */
+        { 'G',  { '+',  0x2563 }},      /* tee pointing left */
+        { 'F',  { '+',  0x2560 }},      /* tee pointing right */
+        { 'H',  { '+',  0x2569 }},      /* tee pointing up */
+        { 'I',  { '+',  0x2566 }},      /* tee pointing down */
+        { 'R',  { '-',  0x2550 }},      /* horizontal line */
+        { 'Y',  { '|',  0x2551 }},      /* vertical line */
+        { 'E',  { '+',  0x256c }},      /* large plus or crossover */
     };
     /* *INDENT-ON* */
 
@@ -120,29 +120,29 @@ _nc_init_wacs(void)
        active ? "" : " not"));
 
     if ((_nc_wacs = typeCalloc(cchar_t, ACS_LEN)) != 0) {
-	unsigned n;
+        unsigned n;
 
-	for (n = 0; n < SIZEOF(table); ++n) {
-	    unsigned m;
+        for (n = 0; n < SIZEOF(table); ++n) {
+            unsigned m;
 #if NCURSES_WCWIDTH_GRAPHICS
-	    int wide = wcwidth((wchar_t) table[n].value[active]);
+            int wide = wcwidth((wchar_t) table[n].value[active]);
 #else
-	    int wide = 1;
+            int wide = 1;
 #endif
 
-	    m = table[n].map;
-	    if (active && (wide == 1)) {
-		SetChar(_nc_wacs[m], table[n].value[1], A_NORMAL);
-	    } else if (acs_map[m] & A_ALTCHARSET) {
-		SetChar(_nc_wacs[m], m, A_ALTCHARSET);
-	    } else {
-		SetChar(_nc_wacs[m], table[n].value[0], A_NORMAL);
-	    }
+            m = table[n].map;
+            if (active && (wide == 1)) {
+                SetChar(_nc_wacs[m], table[n].value[1], A_NORMAL);
+            } else if (acs_map[m] & A_ALTCHARSET) {
+                SetChar(_nc_wacs[m], m, A_ALTCHARSET);
+            } else {
+                SetChar(_nc_wacs[m], table[n].value[0], A_NORMAL);
+            }
 
-	    T(("#%d, width:%d SetChar(%c, %s) = %s",
-	       n, wide, m,
-	       _tracechar(table[n].value[active]),
-	       _tracecchar_t(&_nc_wacs[m])));
-	}
+            T(("#%d, width:%d SetChar(%c, %s) = %s",
+               n, wide, m,
+               _tracechar(table[n].value[active]),
+               _tracecchar_t(&_nc_wacs[m])));
+        }
     }
 }

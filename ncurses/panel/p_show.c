@@ -51,7 +51,7 @@ show_panel(PANEL * pan)
       GetHook(pan);
 
       if (Is_Top(pan))
-	returnCode(OK);
+        returnCode(OK);
 
       dBug(("--> show_panel %s", USER_PTR(pan->user, 1)));
 

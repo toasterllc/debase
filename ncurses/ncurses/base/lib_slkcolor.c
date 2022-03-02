@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
- *	lib_slkcolor.c
- *	Soft key routines.
- *	Set the label's color
+ *      lib_slkcolor.c
+ *      Soft key routines.
+ *      Set the label's color
  */
 #include <curses.priv.h>
 
@@ -49,13 +49,13 @@ _nc_slk_color(SCREEN *sp, int pair_arg)
     T((T_CALLED("slk_color(%p,%d)"), (void *) sp, pair_arg));
 
     if (sp != 0
-	&& sp->_slk != 0
-	&& pair_arg >= 0
-	&& pair_arg < sp->_pair_limit) {
-	TR(TRACE_ATTRS, ("... current is %s", _tracech_t(CHREF(sp->_slk->attr))));
-	SetPair(sp->_slk->attr, pair_arg);
-	TR(TRACE_ATTRS, ("new attribute is %s", _tracech_t(CHREF(sp->_slk->attr))));
-	code = OK;
+        && sp->_slk != 0
+        && pair_arg >= 0
+        && pair_arg < sp->_pair_limit) {
+        TR(TRACE_ATTRS, ("... current is %s", _tracech_t(CHREF(sp->_slk->attr))));
+        SetPair(sp->_slk->attr, pair_arg);
+        TR(TRACE_ATTRS, ("new attribute is %s", _tracech_t(CHREF(sp->_slk->attr))));
+        code = OK;
     }
     returnCode(code);
 }

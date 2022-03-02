@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_get_wch.c
+**      lib_get_wch.c
 **
-**	The routine get_wch().
+**      The routine get_wch().
 **
 */
 
@@ -63,57 +63,57 @@ wget_wch(WINDOW *win, wint_t *result)
     sp = _nc_screen_of(win);
 
     if (sp != 0) {
-	size_t count = 0;
+        size_t count = 0;
 
-	for (;;) {
-	    char buffer[(MB_LEN_MAX * 9) + 1];	/* allow some redundant shifts */
+        for (;;) {
+            char buffer[(MB_LEN_MAX * 9) + 1];  /* allow some redundant shifts */
 
-	    T(("reading %d of %d", (int) count + 1, (int) sizeof(buffer)));
-	    code = _nc_wgetch(win, &value, TRUE EVENTLIST_2nd((_nc_eventlist
-							       *) 0));
-	    if (code == ERR) {
-		break;
-	    } else if (code == KEY_CODE_YES) {
-		/*
-		 * If we were processing an incomplete multibyte character,
-		 * return an error since we have a KEY_xxx code which
-		 * interrupts it.  For some cases, we could improve this by
-		 * writing a new version of lib_getch.c(!), but it is not clear
-		 * whether the improvement would be worth the effort.
-		 */
-		if (count != 0) {
-		    safe_ungetch(SP_PARM, value);
-		    code = ERR;
-		}
-		break;
-	    } else if (count + 1 >= sizeof(buffer)) {
-		safe_ungetch(SP_PARM, value);
-		code = ERR;
-		break;
-	    } else {
-		int status;
+            T(("reading %d of %d", (int) count + 1, (int) sizeof(buffer)));
+            code = _nc_wgetch(win, &value, TRUE EVENTLIST_2nd((_nc_eventlist
+                                                               *) 0));
+            if (code == ERR) {
+                break;
+            } else if (code == KEY_CODE_YES) {
+                /*
+                 * If we were processing an incomplete multibyte character,
+                 * return an error since we have a KEY_xxx code which
+                 * interrupts it.  For some cases, we could improve this by
+                 * writing a new version of lib_getch.c(!), but it is not clear
+                 * whether the improvement would be worth the effort.
+                 */
+                if (count != 0) {
+                    safe_ungetch(SP_PARM, value);
+                    code = ERR;
+                }
+                break;
+            } else if (count + 1 >= sizeof(buffer)) {
+                safe_ungetch(SP_PARM, value);
+                code = ERR;
+                break;
+            } else {
+                int status;
 
-		buffer[count++] = (char) UChar(value);
-		reset_mbytes(state);
-		status = count_mbytes(buffer, count, state);
-		if (status >= 0) {
-		    wchar_t wch;
-		    reset_mbytes(state);
-		    if (check_mbytes(wch, buffer, count, state) != status) {
-			code = ERR;	/* the two calls should match */
-			safe_ungetch(SP_PARM, value);
-		    }
-		    value = wch;
-		    break;
-		}
-	    }
-	}
+                buffer[count++] = (char) UChar(value);
+                reset_mbytes(state);
+                status = count_mbytes(buffer, count, state);
+                if (status >= 0) {
+                    wchar_t wch;
+                    reset_mbytes(state);
+                    if (check_mbytes(wch, buffer, count, state) != status) {
+                        code = ERR;     /* the two calls should match */
+                        safe_ungetch(SP_PARM, value);
+                    }
+                    value = wch;
+                    break;
+                }
+            }
+        }
     } else {
-	code = ERR;
+        code = ERR;
     }
 
     if (result != 0)
-	*result = (wint_t) value;
+        *result = (wint_t) value;
 
     _nc_unlock_global(curses);
     T(("result %#o", value));

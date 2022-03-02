@@ -66,33 +66,33 @@ set_menu_opts(MENU *menu, Menu_Options opts)
   if (menu)
     {
       if (menu->status & _POSTED)
-	RETURN(E_POSTED);
+        RETURN(E_POSTED);
 
       if ((opts & O_ROWMAJOR) != (menu->opt & O_ROWMAJOR))
-	{
-	  /* we need this only if the layout really changed ... */
-	  if (menu->items && menu->items[0])
-	    {
-	      menu->toprow = 0;
-	      menu->curitem = menu->items[0];
-	      assert(menu->curitem);
-	      set_menu_format(menu, menu->frows, menu->fcols);
-	    }
-	}
+        {
+          /* we need this only if the layout really changed ... */
+          if (menu->items && menu->items[0])
+            {
+              menu->toprow = 0;
+              menu->curitem = menu->items[0];
+              assert(menu->curitem);
+              set_menu_format(menu, menu->frows, menu->fcols);
+            }
+        }
 
       menu->opt = opts;
 
       if (opts & O_ONEVALUE)
-	{
-	  ITEM **item;
+        {
+          ITEM **item;
 
-	  if (((item = menu->items) != (ITEM **)0))
-	    for (; *item; item++)
-	      (*item)->value = FALSE;
-	}
+          if (((item = menu->items) != (ITEM **)0))
+            for (; *item; item++)
+              (*item)->value = FALSE;
+        }
 
-      if (opts & O_SHOWDESC)	/* this also changes the geometry */
-	_nc_Calculate_Item_Length_and_Width(menu);
+      if (opts & O_SHOWDESC)    /* this also changes the geometry */
+        _nc_Calculate_Item_Length_and_Width(menu);
     }
   else
     _nc_Default_Menu.opt = opts;
@@ -116,9 +116,9 @@ set_menu_opts(MENU *menu, Menu_Options opts)
 MENU_EXPORT(int)
 menu_opts_off(MENU *menu, Menu_Options opts)
 {
-  MENU *cmenu = menu;		/* use a copy because set_menu_opts must detect
+  MENU *cmenu = menu;           /* use a copy because set_menu_opts must detect
 
-				   NULL menu itself to adjust its behavior */
+                                   NULL menu itself to adjust its behavior */
 
   T((T_CALLED("menu_opts_off(%p,%d)"), (void *)menu, opts));
 
@@ -149,9 +149,9 @@ menu_opts_off(MENU *menu, Menu_Options opts)
 MENU_EXPORT(int)
 menu_opts_on(MENU *menu, Menu_Options opts)
 {
-  MENU *cmenu = menu;		/* use a copy because set_menu_opts must detect
+  MENU *cmenu = menu;           /* use a copy because set_menu_opts must detect
 
-				   NULL menu itself to adjust its behavior */
+                                   NULL menu itself to adjust its behavior */
 
   T((T_CALLED("menu_opts_on(%p,%d)"), (void *)menu, opts));
 

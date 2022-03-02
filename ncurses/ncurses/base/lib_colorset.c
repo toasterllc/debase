@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_colorset.c
+**      lib_colorset.c
 **
-**	The routine wcolor_set().
+**      The routine wcolor_set().
 **
 */
 
@@ -53,13 +53,13 @@ wcolor_set(WINDOW *win, NCURSES_PAIRS_T pair_arg, void *opts)
     T((T_CALLED("wcolor_set(%p,%d)"), (void *) win, color_pair));
     set_extended_pair(opts, color_pair);
     if (win
-	&& (SP != 0)
-	&& (color_pair >= 0)
-	&& (color_pair < SP->_pair_limit)) {
-	TR(TRACE_ATTRS, ("... current %ld", (long) GET_WINDOW_PAIR(win)));
-	SET_WINDOW_PAIR(win, color_pair);
-	if_EXT_COLORS(win->_color = color_pair);
-	code = OK;
+        && (SP != 0)
+        && (color_pair >= 0)
+        && (color_pair < SP->_pair_limit)) {
+        TR(TRACE_ATTRS, ("... current %ld", (long) GET_WINDOW_PAIR(win)));
+        SET_WINDOW_PAIR(win, color_pair);
+        if_EXT_COLORS(win->_color = color_pair);
+        code = OK;
     }
     returnCode(code);
 }

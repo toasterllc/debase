@@ -58,13 +58,13 @@ data_behind(const FORM *form)
 
       field = form->current;
       if (!Single_Line_Field(field))
-	{
-	  result = (form->toprow == 0) ? FALSE : TRUE;
-	}
+        {
+          result = (form->toprow == 0) ? FALSE : TRUE;
+        }
       else
-	{
-	  result = (form->begincol == 0) ? FALSE : TRUE;
-	}
+        {
+          result = (form->begincol == 0) ? FALSE : TRUE;
+        }
     }
   returnBool(result);
 }
@@ -92,31 +92,31 @@ Only_Padding(WINDOW *w, int len, int pad)
   for (j = 0; j < len; ++j)
     {
       if (wmove(w, y, x + j) != ERR)
-	{
+        {
 #if USE_WIDEC_SUPPORT
-	  if (win_wch(w, &cell) != ERR)
-	    {
-	      if ((chtype)CharOf(cell) != ChCharOf(pad)
-		  || cell.chars[1] != 0)
-		{
-		  result = FALSE;
-		  break;
-		}
-	    }
+          if (win_wch(w, &cell) != ERR)
+            {
+              if ((chtype)CharOf(cell) != ChCharOf(pad)
+                  || cell.chars[1] != 0)
+                {
+                  result = FALSE;
+                  break;
+                }
+            }
 #else
-	  cell = (FIELD_CELL)winch(w);
-	  if (ChCharOf(cell) != ChCharOf(pad))
-	    {
-	      result = FALSE;
-	      break;
-	    }
+          cell = (FIELD_CELL)winch(w);
+          if (ChCharOf(cell) != ChCharOf(pad))
+            {
+              result = FALSE;
+              break;
+            }
 #endif
-	}
+        }
       else
-	{
-	  /* if an error, return true: no non-padding text found */
-	  break;
-	}
+        {
+          /* if an error, return true: no non-padding text found */
+          break;
+        }
     }
   /* no need to reset the cursor position; caller does this */
   return result;
@@ -149,43 +149,43 @@ data_ahead(const FORM *form)
       assert(form->w);
 
       if (Single_Line_Field(field))
-	{
-	  pos = form->begincol + field->cols;
-	  while (pos < field->dcols)
-	    {
-	      int check_len = field->dcols - pos;
+        {
+          pos = form->begincol + field->cols;
+          while (pos < field->dcols)
+            {
+              int check_len = field->dcols - pos;
 
-	      if (check_len >= field->cols)
-		check_len = field->cols;
-	      cursor_moved = TRUE;
-	      wmove(form->w, 0, pos);
-	      if (Only_Padding(form->w, check_len, field->pad))
-		pos += field->cols;
-	      else
-		{
-		  result = TRUE;
-		  break;
-		}
-	    }
-	}
+              if (check_len >= field->cols)
+                check_len = field->cols;
+              cursor_moved = TRUE;
+              wmove(form->w, 0, pos);
+              if (Only_Padding(form->w, check_len, field->pad))
+                pos += field->cols;
+              else
+                {
+                  result = TRUE;
+                  break;
+                }
+            }
+        }
       else
-	{
-	  pos = form->toprow + field->rows;
-	  while (pos < field->drows)
-	    {
-	      cursor_moved = TRUE;
-	      wmove(form->w, pos, 0);
-	      pos++;
-	      if (!Only_Padding(form->w, field->cols, field->pad))
-		{
-		  result = TRUE;
-		  break;
-		}
-	    }
-	}
+        {
+          pos = form->toprow + field->rows;
+          while (pos < field->drows)
+            {
+              cursor_moved = TRUE;
+              wmove(form->w, pos, 0);
+              pos++;
+              if (!Only_Padding(form->w, field->cols, field->pad))
+                {
+                  result = TRUE;
+                  break;
+                }
+            }
+        }
 
       if (cursor_moved)
-	wmove(form->w, form->currow, form->curcol);
+        wmove(form->w, form->currow, form->curcol);
     }
   returnBool(result);
 }

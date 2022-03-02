@@ -35,8 +35,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slklab.c
- *	Soft key routines.
+ *      lib_slklab.c
+ *      Soft key routines.
  *      Fetch the label text.
  */
 #include <curses.priv.h>
@@ -49,7 +49,7 @@ NCURSES_SP_NAME(slk_label) (NCURSES_SP_DCLx int n)
     T((T_CALLED("slk_label(%p,%d)"), (void *) SP_PARM, n));
 
     if (SP_PARM == 0 || SP_PARM->_slk == 0 || n < 1 || n > SP_PARM->_slk->labcnt)
-	returnPtr(0);
+        returnPtr(0);
     returnPtr(SP_PARM->_slk->ent[n - 1].ent_text);
 }
 

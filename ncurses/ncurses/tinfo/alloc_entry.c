@@ -36,11 +36,11 @@
 /*
  * alloc_entry.c -- allocation functions for terminfo entries
  *
- *	_nc_copy_entry()
- *	_nc_init_entry()
- *	_nc_merge_entry()
- *	_nc_save_str()
- *	_nc_wrap_entry()
+ *      _nc_copy_entry()
+ *      _nc_init_entry()
+ *      _nc_merge_entry()
+ *      _nc_save_str()
+ *      _nc_wrap_entry()
  *
  */
 
@@ -53,10 +53,10 @@ MODULE_ID("$Id: alloc_entry.c,v 1.66 2021/08/08 00:09:37 tom Exp $")
 #define ABSENT_OFFSET    -1
 #define CANCELLED_OFFSET -2
 
-#define MAX_STRTAB	4096	/* documented maximum entry size */
+#define MAX_STRTAB      4096    /* documented maximum entry size */
 
-static char *stringbuf;		/* buffer for string capabilities */
-static size_t next_free;	/* next free character in stringbuf */
+static char *stringbuf;         /* buffer for string capabilities */
+static size_t next_free;        /* next free character in stringbuf */
 
 NCURSES_EXPORT(void)
 _nc_init_entry(ENTRY * const tp)
@@ -64,15 +64,15 @@ _nc_init_entry(ENTRY * const tp)
 {
 #if NO_LEAKS
     if (tp == 0) {
-	if (stringbuf != 0) {
-	    FreeAndNull(stringbuf);
-	}
-	return;
+        if (stringbuf != 0) {
+            FreeAndNull(stringbuf);
+        }
+        return;
     }
 #endif
 
     if (stringbuf == 0)
-	TYPE_MALLOC(char, (size_t) MAX_STRTAB, stringbuf);
+        TYPE_MALLOC(char, (size_t) MAX_STRTAB, stringbuf);
 
     next_free = 0;
 
@@ -85,8 +85,8 @@ _nc_copy_entry(ENTRY * oldp)
     ENTRY *newp = typeCalloc(ENTRY, 1);
 
     if (newp != 0) {
-	*newp = *oldp;
-	_nc_copy_termtype2(&(newp->tterm), &(oldp->tterm));
+        *newp = *oldp;
+        _nc_copy_termtype2(&(newp->tterm), &(oldp->tterm));
     }
     return newp;
 }
@@ -100,25 +100,25 @@ _nc_save_str(const char *string)
     size_t len;
 
     if (!VALID_STRING(string))
-	string = "";
+        string = "";
     len = strlen(string) + 1;
 
     if (len == 1 && next_free != 0) {
-	/*
-	 * Cheat a little by making an empty string point to the end of the
-	 * previous string.
-	 */
-	if (next_free < MAX_STRTAB) {
-	    result = (stringbuf + next_free - 1);
-	}
+        /*
+         * Cheat a little by making an empty string point to the end of the
+         * previous string.
+         */
+        if (next_free < MAX_STRTAB) {
+            result = (stringbuf + next_free - 1);
+        }
     } else if (next_free + len < MAX_STRTAB) {
-	_nc_STRCPY(&stringbuf[next_free], string, MAX_STRTAB);
-	DEBUG(7, ("Saved string %s", _nc_visbuf(string)));
-	DEBUG(7, ("at location %d", (int) next_free));
-	next_free += len;
-	result = (stringbuf + old_next_free);
+        _nc_STRCPY(&stringbuf[next_free], string, MAX_STRTAB);
+        DEBUG(7, ("Saved string %s", _nc_visbuf(string)));
+        DEBUG(7, ("at location %d", (int) next_free));
+        next_free += len;
+        result = (stringbuf + old_next_free);
     } else {
-	_nc_warning("Too much data, some is lost: %s", string);
+        _nc_warning("Too much data, some is lost: %s", string);
     }
     return result;
 }
@@ -134,45 +134,45 @@ _nc_wrap_entry(ENTRY * const ep, bool copy_strings)
     TERMTYPE2 *tp = &(ep->tterm);
 
     if (copy_strings) {
-	next_free = 0;		/* clear static storage */
+        next_free = 0;          /* clear static storage */
 
-	/* copy term_names, Strings, uses */
-	tp->term_names = _nc_save_str(tp->term_names);
-	for_each_string(i, tp) {
-	    if (tp->Strings[i] != ABSENT_STRING &&
-		tp->Strings[i] != CANCELLED_STRING) {
-		tp->Strings[i] = _nc_save_str(tp->Strings[i]);
-	    }
-	}
+        /* copy term_names, Strings, uses */
+        tp->term_names = _nc_save_str(tp->term_names);
+        for_each_string(i, tp) {
+            if (tp->Strings[i] != ABSENT_STRING &&
+                tp->Strings[i] != CANCELLED_STRING) {
+                tp->Strings[i] = _nc_save_str(tp->Strings[i]);
+            }
+        }
 
-	for (i = 0; i < nuses; i++) {
-	    if (ep->uses[i].name == 0) {
-		ep->uses[i].name = _nc_save_str(ep->uses[i].name);
-	    }
-	}
+        for (i = 0; i < nuses; i++) {
+            if (ep->uses[i].name == 0) {
+                ep->uses[i].name = _nc_save_str(ep->uses[i].name);
+            }
+        }
 
-	free(tp->str_table);
+        free(tp->str_table);
     }
 
     assert(tp->term_names >= stringbuf);
     n = (unsigned) (tp->term_names - stringbuf);
     for_each_string(i, &(ep->tterm)) {
-	if (i < SIZEOF(offsets)) {
-	    if (tp->Strings[i] == ABSENT_STRING) {
-		offsets[i] = ABSENT_OFFSET;
-	    } else if (tp->Strings[i] == CANCELLED_STRING) {
-		offsets[i] = CANCELLED_OFFSET;
-	    } else {
-		offsets[i] = (int) (tp->Strings[i] - stringbuf);
-	    }
-	}
+        if (i < SIZEOF(offsets)) {
+            if (tp->Strings[i] == ABSENT_STRING) {
+                offsets[i] = ABSENT_OFFSET;
+            } else if (tp->Strings[i] == CANCELLED_STRING) {
+                offsets[i] = CANCELLED_OFFSET;
+            } else {
+                offsets[i] = (int) (tp->Strings[i] - stringbuf);
+            }
+        }
     }
 
     for (i = 0; i < nuses; i++) {
-	if (ep->uses[i].name == 0)
-	    useoffsets[i] = ABSENT_OFFSET;
-	else
-	    useoffsets[i] = (int) (ep->uses[i].name - stringbuf);
+        if (ep->uses[i].name == 0)
+            useoffsets[i] = ABSENT_OFFSET;
+        else
+            useoffsets[i] = (int) (ep->uses[i].name - stringbuf);
     }
 
     TYPE_MALLOC(char, next_free, tp->str_table);
@@ -180,45 +180,45 @@ _nc_wrap_entry(ENTRY * const ep, bool copy_strings)
 
     tp->term_names = tp->str_table + n;
     for_each_string(i, &(ep->tterm)) {
-	if (i < SIZEOF(offsets)) {
-	    if (offsets[i] == ABSENT_OFFSET) {
-		tp->Strings[i] = ABSENT_STRING;
-	    } else if (offsets[i] == CANCELLED_OFFSET) {
-		tp->Strings[i] = CANCELLED_STRING;
-	    } else {
-		tp->Strings[i] = tp->str_table + offsets[i];
-	    }
-	}
+        if (i < SIZEOF(offsets)) {
+            if (offsets[i] == ABSENT_OFFSET) {
+                tp->Strings[i] = ABSENT_STRING;
+            } else if (offsets[i] == CANCELLED_OFFSET) {
+                tp->Strings[i] = CANCELLED_STRING;
+            } else {
+                tp->Strings[i] = tp->str_table + offsets[i];
+            }
+        }
     }
 
 #if NCURSES_XNAMES
     if (!copy_strings) {
-	if ((n = (unsigned) NUM_EXT_NAMES(tp)) != 0) {
-	    if (n < SIZEOF(offsets)) {
-		size_t length = 0;
-		size_t offset;
-		for (i = 0; i < n; i++) {
-		    length += strlen(tp->ext_Names[i]) + 1;
-		    offsets[i] = (int) (tp->ext_Names[i] - stringbuf);
-		}
-		TYPE_MALLOC(char, length, tp->ext_str_table);
-		for (i = 0, offset = 0; i < n; i++) {
-		    tp->ext_Names[i] = tp->ext_str_table + offset;
-		    _nc_STRCPY(tp->ext_Names[i],
-			       stringbuf + offsets[i],
-			       length - offset);
-		    offset += strlen(tp->ext_Names[i]) + 1;
-		}
-	    }
-	}
+        if ((n = (unsigned) NUM_EXT_NAMES(tp)) != 0) {
+            if (n < SIZEOF(offsets)) {
+                size_t length = 0;
+                size_t offset;
+                for (i = 0; i < n; i++) {
+                    length += strlen(tp->ext_Names[i]) + 1;
+                    offsets[i] = (int) (tp->ext_Names[i] - stringbuf);
+                }
+                TYPE_MALLOC(char, length, tp->ext_str_table);
+                for (i = 0, offset = 0; i < n; i++) {
+                    tp->ext_Names[i] = tp->ext_str_table + offset;
+                    _nc_STRCPY(tp->ext_Names[i],
+                               stringbuf + offsets[i],
+                               length - offset);
+                    offset += strlen(tp->ext_Names[i]) + 1;
+                }
+            }
+        }
     }
 #endif
 
     for (i = 0; i < nuses; i++) {
-	if (useoffsets[i] == ABSENT_OFFSET)
-	    ep->uses[i].name = 0;
-	else
-	    ep->uses[i].name = (tp->str_table + useoffsets[i]);
+        if (useoffsets[i] == ABSENT_OFFSET)
+            ep->uses[i].name = 0;
+        else
+            ep->uses[i].name = (tp->str_table + useoffsets[i]);
     }
 }
 
@@ -234,7 +234,7 @@ _nc_merge_entry(ENTRY * const target, ENTRY * const source)
     unsigned i;
 
     if (source == 0 || from == 0 || target == 0 || to == 0)
-	return;
+        return;
 
 #if NCURSES_XNAMES
     _nc_copy_termtype2(&copy, from);
@@ -242,25 +242,25 @@ _nc_merge_entry(ENTRY * const target, ENTRY * const source)
     _nc_align_termtype(to, from);
 #endif
     for_each_boolean(i, from) {
-	if (to->Booleans[i] != (NCURSES_SBOOL) CANCELLED_BOOLEAN) {
-	    int mergebool = from->Booleans[i];
+        if (to->Booleans[i] != (NCURSES_SBOOL) CANCELLED_BOOLEAN) {
+            int mergebool = from->Booleans[i];
 
-	    if (mergebool == CANCELLED_BOOLEAN)
-		to->Booleans[i] = FALSE;
-	    else if (mergebool == TRUE)
-		to->Booleans[i] = (NCURSES_SBOOL) mergebool;
-	}
+            if (mergebool == CANCELLED_BOOLEAN)
+                to->Booleans[i] = FALSE;
+            else if (mergebool == TRUE)
+                to->Booleans[i] = (NCURSES_SBOOL) mergebool;
+        }
     }
 
     for_each_number(i, from) {
-	if (to->Numbers[i] != CANCELLED_NUMERIC) {
-	    int mergenum = from->Numbers[i];
+        if (to->Numbers[i] != CANCELLED_NUMERIC) {
+            int mergenum = from->Numbers[i];
 
-	    if (mergenum == CANCELLED_NUMERIC)
-		to->Numbers[i] = ABSENT_NUMERIC;
-	    else if (mergenum != ABSENT_NUMERIC)
-		to->Numbers[i] = (NCURSES_INT2) mergenum;
-	}
+            if (mergenum == CANCELLED_NUMERIC)
+                to->Numbers[i] = ABSENT_NUMERIC;
+            else if (mergenum != ABSENT_NUMERIC)
+                to->Numbers[i] = (NCURSES_INT2) mergenum;
+        }
     }
 
     /*
@@ -269,14 +269,14 @@ _nc_merge_entry(ENTRY * const target, ENTRY * const source)
      * we ever want to deallocate entries.
      */
     for_each_string(i, from) {
-	if (to->Strings[i] != CANCELLED_STRING) {
-	    char *mergestring = from->Strings[i];
+        if (to->Strings[i] != CANCELLED_STRING) {
+            char *mergestring = from->Strings[i];
 
-	    if (mergestring == CANCELLED_STRING)
-		to->Strings[i] = ABSENT_STRING;
-	    else if (mergestring != ABSENT_STRING)
-		to->Strings[i] = mergestring;
-	}
+            if (mergestring == CANCELLED_STRING)
+                to->Strings[i] = ABSENT_STRING;
+            else if (mergestring != ABSENT_STRING)
+                to->Strings[i] = mergestring;
+        }
     }
 #if NCURSES_XNAMES
     /* Discard the data allocated in _nc_copy_termtype2, but do not use
@@ -295,7 +295,7 @@ NCURSES_EXPORT(void)
 _nc_alloc_entry_leaks(void)
 {
     if (stringbuf != 0) {
-	FreeAndNull(stringbuf);
+        FreeAndNull(stringbuf);
     }
     next_free = 0;
 }

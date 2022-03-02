@@ -36,9 +36,9 @@
 MODULE_ID("$Id: lib_erasewchar.c,v 1.5 2021/05/22 23:51:14 tom Exp $")
 
 /*
- *	erasewchar()
+ *      erasewchar()
  *
- *	Return erase character as given in cur_term->Ottyb.
+ *      Return erase character as given in cur_term->Ottyb.
  */
 
 NCURSES_EXPORT(int)
@@ -51,8 +51,8 @@ NCURSES_SP_NAME(erasewchar) (NCURSES_SP_DCLx wchar_t *wch)
 
     T((T_CALLED("erasewchar()")));
     if ((value = NCURSES_SP_NAME(erasechar) (NCURSES_SP_ARG)) != ERR) {
-	*wch = (wchar_t) value;
-	result = OK;
+        *wch = (wchar_t) value;
+        result = OK;
     }
     returnCode(result);
 }
@@ -66,9 +66,9 @@ erasewchar(wchar_t *wch)
 #endif
 
 /*
- *	killwchar()
+ *      killwchar()
  *
- *	Return kill character as given in cur_term->Ottyb.
+ *      Return kill character as given in cur_term->Ottyb.
  */
 
 NCURSES_EXPORT(int)
@@ -81,8 +81,8 @@ NCURSES_SP_NAME(killwchar) (NCURSES_SP_DCLx wchar_t *wch)
 
     T((T_CALLED("killwchar()")));
     if ((value = NCURSES_SP_NAME(killchar) (NCURSES_SP_ARG)) != ERR) {
-	*wch = (wchar_t) value;
-	result = OK;
+        *wch = (wchar_t) value;
+        result = OK;
     }
     returnCode(result);
 }

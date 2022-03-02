@@ -41,18 +41,18 @@ pecho_wchar(WINDOW *pad, const cchar_t *wch)
     T((T_CALLED("pecho_wchar(%p, %s)"), (void *) pad, _tracech_t(wch)));
 
     if (pad == 0)
-	returnCode(ERR);
+        returnCode(ERR);
 
     if (!(pad->_flags & _ISPAD))
-	returnCode(wecho_wchar(pad, wch));
+        returnCode(wecho_wchar(pad, wch));
 
     wadd_wch(pad, wch);
     prefresh(pad, pad->_pad._pad_y,
-	     pad->_pad._pad_x,
-	     pad->_pad._pad_top,
-	     pad->_pad._pad_left,
-	     pad->_pad._pad_bottom,
-	     pad->_pad._pad_right);
+             pad->_pad._pad_x,
+             pad->_pad._pad_top,
+             pad->_pad._pad_left,
+             pad->_pad._pad_bottom,
+             pad->_pad._pad_right);
 
     returnCode(OK);
 }

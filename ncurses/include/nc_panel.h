@@ -35,9 +35,9 @@
 /*
  * $Id: nc_panel.h,v 1.10 2020/02/02 23:34:34 tom Exp $
  *
- *	nc_panel.h
+ *      nc_panel.h
  *
- *	Headerfile to provide an interface for the panel layer into
+ *      Headerfile to provide an interface for the panel layer into
  *      the SCREEN structure of the ncurses core.
  */
 
@@ -52,7 +52,7 @@ extern "C"
 {
 #endif
 
-  struct panel;			/* Forward Declaration */
+  struct panel;                 /* Forward Declaration */
 
   struct panelhook
     {
@@ -64,7 +64,7 @@ extern "C"
 #endif
     };
 
-  struct screen;		/* Forward declaration */
+  struct screen;                /* Forward declaration */
 /* Retrieve the panelhook of the specified screen */
   extern NCURSES_EXPORT(struct panelhook *)
     _nc_panelhook (void);
@@ -77,4 +77,4 @@ extern "C"
 }
 #endif
 
-#endif				/* NC_PANEL_H */
+#endif                          /* NC_PANEL_H */

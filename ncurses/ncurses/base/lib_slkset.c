@@ -33,7 +33,7 @@
  ****************************************************************************/
 
 /*
- *	lib_slkset.c
+ *      lib_slkset.c
  *      Set soft label text.
  */
 #include <curses.priv.h>
@@ -61,86 +61,86 @@ NCURSES_SP_NAME(slk_set) (NCURSES_SP_DCLx int i, const char *astr, int format)
     T((T_CALLED("slk_set(%p, %d, \"%s\", %d)"), (void *) SP_PARM, i, str, format));
 
     if (SP_PARM == 0
-	|| (slk = SP_PARM->_slk) == 0
-	|| i < 1
-	|| i > slk->labcnt
-	|| format < 0
-	|| format > 2)
-	returnCode(ERR);
+        || (slk = SP_PARM->_slk) == 0
+        || i < 1
+        || i > slk->labcnt
+        || format < 0
+        || format > 2)
+        returnCode(ERR);
     if (str == 0)
-	str = "";
-    --i;			/* Adjust numbering of labels */
+        str = "";
+    --i;                        /* Adjust numbering of labels */
 
     limit = MAX_SKEY_LEN(SP_PARM->slk_format);
     while (isspace(UChar(*str)))
-	str++;			/* skip over leading spaces  */
+        str++;                  /* skip over leading spaces  */
     p = str;
 
 #if USE_WIDEC_SUPPORT
     numcols = 0;
     while (*p != 0) {
-	mbstate_t state;
-	wchar_t wc;
-	size_t need;
+        mbstate_t state;
+        wchar_t wc;
+        size_t need;
 
-	init_mb(state);
-	need = mbrtowc(0, p, strlen(p), &state);
-	if (need == (size_t) -1)
-	    break;
-	mbrtowc(&wc, p, need, &state);
-	if (!iswprint((wint_t) wc))
-	    break;
-	if (_nc_wacs_width(wc) + numcols > limit)
-	    break;
-	numcols += _nc_wacs_width(wc);
-	p += need;
+        init_mb(state);
+        need = mbrtowc(0, p, strlen(p), &state);
+        if (need == (size_t) -1)
+            break;
+        mbrtowc(&wc, p, need, &state);
+        if (!iswprint((wint_t) wc))
+            break;
+        if (_nc_wacs_width(wc) + numcols > limit)
+            break;
+        numcols += _nc_wacs_width(wc);
+        p += need;
     }
     numchrs = (int) (p - str);
 #else
     while (isprint(UChar(*p)))
-	p++;			/* The first non-print stops */
+        p++;                    /* The first non-print stops */
 
     numcols = (int) (p - str);
     if (numcols > limit)
-	numcols = limit;
+        numcols = limit;
     numchrs = numcols;
 #endif
 
     FreeIfNeeded(slk->ent[i].ent_text);
     if ((slk->ent[i].ent_text = strdup(str)) == 0)
-	returnCode(ERR);
+        returnCode(ERR);
     slk->ent[i].ent_text[numchrs] = '\0';
 
     if ((slk->ent[i].form_text = (char *) _nc_doalloc(slk->ent[i].form_text,
-						      (size_t) (limit +
-								numchrs + 1))
-	) == 0)
-	returnCode(ERR);
+                                                      (size_t) (limit +
+                                                                numchrs + 1))
+        ) == 0)
+        returnCode(ERR);
 
     switch (format) {
-    case 0:			/* left-justified */
-	offset = 0;
-	break;
-    case 1:			/* centered */
-	offset = (limit - numcols) / 2;
-	break;
-    case 2:			/* right-justified */
-	offset = limit - numcols;
-	break;
+    case 0:                     /* left-justified */
+        offset = 0;
+        break;
+    case 1:                     /* centered */
+        offset = (limit - numcols) / 2;
+        break;
+    case 2:                     /* right-justified */
+        offset = limit - numcols;
+        break;
     }
     if (offset <= 0)
-	offset = 0;
+        offset = 0;
     else
-	memset(slk->ent[i].form_text, ' ', (size_t) offset);
+        memset(slk->ent[i].form_text, ' ', (size_t) offset);
 
     memcpy(slk->ent[i].form_text + offset,
-	   slk->ent[i].ent_text,
-	   (size_t) numchrs);
+           slk->ent[i].ent_text,
+           (size_t) numchrs);
 
     if (offset < limit) {
-	memset(slk->ent[i].form_text + offset + numchrs,
-	       ' ',
-	       (size_t) (limit - (offset + numcols)));
+        memset(slk->ent[i].form_text + offset + numchrs,
+               ' ',
+               (size_t) (limit - (offset + numcols)));
     }
 
     slk->ent[i].form_text[numchrs - numcols + limit] = 0;

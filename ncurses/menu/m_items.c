@@ -70,7 +70,7 @@ set_menu_items(MENU *menu, ITEM **items)
   if (items)
     {
       if (!_nc_Connect_Items(menu, items))
-	RETURN(E_CONNECTED);
+        RETURN(E_CONNECTED);
     }
 
   menu->items = items;

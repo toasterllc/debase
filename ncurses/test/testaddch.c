@@ -38,13 +38,13 @@ static void
 attr_addstr(const char *s, chtype a)
 {
     while (*s)
-	addch(((unsigned char) (*s++)) | a);
+        addch(((unsigned char) (*s++)) | a);
 }
 
 int
 main(
-	int argc GCC_UNUSED,
-	char *argv[]GCC_UNUSED)
+        int argc GCC_UNUSED,
+        char *argv[]GCC_UNUSED)
 {
     unsigned i;
     chtype back, set, attr;
@@ -62,25 +62,25 @@ main(
     init_pair(7, COLOR_BLACK, COLOR_WHITE);
 
     for (i = 0; i < 8; i++) {
-	back = (i & 1) ? A_BOLD | 'B' : ' ';
-	set = (i & 2) ? A_REVERSE : 0;
-	attr = (chtype) ((i & 4) ? COLOR_PAIR(4) : 0);
+        back = (i & 1) ? A_BOLD | 'B' : ' ';
+        set = (i & 2) ? A_REVERSE : 0;
+        attr = (chtype) ((i & 4) ? COLOR_PAIR(4) : 0);
 
-	bkgdset(back);
-	(void) attrset(AttrArg(set, 0));
+        bkgdset(back);
+        (void) attrset(AttrArg(set, 0));
 
-	attr_addstr("Test string with spaces ->   <-\n", attr);
+        attr_addstr("Test string with spaces ->   <-\n", attr);
     }
     addch('\n');
     for (i = 0; i < 8; i++) {
-	back = (i & 1) ? (A_BOLD | 'B' | (chtype) COLOR_PAIR(1)) : ' ';
-	set = (i & 2) ? (A_REVERSE | (chtype) COLOR_PAIR(2)) : 0;
-	attr = (chtype) ((i & 4) ? (chtype) COLOR_PAIR(4) : 0);
+        back = (i & 1) ? (A_BOLD | 'B' | (chtype) COLOR_PAIR(1)) : ' ';
+        set = (i & 2) ? (A_REVERSE | (chtype) COLOR_PAIR(2)) : 0;
+        attr = (chtype) ((i & 4) ? (chtype) COLOR_PAIR(4) : 0);
 
-	bkgdset(back);
-	(void) attrset(AttrArg(set, 0));
+        bkgdset(back);
+        (void) attrset(AttrArg(set, 0));
 
-	attr_addstr("Test string with spaces ->   <-\n", attr);
+        attr_addstr("Test string with spaces ->   <-\n", attr);
     }
 
     getch();

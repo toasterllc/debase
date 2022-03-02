@@ -54,8 +54,8 @@ static bool
 outs(const char *s)
 {
     if (VALID_STRING(s)) {
-	tputs(s, 1, outc);
-	return TRUE;
+        tputs(s, 1, outc);
+        return TRUE;
     }
     return FALSE;
 }
@@ -64,10 +64,10 @@ static void
 cleanup(void)
 {
     if (cur_term != 0) {
-	outs(exit_attribute_mode);
-	if (!outs(orig_colors))
-	    outs(orig_pair);
-	outs(cursor_normal);
+        outs(exit_attribute_mode);
+        if (!outs(orig_colors))
+            outs(orig_pair);
+        outs(cursor_normal);
     }
 }
 
@@ -75,9 +75,9 @@ static void
 change_attr(chtype attr)
 {
     if (p_opt) {
-	vid_puts(attr, (short) 0, (void *) 0, outc);
+        vid_puts(attr, (short) 0, (void *) 0, outc);
     } else {
-	vid_attr(attr, (short) 0, (void *) 0);
+        vid_attr(attr, (short) 0, (void *) 0);
     }
 }
 
@@ -98,16 +98,16 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: test_vid_puts [options]"
-	,""
-	,"Options:"
-	,"  -e      use stderr (default stdout)"
-	,"  -n      do not initialize terminal"
-	,"  -p      use vid_puts (default vid_attr)"
+        "Usage: test_vid_puts [options]"
+        ,""
+        ,"Options:"
+        ,"  -e      use stderr (default stdout)"
+        ,"  -n      do not initialize terminal"
+        ,"  -p      use vid_puts (default vid_attr)"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -120,28 +120,28 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     my_fp = stdout;
 
     while ((ch = getopt(argc, argv, "enp")) != -1) {
-	switch (ch) {
-	case 'e':
-	    my_fp = stderr;
-	    break;
-	case 'n':
-	    no_init = TRUE;
-	    break;
-	case 'p':
-	    p_opt = TRUE;
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+        switch (ch) {
+        case 'e':
+            my_fp = stderr;
+            break;
+        case 'n':
+            no_init = TRUE;
+            break;
+        case 'p':
+            p_opt = TRUE;
+            break;
+        default:
+            usage();
+            break;
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     if (no_init) {
-	START_TRACE();
+        START_TRACE();
     } else {
-	setupterm((char *) 0, fileno(my_fp), (int *) 0);
+        setupterm((char *) 0, fileno(my_fp), (int *) 0);
     }
     test_vid_puts();
     cleanup();

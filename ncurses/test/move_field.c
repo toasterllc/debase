@@ -46,8 +46,8 @@
 #define form_field_col(field) (field)->fcol
 #endif
 
-#define DO_DEMO	CTRL('F')	/* actual key for toggling demo-mode */
-#define MY_DEMO	EDIT_FIELD('f')	/* internal request-code */
+#define DO_DEMO CTRL('F')       /* actual key for toggling demo-mode */
+#define MY_DEMO EDIT_FIELD('f') /* internal request-code */
 
 static char empty[] = "";
 static FIELD *all_fields[100];
@@ -94,25 +94,25 @@ my_help_edit_field(void)
 
     msgs[used++] = strdup("Defined form edit/traversal keys:");
     for (n = 0; n < SIZEOF(commands); ++n) {
-	char *msg;
-	const char *name;
-	const char *code = keyname(commands[n].code);
-	size_t need = 5;
+        char *msg;
+        const char *name;
+        const char *code = keyname(commands[n].code);
+        size_t need = 5;
 #ifdef NCURSES_VERSION
-	if ((name = form_request_name(commands[n].result)) == 0)
+        if ((name = form_request_name(commands[n].result)) == 0)
 #endif
-	    name = commands[n].help;
-	need = 5 + strlen(code) + strlen(name);
-	msg = typeMalloc(char, need);
-	_nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
-	msgs[used++] = msg;
+            name = commands[n].help;
+        need = 5 + strlen(code) + strlen(name);
+        msg = typeMalloc(char, need);
+        _nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
+        msgs[used++] = msg;
     }
     msgs[used++] =
-	strdup("Arrow keys move within a field as you would expect.");
+        strdup("Arrow keys move within a field as you would expect.");
     msgs[used] = 0;
     popup_msg2(stdscr, msgs);
     for (n = 0; msgs[n] != 0; ++n) {
-	free(msgs[n]);
+        free(msgs[n]);
     }
     free(msgs);
 }
@@ -123,8 +123,8 @@ make_label(const char *label, int frow, int fcol)
     FIELD *f = new_field(1, (int) strlen(label), frow, fcol, 0, 0);
 
     if (f) {
-	set_field_buffer(f, 0, label);
-	set_field_opts(f, (int) ((unsigned) field_opts(f) & ~O_ACTIVE));
+        set_field_buffer(f, 0, label);
+        set_field_opts(f, (int) ((unsigned) field_opts(f) & ~O_ACTIVE));
     }
     return (f);
 }
@@ -135,8 +135,8 @@ make_field(int frow, int fcol, int rows, int cols)
     FIELD *f = new_field(rows, cols, frow, fcol, 0, 1);
 
     if (f) {
-	set_field_back(f, A_UNDERLINE);
-	init_edit_field(f, empty);
+        set_field_back(f, A_UNDERLINE);
+        init_edit_field(f, empty);
     }
     return (f);
 }
@@ -203,74 +203,74 @@ my_edit_field(FORM *form, int *result)
     before = current_field(form);
     set_field_back(before, A_NORMAL);
     if (ch <= KEY_MAX) {
-	set_field_back(before, A_REVERSE);
+        set_field_back(before, A_REVERSE);
     } else if (ch <= MAX_FORM_COMMAND) {
-	inactive_field(before);
+        inactive_field(before);
     }
 
     *result = ch;
     for (n = 0; n < SIZEOF(commands); ++n) {
-	if (commands[n].code == ch) {
-	    *result = commands[n].result;
-	    break;
-	}
+        if (commands[n].code == ch) {
+            *result = commands[n].result;
+            break;
+        }
     }
 
     status = form_driver(form, *result);
 
     if (status == E_OK) {
-	bool modified = TRUE;
-	int length = buffer_length(before);
+        bool modified = TRUE;
+        int length = buffer_length(before);
 
-	if (length < before_off)
-	    length = before_off;
-	switch (*result) {
-	case REQ_CLR_EOF:
-	    length = before_off;
-	    break;
-	case REQ_CLR_EOL:
-	    if ((int) (before_row + 1) == (int) (before->rows))
-		length = before_off;
-	    break;
-	case REQ_CLR_FIELD:
-	    length = 0;
-	    break;
-	case REQ_DEL_CHAR:
-	    if (length > before_off)
-		--length;
-	    break;
-	case REQ_DEL_PREV:
-	    if (length > 0) {
-		if (before_col > 0) {
-		    --length;
-		} else if (before_row > 0) {
-		    length -= (int) before->cols + before_col;
-		}
-	    }
-	    break;
-	case REQ_NEW_LINE:
-	    length += (int) before->cols;
-	    break;
+        if (length < before_off)
+            length = before_off;
+        switch (*result) {
+        case REQ_CLR_EOF:
+            length = before_off;
+            break;
+        case REQ_CLR_EOL:
+            if ((int) (before_row + 1) == (int) (before->rows))
+                length = before_off;
+            break;
+        case REQ_CLR_FIELD:
+            length = 0;
+            break;
+        case REQ_DEL_CHAR:
+            if (length > before_off)
+                --length;
+            break;
+        case REQ_DEL_PREV:
+            if (length > 0) {
+                if (before_col > 0) {
+                    --length;
+                } else if (before_row > 0) {
+                    length -= (int) before->cols + before_col;
+                }
+            }
+            break;
+        case REQ_NEW_LINE:
+            length += (int) before->cols;
+            break;
 
-	default:
-	    modified = (ch < MIN_FORM_COMMAND
-			&& isprint(ch));
-	    break;
-	}
+        default:
+            modified = (ch < MIN_FORM_COMMAND
+                        && isprint(ch));
+            break;
+        }
 
-	/*
-	 * If we do not force a re-validation, then field_buffer 0 will
-	 * be lagging by one character.
-	 */
-	if (modified && form_driver(form, REQ_VALIDATION) == E_OK && *result
-	    < MIN_FORM_COMMAND)
-	    ++length;
+        /*
+         * If we do not force a re-validation, then field_buffer 0 will
+         * be lagging by one character.
+         */
+        if (modified && form_driver(form, REQ_VALIDATION) == E_OK && *result
+            < MIN_FORM_COMMAND)
+            ++length;
 
-	set_buffer_length(before, length);
+        set_buffer_length(before, length);
     }
 
     if (current_field(form) != before)
-	inactive_field(before);
+        inactive_field(before);
     return status;
 }
 
@@ -291,10 +291,10 @@ show_status(FORM *form, FIELD *field)
 
     getyx(stdscr, currow, curcol);
     mvprintw(LINES - 1, 0,
-	     "Field at [%d,%d].  Press %s to quit moving.",
-	     getbegy(sub) + form_field_row(field),
-	     getbegx(sub) + form_field_col(field),
-	     keyname(DO_DEMO));
+             "Field at [%d,%d].  Press %s to quit moving.",
+             getbegy(sub) + form_field_row(field),
+             getbegx(sub) + form_field_col(field),
+             keyname(DO_DEMO));
     clrtobot();
     move(currow, curcol);
     refresh();
@@ -311,92 +311,92 @@ do_demo(FORM *form)
     FIELD *my_field = current_field(form);
 
     if (count > 0 && my_field != NULL) {
-	size_t needed = (size_t) count;
-	FIELD **old_fields = copy_fields(form_fields(form), needed);
-	FIELD **new_fields = copy_fields(form_fields(form), needed);
+        size_t needed = (size_t) count;
+        FIELD **old_fields = copy_fields(form_fields(form), needed);
+        FIELD **new_fields = copy_fields(form_fields(form), needed);
 
-	if (old_fields != NULL && new_fields != NULL) {
-	    bool found = FALSE;
-	    int ch;
+        if (old_fields != NULL && new_fields != NULL) {
+            bool found = FALSE;
+            int ch;
 
-	    /* TODO: move the label too, in parallel with the editing field */
+            /* TODO: move the label too, in parallel with the editing field */
 
-	    /* remove the current field from the newer list */
-	    for (ch = 0; ch <= count; ++ch) {
-		if (found) {
-		    new_fields[ch - 1] = new_fields[ch];
-		} else if (new_fields[ch] == my_field) {
-		    found = TRUE;
-		}
-	    }
+            /* remove the current field from the newer list */
+            for (ch = 0; ch <= count; ++ch) {
+                if (found) {
+                    new_fields[ch - 1] = new_fields[ch];
+                } else if (new_fields[ch] == my_field) {
+                    found = TRUE;
+                }
+            }
 
-	    if (found) {
-		int currow, curcol;
+            if (found) {
+                int currow, curcol;
 
-		getyx(stdscr, currow, curcol);
+                getyx(stdscr, currow, curcol);
 
-		show_status(form, my_field);
-		while ((ch = wgetch(form_win(form))) != DO_DEMO) {
-		    int field_y = form_field_row(my_field);
-		    int field_x = form_field_col(my_field);
+                show_status(form, my_field);
+                while ((ch = wgetch(form_win(form))) != DO_DEMO) {
+                    int field_y = form_field_row(my_field);
+                    int field_x = form_field_col(my_field);
 
-		    switch (ch) {
-		    case 'h':
-		    case KEY_LEFT:
-			if (field_x > 0)
-			    field_x--;
-			break;
-		    case 'j':
-		    case KEY_DOWN:
-			field_y++;
-			break;
-		    case 'k':
-		    case KEY_UP:
-			if (field_y > 0)
-			    field_y--;
-			break;
-		    case 'l':
-		    case KEY_RIGHT:
-			field_x++;
-			break;
-		    case CTRL('Q'):
-		    case CTRL('['):
-			ch = DO_DEMO;
-			/* FALLTHRU */
-		    case DO_DEMO:
-			break;
-		    default:
-			continue;
-		    }
+                    switch (ch) {
+                    case 'h':
+                    case KEY_LEFT:
+                        if (field_x > 0)
+                            field_x--;
+                        break;
+                    case 'j':
+                    case KEY_DOWN:
+                        field_y++;
+                        break;
+                    case 'k':
+                    case KEY_UP:
+                        if (field_y > 0)
+                            field_y--;
+                        break;
+                    case 'l':
+                    case KEY_RIGHT:
+                        field_x++;
+                        break;
+                    case CTRL('Q'):
+                    case CTRL('['):
+                        ch = DO_DEMO;
+                        /* FALLTHRU */
+                    case DO_DEMO:
+                        break;
+                    default:
+                        continue;
+                    }
 
-		    if (ch == DO_DEMO)
-			break;
+                    if (ch == DO_DEMO)
+                        break;
 
-		    /* alter connected fields temporarily to move the field */
-		    unpost_form(form);
-		    set_form_fields(form, new_fields);
-		    post_form(form);
+                    /* alter connected fields temporarily to move the field */
+                    unpost_form(form);
+                    set_form_fields(form, new_fields);
+                    post_form(form);
 
-		    /* TODO: update screen position on success */
-		    move_field(my_field, field_y, field_x);
+                    /* TODO: update screen position on success */
+                    move_field(my_field, field_y, field_x);
 
-		    /* restore the form's list of fields */
-		    unpost_form(form);
-		    set_form_fields(form, old_fields);
-		    post_form(form);
+                    /* restore the form's list of fields */
+                    unpost_form(form);
+                    set_form_fields(form, old_fields);
+                    post_form(form);
 
-		    show_status(form, my_field);
-		}
+                    show_status(form, my_field);
+                }
 
-		/* cleanup */
-		move(LINES - 1, 0);
-		clrtobot();
-		move(currow, curcol);
-		refresh();
-	    }
-	}
-	free(old_fields);
-	free(new_fields);
+                /* cleanup */
+                move(LINES - 1, 0);
+                clrtobot();
+                move(currow, curcol);
+                refresh();
+            }
+        }
+        free(old_fields);
+        free(new_fields);
     }
 }
 
@@ -405,18 +405,18 @@ my_form_driver(FORM *form, int c)
 {
     switch (c) {
     case MY_QUIT:
-	if (form_driver(form, REQ_VALIDATION) == E_OK)
-	    return (TRUE);
-	break;
+        if (form_driver(form, REQ_VALIDATION) == E_OK)
+            return (TRUE);
+        break;
     case MY_HELP:
-	my_help_edit_field();
-	break;
+        my_help_edit_field();
+        break;
     case MY_DEMO:
-	do_demo(form);
-	break;
+        do_demo(form);
+        break;
     default:
-	beep();
-	break;
+        beep();
+        break;
     }
     return (FALSE);
 }
@@ -455,30 +455,30 @@ demo_forms(void)
     all_fields[n] = (FIELD *) 0;
 
     if ((form = new_form(all_fields)) != 0) {
-	int finished = 0;
+        int finished = 0;
 
-	post_form(form);
+        post_form(form);
 
-	while (!finished) {
-	    switch (my_edit_field(form, &c)) {
-	    case E_OK:
-		break;
-	    case E_UNKNOWN_COMMAND:
-		finished = my_form_driver(form, c);
-		break;
-	    default:
-		beep();
-		break;
-	    }
-	}
+        while (!finished) {
+            switch (my_edit_field(form, &c)) {
+            case E_OK:
+                break;
+            case E_UNKNOWN_COMMAND:
+                finished = my_form_driver(form, c);
+                break;
+            default:
+                beep();
+                break;
+            }
+        }
 
-	erase_form(form);
+        erase_form(form);
 
-	free_form(form);
+        free_form(form);
     }
     for (c = 0; all_fields[c] != 0; c++) {
-	free_edit_field(all_fields[c]);
-	free_field(all_fields[c]);
+        free_edit_field(all_fields[c]);
+        free_field(all_fields[c]);
     }
     noraw();
     nl();
@@ -493,17 +493,17 @@ main(void)
     cbreak();
     noecho();
     raw();
-    nonl();			/* lets us read ^M's */
+    nonl();                     /* lets us read ^M's */
     intrflush(stdscr, FALSE);
     keypad(stdscr, TRUE);
 
     if (has_colors()) {
-	start_color();
-	init_pair(1, COLOR_WHITE, COLOR_BLUE);
-	init_pair(2, COLOR_GREEN, COLOR_BLACK);
-	init_pair(3, COLOR_CYAN, COLOR_BLACK);
-	bkgd((chtype) COLOR_PAIR(1));
-	refresh();
+        start_color();
+        init_pair(1, COLOR_WHITE, COLOR_BLUE);
+        init_pair(2, COLOR_GREEN, COLOR_BLACK);
+        init_pair(3, COLOR_CYAN, COLOR_BLACK);
+        bkgd((chtype) COLOR_PAIR(1));
+        refresh();
     }
 
     demo_forms();

@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
- *	flash.c
+ *      flash.c
  *
- *	The routine flash().
+ *      The routine flash().
  *
  */
 
@@ -50,10 +50,10 @@
 MODULE_ID("$Id: lib_flash.c,v 1.15 2020/02/02 23:34:34 tom Exp $")
 
 /*
- *	flash()
+ *      flash()
  *
- *	Flash the current terminal's screen if possible.   If not,
- *	sound the audible bell if one exists.
+ *      Flash the current terminal's screen if possible.   If not,
+ *      sound the audible bell if one exists.
  *
  */
 
@@ -65,15 +65,15 @@ NCURSES_SP_NAME(flash) (NCURSES_SP_DCL0)
     T((T_CALLED("flash(%p)"), (void *) SP_PARM));
 #ifdef USE_TERM_DRIVER
     if (SP_PARM != 0)
-	res = CallDriver_1(SP_PARM, td_doBeepOrFlash, FALSE);
+        res = CallDriver_1(SP_PARM, td_doBeepOrFlash, FALSE);
 #else
     if (HasTerminal(SP_PARM)) {
-	/* FIXME: should make sure that we are not in altchar mode */
-	if (flash_screen) {
-	    res = NCURSES_PUTP2_FLUSH("flash_screen", flash_screen);
-	} else if (bell) {
-	    res = NCURSES_PUTP2_FLUSH("bell", bell);
-	}
+        /* FIXME: should make sure that we are not in altchar mode */
+        if (flash_screen) {
+            res = NCURSES_PUTP2_FLUSH("flash_screen", flash_screen);
+        } else if (bell) {
+            res = NCURSES_PUTP2_FLUSH("bell", bell);
+        }
     }
 #endif
     returnCode(res);

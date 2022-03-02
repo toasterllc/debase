@@ -51,17 +51,17 @@ main(int argc, char *argv[])
     curses_trace(TRACE_UPDATE | TRACE_CALLS);
 #endif
     while (argc > 1) {
-	if (isdigit(UChar(*argv[1])))
-	    move(atoi(argv[1]), 0);
-	else if (!strcmp(argv[1], "-k"))
-	    keypad(stdscr, TRUE);
-	argc--, argv++;
+        if (isdigit(UChar(*argv[1])))
+            move(atoi(argv[1]), 0);
+        else if (!strcmp(argv[1], "-k"))
+            keypad(stdscr, TRUE);
+        argc--, argv++;
     }
 
     while (badanswer) {
-	printw("Enter a number (0 to quit):\n");
-	printw("--> ");
-	scanw("%20ld", response);	/* yes, it's a pointer */
+        printw("Enter a number (0 to quit):\n");
+        printw("--> ");
+        scanw("%20ld", response);       /* yes, it's a pointer */
     }
     endwin();
     ExitProgram(EXIT_SUCCESS);

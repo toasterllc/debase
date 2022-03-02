@@ -69,9 +69,9 @@ genlines(int base)
 
 #if USE_TRACE
     if (base == 'a')
-	Trace(("Resetting screen"));
+        Trace(("Resetting screen"));
     else
-	Trace(("Painting `%c' screen", base));
+        Trace(("Painting `%c' screen", base));
 #endif
 
     /* Do this so writes to lower-right corner don't cause a spurious
@@ -82,40 +82,40 @@ genlines(int base)
 
     move(0, 0);
     for (i = 0; i < head_lines; i++)
-	for (j = 0; j < COLS; j++)
-	    AddCh(UChar((j % 8 == 0) ? ('A' + j / 8) : '-'));
+        for (j = 0; j < COLS; j++)
+            AddCh(UChar((j % 8 == 0) ? ('A' + j / 8) : '-'));
 
     move(head_lines, 0);
     for (i = head_lines; i < LINES - foot_lines; i++) {
-	chtype c = (chtype) ((base - LO_CHAR + i) % (HI_CHAR - LO_CHAR + 1)
-			     + LO_CHAR);
-	int hi = (extend_corner || (i < LINES - 1)) ? COLS : COLS - 1;
-	for (j = 0; j < hi; j++)
-	    AddCh(c);
+        chtype c = (chtype) ((base - LO_CHAR + i) % (HI_CHAR - LO_CHAR + 1)
+                             + LO_CHAR);
+        int hi = (extend_corner || (i < LINES - 1)) ? COLS : COLS - 1;
+        for (j = 0; j < hi; j++)
+            AddCh(c);
     }
 
     for (i = LINES - foot_lines; i < LINES; i++) {
-	move(i, 0);
-	for (j = 0; j < (extend_corner ? COLS : COLS - 1); j++)
-	    AddCh(UChar((j % 8 == 0) ? ('A' + j / 8) : '-'));
+        move(i, 0);
+        for (j = 0; j < (extend_corner ? COLS : COLS - 1); j++)
+            AddCh(UChar((j % 8 == 0) ? ('A' + j / 8) : '-'));
     }
 
     scrollok(stdscr, TRUE);
     if (single_step) {
-	move(LINES - 1, 0);
-	getch();
+        move(LINES - 1, 0);
+        getch();
     } else
-	refresh();
+        refresh();
 }
 
 static void
 one_cycle(int ch)
 {
     if (continuous) {
-	genlines(ch);
+        genlines(ch);
     } else if (ch != 'a') {
-	genlines('a');
-	genlines(ch);
+        genlines('a');
+        genlines(ch);
     }
 }
 
@@ -127,26 +127,26 @@ run_test(bool optimized GCC_UNUSED)
     int hi = continuous ? HI_CHAR : 'a' + LINES;
 
     if (lo < LO_CHAR)
-	lo = LO_CHAR;
+        lo = LO_CHAR;
     if (hi > HI_CHAR)
-	hi = HI_CHAR;
+        hi = HI_CHAR;
 
 #if defined(TRACE) || defined(NCURSES_TEST)
     if (optimized) {
-	Trace(("With hash mapping"));
-	_nc_optimize_enable |= OPTIMIZE_HASHMAP;
+        Trace(("With hash mapping"));
+        _nc_optimize_enable |= OPTIMIZE_HASHMAP;
     } else {
-	Trace(("Without hash mapping"));
-	_nc_optimize_enable &= ~OPTIMIZE_HASHMAP;
+        Trace(("Without hash mapping"));
+        _nc_optimize_enable &= ~OPTIMIZE_HASHMAP;
     }
 #endif
 
     if (reverse_loops)
-	for (ch = (char) hi; ch >= lo; ch--)
-	    one_cycle(ch);
+        for (ch = (char) hi; ch >= lo; ch--)
+            one_cycle(ch);
     else
-	for (ch = (char) lo; ch <= hi; ch++)
-	    one_cycle(ch);
+        for (ch = (char) lo; ch <= hi; ch++)
+            one_cycle(ch);
 }
 
 static void
@@ -154,23 +154,23 @@ usage(void)
 {
     static const char *const tbl[] =
     {
-	"Usage: hashtest [options]"
-	,""
-	,"Options:"
-	,"  -c      continuous (don't reset between refresh's)"
-	,"  -f num  leave 'num' lines constant for footer"
-	,"  -h num  leave 'num' lines constant for header"
-	,"  -l num  repeat test 'num' times"
-	,"  -n      test the normal optimizer"
-	,"  -o      test the hashed optimizer"
-	,"  -r      reverse the loops"
-	,"  -s      single-step"
-	,"  -x      assume lower-right corner extension"
+        "Usage: hashtest [options]"
+        ,""
+        ,"Options:"
+        ,"  -c      continuous (don't reset between refresh's)"
+        ,"  -f num  leave 'num' lines constant for footer"
+        ,"  -h num  leave 'num' lines constant for header"
+        ,"  -l num  repeat test 'num' times"
+        ,"  -n      test the normal optimizer"
+        ,"  -o      test the hashed optimizer"
+        ,"  -r      reverse the loops"
+        ,"  -s      single-step"
+        ,"  -x      assume lower-right corner extension"
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(tbl); n++)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -185,62 +185,62 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     while ((c = getopt(argc, argv, "cf:h:l:norsx")) != -1) {
-	switch (c) {
-	case 'c':
-	    continuous = TRUE;
-	    break;
-	case 'f':
-	    foot_lines = atoi(optarg);
-	    break;
-	case 'h':
-	    head_lines = atoi(optarg);
-	    break;
-	case 'l':
-	    test_loops = atoi(optarg);
-	    assert(test_loops >= 0);
-	    break;
-	case 'n':
-	    test_normal = TRUE;
-	    break;
-	case 'o':
-	    test_optimize = TRUE;
-	    break;
-	case 'r':
-	    reverse_loops = TRUE;
-	    break;
-	case 's':
-	    single_step = TRUE;
-	    break;
-	case 'x':
-	    extend_corner = TRUE;
-	    break;
-	default:
-	    usage();
-	}
+        switch (c) {
+        case 'c':
+            continuous = TRUE;
+            break;
+        case 'f':
+            foot_lines = atoi(optarg);
+            break;
+        case 'h':
+            head_lines = atoi(optarg);
+            break;
+        case 'l':
+            test_loops = atoi(optarg);
+            assert(test_loops >= 0);
+            break;
+        case 'n':
+            test_normal = TRUE;
+            break;
+        case 'o':
+            test_optimize = TRUE;
+            break;
+        case 'r':
+            reverse_loops = TRUE;
+            break;
+        case 's':
+            single_step = TRUE;
+            break;
+        case 'x':
+            extend_corner = TRUE;
+            break;
+        default:
+            usage();
+        }
     }
     if (!test_normal && !test_optimize) {
-	test_normal = TRUE;
-	test_optimize = TRUE;
+        test_normal = TRUE;
+        test_optimize = TRUE;
     }
 #if USE_TRACE
     curses_trace(TRACE_TIMES);
 #endif
 
     InitAndCatch(initscr(), finish);
-    keypad(stdscr, TRUE);	/* enable keyboard mapping */
-    (void) nonl();		/* tell curses not to do NL->CR/NL on output */
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    keypad(stdscr, TRUE);       /* enable keyboard mapping */
+    (void) nonl();              /* tell curses not to do NL->CR/NL on output */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
     scrollok(stdscr, TRUE);
 
     while (test_loops-- > 0) {
-	if (test_normal)
-	    run_test(FALSE);
-	if (test_optimize)
-	    run_test(TRUE);
+        if (test_normal)
+            run_test(FALSE);
+        if (test_optimize)
+            run_test(TRUE);
     }
 
-    cleanup();			/* we're done */
+    cleanup();                  /* we're done */
     ExitProgram(EXIT_SUCCESS);
 }
 /* hashtest.c ends here */

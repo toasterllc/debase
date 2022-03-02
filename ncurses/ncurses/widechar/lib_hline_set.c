@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_hline_set.c
+**      lib_hline_set.c
 **
-**	The routine whline_set().
+**      The routine whline_set().
 **
 */
 
@@ -50,29 +50,29 @@ whline_set(WINDOW *win, const cchar_t *ch, int n)
     T((T_CALLED("whline_set(%p,%s,%d)"), (void *) win, _tracecchar_t(ch), n));
 
     if (win) {
-	struct ldat *line = &(win->_line[win->_cury]);
-	NCURSES_CH_T wch;
-	int start = win->_curx;
-	int end = start + n - 1;
+        struct ldat *line = &(win->_line[win->_cury]);
+        NCURSES_CH_T wch;
+        int start = win->_curx;
+        int end = start + n - 1;
 
-	if (end > win->_maxx)
-	    end = win->_maxx;
+        if (end > win->_maxx)
+            end = win->_maxx;
 
-	CHANGED_RANGE(line, start, end);
+        CHANGED_RANGE(line, start, end);
 
-	if (ch == 0)
-	    wch = *WACS_HLINE;
-	else
-	    wch = *ch;
-	wch = _nc_render(win, wch);
+        if (ch == 0)
+            wch = *WACS_HLINE;
+        else
+            wch = *ch;
+        wch = _nc_render(win, wch);
 
-	while (end >= start) {
-	    line->text[end] = wch;
-	    end--;
-	}
+        while (end >= start) {
+            line->text[end] = wch;
+            end--;
+        }
 
-	_nc_synchook(win);
-	code = OK;
+        _nc_synchook(win);
+        code = OK;
     }
     returnCode(code);
 }

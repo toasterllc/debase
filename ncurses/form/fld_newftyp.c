@@ -37,19 +37,19 @@ MODULE_ID("$Id: fld_newftyp.c,v 1.23 2020/05/24 01:40:20 anonymous.maarten Exp $
 
 static FIELDTYPE default_fieldtype =
 {
-  0,				/* status                                      */
-  0L,				/* reference count                             */
-  (FIELDTYPE *)0,		/* pointer to left  operand                    */
-  (FIELDTYPE *)0,		/* pointer to right operand                    */
-  NULL,				/* makearg function                            */
-  NULL,				/* copyarg function                            */
-  NULL,				/* freearg function                            */
-  INIT_FT_FUNC(NULL),		/* field validation function                   */
-  INIT_FT_FUNC(NULL),		/* Character check function                    */
-  INIT_FT_FUNC(NULL),		/* enumerate next function                     */
-  INIT_FT_FUNC(NULL),		/* enumerate previous function                 */
+  0,                            /* status                                      */
+  0L,                           /* reference count                             */
+  (FIELDTYPE *)0,               /* pointer to left  operand                    */
+  (FIELDTYPE *)0,               /* pointer to right operand                    */
+  NULL,                         /* makearg function                            */
+  NULL,                         /* copyarg function                            */
+  NULL,                         /* freearg function                            */
+  INIT_FT_FUNC(NULL),           /* field validation function                   */
+  INIT_FT_FUNC(NULL),           /* Character check function                    */
+  INIT_FT_FUNC(NULL),           /* enumerate next function                     */
+  INIT_FT_FUNC(NULL),           /* enumerate previous function                 */
 #if NCURSES_INTEROP_FUNCS
-  NULL				/* generic callback alternative to makearg     */
+  NULL                          /* generic callback alternative to makearg     */
 #endif
 };
 
@@ -73,7 +73,7 @@ FORM_EXPORT_VAR(FIELDTYPE *)
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(FIELDTYPE *)
 new_fieldtype(bool (*const field_check) (FIELD *, const void *),
-	      bool (*const char_check) (int, const void *))
+              bool (*const char_check) (int, const void *))
 {
   FIELDTYPE *nftyp = (FIELDTYPE *)0;
 
@@ -88,21 +88,21 @@ new_fieldtype(bool (*const field_check) (FIELD *, const void *),
       nftyp = typeMalloc(FIELDTYPE, 1);
 
       if (nftyp)
-	{
-	  T((T_CREATE("fieldtype %p"), (void *)nftyp));
-	  *nftyp = default_fieldtype;
+        {
+          T((T_CREATE("fieldtype %p"), (void *)nftyp));
+          *nftyp = default_fieldtype;
 #if NCURSES_INTEROP_FUNCS
-	  nftyp->fieldcheck.ofcheck = field_check;
-	  nftyp->charcheck.occheck = char_check;
+          nftyp->fieldcheck.ofcheck = field_check;
+          nftyp->charcheck.occheck = char_check;
 #else
-	  nftyp->fcheck = field_check;
-	  nftyp->ccheck = char_check;
+          nftyp->fcheck = field_check;
+          nftyp->ccheck = char_check;
 #endif
-	}
+        }
       else
-	{
-	  SET_ERROR(E_SYSTEM_ERROR);
-	}
+        {
+          SET_ERROR(E_SYSTEM_ERROR);
+        }
     }
   else
     {
@@ -138,9 +138,9 @@ free_fieldtype(FIELDTYPE *typ)
   if (typ->status & _LINKED_TYPE)
     {
       if (typ->left)
-	typ->left->ref--;
+        typ->left->ref--;
       if (typ->right)
-	typ->right->ref--;
+        typ->right->ref--;
     }
   free(typ);
   RETURN(E_OK);

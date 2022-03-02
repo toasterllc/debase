@@ -45,14 +45,14 @@ check_names(const char *name, NCURSES_CONST char *const *table, int termcap)
 
     printf("%s:\n", name);
     for (n = 0; table[n] != NULL; ++n) {
-	entry_ptr = _nc_find_entry(table[n], hash_table);
-	if (entry_ptr == 0) {
-	    printf("  %s\n", table[n]);
-	    errs++;
-	}
+        entry_ptr = _nc_find_entry(table[n], hash_table);
+        if (entry_ptr == 0) {
+            printf("  %s\n", table[n]);
+            errs++;
+        }
     }
     if (errs)
-	printf("%d errors\n", errs);
+        printf("%d errors\n", errs);
 }
 
 int

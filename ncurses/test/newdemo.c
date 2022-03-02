@@ -1,6 +1,6 @@
 /*
- *  newdemo.c	-	A demo program using PDCurses. The program illustrate
- *  	 		the use of colours for text output.
+ *  newdemo.c   -       A demo program using PDCurses. The program illustrate
+ *                      the use of colours for text output.
  *
  * $Id: newdemo.c,v 1.47 2019/12/14 23:25:29 tom Exp $
  */
@@ -66,15 +66,15 @@ WaitForUser(WINDOW *win)
     t = time((time_t *) 0);
 
     while (1) {
-	chtype key;
-	if ((int) (key = (chtype) wgetch(win)) != ERR) {
-	    if (key == 'q' || key == 'Q')
-		return 1;
-	    else
-		return 0;
-	}
-	if (time((time_t *) 0) - t > 5)
-	    return 0;
+        chtype key;
+        if ((int) (key = (chtype) wgetch(win)) != ERR) {
+            if (key == 'q' || key == 'Q')
+                return 1;
+            else
+                return 0;
+        }
+        if (time((time_t *) 0) - t > 5)
+            return 0;
     }
 }
 
@@ -82,10 +82,10 @@ static void
 set_colors(WINDOW *win, int pair, int foreground, int background)
 {
     if (has_colors()) {
-	if (pair > COLOR_PAIRS)
-	    pair = COLOR_PAIRS;
-	init_pair((short) pair, (short) foreground, (short) background);
-	(void) wattrset(win, AttrArg(COLOR_PAIR(pair), 0));
+        if (pair > COLOR_PAIRS)
+            pair = COLOR_PAIRS;
+        init_pair((short) pair, (short) foreground, (short) background);
+        (void) wattrset(win, AttrArg(COLOR_PAIR(pair), 0));
     }
 }
 
@@ -93,9 +93,9 @@ static chtype
 use_colors(WINDOW *win, int pair, chtype attrs)
 {
     if (has_colors()) {
-	if (pair > COLOR_PAIRS)
-	    pair = COLOR_PAIRS;
-	attrs |= (chtype) COLOR_PAIR(pair);
+        if (pair > COLOR_PAIRS)
+            pair = COLOR_PAIRS;
+        attrs |= (chtype) COLOR_PAIR(pair);
     }
     (void) wattrset(win, AttrArg(attrs, 0));
     return attrs;
@@ -116,16 +116,16 @@ SubWinTest(WINDOW *win)
     sh = h / 3;
 
     if ((swin1 = subwin(win, sh, sw, by + 3, bx + 5)) == NULL) {
-	return 1;
+        return 1;
     }
     if ((swin2 = subwin(win, sh, sw, by + 4, bx + 8)) == NULL) {
-	delwin(swin1);
-	return 1;
+        delwin(swin1);
+        return 1;
     }
     if ((swin3 = subwin(win, sh, sw, by + 5, bx + 11)) == NULL) {
-	delwin(swin1);
-	delwin(swin2);
-	return 1;
+        delwin(swin1);
+        delwin(swin2);
+        return 1;
     }
 
     set_colors(swin1, 8, COLOR_RED, COLOR_BLUE);
@@ -154,11 +154,11 @@ static int
 bounce(int n, int *dir, int len)
 {
     if (*dir > 0)
-	++n;
+        ++n;
     else
-	--n;
+        --n;
     if (n <= 1 || n >= len - 2)
-	*dir = *dir ? 0 : 1;
+        *dir = *dir ? 0 : 1;
     return n;
 }
 
@@ -192,25 +192,25 @@ BouncingBalls(WINDOW *win)
     nodelay(win, TRUE);
 
     while (wgetch(win) == ERR) {
-	x1 = bounce(x1, &xd1, w);
-	y1 = bounce(y1, &yd1, h);
-	x2 = bounce(x2, &xd2, w);
-	y2 = bounce(y2, &yd2, h);
-	x3 = bounce(x3, &xd3, w);
-	y3 = bounce(y3, &yd3, h);
+        x1 = bounce(x1, &xd1, w);
+        y1 = bounce(y1, &yd1, h);
+        x2 = bounce(x2, &xd2, w);
+        y2 = bounce(y2, &yd2, h);
+        x3 = bounce(x3, &xd3, w);
+        y3 = bounce(y3, &yd3, h);
 
-	set_colors(win, 11, COLOR_RED, COLOR_BLUE);
-	MvWAddCh(win, y1, x1, 'O');
+        set_colors(win, 11, COLOR_RED, COLOR_BLUE);
+        MvWAddCh(win, y1, x1, 'O');
 
-	set_colors(win, 12, COLOR_BLUE, COLOR_RED);
-	MvWAddCh(win, y2, x2, '*');
+        set_colors(win, 12, COLOR_BLUE, COLOR_RED);
+        MvWAddCh(win, y2, x2, '*');
 
-	set_colors(win, 13, COLOR_YELLOW, COLOR_WHITE);
-	MvWAddCh(win, y3, x3, '@');
+        set_colors(win, 13, COLOR_YELLOW, COLOR_WHITE);
+        MvWAddCh(win, y3, x3, '@');
 
-	wmove(win, 0, 0);
-	wrefresh(win);
-	delay_output(100);
+        wmove(win, 0, 0);
+        wrefresh(win);
+        delay_output(100);
     }
     return 0;
 }
@@ -231,136 +231,136 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
     InitAndCatch(initscr(), trap);
     if (has_colors())
-	start_color();
+        start_color();
     cbreak();
     curs_set(0);
     width = 48;
-    height = 14;		/* Create a drawing window */
+    height = 14;                /* Create a drawing window */
     win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     if (win == NULL) {
-	stop_curses();
-	ExitProgram(EXIT_FAILURE);
+        stop_curses();
+        ExitProgram(EXIT_FAILURE);
     }
 
     while (1) {
-	int w;
-	int j;
-	chtype c;
-	const char *message;
+        int w;
+        int j;
+        chtype c;
+        const char *message;
 
-	set_colors(win, 1, COLOR_WHITE, COLOR_BLUE);
-	werase(win);
+        set_colors(win, 1, COLOR_WHITE, COLOR_BLUE);
+        werase(win);
 
-	set_colors(win, 2, COLOR_RED, COLOR_RED);
-	box(win, ACS_VLINE, ACS_HLINE);
-	wrefresh(win);
-	/* Do ramdom output of a character */
-	use_colors(win, 1, A_NORMAL);
-	c = 'a';
-	for (i = 0; i < 5000; ++i) {
-	    x = rand() % (width - 2) + 1;
-	    y = rand() % (height - 2) + 1;
-	    MvWAddCh(win, y, x, c);
-	    wrefresh(win);
-	    nodelay(win, TRUE);
-	    if (wgetch(win) != ERR)
-		break;
-	    if (i == 2000) {
-		c = 'b';
-		set_colors(win, 3, COLOR_CYAN, COLOR_YELLOW);
-	    }
-	}
+        set_colors(win, 2, COLOR_RED, COLOR_RED);
+        box(win, ACS_VLINE, ACS_HLINE);
+        wrefresh(win);
+        /* Do ramdom output of a character */
+        use_colors(win, 1, A_NORMAL);
+        c = 'a';
+        for (i = 0; i < 5000; ++i) {
+            x = rand() % (width - 2) + 1;
+            y = rand() % (height - 2) + 1;
+            MvWAddCh(win, y, x, c);
+            wrefresh(win);
+            nodelay(win, TRUE);
+            if (wgetch(win) != ERR)
+                break;
+            if (i == 2000) {
+                c = 'b';
+                set_colors(win, 3, COLOR_CYAN, COLOR_YELLOW);
+            }
+        }
 
-	SubWinTest(win);
-	/* Erase and draw green window */
-	set_colors(win, 4, COLOR_YELLOW, COLOR_GREEN);
-	wbkgd(win, use_colors(win, 4, A_BOLD));
-	werase(win);
-	wrefresh(win);
-	/* Draw RED bounding box */
-	use_colors(win, 2, A_NORMAL);
-	box(win, ' ', ' ');
-	wrefresh(win);
-	/* Display Australia map */
-	use_colors(win, 4, A_BOLD);
-	i = 0;
-	while (*AusMap[i]) {
-	    MvWAddStr(win, i + 1, 8, AusMap[i]);
-	    wrefresh(win);
-	    delay_output(50);
-	    ++i;
-	}
+        SubWinTest(win);
+        /* Erase and draw green window */
+        set_colors(win, 4, COLOR_YELLOW, COLOR_GREEN);
+        wbkgd(win, use_colors(win, 4, A_BOLD));
+        werase(win);
+        wrefresh(win);
+        /* Draw RED bounding box */
+        use_colors(win, 2, A_NORMAL);
+        box(win, ' ', ' ');
+        wrefresh(win);
+        /* Display Australia map */
+        use_colors(win, 4, A_BOLD);
+        i = 0;
+        while (*AusMap[i]) {
+            MvWAddStr(win, i + 1, 8, AusMap[i]);
+            wrefresh(win);
+            delay_output(50);
+            ++i;
+        }
 
-	set_colors(win, 5, COLOR_BLUE, COLOR_WHITE);
-	use_colors(win, 5, A_BLINK);
-	MvWAddStr(win, height - 2, 6, " PDCurses 2.1 for DOS, OS/2 and Unix");
-	wrefresh(win);
+        set_colors(win, 5, COLOR_BLUE, COLOR_WHITE);
+        use_colors(win, 5, A_BLINK);
+        MvWAddStr(win, height - 2, 6, " PDCurses 2.1 for DOS, OS/2 and Unix");
+        wrefresh(win);
 
-	/* Draw running messages */
-	set_colors(win, 6, COLOR_YELLOW, COLOR_WHITE);
-	message = messages[j = 0];
-	i = 1;
-	w = width - 2;
-	_nc_STRCPY(buffer, message, sizeof(buffer));
-	while (j < NMESSAGES) {
-	    while ((int) strlen(buffer) < w) {
-		_nc_STRCAT(buffer, " ... ", sizeof(buffer));
-		_nc_STRCAT(buffer, messages[++j % NMESSAGES], sizeof(buffer));
-	    }
+        /* Draw running messages */
+        set_colors(win, 6, COLOR_YELLOW, COLOR_WHITE);
+        message = messages[j = 0];
+        i = 1;
+        w = width - 2;
+        _nc_STRCPY(buffer, message, sizeof(buffer));
+        while (j < NMESSAGES) {
+            while ((int) strlen(buffer) < w) {
+                _nc_STRCAT(buffer, " ... ", sizeof(buffer));
+                _nc_STRCAT(buffer, messages[++j % NMESSAGES], sizeof(buffer));
+            }
 
-	    if (i < w)
-		(void) mvwaddnstr(win, height / 2, w - i, buffer, i);
-	    else
-		(void) mvwaddnstr(win, height / 2, 1, buffer, w);
+            if (i < w)
+                (void) mvwaddnstr(win, height / 2, w - i, buffer, i);
+            else
+                (void) mvwaddnstr(win, height / 2, 1, buffer, w);
 
-	    wrefresh(win);
-	    nodelay(win, TRUE);
-	    if (wgetch(win) != ERR) {
-		flushinp();
-		break;
-	    }
-	    if (i++ >= w) {
-		for (k = 0; (buffer[k] = buffer[k + 1]) != '\0'; k++) ;
-	    }
-	    delay_output(100);
-	}
+            wrefresh(win);
+            nodelay(win, TRUE);
+            if (wgetch(win) != ERR) {
+                flushinp();
+                break;
+            }
+            if (i++ >= w) {
+                for (k = 0; (buffer[k] = buffer[k + 1]) != '\0'; k++) ;
+            }
+            delay_output(100);
+        }
 
-	j = 0;
-	/*  Draw running As across in RED */
-	set_colors(win, 7, COLOR_RED, COLOR_GREEN);
-	memset(save, ' ', sizeof(save));
-	for (i = 2; i < width - 4; ++i) {
-	    k = (int) mvwinch(win, 4, i);
-	    if (k == ERR)
-		break;
-	    save[j++] = c = (chtype) k;
-	    c &= A_CHARTEXT;
-	    MvWAddCh(win, 4, i, c);
-	}
-	wrefresh(win);
+        j = 0;
+        /*  Draw running As across in RED */
+        set_colors(win, 7, COLOR_RED, COLOR_GREEN);
+        memset(save, ' ', sizeof(save));
+        for (i = 2; i < width - 4; ++i) {
+            k = (int) mvwinch(win, 4, i);
+            if (k == ERR)
+                break;
+            save[j++] = c = (chtype) k;
+            c &= A_CHARTEXT;
+            MvWAddCh(win, 4, i, c);
+        }
+        wrefresh(win);
 
-	/* Put a message up wait for a key */
-	i = height - 2;
-	use_colors(win, 5, A_NORMAL);
-	MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
-	wrefresh(win);
+        /* Put a message up wait for a key */
+        i = height - 2;
+        use_colors(win, 5, A_NORMAL);
+        MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
+        wrefresh(win);
 
-	if (WaitForUser(win) == 1)
-	    break;
+        if (WaitForUser(win) == 1)
+            break;
 
-	j = 0;			/* Restore the old line */
-	for (i = 2; i < width - 4; ++i)
-	    MvWAddCh(win, 4, i, save[j++]);
-	wrefresh(win);
+        j = 0;                  /* Restore the old line */
+        for (i = 2; i < width - 4; ++i)
+            MvWAddCh(win, 4, i, save[j++]);
+        wrefresh(win);
 
-	BouncingBalls(win);
-	/* Put a message up wait for a key */
-	i = height - 2;
-	use_colors(win, 5, A_NORMAL);
-	MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
-	wrefresh(win);
-	if (WaitForUser(win) == 1)
-	    break;
+        BouncingBalls(win);
+        /* Put a message up wait for a key */
+        i = height - 2;
+        use_colors(win, 5, A_NORMAL);
+        MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
+        wrefresh(win);
+        if (WaitForUser(win) == 1)
+            break;
     }
     stop_curses();
     ExitProgram(EXIT_SUCCESS);

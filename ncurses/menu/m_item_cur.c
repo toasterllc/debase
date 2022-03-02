@@ -56,24 +56,24 @@ set_current_item(MENU *menu, ITEM *item)
   if (menu && item && (item->imenu == menu))
     {
       if (menu->status & _IN_DRIVER)
-	RETURN(E_BAD_STATE);
+        RETURN(E_BAD_STATE);
 
       assert(menu->curitem);
       if (item != menu->curitem)
-	{
-	  if (menu->status & _LINK_NEEDED)
-	    {
-	      /*
-	       * Items are available, but they are not linked together.
-	       * So we have to link here.
-	       */
-	      _nc_Link_Items(menu);
-	    }
-	  assert(menu->pattern);
-	  Reset_Pattern(menu);
-	  /* adjust the window to make item visible and update the menu */
-	  Adjust_Current_Item(menu, menu->toprow, item);
-	}
+        {
+          if (menu->status & _LINK_NEEDED)
+            {
+              /*
+               * Items are available, but they are not linked together.
+               * So we have to link here.
+               */
+              _nc_Link_Items(menu);
+            }
+          assert(menu->pattern);
+          Reset_Pattern(menu);
+          /* adjust the window to make item visible and update the menu */
+          Adjust_Current_Item(menu, menu->toprow, item);
+        }
     }
   else
     RETURN(E_BAD_ARGUMENT);

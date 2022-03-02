@@ -36,7 +36,7 @@
 /* $Id: term_entry.h,v 1.61 2021/09/04 10:52:55 tom Exp $ */
 
 /*
- *	term_entry.h -- interface to entry-manipulation code
+ *      term_entry.h -- interface to entry-manipulation code
  */
 
 #ifndef NCURSES_TERM_ENTRY_H_incl
@@ -92,51 +92,51 @@ extern "C" {
  * terminal description and defines the order in which they are searched.
  */
 typedef enum {
-	dbdTIC = 0,		/* special, used by tic when writing entry */
+        dbdTIC = 0,             /* special, used by tic when writing entry */
 #if NCURSES_USE_DATABASE
-	dbdEnvOnce,		/* the $TERMINFO environment variable */
-	dbdHome,		/* $HOME/.terminfo */
-	dbdEnvList,		/* the $TERMINFO_DIRS environment variable */
-	dbdCfgList,		/* the compiled-in TERMINFO_DIRS value */
-	dbdCfgOnce,		/* the compiled-in TERMINFO value */
+        dbdEnvOnce,             /* the $TERMINFO environment variable */
+        dbdHome,                /* $HOME/.terminfo */
+        dbdEnvList,             /* the $TERMINFO_DIRS environment variable */
+        dbdCfgList,             /* the compiled-in TERMINFO_DIRS value */
+        dbdCfgOnce,             /* the compiled-in TERMINFO value */
 #endif
 #if NCURSES_USE_TERMCAP
-	dbdEnvOnce2,		/* the $TERMCAP environment variable */
-	dbdEnvList2,		/* the $TERMPATH environment variable */
-	dbdCfgList2,		/* the compiled-in TERMPATH */
+        dbdEnvOnce2,            /* the $TERMCAP environment variable */
+        dbdEnvList2,            /* the $TERMPATH environment variable */
+        dbdCfgList2,            /* the compiled-in TERMPATH */
 #endif
-	dbdLAST
+        dbdLAST
 } DBDIRS;
 
-#define MAX_USES	32
-#define MAX_CROSSLINKS	16
+#define MAX_USES        32
+#define MAX_CROSSLINKS  16
 
 typedef struct entry ENTRY;
 
 typedef struct {
-	char *name;
-	ENTRY *link;
-	long line;
+        char *name;
+        ENTRY *link;
+        long line;
 } ENTRY_USES;
 
 struct entry {
-	TERMTYPE2 tterm;
-	unsigned nuses;
-	ENTRY_USES uses[MAX_USES];
-	int ncrosslinks;
-	ENTRY *crosslinks[MAX_CROSSLINKS];
-	long cstart;
-	long cend;
-	long startline;
-	ENTRY *next;
-	ENTRY *last;
+        TERMTYPE2 tterm;
+        unsigned nuses;
+        ENTRY_USES uses[MAX_USES];
+        int ncrosslinks;
+        ENTRY *crosslinks[MAX_CROSSLINKS];
+        long cstart;
+        long cend;
+        long startline;
+        ENTRY *next;
+        ENTRY *last;
 };
 
 extern NCURSES_EXPORT_VAR(ENTRY *) _nc_head;
 extern NCURSES_EXPORT_VAR(ENTRY *) _nc_tail;
-#define for_entry_list(qp)	for (qp = _nc_head; qp; qp = qp->next)
+#define for_entry_list(qp)      for (qp = _nc_head; qp; qp = qp->next)
 
-#define MAX_LINE	132
+#define MAX_LINE        132
 
 #define NULLHOOK        (bool(*)(ENTRY *))0
 
@@ -144,22 +144,22 @@ extern NCURSES_EXPORT_VAR(ENTRY *) _nc_tail;
  * Note that WANTED and PRESENT are not simple inverses!  If a capability
  * has been explicitly cancelled, it is not considered WANTED.
  */
-#define WANTED(s)	((s) == ABSENT_STRING)
-#define PRESENT(s)	(((s) != ABSENT_STRING) && ((s) != CANCELLED_STRING))
+#define WANTED(s)       ((s) == ABSENT_STRING)
+#define PRESENT(s)      (((s) != ABSENT_STRING) && ((s) != CANCELLED_STRING))
 
 #define ANDMISSING(p,q) \
-		{ \
-		if (PRESENT(p) && !PRESENT(q)) \
-			_nc_warning(#p " but no " #q); \
-		}
+                { \
+                if (PRESENT(p) && !PRESENT(q)) \
+                        _nc_warning(#p " but no " #q); \
+                }
 
 #define PAIRED(p,q) \
-		{ \
-		if (PRESENT(q) && !PRESENT(p)) \
-			_nc_warning(#q " but no " #p); \
-		if (PRESENT(p) && !PRESENT(q)) \
-			_nc_warning(#p " but no " #q); \
-		}
+                { \
+                if (PRESENT(q) && !PRESENT(p)) \
+                        _nc_warning(#q " but no " #p); \
+                if (PRESENT(p) && !PRESENT(q)) \
+                        _nc_warning(#p " but no " #q); \
+                }
 
 /*
  * These entrypoints are used only by the ncurses utilities such as tic.
@@ -223,7 +223,7 @@ extern NCURSES_EXPORT(void) _nc_trace_xnames (TERMTYPE *);
 extern NCURSES_EXPORT(void) _nc_copy_termtype (TERMTYPE *, const TERMTYPE *) NCURSES_TACK_1_08;
 
 /* lib_acs.c */
-extern NCURSES_EXPORT(void) _nc_init_acs (void) NCURSES_TACK_1_08;	/* corresponds to traditional 'init_acs()' */
+extern NCURSES_EXPORT(void) _nc_init_acs (void) NCURSES_TACK_1_08;      /* corresponds to traditional 'init_acs()' */
 
 /* free_ttype.c: elementary allocation code */
 extern NCURSES_EXPORT(void) _nc_free_termtype (TERMTYPE *) NCURSES_TACK_1_08;

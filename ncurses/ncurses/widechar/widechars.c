@@ -46,44 +46,44 @@ _nc_mbtowc(wchar_t *pwc, const char *s, size_t n)
     int try;
 
     if (s != 0 && n != 0) {
-	/*
-	 * MultiByteToWideChar() can decide to return more than one
-	 * wide-character.  We want only one.  Ignore any trailing null, both
-	 * in the initial count and in the conversion.
-	 */
-	count = 0;
-	for (try = 1; try <= (int) n; ++try) {
-	    count = MultiByteToWideChar(CP_UTF8,
-					MB_ERR_INVALID_CHARS,
-					s,
-					try,
-					pwc,
-					0);
-	    TR(TRACE_BITS, ("...try %d:%d", try, count));
-	    if (count > 0) {
-		break;
-	    }
-	}
-	if (count < 1 || count > 2) {
-	    result = -1;
-	} else {
-	    wchar_t actual[2];
-	    memset(&actual, 0, sizeof(actual));
-	    count = MultiByteToWideChar(CP_UTF8,
-					MB_ERR_INVALID_CHARS,
-					s,
-					try,
-					actual,
-					2);
-	    TR(TRACE_BITS, ("\twin32 ->%#x, %#x", actual[0], actual[1]));
-	    *pwc = actual[0];
-	    if (actual[1] != 0)
-		result = -1;
-	    else
-		result = try;
-	}
+        /*
+         * MultiByteToWideChar() can decide to return more than one
+         * wide-character.  We want only one.  Ignore any trailing null, both
+         * in the initial count and in the conversion.
+         */
+        count = 0;
+        for (try = 1; try <= (int) n; ++try) {
+            count = MultiByteToWideChar(CP_UTF8,
+                                        MB_ERR_INVALID_CHARS,
+                                        s,
+                                        try,
+                                        pwc,
+                                        0);
+            TR(TRACE_BITS, ("...try %d:%d", try, count));
+            if (count > 0) {
+                break;
+            }
+        }
+        if (count < 1 || count > 2) {
+            result = -1;
+        } else {
+            wchar_t actual[2];
+            memset(&actual, 0, sizeof(actual));
+            count = MultiByteToWideChar(CP_UTF8,
+                                        MB_ERR_INVALID_CHARS,
+                                        s,
+                                        try,
+                                        actual,
+                                        2);
+            TR(TRACE_BITS, ("\twin32 ->%#x, %#x", actual[0], actual[1]));
+            *pwc = actual[0];
+            if (actual[1] != 0)
+                result = -1;
+            else
+                result = try;
+        }
     } else {
-	result = 0;
+        result = 0;
     }
 
     return result;
@@ -97,23 +97,23 @@ _nc_mblen(const char *s, size_t n)
     wchar_t temp;
 
     if (s != 0 && n != 0) {
-	count = _nc_mbtowc(&temp, s, n);
-	if (count == 1) {
-	    int check = WideCharToMultiByte(CP_UTF8,
-					    0,
-					    &temp,
-					    1,
-					    NULL,
-					    0,	/* compute length only */
-					    NULL,
-					    NULL);
-	    TR(TRACE_BITS, ("\tcheck ->%d\n", check));
-	    if (check > 0 && (size_t) check <= n) {
-		result = check;
-	    }
-	}
+        count = _nc_mbtowc(&temp, s, n);
+        if (count == 1) {
+            int check = WideCharToMultiByte(CP_UTF8,
+                                            0,
+                                            &temp,
+                                            1,
+                                            NULL,
+                                            0,  /* compute length only */
+                                            NULL,
+                                            NULL);
+            TR(TRACE_BITS, ("\tcheck ->%d\n", check));
+            if (check > 0 && (size_t) check <= n) {
+                result = check;
+            }
+        }
     } else {
-	result = 0;
+        result = 0;
     }
 
     return result;
@@ -126,24 +126,24 @@ _nc_wctomb(char *s, wchar_t wc)
     int check;
 
     check = WideCharToMultiByte(CP_UTF8,
-				0,
-				&wc,
-				1,
-				NULL,
-				0,	/* compute length only */
-				NULL,
-				NULL);
+                                0,
+                                &wc,
+                                1,
+                                NULL,
+                                0,      /* compute length only */
+                                NULL,
+                                NULL);
     if (check > 0) {
-	result = WideCharToMultiByte(CP_UTF8,
-				     0,
-				     &wc,
-				     1,
-				     s,
-				     check + 1,
-				     NULL,
-				     NULL);
+        result = WideCharToMultiByte(CP_UTF8,
+                                     0,
+                                     &wc,
+                                     1,
+                                     s,
+                                     check + 1,
+                                     NULL,
+                                     NULL);
     } else {
-	result = -1;
+        result = -1;
     }
     return result;
 }

@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_longname.c
+**      lib_longname.c
 **
-**	The routine longname().
+**      The routine longname().
 **
 */
 
@@ -55,14 +55,14 @@ NCURSES_SP_NAME(longname) (NCURSES_SP_DCL0)
     T((T_CALLED("longname(%p)"), (void *) SP_PARM));
 
     if (SP_PARM) {
-	char *ptr;
+        char *ptr;
 
-	for (ptr = SP_PARM->_ttytype + strlen(SP_PARM->_ttytype);
-	     ptr > SP_PARM->_ttytype;
-	     ptr--)
-	    if (*ptr == '|')
-		returnPtr(ptr + 1);
-	returnPtr(SP_PARM->_ttytype);
+        for (ptr = SP_PARM->_ttytype + strlen(SP_PARM->_ttytype);
+             ptr > SP_PARM->_ttytype;
+             ptr--)
+            if (*ptr == '|')
+                returnPtr(ptr + 1);
+        returnPtr(SP_PARM->_ttytype);
     }
     return empty;
 }
@@ -95,10 +95,10 @@ longname(void)
     T((T_CALLED("longname()")));
 
     for (ptr = ttytype + strlen(ttytype);
-	 ptr > ttytype;
-	 ptr--)
-	if (*ptr == '|')
-	    returnPtr(ptr + 1);
+         ptr > ttytype;
+         ptr--)
+        if (*ptr == '|')
+            returnPtr(ptr + 1);
     returnPtr(ttytype);
 }
 #endif

@@ -44,27 +44,27 @@ trim_suffix(const char *a, size_t *len)
     const char ignore[] = SUFFIX_IGNORED;
 
     if (sizeof(ignore) != 0) {
-	bool trim = FALSE;
-	size_t need = (sizeof(ignore) - 1);
+        bool trim = FALSE;
+        size_t need = (sizeof(ignore) - 1);
 
-	if (*len > need) {
-	    size_t first = *len - need;
-	    size_t n;
-	    trim = TRUE;
-	    for (n = first; n < *len; ++n) {
-		if (tolower(UChar(a[n])) != tolower(UChar(ignore[n - first]))) {
-		    trim = FALSE;
-		    break;
-		}
-	    }
-	    if (trim) {
-		*len -= need;
-	    }
-	}
+        if (*len > need) {
+            size_t first = *len - need;
+            size_t n;
+            trim = TRUE;
+            for (n = first; n < *len; ++n) {
+                if (tolower(UChar(a[n])) != tolower(UChar(ignore[n - first]))) {
+                    trim = FALSE;
+                    break;
+                }
+            }
+            if (trim) {
+                *len -= need;
+            }
+        }
     }
 }
 #else
-#define trim_suffix(a, len)	/* nothing */
+#define trim_suffix(a, len)     /* nothing */
 #endif
 
 bool

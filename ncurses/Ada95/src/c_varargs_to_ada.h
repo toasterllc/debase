@@ -43,40 +43,40 @@
 #include <form.h>
 
 extern int set_field_type_alnum(FIELD * /* field */ ,
-				int /* minimum_width */ );
+                                int /* minimum_width */ );
 
 extern int set_field_type_alpha(FIELD * /* field */ ,
-				int /* minimum_width */ );
+                                int /* minimum_width */ );
 
 extern int set_field_type_enum(FIELD * /* field */ ,
-			       char ** /* value_list */ ,
-			       int /* case_sensitive */ ,
-			       int /* unique_match */ );
+                               char ** /* value_list */ ,
+                               int /* case_sensitive */ ,
+                               int /* unique_match */ );
 
 extern int set_field_type_integer(FIELD * /* field */ ,
-				  int /* precision */ ,
-				  long /* minimum */ ,
-				  long /* maximum */ );
+                                  int /* precision */ ,
+                                  long /* minimum */ ,
+                                  long /* maximum */ );
 
 extern int set_field_type_numeric(FIELD * /* field */ ,
-				  int /* precision */ ,
-				  double /* minimum */ ,
-				  double /* maximum */ );
+                                  int /* precision */ ,
+                                  double /* minimum */ ,
+                                  double /* maximum */ );
 
 extern int set_field_type_regexp(FIELD * /* field */ ,
-				 char * /* regular_expression */ );
+                                 char * /* regular_expression */ );
 
 extern int set_field_type_ipv4(FIELD * /* field */ );
 
 extern int set_field_type_user(FIELD * /* field */ ,
-			       FIELDTYPE * /* fieldtype */ ,
-			       void * /* arg */ );
+                               FIELDTYPE * /* fieldtype */ ,
+                               void * /* arg */ );
 
 extern void *void_star_make_arg(va_list * /* list */ );
 
 #ifdef TRACE
-extern void _traces(const char *	/* fmt */
-		    ,char * /* arg */ );
+extern void _traces(const char *        /* fmt */
+                    ,char * /* arg */ );
 #endif
 
 #endif /* __C_VARARGS_TO_ADA_H */

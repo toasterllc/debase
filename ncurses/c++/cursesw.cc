@@ -30,8 +30,8 @@
 
 /*
  * Authors:
- *	Thomas E. Dickey
- *	Juergen Pfeifer
+ *      Thomas E. Dickey
+ *      Juergen Pfeifer
  *
  * The NCursesWindow class was originally based on a file written by
  * Eric Newton, later modified by Ulrich Drepper and Anatoly Ivasyuk.
@@ -76,10 +76,10 @@ NCursesWindow::scanw(int y, int x, const char* fmt, ...)
     int result = ERR;
 
     if (::wmove(w, y, x) != ERR) {
-	va_list args;
-	va_start(args, fmt);
-	result = ::vw_scanw (w, const_cast<NCURSES_CONST char *>(fmt), args);
-	va_end(args);
+        va_list args;
+        va_start(args, fmt);
+        result = ::vw_scanw (w, const_cast<NCURSES_CONST char *>(fmt), args);
+        va_end(args);
     }
     return result;
 }
@@ -102,7 +102,7 @@ NCursesWindow::scanw(int y, int x, const char* fmt, va_list args)
     int result = ERR;
 
     if (::wmove(w, y, x) != ERR) {
-	result = ::vw_scanw (w, const_cast<NCURSES_CONST char *>(fmt), args);
+        result = ::vw_scanw (w, const_cast<NCURSES_CONST char *>(fmt), args);
     }
     return result;
 }
@@ -126,7 +126,7 @@ NCursesWindow::printw(int y, int x, const char * fmt, ...)
     va_start(args, fmt);
     int result = ::wmove(w, y, x);
     if (result == OK) {
-	result = ::vw_printw(w, fmt, args);
+        result = ::vw_printw(w, fmt, args);
     }
     va_end(args);
     return result;
@@ -146,7 +146,7 @@ NCursesWindow::printw(int y, int x, const char * fmt, va_list args)
 {
     int result = ::wmove(w, y, x);
     if (result == OK) {
-	result = ::vw_printw(w, fmt, args);
+        result = ::vw_printw(w, fmt, args);
     }
     return result;
 }
@@ -169,14 +169,14 @@ void
 NCursesWindow::initialize()
 {
     if (!b_initialized) {
-	::initscr();
-	b_initialized = TRUE;
-	if (colorInitialized == COLORS_NEED_INITIALIZATION) {
-	    colorInitialized = COLORS_NOT_INITIALIZED;
-	    useColors();
-	}
-	::noecho();
-	::cbreak();
+        ::initscr();
+        b_initialized = TRUE;
+        if (colorInitialized == COLORS_NEED_INITIALIZATION) {
+            colorInitialized = COLORS_NOT_INITIALIZED;
+            useColors();
+        }
+        ::noecho();
+        ::cbreak();
     }
 }
 
@@ -202,7 +202,7 @@ NCursesWindow::NCursesWindow(int nlines, int ncols, int begin_y, int begin_x)
 
     w = ::newwin(nlines, ncols, begin_y, begin_x);
     if (w == 0) {
-	err_handler("Cannot construct window");
+        err_handler("Cannot construct window");
     }
     set_keyboard();
 }
@@ -222,20 +222,20 @@ NCursesWindow::NCursesWindow(WINDOW* window)
 }
 
 NCursesWindow::NCursesWindow(NCursesWindow& win, int ny, int nx,
-			     int begin_y, int begin_x, char absrel)
+                             int begin_y, int begin_x, char absrel)
   : w(0), alloced(TRUE), par(0), subwins(0), sib(0)
 {
     constructing();
-    if (absrel == 'a') {	// absolute origin
-	begin_y -= win.begy();
-	begin_x -= win.begx();
+    if (absrel == 'a') {        // absolute origin
+        begin_y -= win.begy();
+        begin_x -= win.begx();
     }
 
     // Link this window into its parent's list of subwindows.
     // We use derwin(), since this also works for pads.
     w = ::derwin(win.w, ny, nx, begin_y, begin_x);
     if (w == 0) {
-	err_handler("Cannot construct subwindow");
+        err_handler("Cannot construct subwindow");
     }
 
     par = &win;
@@ -244,7 +244,7 @@ NCursesWindow::NCursesWindow(NCursesWindow& win, int ny, int nx,
 }
 
 NCursesWindow::NCursesWindow(NCursesWindow& win,
-				bool do_box NCURSES_PARAM_INIT(TRUE))
+                                bool do_box NCURSES_PARAM_INIT(TRUE))
   : w(0), alloced(TRUE), par(0), subwins(0), sib(0)
 {
     constructing();
@@ -252,7 +252,7 @@ NCursesWindow::NCursesWindow(NCursesWindow& win,
     int myWidth  = win.width();
     w = :: derwin(win.w, myHeight - 2, myWidth - 2, 1, 1);
     if (w == 0) {
-	err_handler("Cannot construct subwindow");
+        err_handler("Cannot construct subwindow");
     }
 
     par = &win;
@@ -261,8 +261,8 @@ NCursesWindow::NCursesWindow(NCursesWindow& win,
     subwins = 0;
 
     if (do_box) {
-	win.box();
-	win.touchwin();
+        win.box();
+        win.touchwin();
     }
 }
 
@@ -297,17 +297,17 @@ int _nc_xx_ripoff_init(WINDOW *w, int ncols)
 
     RIPOFFINIT init = *prip++;
     if (init) {
-	res = init(*(new NCursesWindow(w,ncols)));
+        res = init(*(new NCursesWindow(w,ncols)));
     }
     return res;
 }
 
 int NCursesWindow::ripoffline(int ripoff_lines,
-			      int (*init)(NCursesWindow& win))
+                              int (*init)(NCursesWindow& win))
 {
     int code = ::_nc_ripoffline(ripoff_lines,_nc_xx_ripoff_init);
     if (code == OK && init && ripoff_lines) {
-	R_INIT[r_init_idx++] = init;
+        R_INIT[r_init_idx++] = init;
     }
     return code;
 }
@@ -318,10 +318,10 @@ NCursesWindow::isDescendant(NCursesWindow& win)
     bool result = FALSE;
 
     for (NCursesWindow* p = subwins; p != NULL; p = p->sib) {
-	if (p == &win || p->isDescendant(win)) {
-	    result = TRUE;
-	    break;
-	}
+        if (p == &win || p->isDescendant(win)) {
+            result = TRUE;
+            break;
+        }
     }
     return result;
 }
@@ -333,14 +333,14 @@ NCursesWindow::kill_subwindows()
 
     subwins = 0;
     while (p != 0) {
-	NCursesWindow* q = p->sib;
-	p->kill_subwindows();
-	if (p->alloced) {
-	    if (p->w != 0)
-		::delwin(p->w);
-	}
-	delete p;
-	p = q;
+        NCursesWindow* q = p->sib;
+        p->kill_subwindows();
+        if (p->alloced) {
+            if (p->w != 0)
+                ::delwin(p->w);
+        }
+        delete p;
+        p = q;
     }
 }
 
@@ -350,33 +350,33 @@ NCursesWindow::~NCursesWindow() THROWS(NCursesException)
     kill_subwindows();
 
     if (par != 0) {
-	// Remove this window from the parent's list of subwindows.
-	NCursesWindow * next = par->subwins;
-	NCursesWindow * prev = 0;
-	while (next != 0) {
-	    if (next == this) {
-		if (prev != 0) {
-		    prev->sib = next->sib;
-		} else {
-		    par->subwins = next->sib;
-		}
-		break;
-	    }
-	    prev = next;
-	    next = next->sib;
-	}
+        // Remove this window from the parent's list of subwindows.
+        NCursesWindow * next = par->subwins;
+        NCursesWindow * prev = 0;
+        while (next != 0) {
+            if (next == this) {
+                if (prev != 0) {
+                    prev->sib = next->sib;
+                } else {
+                    par->subwins = next->sib;
+                }
+                break;
+            }
+            prev = next;
+            next = next->sib;
+        }
     }
 
     if (alloced && w != 0)
-	::delwin(w);
+        ::delwin(w);
 
     if (alloced) {
-	--count;
-	if (count == 0) {
-	    ::endwin();
-	} else if (count < 0) { // cannot happen!
-	    err_handler("Too many windows destroyed");
-	}
+        --count;
+        if (count == 0) {
+            ::endwin();
+        } else if (count < 0) { // cannot happen!
+            err_handler("Too many windows destroyed");
+        }
     }
 }
 
@@ -389,16 +389,16 @@ void
 NCursesWindow::useColors(void)
 {
     if (colorInitialized == COLORS_NOT_INITIALIZED) {
-	if (b_initialized) {
-	    if (::has_colors()) {
-		::start_color();
-		colorInitialized = COLORS_ARE_REALLY_THERE;
-	    } else {
-		colorInitialized = COLORS_MONOCHROME;
-	    }
-	} else {
-	    colorInitialized = COLORS_NEED_INITIALIZATION;
-	}
+        if (b_initialized) {
+            if (::has_colors()) {
+                ::start_color();
+                colorInitialized = COLORS_ARE_REALLY_THERE;
+            } else {
+                colorInitialized = COLORS_MONOCHROME;
+            }
+        } else {
+            colorInitialized = COLORS_NEED_INITIALIZATION;
+        }
     }
 }
 
@@ -414,12 +414,12 @@ NCursesWindow::getcolor(int getback) const
     NCURSES_COLOR_T fore, back;
 
     if (HaveColors()) {
-	if (::pair_content(getPair(), &fore, &back) == ERR)
-	    err_handler("Can't get color pair");
+        if (::pair_content(getPair(), &fore, &back) == ERR)
+            err_handler("Can't get color pair");
     } else {
-	// Monochrome means white on black
-	back = COLOR_BLACK;
-	fore = COLOR_WHITE;
+        // Monochrome means white on black
+        back = COLOR_BLACK;
+        fore = COLOR_WHITE;
     }
     return getback ? back : fore;
 }
@@ -452,11 +452,11 @@ int
 NCursesWindow::setcolor(NCURSES_PAIRS_T pair)
 {
     if (HaveColors()) {
-	if ((pair < 1) || (pair > COLOR_PAIRS))
-	    err_handler("Can't set color pair");
+        if ((pair < 1) || (pair > COLOR_PAIRS))
+            err_handler("Can't set color pair");
 
-	attroff(A_COLOR);
-	attrset(COLOR_PAIR(pair));
+        attroff(A_COLOR);
+        attrset(COLOR_PAIR(pair));
     }
     return OK;
 }
@@ -465,6 +465,6 @@ NCursesWindow::setcolor(NCURSES_PAIRS_T pair)
 bool NCursesWindow::has_mouse() const
 {
     return ((::has_key(KEY_MOUSE) || ::has_mouse())
-	     ? TRUE : FALSE);
+             ? TRUE : FALSE);
 }
 #endif

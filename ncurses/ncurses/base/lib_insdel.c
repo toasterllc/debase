@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_insdel.c
+**      lib_insdel.c
 **
-**	The routine winsdelln(win, n).
+**      The routine winsdelln(win, n).
 **  positive n insert n lines above current line
 **  negative n delete n lines starting from current line
 **
@@ -53,12 +53,12 @@ winsdelln(WINDOW *win, int n)
     T((T_CALLED("winsdelln(%p,%d)"), (void *) win, n));
 
     if (win) {
-	if (n != 0) {
-	    _nc_scroll_window(win, -n, win->_cury, win->_maxy,
-			      win->_nc_bkgd);
-	    _nc_synchook(win);
-	}
-	code = OK;
+        if (n != 0) {
+            _nc_scroll_window(win, -n, win->_cury, win->_maxy,
+                              win->_nc_bkgd);
+            _nc_synchook(win);
+        }
+        code = OK;
     }
     returnCode(code);
 }

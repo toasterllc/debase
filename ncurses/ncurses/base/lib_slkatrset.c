@@ -33,8 +33,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slkatrset.c
- *	Soft key routines.
+ *      lib_slkatrset.c
+ *      Soft key routines.
  *      Set the labels attributes
  */
 #include <curses.priv.h>
@@ -47,10 +47,10 @@ NCURSES_SP_NAME(slk_attrset) (NCURSES_SP_DCLx const chtype attr)
     T((T_CALLED("slk_attrset(%p,%s)"), (void *) SP_PARM, _traceattr(attr)));
 
     if (SP_PARM != 0 && SP_PARM->_slk != 0) {
-	SetAttr(SP_PARM->_slk->attr, attr);
-	returnCode(OK);
+        SetAttr(SP_PARM->_slk->attr, attr);
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }
 
 #if NCURSES_SP_FUNCS

@@ -108,12 +108,12 @@ set_menu_pattern(MENU *menu, const char *p)
   while (*p)
     {
       if (!isprint(UChar(*p)) ||
-	  (_nc_Match_Next_Character_In_Item_Name(menu, *p, &matchitem) != E_OK))
-	{
-	  Reset_Pattern(menu);
-	  pos_menu_cursor(menu);
-	  RETURN(E_NO_MATCH);
-	}
+          (_nc_Match_Next_Character_In_Item_Name(menu, *p, &matchitem) != E_OK))
+        {
+          Reset_Pattern(menu);
+          pos_menu_cursor(menu);
+          RETURN(E_NO_MATCH);
+        }
       p++;
     }
 

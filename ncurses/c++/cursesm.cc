@@ -121,8 +121,8 @@ NCursesMenu::mapItems(NCursesMenuItem* nitems[])
 
 void
 NCursesMenu::InitMenu(NCursesMenuItem* nitems[],
-		      bool with_frame,
-		      bool autoDelete_Items)
+                      bool with_frame,
+                      bool autoDelete_Items)
 {
   int mrows, mcols;
 
@@ -192,8 +192,8 @@ NCursesMenu::~NCursesMenu() THROWS(NCursesException)
 
     if (b_autoDelete) {
       if (cnt>0) {
-	for (int i=0; i <= cnt; i++)
-	  delete my_items[i];
+        for (int i=0; i <= cnt; i++)
+          delete my_items[i];
       }
       delete[] my_items;
     }
@@ -320,29 +320,29 @@ NCursesMenu::operator()(void)
       break;
     case E_UNKNOWN_COMMAND:
       if (drvCmnd == CMD_ACTION) {
-	if (options() & O_ONEVALUE) {
-	  NCursesMenuItem* itm = current_item();
-	  assert(itm != 0);
-	  if (itm->options() & O_SELECTABLE)
-	    {
-	      b_action = itm->action();
-	      refresh();
-	    }
-	  else
-	    On_Not_Selectable(c);
-	}
-	else {
-	  int n = count();
-	  for(int i=0; i<n; i++) {
-	    NCursesMenuItem* itm = my_items[i];
-	    if (itm->value()) {
-	      b_action |= itm->action();
-	      refresh();
-	    }
-	  }
-	}
+        if (options() & O_ONEVALUE) {
+          NCursesMenuItem* itm = current_item();
+          assert(itm != 0);
+          if (itm->options() & O_SELECTABLE)
+            {
+              b_action = itm->action();
+              refresh();
+            }
+          else
+            On_Not_Selectable(c);
+        }
+        else {
+          int n = count();
+          for(int i=0; i<n; i++) {
+            NCursesMenuItem* itm = my_items[i];
+            if (itm->value()) {
+              b_action |= itm->action();
+              refresh();
+            }
+          }
+        }
       } else
-	On_Unknown_Command(c);
+        On_Unknown_Command(c);
       break;
     case E_NO_MATCH:
       On_No_Match(c);

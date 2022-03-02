@@ -52,13 +52,13 @@ extern int __MINGW_NOTHROW _nc_mblen(const char *, size_t);
 #define reset_mbytes(state) IGNORE_RC(mblen(NULL, 0)), IGNORE_RC(mbtowc(NULL, NULL, 0))
 #define count_mbytes(buffer,length,state) mblen(buffer,length)
 #define check_mbytes(wch,buffer,length,state) \
-	(int) mbtowc(&wch, buffer, length)
+        (int) mbtowc(&wch, buffer, length)
 #define state_unused
 #elif HAVE_MBRTOWC && HAVE_MBRLEN
 #define reset_mbytes(state) init_mb(state)
 #define count_mbytes(buffer,length,state) mbrlen(buffer,length,&state)
 #define check_mbytes(wch,buffer,length,state) \
-	(int) mbrtowc(&wch, buffer, length, &state)
+        (int) mbrtowc(&wch, buffer, length, &state)
 #else
 make an error
 #endif

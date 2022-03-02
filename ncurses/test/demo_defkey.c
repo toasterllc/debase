@@ -48,23 +48,23 @@ log_last_line(WINDOW *win)
     FILE *fp;
 
     if ((fp = fopen(MY_LOGFILE, "a")) != 0) {
-	char temp[256];
-	int y, x, n;
-	int need = sizeof(temp) - 1;
-	if (need > COLS)
-	    need = COLS;
-	getyx(win, y, x);
-	wmove(win, y - 1, 0);
-	n = winnstr(win, temp, need);
-	while (n-- > 0) {
-	    if (isspace(UChar(temp[n])))
-		temp[n] = '\0';
-	    else
-		break;
-	}
-	wmove(win, y, x);
-	fprintf(fp, "%s\n", temp);
-	fclose(fp);
+        char temp[256];
+        int y, x, n;
+        int need = sizeof(temp) - 1;
+        if (need > COLS)
+            need = COLS;
+        getyx(win, y, x);
+        wmove(win, y - 1, 0);
+        n = winnstr(win, temp, need);
+        while (n-- > 0) {
+            if (isspace(UChar(temp[n])))
+                temp[n] = '\0';
+            else
+                break;
+        }
+        wmove(win, y, x);
+        fprintf(fp, "%s\n", temp);
+        fclose(fp);
     }
 }
 
@@ -79,15 +79,15 @@ visichar(int ch)
     ch = UChar(ch);
     assert(ch >= 0 && ch < 256);
     if (ch == '\\') {
-	_nc_STRCPY(temp, "\\\\", sizeof(temp));
+        _nc_STRCPY(temp, "\\\\", sizeof(temp));
     } else if (ch == '\033') {
-	_nc_STRCPY(temp, "\\E", sizeof(temp));
+        _nc_STRCPY(temp, "\\E", sizeof(temp));
     } else if (ch < ' ') {
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "\\%03o", ch);
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "\\%03o", ch);
     } else if (ch >= 127) {
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "\\%03o", ch);
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "\\%03o", ch);
     } else {
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%c", ch);
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%c", ch);
     }
     return temp;
 }
@@ -101,25 +101,25 @@ visible(const char *string)
     char *result = 0;
 
     if (string != 0 && *string != '\0') {
-	int pass;
-	int n;
-	size_t need = 1;
+        int pass;
+        int n;
+        size_t need = 1;
 
-	for (pass = 0; pass < 2; ++pass) {
-	    for (n = 0; string[n] != '\0'; ++n) {
-		char temp[80];
-		_nc_STRNCPY(temp, visichar(string[n]), sizeof(temp) - 2);
-		if (pass) {
-		    _nc_STRCAT(result, temp, need);
-		} else {
-		    need += strlen(temp);
-		}
-	    }
-	    if (!pass)
-		result = typeCalloc(char, need);
-	}
+        for (pass = 0; pass < 2; ++pass) {
+            for (n = 0; string[n] != '\0'; ++n) {
+                char temp[80];
+                _nc_STRNCPY(temp, visichar(string[n]), sizeof(temp) - 2);
+                if (pass) {
+                    _nc_STRCAT(result, temp, need);
+                } else {
+                    need += strlen(temp);
+                }
+            }
+            if (!pass)
+                result = typeCalloc(char, need);
+        }
     } else {
-	result = typeCalloc(char, (size_t) 1);
+        result = typeCalloc(char, (size_t) 1);
     }
     return result;
 }
@@ -134,50 +134,50 @@ really_define_key(WINDOW *win, const char *new_string, int code)
     char temp[80];
 
     if (code_name == 0) {
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "Keycode %d", code);
-	code_name = temp;
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "Keycode %d", code);
+        code_name = temp;
     }
 
     if ((old_string = keybound(code, 0)) != 0) {
-	wprintw(win, "%s is %s\n",
-		code_name,
-		vis_string = visible(old_string));
+        wprintw(win, "%s is %s\n",
+                code_name,
+                vis_string = visible(old_string));
     } else {
-	wprintw(win, "%s is not bound\n",
-		code_name);
+        wprintw(win, "%s is not bound\n",
+                code_name);
     }
     log_last_line(win);
 
     if (vis_string != 0) {
-	free(vis_string);
-	vis_string = 0;
+        free(vis_string);
+        vis_string = 0;
     }
 
     vis_string = visible(new_string);
     if ((rc = key_defined(new_string)) > 0) {
-	wprintw(win, "%s was bound to %s\n", vis_string, keyname(rc));
-	log_last_line(win);
+        wprintw(win, "%s was bound to %s\n", vis_string, keyname(rc));
+        log_last_line(win);
     } else if (new_string != 0 && rc < 0) {
-	wprintw(win, "%s conflicts with longer strings\n", vis_string);
-	log_last_line(win);
+        wprintw(win, "%s conflicts with longer strings\n", vis_string);
+        log_last_line(win);
     }
     rc = define_key(new_string, code);
     if (rc == ERR) {
-	wprintw(win, "%s unchanged\n", code_name);
-	log_last_line(win);
+        wprintw(win, "%s unchanged\n", code_name);
+        log_last_line(win);
     } else if (new_string != 0) {
-	wprintw(win, "%s is now bound to %s\n",
-		vis_string,
-		code_name);
-	log_last_line(win);
+        wprintw(win, "%s is now bound to %s\n",
+                vis_string,
+                code_name);
+        log_last_line(win);
     } else if (old_string != 0) {
-	wprintw(win, "%s deleted\n", code_name);
-	log_last_line(win);
+        wprintw(win, "%s deleted\n", code_name);
+        log_last_line(win);
     }
     if (vis_string != 0)
-	free(vis_string);
+        free(vis_string);
     if (old_string != 0)
-	free(old_string);
+        free(old_string);
 }
 
 static void
@@ -186,19 +186,19 @@ duplicate(WINDOW *win, NCURSES_CONST char *name, int code)
     char *value = tigetstr(name);
 
     if (value != 0) {
-	const char *prefix = 0;
+        const char *prefix = 0;
 
-	if (!(strncmp) (value, "\033[", (size_t) 2)) {
-	    prefix = "\033O";
-	} else if (!(strncmp) (value, "\033O", (size_t) 2)) {
-	    prefix = "\033[";
-	}
-	if (prefix != 0) {
-	    char temp[BUFSIZ];
-	    _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
-			"%s%s", prefix, value + 2);
-	    really_define_key(win, temp, code);
-	}
+        if (!(strncmp) (value, "\033[", (size_t) 2)) {
+            prefix = "\033O";
+        } else if (!(strncmp) (value, "\033O", (size_t) 2)) {
+            prefix = "\033[";
+        }
+        if (prefix != 0) {
+            char temp[BUFSIZ];
+            _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp))
+                        "%s%s", prefix, value + 2);
+            really_define_key(win, temp, code);
+        }
     }
 }
 
@@ -225,8 +225,8 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     unlink(MY_LOGFILE);
 
     initscr();
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     printw("This demo is best on xterm: it reverses the definitions for f1-f12,\n");
     printw("adds duplicate definitions for cursor application and normal modes,\n");
@@ -242,12 +242,12 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
      * keypad() initializes the corresponding data.
      */
     for (n = 0; n < 12; ++n) {
-	char name[20];
-	_nc_SPRINTF(name, _nc_SLIMIT(sizeof(name)) "kf%d", n + 1);
-	fkeys[n] = tigetstr(name);
+        char name[20];
+        _nc_SPRINTF(name, _nc_SLIMIT(sizeof(name)) "kf%d", n + 1);
+        fkeys[n] = tigetstr(name);
     }
     for (n = 0; n < 12; ++n) {
-	redefine(win, fkeys[11 - n], KEY_F(n + 1));
+        redefine(win, fkeys[11 - n], KEY_F(n + 1));
     }
 
     duplicate(win, "kcub1", KEY_LEFT);
@@ -264,14 +264,14 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     really_define_key(win, "\033O", 1023);
 
     while ((ch = wgetch(win)) != ERR) {
-	const char *name = keyname(ch);
-	wprintw(win, "Keycode %d, name %s\n",
-		ch,
-		name != 0 ? name : "<null>");
-	log_last_line(win);
-	wclrtoeol(win);
-	if (ch == 'q')
-	    break;
+        const char *name = keyname(ch);
+        wprintw(win, "Keycode %d, name %s\n",
+                ch,
+                name != 0 ? name : "<null>");
+        log_last_line(win);
+        wclrtoeol(win);
+        if (ch == 'q')
+            break;
     }
     endwin();
     ExitProgram(EXIT_SUCCESS);

@@ -56,7 +56,7 @@ dup_field(FIELD *field, int frow, int fcol)
 
   T((T_CALLED("dup_field(%p,%d,%d)"), (void *)field, frow, fcol));
   if (field && (frow >= 0) && (fcol >= 0) &&
-      ((err = E_SYSTEM_ERROR) != 0) &&	/* trick : this resets the default error */
+      ((err = E_SYSTEM_ERROR) != 0) &&  /* trick : this resets the default error */
       (New_Field = typeMalloc(FIELD, 1)))
     {
       T((T_CREATE("field %p"), (void *)New_Field));
@@ -79,16 +79,16 @@ dup_field(FIELD *field, int frow, int fcol)
       New_Field->usrptr = field->usrptr;
 
       if (_nc_Copy_Type(New_Field, field))
-	{
-	  size_t len;
+        {
+          size_t len;
 
-	  len = Total_Buffer_Size(New_Field);
-	  if ((New_Field->buf = (FIELD_CELL *)malloc(len * 20)))
-	    {
-	      memcpy(New_Field->buf, field->buf, len);
-	      returnField(New_Field);
-	    }
-	}
+          len = Total_Buffer_Size(New_Field);
+          if ((New_Field->buf = (FIELD_CELL *)malloc(len * 20)))
+            {
+              memcpy(New_Field->buf, field->buf, len);
+              returnField(New_Field);
+            }
+        }
     }
 
   if (New_Field)

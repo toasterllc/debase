@@ -61,10 +61,10 @@ add_to_blob(const char *text, size_t limit)
     (void) limit;
 
     if (*text != '\0') {
-	char *last = my_blob + strlen(my_blob);
-	if (last != my_blob)
-	    *last++ = NCURSES_PATHSEP;
-	_nc_STRCPY(last, text, limit);
+        char *last = my_blob + strlen(my_blob);
+        if (last != my_blob)
+            *last++ = NCURSES_PATHSEP;
+        _nc_STRCPY(last, text, limit);
     }
 }
 
@@ -74,19 +74,19 @@ check_existence(const char *name, struct stat *sb)
     bool result = FALSE;
 
     if (quick_prefix(name)) {
-	result = TRUE;
+        result = TRUE;
     } else if (stat(name, sb) == 0
-	       && (S_ISDIR(sb->st_mode)
-		   || (S_ISREG(sb->st_mode) && sb->st_size))) {
-	result = TRUE;
+               && (S_ISDIR(sb->st_mode)
+                   || (S_ISREG(sb->st_mode) && sb->st_size))) {
+        result = TRUE;
     }
 #if USE_HASHED_DB
     else if (strlen(name) < PATH_MAX - sizeof(DBM_SUFFIX)) {
-	char temp[PATH_MAX];
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%s%s", name, DBM_SUFFIX);
-	if (stat(temp, sb) == 0 && S_ISREG(sb->st_mode) && sb->st_size) {
-	    result = TRUE;
-	}
+        char temp[PATH_MAX];
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%s%s", name, DBM_SUFFIX);
+        if (stat(temp, sb) == 0 && S_ISREG(sb->st_mode) && sb->st_size) {
+            result = TRUE;
+        }
     }
 #endif
     return result;
@@ -104,11 +104,11 @@ trim_formatting(char *source)
     char ch;
 
     while ((ch = *source++) != '\0') {
-	if (ch == '\\' && *source == '\n')
-	    continue;
-	if (ch == '\n' || ch == '\t')
-	    continue;
-	*target++ = ch;
+        if (ch == '\\' && *source == '\n')
+            continue;
+        if (ch == '\n' || ch == '\t')
+            continue;
+        *target++ = ch;
     }
     *target = '\0';
 }
@@ -123,28 +123,28 @@ update_getenv(const char *name, DBDIRS which)
     bool result = FALSE;
 
     if (which < dbdLAST) {
-	char *value;
-	char *cached_value = my_vars[which].value;
-	bool same_value;
+        char *value;
+        char *cached_value = my_vars[which].value;
+        bool same_value;
 
-	if ((value = getenv(name)) != 0) {
-	    value = strdup(value);
-	}
-	same_value = ((value == 0 && cached_value == 0) ||
-		      (value != 0 &&
-		       cached_value != 0 &&
-		       strcmp(value, cached_value) == 0));
+        if ((value = getenv(name)) != 0) {
+            value = strdup(value);
+        }
+        same_value = ((value == 0 && cached_value == 0) ||
+                      (value != 0 &&
+                       cached_value != 0 &&
+                       strcmp(value, cached_value) == 0));
 
-	/* Set variable name to enable checks in cache_expired(). */
-	my_vars[which].name = name;
+        /* Set variable name to enable checks in cache_expired(). */
+        my_vars[which].name = name;
 
-	if (!same_value) {
-	    FreeIfNeeded(my_vars[which].value);
-	    my_vars[which].value = value;
-	    result = TRUE;
-	} else {
-	    free(value);
-	}
+        if (!same_value) {
+            FreeIfNeeded(my_vars[which].value);
+            my_vars[which].value = value;
+            result = TRUE;
+        } else {
+            free(value);
+        }
     }
     return result;
 }
@@ -157,7 +157,7 @@ cache_getenv(const char *name, DBDIRS which)
 
     (void) update_getenv(name, which);
     if (which < dbdLAST) {
-	result = my_vars[which].value;
+        result = my_vars[which].value;
     }
     return result;
 }
@@ -181,16 +181,16 @@ cache_expired(void)
     time_t now = time((time_t *) 0);
 
     if (now > my_time) {
-	result = TRUE;
+        result = TRUE;
     } else {
-	DBDIRS n;
-	for (n = (DBDIRS) 0; n < dbdLAST; ++n) {
-	    if (my_vars[n].name != 0
-		&& update_getenv(my_vars[n].name, n)) {
-		result = TRUE;
-		break;
-	    }
-	}
+        DBDIRS n;
+        for (n = (DBDIRS) 0; n < dbdLAST; ++n) {
+            if (my_vars[n].name != 0
+                && update_getenv(my_vars[n].name, n)) {
+                result = TRUE;
+                break;
+            }
+        }
     }
     return result;
 }
@@ -211,16 +211,16 @@ _nc_tic_dir(const char *path)
 {
     T(("_nc_tic_dir %s", NonNull(path)));
     if (!KeepTicDirectory) {
-	if (path != 0) {
-	    TicDirectory = path;
-	    HaveTicDirectory = TRUE;
-	} else if (HaveTicDirectory == 0) {
-	    if (use_terminfo_vars()) {
-		const char *envp;
-		if ((envp = getenv("TERMINFO")) != 0)
-		    return _nc_tic_dir(envp);
-	    }
-	}
+        if (path != 0) {
+            TicDirectory = path;
+            HaveTicDirectory = TRUE;
+        } else if (HaveTicDirectory == 0) {
+            if (use_terminfo_vars()) {
+                const char *envp;
+                if ((envp = getenv("TERMINFO")) != 0)
+                    return _nc_tic_dir(envp);
+            }
+        }
     }
     return TicDirectory ? TicDirectory : TERMINFO;
 }
@@ -244,7 +244,7 @@ NCURSES_EXPORT(void)
 _nc_last_db(void)
 {
     if (my_blob != 0 && cache_expired()) {
-	free_cache();
+        free_cache();
     }
 }
 
@@ -260,15 +260,15 @@ _nc_next_db(DBDIRS * state, int *offset)
 
     (void) offset;
     if ((int) *state < my_size
-	&& my_list != 0
-	&& my_list[*state] != 0) {
-	result = my_list[*state];
-	(*state)++;
+        && my_list != 0
+        && my_list[*state] != 0) {
+        result = my_list[*state];
+        (*state)++;
     } else {
-	result = 0;
+        result = 0;
     }
     if (result != 0) {
-	T(("_nc_next_db %d %s", *state, result));
+        T(("_nc_next_db %d %s", *state, result));
     }
     return result;
 }
@@ -286,145 +286,145 @@ _nc_first_db(DBDIRS * state, int *offset)
      * table.
      */
     if (my_blob == 0 || (cache_has_expired = cache_expired())) {
-	size_t blobsize = 0;
-	const char *values[dbdLAST];
-	struct stat *my_stat;
-	int j;
+        size_t blobsize = 0;
+        const char *values[dbdLAST];
+        struct stat *my_stat;
+        int j;
 
-	if (cache_has_expired)
-	    free_cache();
+        if (cache_has_expired)
+            free_cache();
 
-	for (j = 0; j < dbdLAST; ++j)
-	    values[j] = 0;
+        for (j = 0; j < dbdLAST; ++j)
+            values[j] = 0;
 
-	/*
-	 * This is the first item in the list, and is used only when tic is
-	 * writing to the database, as a performance improvement.
-	 */
-	values[dbdTIC] = TicDirectory;
+        /*
+         * This is the first item in the list, and is used only when tic is
+         * writing to the database, as a performance improvement.
+         */
+        values[dbdTIC] = TicDirectory;
 
 #if NCURSES_USE_DATABASE
 #ifdef TERMINFO_DIRS
-	values[dbdCfgList] = TERMINFO_DIRS;
+        values[dbdCfgList] = TERMINFO_DIRS;
 #endif
 #ifdef TERMINFO
-	values[dbdCfgOnce] = TERMINFO;
+        values[dbdCfgOnce] = TERMINFO;
 #endif
 #endif
 
 #if NCURSES_USE_TERMCAP
-	values[dbdCfgList2] = TERMPATH;
+        values[dbdCfgList2] = TERMPATH;
 #endif
 
-	if (use_terminfo_vars()) {
+        if (use_terminfo_vars()) {
 #if NCURSES_USE_DATABASE
-	    values[dbdEnvOnce] = cache_getenv("TERMINFO", dbdEnvOnce);
-	    values[dbdHome] = _nc_home_terminfo();
-	    (void) cache_getenv("HOME", dbdHome);
-	    values[dbdEnvList] = cache_getenv("TERMINFO_DIRS", dbdEnvList);
+            values[dbdEnvOnce] = cache_getenv("TERMINFO", dbdEnvOnce);
+            values[dbdHome] = _nc_home_terminfo();
+            (void) cache_getenv("HOME", dbdHome);
+            values[dbdEnvList] = cache_getenv("TERMINFO_DIRS", dbdEnvList);
 
 #endif
 #if NCURSES_USE_TERMCAP
-	    values[dbdEnvOnce2] = cache_getenv("TERMCAP", dbdEnvOnce2);
-	    /* only use $TERMCAP if it is an absolute path */
-	    if (values[dbdEnvOnce2] != 0
-		&& *values[dbdEnvOnce2] != '/') {
-		values[dbdEnvOnce2] = 0;
-	    }
-	    values[dbdEnvList2] = cache_getenv("TERMPATH", dbdEnvList2);
+            values[dbdEnvOnce2] = cache_getenv("TERMCAP", dbdEnvOnce2);
+            /* only use $TERMCAP if it is an absolute path */
+            if (values[dbdEnvOnce2] != 0
+                && *values[dbdEnvOnce2] != '/') {
+                values[dbdEnvOnce2] = 0;
+            }
+            values[dbdEnvList2] = cache_getenv("TERMPATH", dbdEnvList2);
 #endif /* NCURSES_USE_TERMCAP */
-	}
+        }
 
-	for (j = 0; j < dbdLAST; ++j) {
-	    if (values[j] == 0)
-		values[j] = "";
-	    blobsize += 2 + strlen(values[j]);
-	}
+        for (j = 0; j < dbdLAST; ++j) {
+            if (values[j] == 0)
+                values[j] = "";
+            blobsize += 2 + strlen(values[j]);
+        }
 
-	my_blob = malloc(blobsize);
-	if (my_blob != 0) {
-	    *my_blob = '\0';
-	    for (j = 0; j < dbdLAST; ++j) {
-		add_to_blob(values[j], blobsize);
-	    }
+        my_blob = malloc(blobsize);
+        if (my_blob != 0) {
+            *my_blob = '\0';
+            for (j = 0; j < dbdLAST; ++j) {
+                add_to_blob(values[j], blobsize);
+            }
 
-	    /* Now, build an array which will be pointers to the distinct
-	     * strings in the blob.
-	     */
-	    blobsize = 2;
-	    for (j = 0; my_blob[j] != '\0'; ++j) {
-		if (my_blob[j] == NCURSES_PATHSEP)
-		    ++blobsize;
-	    }
-	    my_list = typeCalloc(char *, blobsize);
-	    my_stat = typeCalloc(struct stat, blobsize);
-	    if (my_list != 0 && my_stat != 0) {
-		int k = 0;
-		my_list[k++] = my_blob;
-		for (j = 0; my_blob[j] != '\0'; ++j) {
-		    if (my_blob[j] == NCURSES_PATHSEP
-			&& ((&my_blob[j] - my_list[k - 1]) != 3
-			    || !quick_prefix(my_list[k - 1]))) {
-			my_blob[j] = '\0';
-			my_list[k++] = &my_blob[j + 1];
-		    }
-		}
+            /* Now, build an array which will be pointers to the distinct
+             * strings in the blob.
+             */
+            blobsize = 2;
+            for (j = 0; my_blob[j] != '\0'; ++j) {
+                if (my_blob[j] == NCURSES_PATHSEP)
+                    ++blobsize;
+            }
+            my_list = typeCalloc(char *, blobsize);
+            my_stat = typeCalloc(struct stat, blobsize);
+            if (my_list != 0 && my_stat != 0) {
+                int k = 0;
+                my_list[k++] = my_blob;
+                for (j = 0; my_blob[j] != '\0'; ++j) {
+                    if (my_blob[j] == NCURSES_PATHSEP
+                        && ((&my_blob[j] - my_list[k - 1]) != 3
+                            || !quick_prefix(my_list[k - 1]))) {
+                        my_blob[j] = '\0';
+                        my_list[k++] = &my_blob[j + 1];
+                    }
+                }
 
-		/*
-		 * Eliminate duplicates from the list.
-		 */
-		for (j = 0; my_list[j] != 0; ++j) {
+                /*
+                 * Eliminate duplicates from the list.
+                 */
+                for (j = 0; my_list[j] != 0; ++j) {
 #ifdef TERMINFO
-		    if (*my_list[j] == '\0')
-			my_list[j] = strdup(TERMINFO);
+                    if (*my_list[j] == '\0')
+                        my_list[j] = strdup(TERMINFO);
 #endif
-		    trim_formatting(my_list[j]);
-		    for (k = 0; k < j; ++k) {
-			if (!strcmp(my_list[j], my_list[k])) {
-			    T(("duplicate %s", my_list[j]));
-			    k = j - 1;
-			    while ((my_list[j] = my_list[j + 1]) != 0) {
-				++j;
-			    }
-			    j = k;
-			    break;
-			}
-		    }
-		}
+                    trim_formatting(my_list[j]);
+                    for (k = 0; k < j; ++k) {
+                        if (!strcmp(my_list[j], my_list[k])) {
+                            T(("duplicate %s", my_list[j]));
+                            k = j - 1;
+                            while ((my_list[j] = my_list[j + 1]) != 0) {
+                                ++j;
+                            }
+                            j = k;
+                            break;
+                        }
+                    }
+                }
 
-		/*
-		 * Eliminate non-existent databases, and those that happen to
-		 * be symlinked to another location.
-		 */
-		for (j = 0; my_list[j] != 0; ++j) {
-		    bool found = check_existence(my_list[j], &my_stat[j]);
+                /*
+                 * Eliminate non-existent databases, and those that happen to
+                 * be symlinked to another location.
+                 */
+                for (j = 0; my_list[j] != 0; ++j) {
+                    bool found = check_existence(my_list[j], &my_stat[j]);
 #if HAVE_LINK
-		    if (found) {
-			for (k = 0; k < j; ++k) {
-			    if (my_stat[j].st_dev == my_stat[k].st_dev
-				&& my_stat[j].st_ino == my_stat[k].st_ino) {
-				found = FALSE;
-				break;
-			    }
-			}
-		    }
+                    if (found) {
+                        for (k = 0; k < j; ++k) {
+                            if (my_stat[j].st_dev == my_stat[k].st_dev
+                                && my_stat[j].st_ino == my_stat[k].st_ino) {
+                                found = FALSE;
+                                break;
+                            }
+                        }
+                    }
 #endif
-		    if (!found) {
-			T(("not found %s", my_list[j]));
-			k = j;
-			while ((my_list[k] = my_list[k + 1]) != 0) {
-			    ++k;
-			}
-			--j;
-		    }
-		}
-		my_size = j;
-		my_time = time((time_t *) 0);
-	    } else {
-		FreeAndNull(my_blob);
-	    }
-	    free(my_stat);
-	}
+                    if (!found) {
+                        T(("not found %s", my_list[j]));
+                        k = j;
+                        while ((my_list[k] = my_list[k + 1]) != 0) {
+                            ++k;
+                        }
+                        --j;
+                    }
+                }
+                my_size = j;
+                my_time = time((time_t *) 0);
+            } else {
+                FreeAndNull(my_blob);
+            }
+            free(my_stat);
+        }
     }
     returnVoid;
 }
@@ -436,13 +436,13 @@ _nc_db_iterator_leaks(void)
     DBDIRS which;
 
     if (my_blob != 0)
-	FreeAndNull(my_blob);
+        FreeAndNull(my_blob);
     if (my_list != 0)
-	FreeAndNull(my_list);
+        FreeAndNull(my_list);
     for (which = 0; (int) which < dbdLAST; ++which) {
-	my_vars[which].name = 0;
-	FreeIfNeeded(my_vars[which].value);
-	my_vars[which].value = 0;
+        my_vars[which].name = 0;
+        FreeIfNeeded(my_vars[which].value);
+        my_vars[which].value = 0;
     }
 }
 #endif

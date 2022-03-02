@@ -48,17 +48,17 @@ FORM_IMPEXP int NCURSES_API set_field_ ## name (FIELD * field, chtype attr)\
      {\
        Normalize_Field( field );\
        if (field != 0) \
-	 { \
-	 if ((field -> name) != attr)\
-	   {\
-	     field -> name = attr;\
-	     res = _nc_Synchronize_Attributes( field );\
-	   }\
-	 else\
-	   {\
-	     res = E_OK;\
-	   }\
-	 }\
+         { \
+         if ((field -> name) != attr)\
+           {\
+             field -> name = attr;\
+             res = _nc_Synchronize_Attributes( field );\
+           }\
+         else\
+           {\
+             res = E_OK;\
+           }\
+         }\
      }\
    RETURN(res);\
 }

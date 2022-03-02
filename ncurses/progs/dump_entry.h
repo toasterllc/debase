@@ -48,24 +48,24 @@
 #include <term.h>
 
 /* capability output formats */
-#define F_TERMINFO	0	/* use terminfo names */
-#define F_VARIABLE	1	/* use C variable names */
-#define F_TERMCAP	2	/* termcap names with capability conversion */
-#define F_TCONVERR	3	/* as T_TERMCAP, no skip of untranslatables */
-#define F_LITERAL	4	/* like F_TERMINFO, but no smart defaults */
+#define F_TERMINFO      0       /* use terminfo names */
+#define F_VARIABLE      1       /* use C variable names */
+#define F_TERMCAP       2       /* termcap names with capability conversion */
+#define F_TCONVERR      3       /* as T_TERMCAP, no skip of untranslatables */
+#define F_LITERAL       4       /* like F_TERMINFO, but no smart defaults */
 
 /* capability sort modes */
-#define S_DEFAULT	0	/* sort by terminfo name (implicit) */
-#define S_NOSORT	1	/* don't sort */
-#define S_TERMINFO	2	/* sort by terminfo names (explicit) */
-#define S_VARIABLE	3	/* sort by C variable names */
-#define S_TERMCAP	4	/* sort by termcap names */
+#define S_DEFAULT       0       /* sort by terminfo name (implicit) */
+#define S_NOSORT        1       /* don't sort */
+#define S_TERMINFO      2       /* sort by terminfo names (explicit) */
+#define S_VARIABLE      3       /* sort by C variable names */
+#define S_TERMCAP       4       /* sort by termcap names */
 
 /* capability types for the comparison hook */
-#define CMP_BOOLEAN	0	/* comparison on booleans */
-#define CMP_NUMBER	1	/* comparison on numerics */
-#define CMP_STRING	2	/* comparison on strings */
-#define CMP_USE		3	/* comparison on use capabilities */
+#define CMP_BOOLEAN     0       /* comparison on booleans */
+#define CMP_NUMBER      1       /* comparison on numerics */
+#define CMP_STRING      2       /* comparison on strings */
+#define CMP_USE         3       /* comparison on use capabilities */
 
 #ifndef _TERMSORT_H
 typedef unsigned PredType;
@@ -82,13 +82,13 @@ extern int show_entry(void);
 extern void compare_entry(PredHook, TERMTYPE2 *, bool);
 extern void dump_entry(TERMTYPE2 *, int, int, int, PredFunc);
 extern void dump_init(const char *, int, int, bool, int, int, unsigned, bool,
-		      bool, int);
+                      bool, int);
 extern void dump_uses(const char *, bool);
 extern void repair_acsc(TERMTYPE2 *tp);
 
 #define L_CURL "{"
 #define R_CURL "}"
 
-#define FAIL	-1
+#define FAIL    -1
 
 #endif /* DUMP_ENTRY_H */
