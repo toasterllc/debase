@@ -10,17 +10,9 @@
 		55D1D17327CF5A6900C78ED3 /* libncurses.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF5227CF5A2A00C78ED3 /* libncurses.a */; };
 		55D1D17427CF5A6C00C78ED3 /* libpanel.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4F27CF5A2A00C78ED3 /* libpanel.a */; };
 		55D1D17527CF5A6E00C78ED3 /* libncurses++.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4B27CF5A2A00C78ED3 /* libncurses++.a */; };
-		55D1D19827CF5F0F00C78ED3 /* cursesm.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D17727CF5E9E00C78ED3 /* cursesm.cc */; };
-		55D1D19927CF5F0F00C78ED3 /* demo.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D17827CF5E9E00C78ED3 /* demo.cc */; };
-		55D1D19A27CF5F0F00C78ED3 /* cursesmain.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D17B27CF5E9E00C78ED3 /* cursesmain.cc */; };
-		55D1D19B27CF5F0F00C78ED3 /* cursesp.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D17D27CF5E9E00C78ED3 /* cursesp.cc */; };
-		55D1D19C27CF5F0F00C78ED3 /* cursesf.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D18127CF5E9E00C78ED3 /* cursesf.cc */; };
-		55D1D19D27CF5F0F00C78ED3 /* cursesapp.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D18727CF5E9E00C78ED3 /* cursesapp.cc */; };
-		55D1D19E27CF5F0F00C78ED3 /* cursesw.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D18A27CF5E9E00C78ED3 /* cursesw.cc */; };
-		55D1D19F27CF5F0F00C78ED3 /* cursslk.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D18D27CF5E9E00C78ED3 /* cursslk.cc */; };
-		55D1D1A027CF5F0F00C78ED3 /* cursespad.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D18E27CF5E9E00C78ED3 /* cursespad.cc */; };
 		55D1D1A227CF5FF700C78ED3 /* libmenu.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF5027CF5A2A00C78ED3 /* libmenu.a */; };
 		55D1D1A327CF600200C78ED3 /* libform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D1CF4D27CF5A2A00C78ED3 /* libform.a */; };
+		55D1D1A527CF6C9300C78ED3 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 55D1D1A427CF6C9300C78ED3 /* main.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -98,23 +90,15 @@
 		55D1CF4F27CF5A2A00C78ED3 /* libpanel.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpanel.a; sourceTree = "<group>"; };
 		55D1CF5027CF5A2A00C78ED3 /* libmenu.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmenu.a; sourceTree = "<group>"; };
 		55D1CF5227CF5A2A00C78ED3 /* libncurses.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libncurses.a; sourceTree = "<group>"; };
-		55D1D17727CF5E9E00C78ED3 /* cursesm.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesm.cc; sourceTree = "<group>"; };
-		55D1D17827CF5E9E00C78ED3 /* demo.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = demo.cc; sourceTree = "<group>"; };
-		55D1D17927CF5E9E00C78ED3 /* cursesp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesp.h; sourceTree = "<group>"; };
-		55D1D17A27CF5E9E00C78ED3 /* internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = internal.h; sourceTree = "<group>"; };
-		55D1D17B27CF5E9E00C78ED3 /* cursesmain.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesmain.cc; sourceTree = "<group>"; };
-		55D1D17C27CF5E9E00C78ED3 /* cursesf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesf.h; sourceTree = "<group>"; };
-		55D1D17D27CF5E9E00C78ED3 /* cursesp.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesp.cc; sourceTree = "<group>"; };
-		55D1D17E27CF5E9E00C78ED3 /* cursesw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesw.h; sourceTree = "<group>"; };
-		55D1D18027CF5E9E00C78ED3 /* cursesapp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesapp.h; sourceTree = "<group>"; };
-		55D1D18127CF5E9E00C78ED3 /* cursesf.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesf.cc; sourceTree = "<group>"; };
-		55D1D18327CF5E9E00C78ED3 /* cursslk.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursslk.h; sourceTree = "<group>"; };
-		55D1D18727CF5E9E00C78ED3 /* cursesapp.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesapp.cc; sourceTree = "<group>"; };
-		55D1D18A27CF5E9E00C78ED3 /* cursesw.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursesw.cc; sourceTree = "<group>"; };
-		55D1D18B27CF5E9E00C78ED3 /* cursesm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesm.h; sourceTree = "<group>"; };
-		55D1D18D27CF5E9E00C78ED3 /* cursslk.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursslk.cc; sourceTree = "<group>"; };
-		55D1D18E27CF5E9E00C78ED3 /* cursespad.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cursespad.cc; sourceTree = "<group>"; };
-		55D1D1A127CF5FB000C78ED3 /* etip.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = etip.h; sourceTree = "<group>"; };
+		55D1D1A427CF6C9300C78ED3 /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		55D1D1B127CF6F1A00C78ED3 /* cursesp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesp.h; sourceTree = "<group>"; };
+		55D1D1B227CF6F1A00C78ED3 /* internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = internal.h; sourceTree = "<group>"; };
+		55D1D1B427CF6F1A00C78ED3 /* cursesf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesf.h; sourceTree = "<group>"; };
+		55D1D1B627CF6F1A00C78ED3 /* cursesw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesw.h; sourceTree = "<group>"; };
+		55D1D1B827CF6F1A00C78ED3 /* cursesapp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesapp.h; sourceTree = "<group>"; };
+		55D1D1BB27CF6F1A00C78ED3 /* cursslk.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursslk.h; sourceTree = "<group>"; };
+		55D1D1C327CF6F1A00C78ED3 /* cursesm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursesm.h; sourceTree = "<group>"; };
+		55D1D1C727CF6F9A00C78ED3 /* etip.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = etip.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,7 +121,7 @@
 			isa = PBXGroup;
 			children = (
 				55D1C98127CF5A2800C78ED3 /* ncurses */,
-				55D1D17627CF5E9E00C78ED3 /* c++ */,
+				55D1D1A427CF6C9300C78ED3 /* main.mm */,
 				5590696227CED4D600AE89BD /* Products */,
 				55D1D17227CF5A6900C78ED3 /* Frameworks */,
 			);
@@ -154,6 +138,7 @@
 		55D1C98127CF5A2800C78ED3 /* ncurses */ = {
 			isa = PBXGroup;
 			children = (
+				55D1D1AE27CF6F1A00C78ED3 /* c++ */,
 				55D1CC8E27CF5A2900C78ED3 /* include */,
 				55D1CF4A27CF5A2A00C78ED3 /* lib */,
 			);
@@ -242,26 +227,17 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		55D1D17627CF5E9E00C78ED3 /* c++ */ = {
+		55D1D1AE27CF6F1A00C78ED3 /* c++ */ = {
 			isa = PBXGroup;
 			children = (
-				55D1D18727CF5E9E00C78ED3 /* cursesapp.cc */,
-				55D1D18027CF5E9E00C78ED3 /* cursesapp.h */,
-				55D1D18127CF5E9E00C78ED3 /* cursesf.cc */,
-				55D1D17C27CF5E9E00C78ED3 /* cursesf.h */,
-				55D1D17727CF5E9E00C78ED3 /* cursesm.cc */,
-				55D1D18B27CF5E9E00C78ED3 /* cursesm.h */,
-				55D1D17B27CF5E9E00C78ED3 /* cursesmain.cc */,
-				55D1D17D27CF5E9E00C78ED3 /* cursesp.cc */,
-				55D1D17927CF5E9E00C78ED3 /* cursesp.h */,
-				55D1D18E27CF5E9E00C78ED3 /* cursespad.cc */,
-				55D1D18A27CF5E9E00C78ED3 /* cursesw.cc */,
-				55D1D17E27CF5E9E00C78ED3 /* cursesw.h */,
-				55D1D18D27CF5E9E00C78ED3 /* cursslk.cc */,
-				55D1D18327CF5E9E00C78ED3 /* cursslk.h */,
-				55D1D17827CF5E9E00C78ED3 /* demo.cc */,
-				55D1D1A127CF5FB000C78ED3 /* etip.h */,
-				55D1D17A27CF5E9E00C78ED3 /* internal.h */,
+				55D1D1B827CF6F1A00C78ED3 /* cursesapp.h */,
+				55D1D1B427CF6F1A00C78ED3 /* cursesf.h */,
+				55D1D1C327CF6F1A00C78ED3 /* cursesm.h */,
+				55D1D1B127CF6F1A00C78ED3 /* cursesp.h */,
+				55D1D1B627CF6F1A00C78ED3 /* cursesw.h */,
+				55D1D1BB27CF6F1A00C78ED3 /* cursslk.h */,
+				55D1D1C727CF6F9A00C78ED3 /* etip.h */,
+				55D1D1B227CF6F1A00C78ED3 /* internal.h */,
 			);
 			path = "c++";
 			sourceTree = "<group>";
@@ -323,15 +299,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55D1D19927CF5F0F00C78ED3 /* demo.cc in Sources */,
-				55D1D19C27CF5F0F00C78ED3 /* cursesf.cc in Sources */,
-				55D1D19D27CF5F0F00C78ED3 /* cursesapp.cc in Sources */,
-				55D1D19E27CF5F0F00C78ED3 /* cursesw.cc in Sources */,
-				55D1D19A27CF5F0F00C78ED3 /* cursesmain.cc in Sources */,
-				55D1D19F27CF5F0F00C78ED3 /* cursslk.cc in Sources */,
-				55D1D19827CF5F0F00C78ED3 /* cursesm.cc in Sources */,
-				55D1D19B27CF5F0F00C78ED3 /* cursesp.cc in Sources */,
-				55D1D1A027CF5F0F00C78ED3 /* cursespad.cc in Sources */,
+				55D1D1A527CF6C9300C78ED3 /* main.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,7 +426,10 @@
 					"$(PROJECT_DIR)/ncurses/lib",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/ncurses/include";
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/ncurses/include",
+					"$(PROJECT_DIR)/ncurses/c++",
+				);
 			};
 			name = Debug;
 		};
@@ -471,7 +442,10 @@
 					"$(PROJECT_DIR)/ncurses/lib",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/ncurses/include";
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/ncurses/include",
+					"$(PROJECT_DIR)/ncurses/c++",
+				);
 			};
 			name = Release;
 		};
