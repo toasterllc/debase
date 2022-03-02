@@ -46,10 +46,10 @@ THIS		= Makefile
 
 DESTDIR		= 
 srcdir		= .
-prefix		= /usr/local
+prefix		= /usr
 exec_prefix	= ${prefix}
 includedir	= ${prefix}/include
-includesubdir	= /ncurses
+includesubdir	= 
 
 INCLUDEDIR	= $(DESTDIR)$(includedir)$(includesubdir)
 
