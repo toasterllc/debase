@@ -379,7 +379,7 @@ inline int UNDEF(mvaddstr)(int y, int x, const char * str)
 
 #ifdef mvchgat
 inline int UNDEF(mvchgat)(int y, int x, int n,
-			  attr_t attr, NCURSES_PAIRS_T color, const void *opts) {
+                          attr_t attr, NCURSES_PAIRS_T color, const void *opts) {
   return mvchgat(y, x, n, attr, color, opts); }
 #undef mvchgat
 #define mvchgat UNDEF(mvchgat)
@@ -481,7 +481,7 @@ inline int UNDEF(mvwaddstr)(WINDOW *win, int y, int x, const char * str)
 
 #ifdef mvwchgat
 inline int UNDEF(mvwchgat)(WINDOW *win, int y, int x, int n,
-			   attr_t attr, NCURSES_PAIRS_T color, const void *opts) {
+                           attr_t attr, NCURSES_PAIRS_T color, const void *opts) {
   return mvwchgat(win, y, x, n, attr, color, opts); }
 #undef mvwchgat
 #define mvwchgat UNDEF(mvwchgat)
@@ -634,7 +634,7 @@ inline int UNDEF(scrollok)(WINDOW* win, bool bf)  { return scrollok(win, bf); }
 #undef scrollok
 #define scrollok UNDEF(scrollok)
 #else
-#if	defined(__NCURSES_H)
+#if     defined(__NCURSES_H)
 extern "C" NCURSES_IMPEXP int NCURSES_API scrollok(WINDOW*, bool);
 #else
 extern "C" NCURSES_IMPEXP int NCURSES_API scrollok(WINDOW*, char);
@@ -819,20 +819,20 @@ public:
   explicit NCursesWindow(WINDOW* window);   // useful only for stdscr
 
   NCursesWindow(int nlines,        // number of lines
-		int ncols,         // number of columns
-		int begin_y,       // line origin
-		int begin_x);      // col origin
+                int ncols,         // number of columns
+                int begin_y,       // line origin
+                int begin_x);      // col origin
 
   NCursesWindow(NCursesWindow& par,// parent window
-		int nlines,        // number of lines
-		int ncols,         // number of columns
-		int begin_y,       // absolute or relative
-		int begin_x,       //   origins:
-		char absrel = 'a');// if `a', begin_y & begin_x are
+                int nlines,        // number of lines
+                int ncols,         // number of columns
+                int begin_y,       // absolute or relative
+                int begin_x,       //   origins:
+                char absrel = 'a');// if `a', begin_y & begin_x are
   // absolute screen pos, else if `r', they are relative to par origin
 
   NCursesWindow(NCursesWindow& par,// parent window
-		bool do_box = TRUE);
+                bool do_box = TRUE);
   // this is the very common case that we want to create the subwindow that
   // is two lines and two columns smaller and begins at (1,1).
   // We may automatically request the box around it.
@@ -859,7 +859,7 @@ public:
   // Call this routine very early if you want to have colors.
 
   static int ripoffline(int ripoff_lines,
-			int (*init)(NCursesWindow& win));
+                        int (*init)(NCursesWindow& win));
   // This function is used to generate a window of ripped-of lines.
   // If the argument is positive, lines are removed from the top, if it
   // is negative lines are removed from the bottom. This enhances the
@@ -1136,7 +1136,7 @@ public:
   // line, the attributes will be changed up to the end of the line.
 
   int            chgat(int y, int x,
-		       int n, attr_t attr, NCURSES_PAIRS_T color, const void *opts=NULL) {
+                       int n, attr_t attr, NCURSES_PAIRS_T color, const void *opts=NULL) {
     return ::mvwchgat(w, y, x, n, attr, color, opts); }
   // Move the cursor to the requested position and then perform chgat() as
   // described above.
@@ -1163,11 +1163,11 @@ public:
   // to find a "nice" character.
 
   int            border(chtype left=0, chtype right=0,
-			chtype top =0, chtype bottom=0,
-			chtype top_left =0, chtype top_right=0,
-			chtype bottom_left =0, chtype bottom_right=0) {
+                        chtype top =0, chtype bottom=0,
+                        chtype top_left =0, chtype top_right=0,
+                        chtype bottom_left =0, chtype bottom_right=0) {
     return ::wborder(w, left, right, top, bottom, top_left, top_right,
-		     bottom_left, bottom_right); }
+                     bottom_left, bottom_right); }
   // Draw a border around the window with the given characters for the
   // various parts of the border. If you pass zero for a character, curses
   // will try to find "nice" characters.
@@ -1340,11 +1340,11 @@ public:
   // Overwrite win with this window.
 
   int            copywin(NCursesWindow& win,
-			 int sminrow, int smincol,
-			 int dminrow, int dmincol,
-			 int dmaxrow, int dmaxcol, bool overlaywin=TRUE) {
+                         int sminrow, int smincol,
+                         int dminrow, int dmincol,
+                         int dmaxrow, int dmaxcol, bool overlaywin=TRUE) {
     return ::copywin(w, win.w, sminrow, smincol, dminrow, dmincol,
-		     dmaxrow, dmaxcol, static_cast<int>(overlaywin ? 1 : 0)); }
+                     dmaxrow, dmaxcol, static_cast<int>(overlaywin ? 1 : 0)); }
   // Overlay or overwrite the rectangle in win given by dminrow,dmincol,
   // dmaxrow,dmaxcol with the rectangle in this window beginning at
   // sminrow,smincol.
@@ -1390,22 +1390,22 @@ public:
       useColors(); }
 
   NCursesColorWindow(int nlines,        // number of lines
-		     int ncols,         // number of columns
-		     int begin_y,       // line origin
-		     int begin_x)       // col origin
+                     int ncols,         // number of columns
+                     int begin_y,       // line origin
+                     int begin_x)       // col origin
     : NCursesWindow(nlines, ncols, begin_y, begin_x) {
       useColors(); }
 
   NCursesColorWindow(NCursesWindow& parentWin,// parent window
-		     int nlines,        // number of lines
-		     int ncols,         // number of columns
-		     int begin_y,       // absolute or relative
-		     int begin_x,       //   origins:
-		     char absrel = 'a') // if `a', by & bx are
+                     int nlines,        // number of lines
+                     int ncols,         // number of columns
+                     int begin_y,       // absolute or relative
+                     int begin_x,       //   origins:
+                     char absrel = 'a') // if `a', by & bx are
     : NCursesWindow(parentWin,
-		    nlines, ncols,	// absolute screen pos,
-		    begin_y, begin_x,   // else if `r', they are
-		    absrel ) {          // relative to par origin
+                    nlines, ncols,      // absolute screen pos,
+                    begin_y, begin_x,   // else if `r', they are
+                    absrel ) {          // relative to par origin
       useColors(); }
 };
 
@@ -1508,10 +1508,10 @@ public:
   // this is a noop.
 
   int refresh(int pminrow, int pmincol,
-	      int sminrow, int smincol,
-	      int smaxrow, int smaxcol) {
+              int sminrow, int smincol,
+              int smaxrow, int smaxcol) {
     return ::prefresh(w, pminrow, pmincol,
-		      sminrow, smincol, smaxrow, smaxcol);
+                      sminrow, smincol, smaxrow, smaxcol);
   }
   // The coordinates sminrow,smincol,smaxrow,smaxcol describe a rectangle
   // on the screen. <b>refresh</b> copies a rectangle of this size beginning
@@ -1522,10 +1522,10 @@ public:
   // this is a noop.
 
   int noutrefresh(int pminrow, int pmincol,
-		  int sminrow, int smincol,
-		  int smaxrow, int smaxcol) {
+                  int sminrow, int smincol,
+                  int smaxrow, int smaxcol) {
     return ::pnoutrefresh(w, pminrow, pmincol,
-			  sminrow, smincol, smaxrow, smaxcol);
+                          sminrow, smincol, smaxrow, smaxcol);
   }
   // Does the same as refresh() but without calling doupdate().
 
@@ -1551,7 +1551,7 @@ protected:
 
 public:
   NCursesFramedPad(NCursesWindow& win, int nlines, int ncols,
-		   int v_grid = 1, int h_grid = 1)
+                   int v_grid = 1, int h_grid = 1)
     : NCursesPad(nlines, ncols) {
     NCursesPad::setWindow(win, v_grid, h_grid);
     NCursesPad::setSubWindow(*(new NCursesWindow(win)));

@@ -35,12 +35,12 @@
  ****************************************************************************/
 
 /*
- *	lib_kernel.c
+ *      lib_kernel.c
  *
- *	Misc. low-level routines:
- *		erasechar()
- *		killchar()
- *		flushinp()
+ *      Misc. low-level routines:
+ *              erasechar()
+ *              killchar()
+ *              flushinp()
  *
  * The baudrate() and delay_output() functions could logically live here,
  * but are in other modules to reduce the static-link size of programs
@@ -61,23 +61,23 @@ _nc_vdisable(void)
 #endif
 #if defined(_PC_VDISABLE)
     if (value == -1) {
-	value = (int) fpathconf(0, _PC_VDISABLE);
-	if (value == -1) {
-	    value = 0377;
-	}
+        value = (int) fpathconf(0, _PC_VDISABLE);
+        if (value == -1) {
+            value = 0377;
+        }
     }
 #elif defined(VDISABLE)
     if (value == -1)
-	value = VDISABLE;
+        value = VDISABLE;
 #endif
     return value;
 }
 #endif /* TERMIOS */
 
 /*
- *	erasechar()
+ *      erasechar()
  *
- *	Return erase character as given in cur_term->Ottyb.
+ *      Return erase character as given in cur_term->Ottyb.
  *
  */
 
@@ -91,13 +91,13 @@ NCURSES_SP_NAME(erasechar) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef TERMIOS
-	result = termp->Ottyb.c_cc[VERASE];
-	if (result == _nc_vdisable())
-	    result = ERR;
+        result = termp->Ottyb.c_cc[VERASE];
+        if (result == _nc_vdisable())
+            result = ERR;
 #elif defined(EXP_WIN32_DRIVER)
-	result = ERR;
+        result = ERR;
 #else
-	result = termp->Ottyb.sg_erase;
+        result = termp->Ottyb.sg_erase;
 #endif
     }
     returnChar((char) result);
@@ -112,9 +112,9 @@ erasechar(void)
 #endif
 
 /*
- *	killchar()
+ *      killchar()
  *
- *	Return kill character as given in cur_term->Ottyb.
+ *      Return kill character as given in cur_term->Ottyb.
  *
  */
 
@@ -128,13 +128,13 @@ NCURSES_SP_NAME(killchar) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef TERMIOS
-	result = termp->Ottyb.c_cc[VKILL];
-	if (result == _nc_vdisable())
-	    result = ERR;
+        result = termp->Ottyb.c_cc[VKILL];
+        if (result == _nc_vdisable())
+            result = ERR;
 #elif defined(EXP_WIN32_DRIVER)
-	result = ERR;
+        result = ERR;
 #else
-	result = termp->Ottyb.sg_kill;
+        result = termp->Ottyb.sg_kill;
 #endif
     }
     returnChar((char) result);
@@ -149,9 +149,9 @@ killchar(void)
 #endif
 
 /*
- *	flushinp()
+ *      flushinp()
  *
- *	Flush any input on cur_term->Filedes
+ *      Flush any input on cur_term->Filedes
  *
  */
 
@@ -164,24 +164,24 @@ NCURSES_SP_NAME(flushinp) (NCURSES_SP_DCL0)
 
     if (termp != 0) {
 #ifdef TERMIOS
-	tcflush(termp->Filedes, TCIFLUSH);
+        tcflush(termp->Filedes, TCIFLUSH);
 #else
-	errno = 0;
-	do {
+        errno = 0;
+        do {
 #if defined(EXP_WIN32_DRIVER)
-	    _nc_console_flush(_nc_console_fd2handle(termp->Filedes));
+            _nc_console_flush(_nc_console_fd2handle(termp->Filedes));
 #else
-	    ioctl(termp->Filedes, TIOCFLUSH, 0);
+            ioctl(termp->Filedes, TIOCFLUSH, 0);
 #endif
-	} while
-	    (errno == EINTR);
+        } while
+            (errno == EINTR);
 #endif
-	if (SP_PARM) {
-	    SP_PARM->_fifohead = -1;
-	    SP_PARM->_fifotail = 0;
-	    SP_PARM->_fifopeek = 0;
-	}
-	returnCode(OK);
+        if (SP_PARM) {
+            SP_PARM->_fifohead = -1;
+            SP_PARM->_fifotail = 0;
+            SP_PARM->_fifopeek = 0;
+        }
+        returnCode(OK);
     }
     returnCode(ERR);
 }

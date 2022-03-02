@@ -65,9 +65,9 @@ scale_menu(const MENU *menu, int *rows, int *cols)
   if (menu->items && *(menu->items))
     {
       if (rows)
-	*rows = menu->height;
+        *rows = menu->height;
       if (cols)
-	*cols = menu->width;
+        *cols = menu->width;
       RETURN(E_OK);
     }
   else

@@ -61,7 +61,7 @@ protected:
 
 public:
   NCursesMenuItem (const char* p_name     = NULL,
-		   const char* p_descript = NULL)
+                   const char* p_descript = NULL)
     : item(0)
   {
     item = p_name ? ::new_item (p_name, p_descript) : STATIC_CAST(ITEM*)(0);
@@ -160,8 +160,8 @@ private:
 
 public:
   NCursesMenuCallbackItem(ITEMCALLBACK* fct       = NULL,
-			  const char* p_name      = NULL,
-			  const char* p_descript  = NULL )
+                          const char* p_name      = NULL,
+                          const char* p_descript  = NULL )
     : NCursesMenuItem (p_name, p_descript),
       p_fct (fct) {
   }
@@ -251,8 +251,8 @@ protected:
   }
 
   void InitMenu (NCursesMenuItem* menu[],
-		 bool with_frame,
-		 bool autoDeleteItems);
+                 bool with_frame,
+                 bool autoDeleteItems);
 
   inline void OnError (int err) const THROW2(NCursesException const, NCursesMenuException) {
     if (err != E_OK)
@@ -265,9 +265,9 @@ protected:
   // 'Internal' constructor to create a menu without association to
   // an array of items.
   NCursesMenu( int  nlines,
-	       int  ncols,
-	       int  begin_y = 0,
-	       int  begin_x = 0)
+               int  ncols,
+               int  begin_y = 0,
+               int  begin_x = 0)
     : NCursesPanel(nlines,ncols,begin_y,begin_x),
       menu (STATIC_CAST(MENU*)(0)),
       sub(0),
@@ -281,8 +281,8 @@ protected:
 public:
   // Make a full window size menu
   NCursesMenu (NCursesMenuItem* Items[],
-	       bool with_frame=FALSE,        // Reserve space for a frame?
-	       bool autoDelete_Items=FALSE)  // Autocleanup of Items?
+               bool with_frame=FALSE,        // Reserve space for a frame?
+               bool autoDelete_Items=FALSE)  // Autocleanup of Items?
     : NCursesPanel(),
       menu(0),
       sub(0),
@@ -296,12 +296,12 @@ public:
 
   // Make a menu with a window of this size.
   NCursesMenu (NCursesMenuItem* Items[],
-	       int  nlines,
-	       int  ncols,
-	       int  begin_y = 0,
-	       int  begin_x = 0,
-	       bool with_frame=FALSE,        // Reserve space for a frame?
-	       bool autoDelete_Items=FALSE)  // Autocleanup of Items?
+               int  nlines,
+               int  ncols,
+               int  begin_y = 0,
+               int  begin_x = 0,
+               bool with_frame=FALSE,        // Reserve space for a frame?
+               bool autoDelete_Items=FALSE)  // Autocleanup of Items?
     : NCursesPanel(nlines, ncols, begin_y, begin_x),
       menu(0),
       sub(0),
@@ -493,22 +493,22 @@ public:
   // spacing control
   // Set the spacing for the menu
   inline void setSpacing(int spc_description,
-			 int spc_rows,
-			 int spc_columns) {
+                         int spc_rows,
+                         int spc_columns) {
     OnError(::set_menu_spacing(menu,
-			       spc_description,
-			       spc_rows,
-			       spc_columns));
+                               spc_description,
+                               spc_rows,
+                               spc_columns));
   }
 
   // Get the spacing info for the menu
   inline void Spacing(int& spc_description,
-		      int& spc_rows,
-		      int& spc_columns) const {
+                      int& spc_rows,
+                      int& spc_columns) const {
     OnError(::menu_spacing(menu,
-			   &spc_description,
-			   &spc_rows,
-			   &spc_columns));
+                           &spc_description,
+                           &spc_rows,
+                           &spc_columns));
   }
 
   // Decorations
@@ -600,11 +600,11 @@ template<class T> class NCURSES_CXX_IMPEXP NCursesUserItem : public NCursesMenuI
 {
 public:
   NCursesUserItem (const char* p_name,
-		   const char* p_descript = NULL,
-		   const T* p_UserData    = STATIC_CAST(T*)(0))
+                   const char* p_descript = NULL,
+                   const T* p_UserData    = STATIC_CAST(T*)(0))
     : NCursesMenuItem (p_name, p_descript) {
       if (item)
-	OnError (::set_item_userptr (item, const_cast<void *>(reinterpret_cast<const void*>(p_UserData))));
+        OnError (::set_item_userptr (item, const_cast<void *>(reinterpret_cast<const void*>(p_UserData))));
   }
 
   virtual ~NCursesUserItem() THROWS(NCursesException) {}
@@ -627,35 +627,35 @@ template<class T> class NCURSES_CXX_IMPEXP NCursesUserMenu : public NCursesMenu
 {
 protected:
   NCursesUserMenu( int  nlines,
-		   int  ncols,
-		   int  begin_y = 0,
-		   int  begin_x = 0,
-		   const T* p_UserData = STATIC_CAST(T*)(0))
+                   int  ncols,
+                   int  begin_y = 0,
+                   int  begin_x = 0,
+                   const T* p_UserData = STATIC_CAST(T*)(0))
     : NCursesMenu(nlines,ncols,begin_y,begin_x) {
       if (menu)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   }
 
 public:
   NCursesUserMenu (NCursesMenuItem* Items[],
-		   const T* p_UserData = STATIC_CAST(T*)(0),
-		   bool with_frame=FALSE,
-		   bool autoDelete_Items=FALSE)
+                   const T* p_UserData = STATIC_CAST(T*)(0),
+                   bool with_frame=FALSE,
+                   bool autoDelete_Items=FALSE)
     : NCursesMenu (Items, with_frame, autoDelete_Items) {
       if (menu)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
   NCursesUserMenu (NCursesMenuItem* Items[],
-		   int nlines,
-		   int ncols,
-		   int begin_y = 0,
-		   int begin_x = 0,
-		   const T* p_UserData = STATIC_CAST(T*)(0),
-		   bool with_frame=FALSE)
+                   int nlines,
+                   int ncols,
+                   int begin_y = 0,
+                   int begin_x = 0,
+                   const T* p_UserData = STATIC_CAST(T*)(0),
+                   bool with_frame=FALSE)
     : NCursesMenu (Items, nlines, ncols, begin_y, begin_x, with_frame) {
       if (menu)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
   virtual ~NCursesUserMenu() THROWS(NCursesException) {

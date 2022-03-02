@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /*
- *	home_terminfo.c -- return the $HOME/.terminfo string, expanded
+ *      home_terminfo.c -- return the $HOME/.terminfo string, expanded
  */
 
 #include <curses.priv.h>
@@ -51,16 +51,16 @@ _nc_home_terminfo(void)
 #if USE_HOME_TERMINFO
     if (use_terminfo_vars()) {
 
-	if (MyBuffer == 0) {
-	    char *home;
+        if (MyBuffer == 0) {
+            char *home;
 
-	    if ((home = getenv("HOME")) != 0) {
-		size_t want = (strlen(home) + sizeof(PRIVATE_INFO));
-		TYPE_MALLOC(char, want, MyBuffer);
-		_nc_SPRINTF(MyBuffer, _nc_SLIMIT(want) PRIVATE_INFO, home);
-	    }
-	}
-	result = MyBuffer;
+            if ((home = getenv("HOME")) != 0) {
+                size_t want = (strlen(home) + sizeof(PRIVATE_INFO));
+                TYPE_MALLOC(char, want, MyBuffer);
+                _nc_SPRINTF(MyBuffer, _nc_SLIMIT(want) PRIVATE_INFO, home);
+            }
+        }
+        result = MyBuffer;
     }
 #endif
     return result;

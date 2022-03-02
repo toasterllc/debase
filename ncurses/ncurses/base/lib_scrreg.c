@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_scrreg.c
+**      lib_scrreg.c
 **
-**	The routine wsetscrreg().
+**      The routine wsetscrreg().
 **
 */
 
@@ -49,13 +49,13 @@ wsetscrreg(WINDOW *win, int top, int bottom)
     T((T_CALLED("wsetscrreg(%p,%d,%d)"), (void *) win, top, bottom));
 
     if (win &&
-	top >= 0 && top <= win->_maxy &&
-	bottom >= 0 && bottom <= win->_maxy &&
-	bottom > top) {
-	win->_regtop = (NCURSES_SIZE_T) top;
-	win->_regbottom = (NCURSES_SIZE_T) bottom;
+        top >= 0 && top <= win->_maxy &&
+        bottom >= 0 && bottom <= win->_maxy &&
+        bottom > top) {
+        win->_regtop = (NCURSES_SIZE_T) top;
+        win->_regbottom = (NCURSES_SIZE_T) bottom;
 
-	returnCode(OK);
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

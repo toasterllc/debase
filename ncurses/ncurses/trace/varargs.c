@@ -66,123 +66,123 @@ _nc_varargs(const char *fmt, va_list ap)
     int n;
 
     if (fmt == 0 || *fmt == '\0')
-	return dummy;
+        return dummy;
     if (MyLength == 0)
-	MyBuffer = typeMalloc(char, MyLength = BUFSIZ);
+        MyBuffer = typeMalloc(char, MyLength = BUFSIZ);
     if (MyBuffer == 0)
-	return dummy;
+        return dummy;
     *MyBuffer = '\0';
 
     while (*fmt != '\0') {
-	if (*fmt == '%') {
-	    char *pval = 0;	/* avoid const-cast */
-	    const char *sval = "";
-	    double fval = 0.0;
-	    int done = FALSE;
-	    int ival = 0;
-	    int type = 0;
-	    ARGTYPE parm[MAX_PARMS];
-	    int parms = 0;
-	    ARGTYPE used = atUnknown;
+        if (*fmt == '%') {
+            char *pval = 0;     /* avoid const-cast */
+            const char *sval = "";
+            double fval = 0.0;
+            int done = FALSE;
+            int ival = 0;
+            int type = 0;
+            ARGTYPE parm[MAX_PARMS];
+            int parms = 0;
+            ARGTYPE used = atUnknown;
 
-	    while (*++fmt != '\0' && !done) {
+            while (*++fmt != '\0' && !done) {
 
-		if (*fmt == '*') {
-		    VA_INT(int);
-		    if (parms < MAX_PARMS)
-			parm[parms++] = atInteger;
-		} else if (isalpha(UChar(*fmt))) {
-		    done = TRUE;
-		    switch (*fmt) {
-		    case 'Z':	/* FALLTHRU */
-		    case 'h':	/* FALLTHRU */
-		    case 'l':	/* FALLTHRU */
-			done = FALSE;
-			type = *fmt;
-			break;
-		    case 'i':	/* FALLTHRU */
-		    case 'd':	/* FALLTHRU */
-		    case 'u':	/* FALLTHRU */
-		    case 'x':	/* FALLTHRU */
-		    case 'X':	/* FALLTHRU */
-			if (type == 'l')
-			    VA_INT(long);
-			else if (type == 'Z')
-			    VA_INT(size_t);
-			else
-			    VA_INT(int);
-			used = atInteger;
-			break;
-		    case 'f':	/* FALLTHRU */
-		    case 'e':	/* FALLTHRU */
-		    case 'E':	/* FALLTHRU */
-		    case 'g':	/* FALLTHRU */
-		    case 'G':	/* FALLTHRU */
-			VA_FLT(double);
-			used = atFloat;
-			break;
-		    case 'c':
-			VA_INT(int);
-			used = atInteger;
-			break;
-		    case 's':
-			VA_STR(const char *);
-			used = atString;
-			break;
-		    case 'p':
-			VA_PTR(void *);
-			used = atPoint;
-			break;
-		    case 'n':
-			VA_PTR(int *);
-			used = atPoint;
-			break;
-		    default:
-			break;
-		    }
-		} else if (*fmt == '%') {
-		    done = TRUE;
-		}
-		if (used != atUnknown && parms < MAX_PARMS) {
-		    parm[parms++] = used;
-		    for (n = 0; n < parms; ++n) {
-			used = parm[n];
-			param = buffer;
-			switch (used) {
-			case atInteger:
-			    _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
-					"%d", ival);
-			    break;
-			case atFloat:
-			    _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
-					"%f", fval);
-			    break;
-			case atPoint:
-			    _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
-					"%p", pval);
-			    break;
-			case atString:
-			    param = _nc_visbuf2(1, sval);
-			    break;
-			case atUnknown:
-			default:
-			    _nc_STRCPY(buffer, "?", sizeof(buffer));
-			    break;
-			}
-			MyLength += strlen(param) + 2;
-			MyBuffer = typeRealloc(char, MyLength, MyBuffer);
-			if (MyBuffer != 0) {
-			    _nc_SPRINTF(MyBuffer + strlen(MyBuffer),
-					_nc_SLIMIT(MyLength - strlen(MyBuffer))
-					", %s", param);
-			}
-		    }
-		}
-		used = atUnknown;
-	    }
-	} else {
-	    fmt++;
-	}
+                if (*fmt == '*') {
+                    VA_INT(int);
+                    if (parms < MAX_PARMS)
+                        parm[parms++] = atInteger;
+                } else if (isalpha(UChar(*fmt))) {
+                    done = TRUE;
+                    switch (*fmt) {
+                    case 'Z':   /* FALLTHRU */
+                    case 'h':   /* FALLTHRU */
+                    case 'l':   /* FALLTHRU */
+                        done = FALSE;
+                        type = *fmt;
+                        break;
+                    case 'i':   /* FALLTHRU */
+                    case 'd':   /* FALLTHRU */
+                    case 'u':   /* FALLTHRU */
+                    case 'x':   /* FALLTHRU */
+                    case 'X':   /* FALLTHRU */
+                        if (type == 'l')
+                            VA_INT(long);
+                        else if (type == 'Z')
+                            VA_INT(size_t);
+                        else
+                            VA_INT(int);
+                        used = atInteger;
+                        break;
+                    case 'f':   /* FALLTHRU */
+                    case 'e':   /* FALLTHRU */
+                    case 'E':   /* FALLTHRU */
+                    case 'g':   /* FALLTHRU */
+                    case 'G':   /* FALLTHRU */
+                        VA_FLT(double);
+                        used = atFloat;
+                        break;
+                    case 'c':
+                        VA_INT(int);
+                        used = atInteger;
+                        break;
+                    case 's':
+                        VA_STR(const char *);
+                        used = atString;
+                        break;
+                    case 'p':
+                        VA_PTR(void *);
+                        used = atPoint;
+                        break;
+                    case 'n':
+                        VA_PTR(int *);
+                        used = atPoint;
+                        break;
+                    default:
+                        break;
+                    }
+                } else if (*fmt == '%') {
+                    done = TRUE;
+                }
+                if (used != atUnknown && parms < MAX_PARMS) {
+                    parm[parms++] = used;
+                    for (n = 0; n < parms; ++n) {
+                        used = parm[n];
+                        param = buffer;
+                        switch (used) {
+                        case atInteger:
+                            _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
+                                        "%d", ival);
+                            break;
+                        case atFloat:
+                            _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
+                                        "%f", fval);
+                            break;
+                        case atPoint:
+                            _nc_SPRINTF(buffer, _nc_SLIMIT(sizeof(buffer))
+                                        "%p", pval);
+                            break;
+                        case atString:
+                            param = _nc_visbuf2(1, sval);
+                            break;
+                        case atUnknown:
+                        default:
+                            _nc_STRCPY(buffer, "?", sizeof(buffer));
+                            break;
+                        }
+                        MyLength += strlen(param) + 2;
+                        MyBuffer = typeRealloc(char, MyLength, MyBuffer);
+                        if (MyBuffer != 0) {
+                            _nc_SPRINTF(MyBuffer + strlen(MyBuffer),
+                                        _nc_SLIMIT(MyLength - strlen(MyBuffer))
+                                        ", %s", param);
+                        }
+                    }
+                }
+                used = atUnknown;
+            }
+        } else {
+            fmt++;
+        }
     }
 
     return (MyBuffer ? MyBuffer : dummy);

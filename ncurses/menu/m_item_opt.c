@@ -64,20 +64,20 @@ set_item_opts(ITEM *item, Item_Options opts)
   if (item)
     {
       if (item->opt != opts)
-	{
-	  MENU *menu = item->imenu;
+        {
+          MENU *menu = item->imenu;
 
-	  item->opt = opts;
+          item->opt = opts;
 
-	  if ((!(opts & O_SELECTABLE)) && item->value)
-	    item->value = FALSE;
+          if ((!(opts & O_SELECTABLE)) && item->value)
+            item->value = FALSE;
 
-	  if (menu && (menu->status & _POSTED))
-	    {
-	      Move_And_Post_Item(menu, item);
-	      _nc_Show_Menu(menu);
-	    }
-	}
+          if (menu && (menu->status & _POSTED))
+            {
+              Move_And_Post_Item(menu, item);
+              _nc_Show_Menu(menu);
+            }
+        }
     }
   else
     _nc_Default_Item.opt = opts;
@@ -97,9 +97,9 @@ set_item_opts(ITEM *item, Item_Options opts)
 MENU_EXPORT(int)
 item_opts_off(ITEM *item, Item_Options opts)
 {
-  ITEM *citem = item;		/* use a copy because set_item_opts must detect
+  ITEM *citem = item;           /* use a copy because set_item_opts must detect
 
-				   NULL item itself to adjust its behavior */
+                                   NULL item itself to adjust its behavior */
 
   T((T_CALLED("item_opts_off(%p,%d)"), (void *)item, opts));
 
@@ -125,9 +125,9 @@ item_opts_off(ITEM *item, Item_Options opts)
 MENU_EXPORT(int)
 item_opts_on(ITEM *item, Item_Options opts)
 {
-  ITEM *citem = item;		/* use a copy because set_item_opts must detect
+  ITEM *citem = item;           /* use a copy because set_item_opts must detect
 
-				   NULL item itself to adjust its behavior */
+                                   NULL item itself to adjust its behavior */
 
   T((T_CALLED("item_opts_on(%p,%d)"), (void *)item, opts));
 

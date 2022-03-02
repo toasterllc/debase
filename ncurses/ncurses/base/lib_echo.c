@@ -35,11 +35,11 @@
  ****************************************************************************/
 
 /*
- *	echo.c
+ *      echo.c
  *
- *	Routines:
- *		echo()
- *		noecho()
+ *      Routines:
+ *              echo()
+ *              noecho()
  *
  */
 
@@ -52,7 +52,7 @@ NCURSES_SP_NAME(echo) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("echo(%p)"), (void *) SP_PARM));
     if (0 == SP_PARM)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_echo = TRUE;
     returnCode(OK);
 }
@@ -70,7 +70,7 @@ NCURSES_SP_NAME(noecho) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("noecho(%p)"), (void *) SP_PARM));
     if (0 == SP_PARM)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_echo = FALSE;
     returnCode(OK);
 }

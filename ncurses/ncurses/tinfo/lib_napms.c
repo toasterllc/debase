@@ -35,12 +35,12 @@
  ****************************************************************************/
 
 /*
- *	lib_napms.c
+ *      lib_napms.c
  *
- *	The routine napms.
+ *      The routine napms.
  *
- *	(This file was originally written by Eric Raymond; however except for
- *	comments, none of the original code remains - T.Dickey).
+ *      (This file was originally written by Eric Raymond; however except for
+ *      comments, none of the original code remains - T.Dickey).
  */
 
 #include <curses.priv.h>
@@ -48,7 +48,7 @@
 #if HAVE_NANOSLEEP
 #include <time.h>
 #if HAVE_SYS_TIME_H
-#include <sys/time.h>		/* needed for MacOS X DP3 */
+#include <sys/time.h>           /* needed for MacOS X DP3 */
 #endif
 #endif
 
@@ -67,13 +67,13 @@ NCURSES_SP_NAME(napms) (NCURSES_SP_DCLx int ms)
 #endif
 #if HAVE_NANOSLEEP
     {
-	struct timespec request, remaining;
-	request.tv_sec = ms / 1000;
-	request.tv_nsec = (ms % 1000) * 1000000;
-	while (nanosleep(&request, &remaining) == -1
-	       && errno == EINTR) {
-	    request = remaining;
-	}
+        struct timespec request, remaining;
+        request.tv_sec = ms / 1000;
+        request.tv_nsec = (ms % 1000) * 1000000;
+        while (nanosleep(&request, &remaining) == -1
+               && errno == EINTR) {
+            request = remaining;
+        }
     }
 #elif defined(_NC_WINDOWS)
     Sleep((DWORD) ms);

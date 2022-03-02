@@ -38,14 +38,14 @@
 
 MODULE_ID("$Id: gettimeofday.c,v 1.6 2020/07/11 21:03:53 tom Exp $")
 
-#define JAN1970 116444736000000000LL	/* the value for 01/01/1970 00:00 */
+#define JAN1970 116444736000000000LL    /* the value for 01/01/1970 00:00 */
 
 NCURSES_EXPORT(int)
 gettimeofday(struct timeval *tv, void *tz GCC_UNUSED)
 {
     union {
-	FILETIME ft;
-	long long since1601;	/* time since 1 Jan 1601 in 100ns units */
+        FILETIME ft;
+        long long since1601;    /* time since 1 Jan 1601 in 100ns units */
     } data;
 
     GetSystemTimeAsFileTime(&data.ft);

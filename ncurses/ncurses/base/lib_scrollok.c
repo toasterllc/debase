@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_scrollok.c
+**      lib_scrollok.c
 **
-**	The routine scrollok.
+**      The routine scrollok.
 **
 */
 
@@ -49,8 +49,8 @@ scrollok(WINDOW *win, bool flag)
     T((T_CALLED("scrollok(%p,%d)"), (void *) win, flag));
 
     if (win) {
-	win->_scroll = flag;
-	returnCode(OK);
+        win->_scroll = flag;
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

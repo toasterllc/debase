@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_endwin.c
+**      lib_endwin.c
 **
-**	The routine endwin().
+**      The routine endwin().
 **
 */
 
@@ -49,7 +49,7 @@ NCURSES_EXPORT(bool)
 NCURSES_SP_NAME(isendwin) (NCURSES_SP_DCL0)
 {
     if (SP_PARM == NULL)
-	return FALSE;
+        return FALSE;
     return (SP_PARM->_endwin == ewSuspend);
 }
 

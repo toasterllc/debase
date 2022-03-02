@@ -35,7 +35,7 @@
  ****************************************************************************/
 
 /*
- *	lib_trace.c - Tracing/Debugging routines
+ *      lib_trace.c - Tracing/Debugging routines
  *
  * The _tracef() function is originally from pcurses (by Pavel Curtis) in 1982.
  * pcurses allowed one to enable/disable tracing using traceon() and traceoff()
@@ -69,29 +69,29 @@ NCURSES_EXPORT(void)
 _nc_set_tputs_trace(const char *s)
 {
     if (CURRENT_SCREEN)
-	CURRENT_SCREEN->_tputs_trace = s;
+        CURRENT_SCREEN->_tputs_trace = s;
     else
-	_nc_prescreen._tputs_trace = s;
+        _nc_prescreen._tputs_trace = s;
 }
 NCURSES_EXPORT(void)
 _nc_count_outchars(long increment)
 {
     if (CURRENT_SCREEN)
-	CURRENT_SCREEN->_outchars += increment;
+        CURRENT_SCREEN->_outchars += increment;
     else
-	_nc_prescreen._outchars += increment;
+        _nc_prescreen._outchars += increment;
 }
 #else
 NCURSES_EXPORT_VAR(const char *) _nc_tputs_trace = "";
 NCURSES_EXPORT_VAR(long) _nc_outchars = 0;
 #endif
 
-#define MyFP		_nc_globals.trace_fp
-#define MyFD		_nc_globals.trace_fd
-#define MyInit		_nc_globals.trace_opened
-#define MyPath		_nc_globals.trace_fname
-#define MyLevel		_nc_globals.trace_level
-#define MyNested	_nc_globals.nested_tracef
+#define MyFP            _nc_globals.trace_fp
+#define MyFD            _nc_globals.trace_fd
+#define MyInit          _nc_globals.trace_opened
+#define MyPath          _nc_globals.trace_fname
+#define MyLevel         _nc_globals.trace_level
+#define MyNested        _nc_globals.nested_tracef
 #endif /* TRACE */
 
 NCURSES_EXPORT(unsigned)
@@ -101,56 +101,56 @@ curses_trace(unsigned tracelevel)
 #if defined(TRACE)
     result = _nc_tracing;
     if ((MyFP == 0) && tracelevel) {
-	MyInit = TRUE;
-	if (MyFD >= 0) {
-	    MyFP = fdopen(MyFD, BIN_W);
-	} else {
-	    if (MyPath[0] == '\0') {
-		size_t size = sizeof(MyPath) - 12;
-		if (getcwd(MyPath, size) == 0) {
-		    perror("curses: Can't get working directory");
-		    exit(EXIT_FAILURE);
-		}
-		MyPath[size] = '\0';
-		assert(strlen(MyPath) <= size);
-		_nc_STRCAT(MyPath, "/trace", sizeof(MyPath));
-		if (_nc_is_dir_path(MyPath)) {
-		    _nc_STRCAT(MyPath, ".log", sizeof(MyPath));
-		}
-	    }
+        MyInit = TRUE;
+        if (MyFD >= 0) {
+            MyFP = fdopen(MyFD, BIN_W);
+        } else {
+            if (MyPath[0] == '\0') {
+                size_t size = sizeof(MyPath) - 12;
+                if (getcwd(MyPath, size) == 0) {
+                    perror("curses: Can't get working directory");
+                    exit(EXIT_FAILURE);
+                }
+                MyPath[size] = '\0';
+                assert(strlen(MyPath) <= size);
+                _nc_STRCAT(MyPath, "/trace", sizeof(MyPath));
+                if (_nc_is_dir_path(MyPath)) {
+                    _nc_STRCAT(MyPath, ".log", sizeof(MyPath));
+                }
+            }
 #define SAFE_MODE (O_CREAT | O_EXCL | O_RDWR)
-	    if (_nc_access(MyPath, W_OK) < 0
-		|| (MyFD = safe_open3(MyPath, SAFE_MODE, 0600)) < 0
-		|| (MyFP = fdopen(MyFD, BIN_W)) == 0) {
-		;		/* EMPTY */
-	    }
-	}
-	_nc_tracing = tracelevel;
-	/* Try to set line-buffered mode, or (failing that) unbuffered,
-	 * so that the trace-output gets flushed automatically at the
-	 * end of each line.  This is useful in case the program dies.
-	 */
-	if (MyFP != 0) {
-#if HAVE_SETVBUF		/* ANSI */
-	    (void) setvbuf(MyFP, (char *) 0, _IOLBF, (size_t) 0);
+            if (_nc_access(MyPath, W_OK) < 0
+                || (MyFD = safe_open3(MyPath, SAFE_MODE, 0600)) < 0
+                || (MyFP = fdopen(MyFD, BIN_W)) == 0) {
+                ;               /* EMPTY */
+            }
+        }
+        _nc_tracing = tracelevel;
+        /* Try to set line-buffered mode, or (failing that) unbuffered,
+         * so that the trace-output gets flushed automatically at the
+         * end of each line.  This is useful in case the program dies.
+         */
+        if (MyFP != 0) {
+#if HAVE_SETVBUF                /* ANSI */
+            (void) setvbuf(MyFP, (char *) 0, _IOLBF, (size_t) 0);
 #elif HAVE_SETBUF /* POSIX */
-	    (void) setbuffer(MyFP, (char *) 0);
+            (void) setbuffer(MyFP, (char *) 0);
 #endif
-	}
-	_tracef("TRACING NCURSES version %s.%d (tracelevel=%#x)",
-		NCURSES_VERSION,
-		NCURSES_VERSION_PATCH,
-		tracelevel);
+        }
+        _tracef("TRACING NCURSES version %s.%d (tracelevel=%#x)",
+                NCURSES_VERSION,
+                NCURSES_VERSION_PATCH,
+                tracelevel);
     } else if (tracelevel == 0) {
-	if (MyFP != 0) {
-	    MyFD = dup(MyFD);	/* allow reopen of same file */
-	    fclose(MyFP);
-	    MyFP = 0;
-	}
-	_nc_tracing = tracelevel;
+        if (MyFP != 0) {
+            MyFD = dup(MyFD);   /* allow reopen of same file */
+            fclose(MyFP);
+            MyFP = 0;
+        }
+        _nc_tracing = tracelevel;
     } else if (_nc_tracing != tracelevel) {
-	_nc_tracing = tracelevel;
-	_tracef("tracelevel=%#x", tracelevel);
+        _nc_tracing = tracelevel;
+        _tracef("tracelevel=%#x", tracelevel);
     }
 #else
     (void) tracelevel;
@@ -181,57 +181,57 @@ _nc_va_tracef(const char *fmt, va_list ap)
 #ifdef TRACE
     /* verbose-trace in the command-line utilities relies on this */
     if (fp == 0 && !MyInit && _nc_tracing >= DEBUG_LEVEL(1))
-	fp = stderr;
+        fp = stderr;
 #endif
 
     if (strlen(fmt) >= sizeof(Called) - 1) {
-	if (!strncmp(fmt, Called, sizeof(Called) - 1)) {
-	    before = TRUE;
-	    MyLevel++;
-	} else if (!strncmp(fmt, Return, sizeof(Return) - 1)) {
-	    after = TRUE;
-	}
-	if (before || after) {
-	    if ((MyLevel <= 1)
-		|| (doit & TRACE_ICALLS) != 0)
-		doit &= (TRACE_CALLS | TRACE_CCALLS);
-	    else
-		doit = 0;
-	}
+        if (!strncmp(fmt, Called, sizeof(Called) - 1)) {
+            before = TRUE;
+            MyLevel++;
+        } else if (!strncmp(fmt, Return, sizeof(Return) - 1)) {
+            after = TRUE;
+        }
+        if (before || after) {
+            if ((MyLevel <= 1)
+                || (doit & TRACE_ICALLS) != 0)
+                doit &= (TRACE_CALLS | TRACE_CCALLS);
+            else
+                doit = 0;
+        }
     }
 
     if (doit != 0 && fp != 0) {
 #ifdef USE_PTHREADS
-	/*
-	 * TRACE_ICALLS is "really" needed to show normal use with threaded
-	 * applications, since anything can be running during a napms(),
-	 * making it appear in the hierarchical trace as it other functions
-	 * are being called.
-	 *
-	 * Rather than add the complication of a per-thread stack, just
-	 * show the thread-id in each line of the trace.
-	 */
+        /*
+         * TRACE_ICALLS is "really" needed to show normal use with threaded
+         * applications, since anything can be running during a napms(),
+         * making it appear in the hierarchical trace as it other functions
+         * are being called.
+         *
+         * Rather than add the complication of a per-thread stack, just
+         * show the thread-id in each line of the trace.
+         */
 # if USE_WEAK_SYMBOLS
-	if ((pthread_self))
+        if ((pthread_self))
 # endif
 #ifdef _NC_WINDOWS
-	    fprintf(fp, "%#lx:", (long) (intptr_t) pthread_self().p);
+            fprintf(fp, "%#lx:", (long) (intptr_t) pthread_self().p);
 #else
-	    fprintf(fp, "%#lx:", (long) (intptr_t) pthread_self());
+            fprintf(fp, "%#lx:", (long) (intptr_t) pthread_self());
 #endif
 #endif
-	if (before || after) {
-	    int n;
-	    for (n = 1; n < MyLevel; n++)
-		fputs("+ ", fp);
-	}
-	vfprintf(fp, fmt, ap);
-	fputc('\n', fp);
-	fflush(fp);
+        if (before || after) {
+            int n;
+            for (n = 1; n < MyLevel; n++)
+                fputs("+ ", fp);
+        }
+        vfprintf(fp, fmt, ap);
+        fputc('\n', fp);
+        fflush(fp);
     }
 
     if (after && MyLevel)
-	MyLevel--;
+        MyLevel--;
 
     errno = save_err;
 }
@@ -334,8 +334,8 @@ _nc_fmt_funcptr(char *target, const char *source, size_t size)
     bool leading = TRUE;
 
     union {
-	int value;
-	char bytes[sizeof(int)];
+        int value;
+        char bytes[sizeof(int)];
     } byteorder;
 
     byteorder.value = 0x1234;
@@ -344,16 +344,16 @@ _nc_fmt_funcptr(char *target, const char *source, size_t size)
     *dst++ = 'x';
 
     for (n = 0; n < size; ++n) {
-	unsigned ch = ((byteorder.bytes[0] == 0x34)
-		       ? UChar(source[size - n - 1])
-		       : UChar(source[n]));
-	if (ch != 0 || (n + 1) >= size)
-	    leading = FALSE;
-	if (!leading) {
-	    _nc_SPRINTF(dst, _nc_SLIMIT(TR_FUNC_LEN - (size_t) (dst - target))
-			"%02x", ch & 0xff);
-	    dst += 2;
-	}
+        unsigned ch = ((byteorder.bytes[0] == 0x34)
+                       ? UChar(source[size - n - 1])
+                       : UChar(source[n]));
+        if (ch != 0 || (n + 1) >= size)
+            leading = FALSE;
+        if (!leading) {
+            _nc_SPRINTF(dst, _nc_SLIMIT(TR_FUNC_LEN - (size_t) (dst - target))
+                        "%02x", ch & 0xff);
+            dst += 2;
+        }
     }
     *dst = '\0';
     return target;
@@ -374,16 +374,16 @@ _nc_use_tracef(unsigned mask)
 
     _nc_lock_global(tst_tracef);
     if (!MyNested++) {
-	if ((result = (_nc_tracing & (mask))) != 0
-	    && _nc_try_global(tracef) == 0) {
-	    /* we will call _nc_locked_tracef(), no nesting so far */
-	} else {
-	    /* we will not call _nc_locked_tracef() */
-	    MyNested = 0;
-	}
+        if ((result = (_nc_tracing & (mask))) != 0
+            && _nc_try_global(tracef) == 0) {
+            /* we will call _nc_locked_tracef(), no nesting so far */
+        } else {
+            /* we will not call _nc_locked_tracef() */
+            MyNested = 0;
+        }
     } else {
-	/* we may call _nc_locked_tracef(), but with nested_tracef > 0 */
-	result = (_nc_tracing & (mask));
+        /* we may call _nc_locked_tracef(), but with nested_tracef > 0 */
+        result = (_nc_tracing & (mask));
     }
     _nc_unlock_global(tst_tracef);
     return result;
@@ -403,7 +403,7 @@ _nc_locked_tracef(const char *fmt, ...)
     va_end(ap);
 
     if (--(MyNested) == 0) {
-	_nc_unlock_global(tracef);
+        _nc_unlock_global(tracef);
     }
 }
 #endif /* USE_REENTRANT */

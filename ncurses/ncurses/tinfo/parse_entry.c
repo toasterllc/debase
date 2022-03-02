@@ -34,12 +34,12 @@
  ****************************************************************************/
 
 /*
- *	parse_entry.c -- compile one terminfo or termcap entry
+ *      parse_entry.c -- compile one terminfo or termcap entry
  *
- *	Get an exact in-core representation of an entry.  Don't
- *	try to resolve use or tc capabilities, that is someone
- *	else's job.  Depends on the lexical analyzer to get tokens
- *	from the input stream.
+ *      Get an exact in-core representation of an entry.  Don't
+ *      try to resolve use or tc capabilities, that is someone
+ *      else's job.  Depends on the lexical analyzer to get tokens
+ *      from the input stream.
  */
 
 #define __INTERNAL_CAPS_VISIBLE
@@ -76,100 +76,100 @@ _nc_extend_names(ENTRY * entryp, const char *name, int token_type)
 
     switch (token_type) {
     case BOOLEAN:
-	first = 0;
-	last = tp->ext_Booleans;
-	offset = tp->ext_Booleans;
-	tindex = tp->num_Booleans;
-	break;
+        first = 0;
+        last = tp->ext_Booleans;
+        offset = tp->ext_Booleans;
+        tindex = tp->num_Booleans;
+        break;
     case NUMBER:
-	first = tp->ext_Booleans;
-	last = tp->ext_Numbers + first;
-	offset = (unsigned) (tp->ext_Booleans + tp->ext_Numbers);
-	tindex = tp->num_Numbers;
-	break;
+        first = tp->ext_Booleans;
+        last = tp->ext_Numbers + first;
+        offset = (unsigned) (tp->ext_Booleans + tp->ext_Numbers);
+        tindex = tp->num_Numbers;
+        break;
     case STRING:
-	first = (unsigned) (tp->ext_Booleans + tp->ext_Numbers);
-	last = tp->ext_Strings + first;
-	offset = (unsigned) (tp->ext_Booleans + tp->ext_Numbers + tp->ext_Strings);
-	tindex = tp->num_Strings;
-	break;
+        first = (unsigned) (tp->ext_Booleans + tp->ext_Numbers);
+        last = tp->ext_Strings + first;
+        offset = (unsigned) (tp->ext_Booleans + tp->ext_Numbers + tp->ext_Strings);
+        tindex = tp->num_Strings;
+        break;
     case CANCEL:
-	actual = NUM_EXT_NAMES(tp);
-	for (n = 0; n < actual; n++) {
-	    if (!strcmp(name, tp->ext_Names[n])) {
-		if (n > (unsigned) (tp->ext_Booleans + tp->ext_Numbers)) {
-		    token_type = STRING;
-		} else if (n > tp->ext_Booleans) {
-		    token_type = NUMBER;
-		} else {
-		    token_type = BOOLEAN;
-		}
-		return _nc_extend_names(entryp, name, token_type);
-	    }
-	}
-	/* Well, we are given a cancel for a name that we don't recognize */
-	return _nc_extend_names(entryp, name, STRING);
+        actual = NUM_EXT_NAMES(tp);
+        for (n = 0; n < actual; n++) {
+            if (!strcmp(name, tp->ext_Names[n])) {
+                if (n > (unsigned) (tp->ext_Booleans + tp->ext_Numbers)) {
+                    token_type = STRING;
+                } else if (n > tp->ext_Booleans) {
+                    token_type = NUMBER;
+                } else {
+                    token_type = BOOLEAN;
+                }
+                return _nc_extend_names(entryp, name, token_type);
+            }
+        }
+        /* Well, we are given a cancel for a name that we don't recognize */
+        return _nc_extend_names(entryp, name, STRING);
     default:
-	return 0;
+        return 0;
     }
 
     /* Adjust the 'offset' (insertion-point) to keep the lists of extended
      * names sorted.
      */
     for (n = first, found = FALSE; n < last; n++) {
-	int cmp = strcmp(tp->ext_Names[n], name);
-	if (cmp == 0)
-	    found = TRUE;
-	if (cmp >= 0) {
-	    offset = n;
-	    tindex = n - first;
-	    switch (token_type) {
-	    case BOOLEAN:
-		tindex += BOOLCOUNT;
-		break;
-	    case NUMBER:
-		tindex += NUMCOUNT;
-		break;
-	    case STRING:
-		tindex += STRCOUNT;
-		break;
-	    }
-	    break;
-	}
+        int cmp = strcmp(tp->ext_Names[n], name);
+        if (cmp == 0)
+            found = TRUE;
+        if (cmp >= 0) {
+            offset = n;
+            tindex = n - first;
+            switch (token_type) {
+            case BOOLEAN:
+                tindex += BOOLCOUNT;
+                break;
+            case NUMBER:
+                tindex += NUMCOUNT;
+                break;
+            case STRING:
+                tindex += STRCOUNT;
+                break;
+            }
+            break;
+        }
     }
 
 #define for_each_value(max) \
-	for (last = (unsigned) (max - 1); last > tindex; last--)
+        for (last = (unsigned) (max - 1); last > tindex; last--)
 
     if (!found) {
-	switch (token_type) {
-	case BOOLEAN:
-	    tp->ext_Booleans++;
-	    tp->num_Booleans++;
-	    TYPE_REALLOC(NCURSES_SBOOL, tp->num_Booleans, tp->Booleans);
-	    for_each_value(tp->num_Booleans)
-		tp->Booleans[last] = tp->Booleans[last - 1];
-	    break;
-	case NUMBER:
-	    tp->ext_Numbers++;
-	    tp->num_Numbers++;
-	    TYPE_REALLOC(NCURSES_INT2, tp->num_Numbers, tp->Numbers);
-	    for_each_value(tp->num_Numbers)
-		tp->Numbers[last] = tp->Numbers[last - 1];
-	    break;
-	case STRING:
-	    tp->ext_Strings++;
-	    tp->num_Strings++;
-	    TYPE_REALLOC(char *, tp->num_Strings, tp->Strings);
-	    for_each_value(tp->num_Strings)
-		tp->Strings[last] = tp->Strings[last - 1];
-	    break;
-	}
-	actual = NUM_EXT_NAMES(tp);
-	TYPE_REALLOC(char *, actual, tp->ext_Names);
-	while (--actual > offset)
-	    tp->ext_Names[actual] = tp->ext_Names[actual - 1];
-	tp->ext_Names[offset] = _nc_save_str(name);
+        switch (token_type) {
+        case BOOLEAN:
+            tp->ext_Booleans++;
+            tp->num_Booleans++;
+            TYPE_REALLOC(NCURSES_SBOOL, tp->num_Booleans, tp->Booleans);
+            for_each_value(tp->num_Booleans)
+                tp->Booleans[last] = tp->Booleans[last - 1];
+            break;
+        case NUMBER:
+            tp->ext_Numbers++;
+            tp->num_Numbers++;
+            TYPE_REALLOC(NCURSES_INT2, tp->num_Numbers, tp->Numbers);
+            for_each_value(tp->num_Numbers)
+                tp->Numbers[last] = tp->Numbers[last - 1];
+            break;
+        case STRING:
+            tp->ext_Strings++;
+            tp->num_Strings++;
+            TYPE_REALLOC(char *, tp->num_Strings, tp->Strings);
+            for_each_value(tp->num_Strings)
+                tp->Strings[last] = tp->Strings[last - 1];
+            break;
+        }
+        actual = NUM_EXT_NAMES(tp);
+        TYPE_REALLOC(char *, actual, tp->ext_Names);
+        while (--actual > offset)
+            tp->ext_Names[actual] = tp->ext_Names[actual - 1];
+        tp->ext_Names[offset] = _nc_save_str(name);
     }
 
     temp.nte_name = tp->ext_Names[offset];
@@ -185,11 +185,11 @@ usertype2s(int mask)
 {
     const char *result = "unknown";
     if (mask & (1 << BOOLEAN)) {
-	result = "boolean";
+        result = "boolean";
     } else if (mask & (1 << NUMBER)) {
-	result = "number";
+        result = "number";
     } else if (mask & (1 << STRING)) {
-	result = "string";
+        result = "string";
     }
     return result;
 }
@@ -200,15 +200,15 @@ expected_type(const char *name, int token_type, bool silent)
     struct user_table_entry const *entry = _nc_find_user_entry(name);
     bool result = TRUE;
     if ((entry != 0) && (token_type != CANCEL)) {
-	int have_type = (1 << token_type);
-	if (!(entry->ute_type & have_type)) {
-	    if (!silent)
-		_nc_warning("expected %s-type for %s, have %s",
-			    usertype2s(entry->ute_type),
-			    name,
-			    usertype2s(have_type));
-	    result = FALSE;
-	}
+        int have_type = (1 << token_type);
+        if (!(entry->ute_type & have_type)) {
+            if (!silent)
+                _nc_warning("expected %s-type for %s, have %s",
+                            usertype2s(entry->ute_type),
+                            name,
+                            usertype2s(have_type));
+            result = FALSE;
+        }
     }
     return result;
 }
@@ -220,36 +220,36 @@ valid_entryname(const char *name)
     bool result = TRUE;
     int ch;
     while ((ch = UChar(*name++)) != '\0') {
-	if (ch <= ' ' || ch > '~' || ch == '/') {
-	    result = FALSE;
-	    break;
-	}
+        if (ch <= ' ' || ch > '~' || ch == '/') {
+            result = FALSE;
+            break;
+        }
     }
     return result;
 }
 
 /*
- *	int
- *	_nc_parse_entry(entry, literal, silent)
+ *      int
+ *      _nc_parse_entry(entry, literal, silent)
  *
- *	Compile one entry.  Doesn't try to resolve use or tc capabilities.
+ *      Compile one entry.  Doesn't try to resolve use or tc capabilities.
  *
- *	found-forward-use = FALSE
- *	re-initialise internal arrays
- *	get_token();
- *	if the token was not a name in column 1, complain and die
- *	save names in entry's string table
- *	while (get_token() is not EOF and not NAMES)
- *	        check for existence and type-correctness
- *	        enter cap into structure
- *	        if STRING
- *	            save string in entry's string table
- *	push back token
+ *      found-forward-use = FALSE
+ *      re-initialise internal arrays
+ *      get_token();
+ *      if the token was not a name in column 1, complain and die
+ *      save names in entry's string table
+ *      while (get_token() is not EOF and not NAMES)
+ *              check for existence and type-correctness
+ *              enter cap into structure
+ *              if STRING
+ *                  save string in entry's string table
+ *      push back token
  */
 
 #define BAD_TC_USAGE if (!bad_tc_usage) \
- 	{ bad_tc_usage = TRUE; \
-	 _nc_warning("Legacy termcap allows only a trailing tc= clause"); }
+        { bad_tc_usage = TRUE; \
+         _nc_warning("Legacy termcap allows only a trailing tc= clause"); }
 
 #define MAX_NUMBER MAX_OF_TYPE(NCURSES_INT2)
 
@@ -265,9 +265,9 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
     token_type = _nc_get_token(silent);
 
     if (token_type == EOF)
-	return (EOF);
+        return (EOF);
     if (token_type != NAMES)
-	_nc_err_abort("Entry does not start with terminal names in column one");
+        _nc_err_abort("Entry does not start with terminal names in column one");
 
     _nc_init_entry(entryp);
 
@@ -289,19 +289,19 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
     ptr = _nc_curr_token.tk_name;
     if (_nc_syntax == SYN_TERMCAP
 #if NCURSES_XNAMES
-	&& !_nc_user_definable
+        && !_nc_user_definable
 #endif
-	) {
-	if (ok_TC2(ptr[0]) && ok_TC2(ptr[1]) && (ptr[2] == '|')) {
-	    ptr += 3;
-	    _nc_curr_token.tk_name[2] = '\0';
-	}
+        ) {
+        if (ok_TC2(ptr[0]) && ok_TC2(ptr[1]) && (ptr[2] == '|')) {
+            ptr += 3;
+            _nc_curr_token.tk_name[2] = '\0';
+        }
     }
 
     entryp->tterm.str_table = entryp->tterm.term_names = _nc_save_str(ptr);
 
     if (entryp->tterm.str_table == 0)
-	return (ERR);
+        return (ERR);
 
     DEBUG(1, ("Starting '%s'", ptr));
 
@@ -312,259 +312,259 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
      */
     name = _nc_first_name(entryp->tterm.term_names);
     if (!valid_entryname(name)) {
-	_nc_warning("invalid entry name \"%s\"", name);
-	name = "invalid";
+        _nc_warning("invalid entry name \"%s\"", name);
+        name = "invalid";
     }
     _nc_set_type(name);
 
     /* check for overly-long names and aliases */
     for (base = entryp->tterm.term_names; (ptr = strchr(base, '|')) != 0;
-	 base = ptr + 1) {
-	if (ptr - base > MAX_ALIAS) {
-	    _nc_warning("%s `%.*s' may be too long",
-			(base == entryp->tterm.term_names)
-			? "primary name"
-			: "alias",
-			(int) (ptr - base), base);
-	}
+         base = ptr + 1) {
+        if (ptr - base > MAX_ALIAS) {
+            _nc_warning("%s `%.*s' may be too long",
+                        (base == entryp->tterm.term_names)
+                        ? "primary name"
+                        : "alias",
+                        (int) (ptr - base), base);
+        }
     }
 
     entryp->nuses = 0;
 
     for (token_type = _nc_get_token(silent);
-	 token_type != EOF && token_type != NAMES;
-	 token_type = _nc_get_token(silent)) {
-	bool is_use = (strcmp(_nc_curr_token.tk_name, "use") == 0);
-	bool is_tc = !is_use && (strcmp(_nc_curr_token.tk_name, "tc") == 0);
-	if (is_use || is_tc) {
-	    if (!VALID_STRING(_nc_curr_token.tk_valstring)
-		|| _nc_curr_token.tk_valstring[0] == '\0') {
-		_nc_warning("missing name for use-clause");
-		continue;
-	    } else if (!valid_entryname(_nc_curr_token.tk_valstring)) {
-		_nc_warning("invalid name for use-clause \"%s\"",
-			    _nc_curr_token.tk_valstring);
-		continue;
-	    } else if (entryp->nuses >= MAX_USES) {
-		_nc_warning("too many use-clauses, ignored \"%s\"",
-			    _nc_curr_token.tk_valstring);
-		continue;
-	    }
-	    entryp->uses[entryp->nuses].name = _nc_save_str(_nc_curr_token.tk_valstring);
-	    entryp->uses[entryp->nuses].line = _nc_curr_line;
-	    entryp->nuses++;
-	    if (entryp->nuses > 1 && is_tc) {
-		BAD_TC_USAGE
-	    }
-	} else {
-	    /* normal token lookup */
-	    entry_ptr = _nc_find_entry(_nc_curr_token.tk_name,
-				       _nc_get_hash_table(_nc_syntax));
+         token_type != EOF && token_type != NAMES;
+         token_type = _nc_get_token(silent)) {
+        bool is_use = (strcmp(_nc_curr_token.tk_name, "use") == 0);
+        bool is_tc = !is_use && (strcmp(_nc_curr_token.tk_name, "tc") == 0);
+        if (is_use || is_tc) {
+            if (!VALID_STRING(_nc_curr_token.tk_valstring)
+                || _nc_curr_token.tk_valstring[0] == '\0') {
+                _nc_warning("missing name for use-clause");
+                continue;
+            } else if (!valid_entryname(_nc_curr_token.tk_valstring)) {
+                _nc_warning("invalid name for use-clause \"%s\"",
+                            _nc_curr_token.tk_valstring);
+                continue;
+            } else if (entryp->nuses >= MAX_USES) {
+                _nc_warning("too many use-clauses, ignored \"%s\"",
+                            _nc_curr_token.tk_valstring);
+                continue;
+            }
+            entryp->uses[entryp->nuses].name = _nc_save_str(_nc_curr_token.tk_valstring);
+            entryp->uses[entryp->nuses].line = _nc_curr_line;
+            entryp->nuses++;
+            if (entryp->nuses > 1 && is_tc) {
+                BAD_TC_USAGE
+            }
+        } else {
+            /* normal token lookup */
+            entry_ptr = _nc_find_entry(_nc_curr_token.tk_name,
+                                       _nc_get_hash_table(_nc_syntax));
 
-	    /*
-	     * Our kluge to handle aliasing.  The reason it is done
-	     * this ugly way, with a linear search, is so the hashing
-	     * machinery doesn't have to be made really complicated
-	     * (also we get better warnings this way).  No point in
-	     * making this case fast, aliased caps aren't common now
-	     * and will get rarer.
-	     */
-	    if (entry_ptr == NOTFOUND) {
-		const struct alias *ap;
+            /*
+             * Our kluge to handle aliasing.  The reason it is done
+             * this ugly way, with a linear search, is so the hashing
+             * machinery doesn't have to be made really complicated
+             * (also we get better warnings this way).  No point in
+             * making this case fast, aliased caps aren't common now
+             * and will get rarer.
+             */
+            if (entry_ptr == NOTFOUND) {
+                const struct alias *ap;
 
-		if (_nc_syntax == SYN_TERMCAP) {
-		    if (entryp->nuses != 0) {
-			BAD_TC_USAGE
-		    }
-		    for (ap = _nc_get_alias_table(TRUE); ap->from; ap++)
-			if (strcmp(ap->from, _nc_curr_token.tk_name) == 0) {
-			    if (ap->to == (char *) 0) {
-				_nc_warning("%s (%s termcap extension) ignored",
-					    ap->from, ap->source);
-				goto nexttok;
-			    }
+                if (_nc_syntax == SYN_TERMCAP) {
+                    if (entryp->nuses != 0) {
+                        BAD_TC_USAGE
+                    }
+                    for (ap = _nc_get_alias_table(TRUE); ap->from; ap++)
+                        if (strcmp(ap->from, _nc_curr_token.tk_name) == 0) {
+                            if (ap->to == (char *) 0) {
+                                _nc_warning("%s (%s termcap extension) ignored",
+                                            ap->from, ap->source);
+                                goto nexttok;
+                            }
 
-			    entry_ptr = _nc_find_entry(ap->to,
-						       _nc_get_hash_table(TRUE));
-			    if (entry_ptr && !silent)
-				_nc_warning("%s (%s termcap extension) aliased to %s",
-					    ap->from, ap->source, ap->to);
-			    break;
-			}
-		} else {	/* if (_nc_syntax == SYN_TERMINFO) */
-		    for (ap = _nc_get_alias_table(FALSE); ap->from; ap++)
-			if (strcmp(ap->from, _nc_curr_token.tk_name) == 0) {
-			    if (ap->to == (char *) 0) {
-				_nc_warning("%s (%s terminfo extension) ignored",
-					    ap->from, ap->source);
-				goto nexttok;
-			    }
+                            entry_ptr = _nc_find_entry(ap->to,
+                                                       _nc_get_hash_table(TRUE));
+                            if (entry_ptr && !silent)
+                                _nc_warning("%s (%s termcap extension) aliased to %s",
+                                            ap->from, ap->source, ap->to);
+                            break;
+                        }
+                } else {        /* if (_nc_syntax == SYN_TERMINFO) */
+                    for (ap = _nc_get_alias_table(FALSE); ap->from; ap++)
+                        if (strcmp(ap->from, _nc_curr_token.tk_name) == 0) {
+                            if (ap->to == (char *) 0) {
+                                _nc_warning("%s (%s terminfo extension) ignored",
+                                            ap->from, ap->source);
+                                goto nexttok;
+                            }
 
-			    entry_ptr = _nc_find_entry(ap->to,
-						       _nc_get_hash_table(FALSE));
-			    if (entry_ptr && !silent)
-				_nc_warning("%s (%s terminfo extension) aliased to %s",
-					    ap->from, ap->source, ap->to);
-			    break;
-			}
+                            entry_ptr = _nc_find_entry(ap->to,
+                                                       _nc_get_hash_table(FALSE));
+                            if (entry_ptr && !silent)
+                                _nc_warning("%s (%s terminfo extension) aliased to %s",
+                                            ap->from, ap->source, ap->to);
+                            break;
+                        }
 
-		    if (entry_ptr == NOTFOUND) {
-			entry_ptr = lookup_fullname(_nc_curr_token.tk_name);
-		    }
-		}
-	    }
+                    if (entry_ptr == NOTFOUND) {
+                        entry_ptr = lookup_fullname(_nc_curr_token.tk_name);
+                    }
+                }
+            }
 #if NCURSES_XNAMES
-	    /*
-	     * If we have extended-names active, we will automatically
-	     * define a name based on its context.
-	     */
-	    if (entry_ptr == NOTFOUND
-		&& _nc_user_definable) {
-		if (expected_type(_nc_curr_token.tk_name, token_type, silent)) {
-		    if ((entry_ptr = _nc_extend_names(entryp,
-						      _nc_curr_token.tk_name,
-						      token_type)) != 0) {
-			if (_nc_tracing >= DEBUG_LEVEL(1)) {
-			    _nc_warning("extended capability '%s'",
-					_nc_curr_token.tk_name);
-			}
-		    }
-		} else {
-		    /* ignore it: we have already printed error message */
-		    continue;
-		}
-	    }
+            /*
+             * If we have extended-names active, we will automatically
+             * define a name based on its context.
+             */
+            if (entry_ptr == NOTFOUND
+                && _nc_user_definable) {
+                if (expected_type(_nc_curr_token.tk_name, token_type, silent)) {
+                    if ((entry_ptr = _nc_extend_names(entryp,
+                                                      _nc_curr_token.tk_name,
+                                                      token_type)) != 0) {
+                        if (_nc_tracing >= DEBUG_LEVEL(1)) {
+                            _nc_warning("extended capability '%s'",
+                                        _nc_curr_token.tk_name);
+                        }
+                    }
+                } else {
+                    /* ignore it: we have already printed error message */
+                    continue;
+                }
+            }
 #endif /* NCURSES_XNAMES */
 
-	    /* can't find this cap name, not even as an alias */
-	    if (entry_ptr == NOTFOUND) {
-		if (!silent)
-		    _nc_warning("unknown capability '%s'",
-				_nc_curr_token.tk_name);
-		continue;
-	    }
+            /* can't find this cap name, not even as an alias */
+            if (entry_ptr == NOTFOUND) {
+                if (!silent)
+                    _nc_warning("unknown capability '%s'",
+                                _nc_curr_token.tk_name);
+                continue;
+            }
 
-	    /* deal with bad type/value combinations. */
-	    if (token_type == CANCEL) {
-		/*
-		 * Prefer terminfo in this (long-obsolete) ambiguity:
-		 */
-		if (!strcmp("ma", _nc_curr_token.tk_name)) {
-		    entry_ptr = _nc_find_type_entry("ma", NUMBER,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
-		}
-	    } else if (entry_ptr->nte_type != token_type) {
-		/*
-		 * Nasty special cases here handle situations in which type
-		 * information can resolve name clashes.  Normal lookup
-		 * finds the last instance in the capability table of a
-		 * given name, regardless of type.  find_type_entry looks
-		 * for a first matching instance with given type.  So as
-		 * long as all ambiguous names occur in pairs of distinct
-		 * type, this will do the job.
-		 */
+            /* deal with bad type/value combinations. */
+            if (token_type == CANCEL) {
+                /*
+                 * Prefer terminfo in this (long-obsolete) ambiguity:
+                 */
+                if (!strcmp("ma", _nc_curr_token.tk_name)) {
+                    entry_ptr = _nc_find_type_entry("ma", NUMBER,
+                                                    _nc_syntax != 0);
+                    assert(entry_ptr != 0);
+                }
+            } else if (entry_ptr->nte_type != token_type) {
+                /*
+                 * Nasty special cases here handle situations in which type
+                 * information can resolve name clashes.  Normal lookup
+                 * finds the last instance in the capability table of a
+                 * given name, regardless of type.  find_type_entry looks
+                 * for a first matching instance with given type.  So as
+                 * long as all ambiguous names occur in pairs of distinct
+                 * type, this will do the job.
+                 */
 
-		if (token_type == NUMBER
-		    && !strcmp("ma", _nc_curr_token.tk_name)) {
-		    /* tell max_attributes from arrow_key_map */
-		    entry_ptr = _nc_find_type_entry("ma", NUMBER,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
+                if (token_type == NUMBER
+                    && !strcmp("ma", _nc_curr_token.tk_name)) {
+                    /* tell max_attributes from arrow_key_map */
+                    entry_ptr = _nc_find_type_entry("ma", NUMBER,
+                                                    _nc_syntax != 0);
+                    assert(entry_ptr != 0);
 
-		} else if (token_type == STRING
-			   && !strcmp("MT", _nc_curr_token.tk_name)) {
-		    /* map terminfo's string MT to MT */
-		    entry_ptr = _nc_find_type_entry("MT", STRING,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
+                } else if (token_type == STRING
+                           && !strcmp("MT", _nc_curr_token.tk_name)) {
+                    /* map terminfo's string MT to MT */
+                    entry_ptr = _nc_find_type_entry("MT", STRING,
+                                                    _nc_syntax != 0);
+                    assert(entry_ptr != 0);
 
-		} else if (token_type == BOOLEAN
-			   && entry_ptr->nte_type == STRING) {
-		    /* treat strings without following "=" as empty strings */
-		    token_type = STRING;
-		} else {
-		    /* we couldn't recover; skip this token */
-		    if (!silent) {
-			const char *type_name;
-			switch (entry_ptr->nte_type) {
-			case BOOLEAN:
-			    type_name = "boolean";
-			    break;
-			case STRING:
-			    type_name = "string";
-			    break;
-			case NUMBER:
-			    type_name = "numeric";
-			    break;
-			default:
-			    type_name = "unknown";
-			    break;
-			}
-			_nc_warning("wrong type used for %s capability '%s'",
-				    type_name, _nc_curr_token.tk_name);
-		    }
-		    continue;
-		}
-	    }
+                } else if (token_type == BOOLEAN
+                           && entry_ptr->nte_type == STRING) {
+                    /* treat strings without following "=" as empty strings */
+                    token_type = STRING;
+                } else {
+                    /* we couldn't recover; skip this token */
+                    if (!silent) {
+                        const char *type_name;
+                        switch (entry_ptr->nte_type) {
+                        case BOOLEAN:
+                            type_name = "boolean";
+                            break;
+                        case STRING:
+                            type_name = "string";
+                            break;
+                        case NUMBER:
+                            type_name = "numeric";
+                            break;
+                        default:
+                            type_name = "unknown";
+                            break;
+                        }
+                        _nc_warning("wrong type used for %s capability '%s'",
+                                    type_name, _nc_curr_token.tk_name);
+                    }
+                    continue;
+                }
+            }
 
-	    /* now we know that the type/value combination is OK */
-	    switch (token_type) {
-	    case CANCEL:
-		switch (entry_ptr->nte_type) {
-		case BOOLEAN:
-		    entryp->tterm.Booleans[entry_ptr->nte_index] = CANCELLED_BOOLEAN;
-		    break;
+            /* now we know that the type/value combination is OK */
+            switch (token_type) {
+            case CANCEL:
+                switch (entry_ptr->nte_type) {
+                case BOOLEAN:
+                    entryp->tterm.Booleans[entry_ptr->nte_index] = CANCELLED_BOOLEAN;
+                    break;
 
-		case NUMBER:
-		    entryp->tterm.Numbers[entry_ptr->nte_index] = CANCELLED_NUMERIC;
-		    break;
+                case NUMBER:
+                    entryp->tterm.Numbers[entry_ptr->nte_index] = CANCELLED_NUMERIC;
+                    break;
 
-		case STRING:
-		    entryp->tterm.Strings[entry_ptr->nte_index] = CANCELLED_STRING;
-		    break;
-		}
-		break;
+                case STRING:
+                    entryp->tterm.Strings[entry_ptr->nte_index] = CANCELLED_STRING;
+                    break;
+                }
+                break;
 
-	    case BOOLEAN:
-		entryp->tterm.Booleans[entry_ptr->nte_index] = TRUE;
-		break;
+            case BOOLEAN:
+                entryp->tterm.Booleans[entry_ptr->nte_index] = TRUE;
+                break;
 
-	    case NUMBER:
+            case NUMBER:
 #if !NCURSES_EXT_NUMBERS
-		if (_nc_curr_token.tk_valnumber > MAX_NUMBER) {
-		    entryp->tterm.Numbers[entry_ptr->nte_index] = MAX_NUMBER;
-		} else
+                if (_nc_curr_token.tk_valnumber > MAX_NUMBER) {
+                    entryp->tterm.Numbers[entry_ptr->nte_index] = MAX_NUMBER;
+                } else
 #endif
-		{
-		    entryp->tterm.Numbers[entry_ptr->nte_index] =
-			(NCURSES_INT2) _nc_curr_token.tk_valnumber;
-		}
-		break;
+                {
+                    entryp->tterm.Numbers[entry_ptr->nte_index] =
+                        (NCURSES_INT2) _nc_curr_token.tk_valnumber;
+                }
+                break;
 
-	    case STRING:
-		ptr = _nc_curr_token.tk_valstring;
-		if (_nc_syntax == SYN_TERMCAP) {
-		    int n = entry_ptr->nte_index;
-		    ptr = _nc_captoinfo(_nc_curr_token.tk_name,
-					ptr,
-					(n < (int) SIZEOF(parametrized))
-					? parametrized[n]
-					: 0);
-		}
-		entryp->tterm.Strings[entry_ptr->nte_index] = _nc_save_str(ptr);
-		break;
+            case STRING:
+                ptr = _nc_curr_token.tk_valstring;
+                if (_nc_syntax == SYN_TERMCAP) {
+                    int n = entry_ptr->nte_index;
+                    ptr = _nc_captoinfo(_nc_curr_token.tk_name,
+                                        ptr,
+                                        (n < (int) SIZEOF(parametrized))
+                                        ? parametrized[n]
+                                        : 0);
+                }
+                entryp->tterm.Strings[entry_ptr->nte_index] = _nc_save_str(ptr);
+                break;
 
-	    default:
-		if (!silent)
-		    _nc_warning("unknown token type");
-		_nc_panic_mode((char) ((_nc_syntax == SYN_TERMCAP) ? ':' : ','));
-		continue;
-	    }
-	}			/* end else cur_token.name != "use" */
+            default:
+                if (!silent)
+                    _nc_warning("unknown token type");
+                _nc_panic_mode((char) ((_nc_syntax == SYN_TERMCAP) ? ':' : ','));
+                continue;
+            }
+        }                       /* end else cur_token.name != "use" */
       nexttok:
-	continue;		/* cannot have a label w/o statement */
-    }				/* endwhile (not EOF and not NAMES) */
+        continue;               /* cannot have a label w/o statement */
+    }                           /* endwhile (not EOF and not NAMES) */
 
     _nc_push_token(token_type);
     _nc_set_type(_nc_first_name(entryp->tterm.term_names));
@@ -576,32 +576,32 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
      * to be done before entry allocation is wrapped up.
      */
     if (!literal) {
-	if (_nc_syntax == SYN_TERMCAP) {
-	    bool has_base_entry = FALSE;
+        if (_nc_syntax == SYN_TERMCAP) {
+            bool has_base_entry = FALSE;
 
-	    /*
-	     * Don't insert defaults if this is a `+' entry meant only
-	     * for inclusion in other entries (not sure termcap ever
-	     * had these, actually).
-	     */
-	    if (strchr(entryp->tterm.term_names, '+')) {
-		has_base_entry = TRUE;
-	    } else {
-		unsigned i;
-		/*
-		 * Otherwise, look for a base entry that will already
-		 * have picked up defaults via translation.
-		 */
-		for (i = 0; i < entryp->nuses; i++) {
-		    if (entryp->uses[i].name != 0
-			&& !strchr(entryp->uses[i].name, '+'))
-			has_base_entry = TRUE;
-		}
-	    }
+            /*
+             * Don't insert defaults if this is a `+' entry meant only
+             * for inclusion in other entries (not sure termcap ever
+             * had these, actually).
+             */
+            if (strchr(entryp->tterm.term_names, '+')) {
+                has_base_entry = TRUE;
+            } else {
+                unsigned i;
+                /*
+                 * Otherwise, look for a base entry that will already
+                 * have picked up defaults via translation.
+                 */
+                for (i = 0; i < entryp->nuses; i++) {
+                    if (entryp->uses[i].name != 0
+                        && !strchr(entryp->uses[i].name, '+'))
+                        has_base_entry = TRUE;
+                }
+            }
 
-	    postprocess_termcap(&entryp->tterm, has_base_entry);
-	} else
-	    postprocess_terminfo(&entryp->tterm);
+            postprocess_termcap(&entryp->tterm, has_base_entry);
+        } else
+            postprocess_terminfo(&entryp->tterm);
     }
     _nc_wrap_entry(entryp, FALSE);
 
@@ -616,44 +616,44 @@ _nc_capcmp(const char *s, const char *t)
     bool ok_t = VALID_STRING(t);
 
     if (ok_s && ok_t) {
-	for (;;) {
-	    if (s[0] == '$' && s[1] == '<') {
-		for (s += 2;; s++) {
-		    if (!(isdigit(UChar(*s))
-			  || *s == '.'
-			  || *s == '*'
-			  || *s == '/'
-			  || *s == '>')) {
-			break;
-		    }
-		}
-	    }
+        for (;;) {
+            if (s[0] == '$' && s[1] == '<') {
+                for (s += 2;; s++) {
+                    if (!(isdigit(UChar(*s))
+                          || *s == '.'
+                          || *s == '*'
+                          || *s == '/'
+                          || *s == '>')) {
+                        break;
+                    }
+                }
+            }
 
-	    if (t[0] == '$' && t[1] == '<') {
-		for (t += 2;; t++) {
-		    if (!(isdigit(UChar(*t))
-			  || *t == '.'
-			  || *t == '*'
-			  || *t == '/'
-			  || *t == '>')) {
-			break;
-		    }
-		}
-	    }
+            if (t[0] == '$' && t[1] == '<') {
+                for (t += 2;; t++) {
+                    if (!(isdigit(UChar(*t))
+                          || *t == '.'
+                          || *t == '*'
+                          || *t == '/'
+                          || *t == '>')) {
+                        break;
+                    }
+                }
+            }
 
-	    /* we've now pushed s and t past any padding they pointed at */
+            /* we've now pushed s and t past any padding they pointed at */
 
-	    if (*s == '\0' && *t == '\0')
-		return (0);
+            if (*s == '\0' && *t == '\0')
+                return (0);
 
-	    if (*s != *t)
-		return (*t - *s);
+            if (*s != *t)
+                return (*t - *s);
 
-	    /* else *s == *t but one is not NUL, so continue */
-	    s++, t++;
-	}
+            /* else *s == *t but one is not NUL, so continue */
+            s++, t++;
+        }
     } else if (ok_s || ok_t) {
-	return 1;
+        return 1;
     }
     return 0;
 }
@@ -662,11 +662,11 @@ static void
 append_acs0(string_desc * dst, int code, char *src, size_t off)
 {
     if (src != 0 && off < strlen(src)) {
-	char temp[3];
-	temp[0] = (char) code;
-	temp[1] = src[off];
-	temp[2] = 0;
-	_nc_safe_strcat(dst, temp);
+        char temp[3];
+        temp[0] = (char) code;
+        temp[1] = src[off];
+        temp[2] = 0;
+        _nc_safe_strcat(dst, temp);
     }
 }
 
@@ -674,7 +674,7 @@ static void
 append_acs(string_desc * dst, int code, char *src)
 {
     if (VALID_STRING(src) && strlen(src) == 1) {
-	append_acs0(dst, code, src, 0);
+        append_acs0(dst, code, src, 0);
     }
 }
 
@@ -690,25 +690,25 @@ typedef struct {
 } assoc;
 static assoc const ko_xlate[] =
 {
-    DATA("al", "kil1"),		/* insert line key  -> KEY_IL    */
-    DATA("bt", "kcbt"),		/* back tab         -> KEY_BTAB  */
-    DATA("cd", "ked"),		/* clear-to-eos key -> KEY_EOL   */
-    DATA("ce", "kel"),		/* clear-to-eol key -> KEY_EOS   */
-    DATA("cl", "kclr"),		/* clear key        -> KEY_CLEAR */
-    DATA("ct", "tbc"),		/* clear all tabs   -> KEY_CATAB */
-    DATA("dc", "kdch1"),	/* delete char      -> KEY_DC    */
-    DATA("dl", "kdl1"),		/* delete line      -> KEY_DL    */
-    DATA("do", "kcud1"),	/* down key         -> KEY_DOWN  */
-    DATA("ei", "krmir"),	/* exit insert key  -> KEY_EIC   */
-    DATA("ho", "khome"),	/* home key         -> KEY_HOME  */
-    DATA("ic", "kich1"),	/* insert char key  -> KEY_IC    */
-    DATA("im", "kIC"),		/* insert-mode key  -> KEY_SIC   */
-    DATA("le", "kcub1"),	/* le key           -> KEY_LEFT  */
-    DATA("nd", "kcuf1"),	/* nd key           -> KEY_RIGHT */
-    DATA("nl", "kent"),		/* new line key     -> KEY_ENTER */
-    DATA("st", "khts"),		/* set-tab key      -> KEY_STAB  */
+    DATA("al", "kil1"),         /* insert line key  -> KEY_IL    */
+    DATA("bt", "kcbt"),         /* back tab         -> KEY_BTAB  */
+    DATA("cd", "ked"),          /* clear-to-eos key -> KEY_EOL   */
+    DATA("ce", "kel"),          /* clear-to-eol key -> KEY_EOS   */
+    DATA("cl", "kclr"),         /* clear key        -> KEY_CLEAR */
+    DATA("ct", "tbc"),          /* clear all tabs   -> KEY_CATAB */
+    DATA("dc", "kdch1"),        /* delete char      -> KEY_DC    */
+    DATA("dl", "kdl1"),         /* delete line      -> KEY_DL    */
+    DATA("do", "kcud1"),        /* down key         -> KEY_DOWN  */
+    DATA("ei", "krmir"),        /* exit insert key  -> KEY_EIC   */
+    DATA("ho", "khome"),        /* home key         -> KEY_HOME  */
+    DATA("ic", "kich1"),        /* insert char key  -> KEY_IC    */
+    DATA("im", "kIC"),          /* insert-mode key  -> KEY_SIC   */
+    DATA("le", "kcub1"),        /* le key           -> KEY_LEFT  */
+    DATA("nd", "kcuf1"),        /* nd key           -> KEY_RIGHT */
+    DATA("nl", "kent"),         /* new line key     -> KEY_ENTER */
+    DATA("st", "khts"),         /* set-tab key      -> KEY_STAB  */
     DATA("ta", ""),
-    DATA("up", "kcuu1"),	/* up-arrow key     -> KEY_UP    */
+    DATA("up", "kcuu1"),        /* up-arrow key     -> KEY_UP    */
 };
 
 /*
@@ -747,75 +747,75 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 
     /* if there was a tc entry, assume we picked up defaults via that */
     if (!has_base) {
-	if (WANTED(init_3string) && PRESENT(termcap_init2))
-	    init_3string = _nc_save_str(termcap_init2);
+        if (WANTED(init_3string) && PRESENT(termcap_init2))
+            init_3string = _nc_save_str(termcap_init2);
 
-	if (WANTED(reset_2string) && PRESENT(termcap_reset))
-	    reset_2string = _nc_save_str(termcap_reset);
+        if (WANTED(reset_2string) && PRESENT(termcap_reset))
+            reset_2string = _nc_save_str(termcap_reset);
 
-	if (WANTED(carriage_return)) {
-	    if (carriage_return_delay > 0) {
-		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-			    "%s$<%d>", C_CR, carriage_return_delay);
-		carriage_return = _nc_save_str(buf);
-	    } else
-		carriage_return = _nc_save_str(C_CR);
-	}
-	if (WANTED(cursor_left)) {
-	    if (backspace_delay > 0) {
-		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-			    "%s$<%d>", C_BS, backspace_delay);
-		cursor_left = _nc_save_str(buf);
-	    } else if (backspaces_with_bs == 1)
-		cursor_left = _nc_save_str(C_BS);
-	    else if (PRESENT(backspace_if_not_bs))
-		cursor_left = backspace_if_not_bs;
-	}
-	/* vi doesn't use "do", but it does seem to use nl (or '\n') instead */
-	if (WANTED(cursor_down)) {
-	    if (PRESENT(linefeed_if_not_lf))
-		cursor_down = linefeed_if_not_lf;
-	    else if (linefeed_is_newline != 1) {
-		if (new_line_delay > 0) {
-		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-				"%s$<%d>", C_LF, new_line_delay);
-		    cursor_down = _nc_save_str(buf);
-		} else
-		    cursor_down = _nc_save_str(C_LF);
-	    }
-	}
-	if (WANTED(scroll_forward) && crt_no_scrolling != 1) {
-	    if (PRESENT(linefeed_if_not_lf))
-		cursor_down = linefeed_if_not_lf;
-	    else if (linefeed_is_newline != 1) {
-		if (new_line_delay > 0) {
-		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-				"%s$<%d>", C_LF, new_line_delay);
-		    scroll_forward = _nc_save_str(buf);
-		} else
-		    scroll_forward = _nc_save_str(C_LF);
-	    }
-	}
-	if (WANTED(newline)) {
-	    if (linefeed_is_newline == 1) {
-		if (new_line_delay > 0) {
-		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-				"%s$<%d>", C_LF, new_line_delay);
-		    newline = _nc_save_str(buf);
-		} else
-		    newline = _nc_save_str(C_LF);
-	    } else if (PRESENT(carriage_return) && PRESENT(scroll_forward)) {
-		_nc_str_init(&result, buf, sizeof(buf));
-		if (_nc_safe_strcat(&result, carriage_return)
-		    && _nc_safe_strcat(&result, scroll_forward))
-		    newline = _nc_save_str(buf);
-	    } else if (PRESENT(carriage_return) && PRESENT(cursor_down)) {
-		_nc_str_init(&result, buf, sizeof(buf));
-		if (_nc_safe_strcat(&result, carriage_return)
-		    && _nc_safe_strcat(&result, cursor_down))
-		    newline = _nc_save_str(buf);
-	    }
-	}
+        if (WANTED(carriage_return)) {
+            if (carriage_return_delay > 0) {
+                _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                            "%s$<%d>", C_CR, carriage_return_delay);
+                carriage_return = _nc_save_str(buf);
+            } else
+                carriage_return = _nc_save_str(C_CR);
+        }
+        if (WANTED(cursor_left)) {
+            if (backspace_delay > 0) {
+                _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                            "%s$<%d>", C_BS, backspace_delay);
+                cursor_left = _nc_save_str(buf);
+            } else if (backspaces_with_bs == 1)
+                cursor_left = _nc_save_str(C_BS);
+            else if (PRESENT(backspace_if_not_bs))
+                cursor_left = backspace_if_not_bs;
+        }
+        /* vi doesn't use "do", but it does seem to use nl (or '\n') instead */
+        if (WANTED(cursor_down)) {
+            if (PRESENT(linefeed_if_not_lf))
+                cursor_down = linefeed_if_not_lf;
+            else if (linefeed_is_newline != 1) {
+                if (new_line_delay > 0) {
+                    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                                "%s$<%d>", C_LF, new_line_delay);
+                    cursor_down = _nc_save_str(buf);
+                } else
+                    cursor_down = _nc_save_str(C_LF);
+            }
+        }
+        if (WANTED(scroll_forward) && crt_no_scrolling != 1) {
+            if (PRESENT(linefeed_if_not_lf))
+                cursor_down = linefeed_if_not_lf;
+            else if (linefeed_is_newline != 1) {
+                if (new_line_delay > 0) {
+                    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                                "%s$<%d>", C_LF, new_line_delay);
+                    scroll_forward = _nc_save_str(buf);
+                } else
+                    scroll_forward = _nc_save_str(C_LF);
+            }
+        }
+        if (WANTED(newline)) {
+            if (linefeed_is_newline == 1) {
+                if (new_line_delay > 0) {
+                    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                                "%s$<%d>", C_LF, new_line_delay);
+                    newline = _nc_save_str(buf);
+                } else
+                    newline = _nc_save_str(C_LF);
+            } else if (PRESENT(carriage_return) && PRESENT(scroll_forward)) {
+                _nc_str_init(&result, buf, sizeof(buf));
+                if (_nc_safe_strcat(&result, carriage_return)
+                    && _nc_safe_strcat(&result, scroll_forward))
+                    newline = _nc_save_str(buf);
+            } else if (PRESENT(carriage_return) && PRESENT(cursor_down)) {
+                _nc_str_init(&result, buf, sizeof(buf));
+                if (_nc_safe_strcat(&result, carriage_return)
+                    && _nc_safe_strcat(&result, cursor_down))
+                    newline = _nc_save_str(buf);
+            }
+        }
     }
 
     /*
@@ -828,200 +828,200 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
      */
 
     if (!has_base) {
-	/*
-	 * We wait until now to decide if we've got a working cr because even
-	 * one that doesn't work can be used for newline. Unfortunately the
-	 * space allocated for it is wasted.
-	 */
-	if (return_does_clr_eol == 1 || no_correctly_working_cr == 1)
-	    carriage_return = ABSENT_STRING;
+        /*
+         * We wait until now to decide if we've got a working cr because even
+         * one that doesn't work can be used for newline. Unfortunately the
+         * space allocated for it is wasted.
+         */
+        if (return_does_clr_eol == 1 || no_correctly_working_cr == 1)
+            carriage_return = ABSENT_STRING;
 
-	/*
-	 * Supposedly most termcap entries have ta now and '\t' is no longer a
-	 * default, but it doesn't seem to be true...
-	 */
-	if (WANTED(tab)) {
-	    if (horizontal_tab_delay > 0) {
-		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
-			    "%s$<%d>", C_HT, horizontal_tab_delay);
-		tab = _nc_save_str(buf);
-	    } else
-		tab = _nc_save_str(C_HT);
-	}
-	if (init_tabs == ABSENT_NUMERIC && has_hardware_tabs == TRUE)
-	    init_tabs = 8;
+        /*
+         * Supposedly most termcap entries have ta now and '\t' is no longer a
+         * default, but it doesn't seem to be true...
+         */
+        if (WANTED(tab)) {
+            if (horizontal_tab_delay > 0) {
+                _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+                            "%s$<%d>", C_HT, horizontal_tab_delay);
+                tab = _nc_save_str(buf);
+            } else
+                tab = _nc_save_str(C_HT);
+        }
+        if (init_tabs == ABSENT_NUMERIC && has_hardware_tabs == TRUE)
+            init_tabs = 8;
 
-	/*
-	 * Assume we can beep with ^G unless we're given bl@.
-	 */
-	if (WANTED(bell))
-	    bell = _nc_save_str("\007");
+        /*
+         * Assume we can beep with ^G unless we're given bl@.
+         */
+        if (WANTED(bell))
+            bell = _nc_save_str("\007");
     }
 
     /*
      * Translate the old termcap :pt: capability to it#8 + ht=\t
      */
     if (has_hardware_tabs == TRUE) {
-	if (init_tabs != 8 && init_tabs != ABSENT_NUMERIC)
-	    _nc_warning("hardware tabs with a width other than 8: %d", init_tabs);
-	else {
-	    if (PRESENT(tab) && _nc_capcmp(tab, C_HT))
-		_nc_warning("hardware tabs with a non-^I tab string %s",
-			    _nc_visbuf(tab));
-	    else {
-		if (WANTED(tab))
-		    tab = _nc_save_str(C_HT);
-		init_tabs = 8;
-	    }
-	}
+        if (init_tabs != 8 && init_tabs != ABSENT_NUMERIC)
+            _nc_warning("hardware tabs with a width other than 8: %d", init_tabs);
+        else {
+            if (PRESENT(tab) && _nc_capcmp(tab, C_HT))
+                _nc_warning("hardware tabs with a non-^I tab string %s",
+                            _nc_visbuf(tab));
+            else {
+                if (WANTED(tab))
+                    tab = _nc_save_str(C_HT);
+                init_tabs = 8;
+            }
+        }
     }
     /*
      * Now translate the ko capability, if there is one.  This
      * isn't from mytinfo...
      */
     if (PRESENT(other_non_function_keys)) {
-	char *base;
-	char *bp, *cp, *dp;
-	struct name_table_entry const *from_ptr;
-	struct name_table_entry const *to_ptr;
-	char buf2[MAX_TERMINFO_LENGTH];
-	bool foundim;
+        char *base;
+        char *bp, *cp, *dp;
+        struct name_table_entry const *from_ptr;
+        struct name_table_entry const *to_ptr;
+        char buf2[MAX_TERMINFO_LENGTH];
+        bool foundim;
 
-	/* we're going to use this for a special case later */
-	dp = strchr(other_non_function_keys, 'i');
-	foundim = (dp != 0) && (dp[1] == 'm');
+        /* we're going to use this for a special case later */
+        dp = strchr(other_non_function_keys, 'i');
+        foundim = (dp != 0) && (dp[1] == 'm');
 
-	/* look at each comma-separated capability in the ko string... */
-	for (base = other_non_function_keys;
-	     (cp = strchr(base, ',')) != 0;
-	     base = cp + 1) {
-	    size_t len = (unsigned) (cp - base);
-	    size_t n;
-	    assoc const *ap = 0;
+        /* look at each comma-separated capability in the ko string... */
+        for (base = other_non_function_keys;
+             (cp = strchr(base, ',')) != 0;
+             base = cp + 1) {
+            size_t len = (unsigned) (cp - base);
+            size_t n;
+            assoc const *ap = 0;
 
-	    for (n = 0; n < SIZEOF(ko_xlate); ++n) {
-		if (len == strlen(ko_xlate[n].from)
-		    && strncmp(ko_xlate[n].from, base, len) == 0) {
-		    ap = ko_xlate + n;
-		    break;
-		}
-	    }
-	    if (ap == 0) {
-		_nc_warning("unknown capability `%.*s' in ko string",
-			    (int) len, base);
-		continue;
-	    } else if (ap->to[0] == '\0')	/* ignore it */
-		continue;
+            for (n = 0; n < SIZEOF(ko_xlate); ++n) {
+                if (len == strlen(ko_xlate[n].from)
+                    && strncmp(ko_xlate[n].from, base, len) == 0) {
+                    ap = ko_xlate + n;
+                    break;
+                }
+            }
+            if (ap == 0) {
+                _nc_warning("unknown capability `%.*s' in ko string",
+                            (int) len, base);
+                continue;
+            } else if (ap->to[0] == '\0')       /* ignore it */
+                continue;
 
-	    /* now we know we found a match in ko_table, so... */
+            /* now we know we found a match in ko_table, so... */
 
-	    from_ptr = _nc_find_entry(ap->from, _nc_get_hash_table(TRUE));
-	    to_ptr = _nc_find_entry(ap->to, _nc_get_hash_table(FALSE));
+            from_ptr = _nc_find_entry(ap->from, _nc_get_hash_table(TRUE));
+            to_ptr = _nc_find_entry(ap->to, _nc_get_hash_table(FALSE));
 
-	    if (!from_ptr || !to_ptr)	/* should never happen! */
-		_nc_err_abort("ko translation table is invalid, I give up");
+            if (!from_ptr || !to_ptr)   /* should never happen! */
+                _nc_err_abort("ko translation table is invalid, I give up");
 
-	    if (WANTED(tp->Strings[from_ptr->nte_index])) {
-		_nc_warning("no value for ko capability %s", ap->from);
-		continue;
-	    }
+            if (WANTED(tp->Strings[from_ptr->nte_index])) {
+                _nc_warning("no value for ko capability %s", ap->from);
+                continue;
+            }
 
-	    if (tp->Strings[to_ptr->nte_index]) {
-		const char *s = tp->Strings[from_ptr->nte_index];
-		const char *t = tp->Strings[to_ptr->nte_index];
-		/* There's no point in warning about it if it is the same
-		 * string; that's just an inefficiency.
-		 */
-		if (VALID_STRING(s) && VALID_STRING(t) && strcmp(s, t) != 0)
-		    _nc_warning("%s (%s) already has an explicit value %s, ignoring ko",
-				ap->to, ap->from, t);
-		continue;
-	    }
+            if (tp->Strings[to_ptr->nte_index]) {
+                const char *s = tp->Strings[from_ptr->nte_index];
+                const char *t = tp->Strings[to_ptr->nte_index];
+                /* There's no point in warning about it if it is the same
+                 * string; that's just an inefficiency.
+                 */
+                if (VALID_STRING(s) && VALID_STRING(t) && strcmp(s, t) != 0)
+                    _nc_warning("%s (%s) already has an explicit value %s, ignoring ko",
+                                ap->to, ap->from, t);
+                continue;
+            }
 
-	    /*
-	     * The magic moment -- copy the mapped key string over,
-	     * stripping out padding.
-	     */
-	    bp = tp->Strings[from_ptr->nte_index];
-	    if (VALID_STRING(bp)) {
-		for (dp = buf2; *bp; bp++) {
-		    if (bp[0] == '$' && bp[1] == '<') {
-			while (*bp && *bp != '>') {
-			    ++bp;
-			}
-		    } else
-			*dp++ = *bp;
-		}
-		*dp = '\0';
+            /*
+             * The magic moment -- copy the mapped key string over,
+             * stripping out padding.
+             */
+            bp = tp->Strings[from_ptr->nte_index];
+            if (VALID_STRING(bp)) {
+                for (dp = buf2; *bp; bp++) {
+                    if (bp[0] == '$' && bp[1] == '<') {
+                        while (*bp && *bp != '>') {
+                            ++bp;
+                        }
+                    } else
+                        *dp++ = *bp;
+                }
+                *dp = '\0';
 
-		tp->Strings[to_ptr->nte_index] = _nc_save_str(buf2);
-	    } else {
-		tp->Strings[to_ptr->nte_index] = bp;
-	    }
-	}
+                tp->Strings[to_ptr->nte_index] = _nc_save_str(buf2);
+            } else {
+                tp->Strings[to_ptr->nte_index] = bp;
+            }
+        }
 
-	/*
-	 * Note: ko=im and ko=ic both want to grab the `Insert'
-	 * keycap.  There's a kich1 but no ksmir, so the ic capability
-	 * got mapped to kich1 and im to kIC to avoid a collision.
-	 * If the description has im but not ic, hack kIC back to kich1.
-	 */
-	if (foundim && WANTED(key_ic) && PRESENT(key_sic)) {
-	    key_ic = key_sic;
-	    key_sic = ABSENT_STRING;
-	}
+        /*
+         * Note: ko=im and ko=ic both want to grab the `Insert'
+         * keycap.  There's a kich1 but no ksmir, so the ic capability
+         * got mapped to kich1 and im to kIC to avoid a collision.
+         * If the description has im but not ic, hack kIC back to kich1.
+         */
+        if (foundim && WANTED(key_ic) && PRESENT(key_sic)) {
+            key_ic = key_sic;
+            key_sic = ABSENT_STRING;
+        }
     }
 
     if (!has_base) {
-	if (!hard_copy) {
-	    if (WANTED(key_backspace))
-		key_backspace = _nc_save_str(C_BS);
-	    if (WANTED(key_left))
-		key_left = _nc_save_str(C_BS);
-	    if (WANTED(key_down))
-		key_down = _nc_save_str(C_LF);
-	}
+        if (!hard_copy) {
+            if (WANTED(key_backspace))
+                key_backspace = _nc_save_str(C_BS);
+            if (WANTED(key_left))
+                key_left = _nc_save_str(C_BS);
+            if (WANTED(key_down))
+                key_down = _nc_save_str(C_LF);
+        }
     }
 
     /*
      * Translate XENIX forms characters.
      */
     if (PRESENT(acs_ulcorner) ||
-	PRESENT(acs_llcorner) ||
-	PRESENT(acs_urcorner) ||
-	PRESENT(acs_lrcorner) ||
-	PRESENT(acs_ltee) ||
-	PRESENT(acs_rtee) ||
-	PRESENT(acs_btee) ||
-	PRESENT(acs_ttee) ||
-	PRESENT(acs_hline) ||
-	PRESENT(acs_vline) ||
-	PRESENT(acs_plus)) {
-	char buf2[MAX_TERMCAP_LENGTH];
+        PRESENT(acs_llcorner) ||
+        PRESENT(acs_urcorner) ||
+        PRESENT(acs_lrcorner) ||
+        PRESENT(acs_ltee) ||
+        PRESENT(acs_rtee) ||
+        PRESENT(acs_btee) ||
+        PRESENT(acs_ttee) ||
+        PRESENT(acs_hline) ||
+        PRESENT(acs_vline) ||
+        PRESENT(acs_plus)) {
+        char buf2[MAX_TERMCAP_LENGTH];
 
-	_nc_str_init(&result, buf2, sizeof(buf2));
-	_nc_safe_strcat(&result, acs_chars);
+        _nc_str_init(&result, buf2, sizeof(buf2));
+        _nc_safe_strcat(&result, acs_chars);
 
-	append_acs(&result, 'j', acs_lrcorner);
-	append_acs(&result, 'k', acs_urcorner);
-	append_acs(&result, 'l', acs_ulcorner);
-	append_acs(&result, 'm', acs_llcorner);
-	append_acs(&result, 'n', acs_plus);
-	append_acs(&result, 'q', acs_hline);
-	append_acs(&result, 't', acs_ltee);
-	append_acs(&result, 'u', acs_rtee);
-	append_acs(&result, 'v', acs_btee);
-	append_acs(&result, 'w', acs_ttee);
-	append_acs(&result, 'x', acs_vline);
+        append_acs(&result, 'j', acs_lrcorner);
+        append_acs(&result, 'k', acs_urcorner);
+        append_acs(&result, 'l', acs_ulcorner);
+        append_acs(&result, 'm', acs_llcorner);
+        append_acs(&result, 'n', acs_plus);
+        append_acs(&result, 'q', acs_hline);
+        append_acs(&result, 't', acs_ltee);
+        append_acs(&result, 'u', acs_rtee);
+        append_acs(&result, 'v', acs_btee);
+        append_acs(&result, 'w', acs_ttee);
+        append_acs(&result, 'x', acs_vline);
 
-	if (buf2[0]) {
-	    acs_chars = _nc_save_str(buf2);
-	    _nc_warning("acsc string synthesized from XENIX capabilities");
-	}
+        if (buf2[0]) {
+            acs_chars = _nc_save_str(buf2);
+            _nc_warning("acsc string synthesized from XENIX capabilities");
+        }
     } else if (acs_chars == ABSENT_STRING
-	       && PRESENT(enter_alt_charset_mode)
-	       && PRESENT(exit_alt_charset_mode)) {
-	acs_chars = _nc_save_str(VT_ACSC);
+               && PRESENT(enter_alt_charset_mode)
+               && PRESENT(exit_alt_charset_mode)) {
+        acs_chars = _nc_save_str(VT_ACSC);
     }
 }
 
@@ -1037,29 +1037,29 @@ postprocess_terminfo(TERMTYPE2 *tp)
      * Translate AIX forms characters.
      */
     if (PRESENT(box_chars_1)) {
-	char buf2[MAX_TERMCAP_LENGTH];
-	string_desc result;
+        char buf2[MAX_TERMCAP_LENGTH];
+        string_desc result;
 
-	_nc_str_init(&result, buf2, sizeof(buf2));
-	_nc_safe_strcat(&result, acs_chars);
+        _nc_str_init(&result, buf2, sizeof(buf2));
+        _nc_safe_strcat(&result, acs_chars);
 
-	append_acs0(&result, 'l', box_chars_1, 0);	/* ACS_ULCORNER */
-	append_acs0(&result, 'q', box_chars_1, 1);	/* ACS_HLINE */
-	append_acs0(&result, 'k', box_chars_1, 2);	/* ACS_URCORNER */
-	append_acs0(&result, 'x', box_chars_1, 3);	/* ACS_VLINE */
-	append_acs0(&result, 'j', box_chars_1, 4);	/* ACS_LRCORNER */
-	append_acs0(&result, 'm', box_chars_1, 5);	/* ACS_LLCORNER */
-	append_acs0(&result, 'w', box_chars_1, 6);	/* ACS_TTEE */
-	append_acs0(&result, 'u', box_chars_1, 7);	/* ACS_RTEE */
-	append_acs0(&result, 'v', box_chars_1, 8);	/* ACS_BTEE */
-	append_acs0(&result, 't', box_chars_1, 9);	/* ACS_LTEE */
-	append_acs0(&result, 'n', box_chars_1, 10);	/* ACS_PLUS */
+        append_acs0(&result, 'l', box_chars_1, 0);      /* ACS_ULCORNER */
+        append_acs0(&result, 'q', box_chars_1, 1);      /* ACS_HLINE */
+        append_acs0(&result, 'k', box_chars_1, 2);      /* ACS_URCORNER */
+        append_acs0(&result, 'x', box_chars_1, 3);      /* ACS_VLINE */
+        append_acs0(&result, 'j', box_chars_1, 4);      /* ACS_LRCORNER */
+        append_acs0(&result, 'm', box_chars_1, 5);      /* ACS_LLCORNER */
+        append_acs0(&result, 'w', box_chars_1, 6);      /* ACS_TTEE */
+        append_acs0(&result, 'u', box_chars_1, 7);      /* ACS_RTEE */
+        append_acs0(&result, 'v', box_chars_1, 8);      /* ACS_BTEE */
+        append_acs0(&result, 't', box_chars_1, 9);      /* ACS_LTEE */
+        append_acs0(&result, 'n', box_chars_1, 10);     /* ACS_PLUS */
 
-	if (buf2[0]) {
-	    acs_chars = _nc_save_str(buf2);
-	    _nc_warning("acsc string synthesized from AIX capabilities");
-	    box_chars_1 = ABSENT_STRING;
-	}
+        if (buf2[0]) {
+            acs_chars = _nc_save_str(buf2);
+            _nc_warning("acsc string synthesized from AIX capabilities");
+            box_chars_1 = ABSENT_STRING;
+        }
     }
     /*
      * ----------------------------------------------------------------------
@@ -1080,32 +1080,32 @@ lookup_fullname(const char *find)
     int state = -1;
 
     for (;;) {
-	int count = 0;
-	NCURSES_CONST char *const *names;
+        int count = 0;
+        NCURSES_CONST char *const *names;
 
-	switch (++state) {
-	case BOOLEAN:
-	    names = boolfnames;
-	    break;
-	case STRING:
-	    names = strfnames;
-	    break;
-	case NUMBER:
-	    names = numfnames;
-	    break;
-	default:
-	    return NOTFOUND;
-	}
+        switch (++state) {
+        case BOOLEAN:
+            names = boolfnames;
+            break;
+        case STRING:
+            names = strfnames;
+            break;
+        case NUMBER:
+            names = numfnames;
+            break;
+        default:
+            return NOTFOUND;
+        }
 
-	for (count = 0; names[count] != 0; count++) {
-	    if (!strcmp(names[count], find)) {
-		struct name_table_entry const *entry_ptr = _nc_get_table(FALSE);
-		while (entry_ptr->nte_type != state
-		       || entry_ptr->nte_index != count)
-		    entry_ptr++;
-		return entry_ptr;
-	    }
-	}
+        for (count = 0; names[count] != 0; count++) {
+            if (!strcmp(names[count], find)) {
+                struct name_table_entry const *entry_ptr = _nc_get_table(FALSE);
+                while (entry_ptr->nte_type != state
+                       || entry_ptr->nte_index != count)
+                    entry_ptr++;
+                return entry_ptr;
+            }
+        }
     }
 }
 

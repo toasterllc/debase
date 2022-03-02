@@ -58,12 +58,12 @@ set_top_row(MENU *menu, int row)
   if (menu)
     {
       if (menu->status & _IN_DRIVER)
-	RETURN(E_BAD_STATE);
+        RETURN(E_BAD_STATE);
       if (menu->items == (ITEM **)0)
-	RETURN(E_NOT_CONNECTED);
+        RETURN(E_NOT_CONNECTED);
 
       if ((row < 0) || (row > (menu->rows - menu->arows)))
-	RETURN(E_BAD_ARGUMENT);
+        RETURN(E_BAD_ARGUMENT);
     }
   else
     RETURN(E_BAD_ARGUMENT);
@@ -73,7 +73,7 @@ set_top_row(MENU *menu, int row)
       ITEM *item;
 
       if (menu->status & _LINK_NEEDED)
-	_nc_Link_Items(menu);
+        _nc_Link_Items(menu);
 
       item = menu->items[(menu->opt & O_ROWMAJOR) ? (row * menu->cols) : row];
       assert(menu->pattern);

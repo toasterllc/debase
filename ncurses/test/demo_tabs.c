@@ -41,17 +41,17 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: demo_tabs [options]",
-	"",
-	"Print a grid to test tab-stops with the curses interface",
-	"",
-	"Options:",
-	" -l COUNT total number of lines to show",
-	" -t NUM   set TABSIZE variable to the given value",
+        "Usage: demo_tabs [options]",
+        "",
+        "Print a grid to test tab-stops with the curses interface",
+        "",
+        "Options:",
+        " -l COUNT total number of lines to show",
+        " -t NUM   set TABSIZE variable to the given value",
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
     }
     ExitProgram(EXIT_FAILURE);
 }
@@ -65,53 +65,53 @@ main(int argc, char *argv[])
     int curses_stops = -1;
 
     while ((n = getopt(argc, argv, "l:t:")) != -1) {
-	switch (n) {
-	case 'l':
-	    line_limit = atoi(optarg);
-	    break;
-	case 't':
-	    curses_stops = atoi(optarg);
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+        switch (n) {
+        case 'l':
+            line_limit = atoi(optarg);
+            break;
+        case 't':
+            curses_stops = atoi(optarg);
+            break;
+        default:
+            usage();
+            break;
+        }
     }
 
     initscr();
     noecho();
     cbreak();
     if (curses_stops > 0)
-	set_tabsize(curses_stops);
+        set_tabsize(curses_stops);
 #if HAVE_TIGETNUM
     tabstop = tigetnum("it");
     if (tabstop <= 0)
 #endif
-	tabstop = 8;
+        tabstop = 8;
     for (row = 0; row < LINES; ++row) {
-	move(row, 0);
-	for (col = step = 0; col < COLS - 1; ++col) {
-	    if (row == 0) {
-		chtype ch = '-';
-		if ((col % tabstop) == 0)
-		    ch = '+';
-		addch(ch);
-	    } else if (col + 1 < row) {
-		addch('*');
-	    } else {
-		printw("%x", step);
-		col = (row + (tabstop * ++step));
-		col /= tabstop;
-		col *= tabstop;
-		col -= 1;
-		if ((col + tabstop) < COLS)
-		    addch('\t');
-		refresh();
-	    }
-	}
-	addch('\n');
-	if (line_limit > 0 && row >= line_limit)
-	    break;
+        move(row, 0);
+        for (col = step = 0; col < COLS - 1; ++col) {
+            if (row == 0) {
+                chtype ch = '-';
+                if ((col % tabstop) == 0)
+                    ch = '+';
+                addch(ch);
+            } else if (col + 1 < row) {
+                addch('*');
+            } else {
+                printw("%x", step);
+                col = (row + (tabstop * ++step));
+                col /= tabstop;
+                col *= tabstop;
+                col -= 1;
+                if ((col + tabstop) < COLS)
+                    addch('\t');
+                refresh();
+            }
+        }
+        addch('\n');
+        if (line_limit > 0 && row >= line_limit)
+            break;
     }
     getch();
     endwin();

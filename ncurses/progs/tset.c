@@ -59,7 +59,7 @@
  */
 /*-
  * Copyright (c) 1980, 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -112,12 +112,12 @@ static GCC_NORETURN void exit_error(void);
 
 static int
 CaselessCmp(const char *a, const char *b)
-{				/* strcasecmp isn't portable */
+{                               /* strcasecmp isn't portable */
     while (*a && *b) {
-	int cmp = LOWERCASE(*a) - LOWERCASE(*b);
-	if (cmp != 0)
-	    break;
-	a++, b++;
+        int cmp = LOWERCASE(*a) - LOWERCASE(*b);
+        if (cmp != 0)
+            break;
+        a++, b++;
     }
     return LOWERCASE(*a) - LOWERCASE(*b);
 }
@@ -151,10 +151,10 @@ failed(const char *msg)
     size_t len = strlen(_nc_progname) + 2;
 
     if ((int) len < (int) sizeof(temp) - 12) {
-	_nc_STRCPY(temp, _nc_progname, sizeof(temp));
-	_nc_STRCAT(temp, ": ", sizeof(temp));
+        _nc_STRCPY(temp, _nc_progname, sizeof(temp));
+        _nc_STRCAT(temp, ": ", sizeof(temp));
     } else {
-	_nc_STRCPY(temp, "tset: ", sizeof(temp));
+        _nc_STRCPY(temp, "tset: ", sizeof(temp));
     }
     _nc_STRNCAT(temp, msg, sizeof(temp), sizeof(temp) - strlen(temp) - 2);
     perror(temp);
@@ -171,34 +171,34 @@ askuser(const char *dflt)
     /* We can get recalled; if so, don't continue uselessly. */
     clearerr(stdin);
     if (feof(stdin) || ferror(stdin)) {
-	(void) fprintf(stderr, "\n");
-	exit_error();
-	/* NOTREACHED */
+        (void) fprintf(stderr, "\n");
+        exit_error();
+        /* NOTREACHED */
     }
 
     for (;;) {
-	char *p;
+        char *p;
 
-	if (dflt)
-	    (void) fprintf(stderr, "Terminal type? [%s] ", dflt);
-	else
-	    (void) fprintf(stderr, "Terminal type? ");
-	(void) fflush(stderr);
+        if (dflt)
+            (void) fprintf(stderr, "Terminal type? [%s] ", dflt);
+        else
+            (void) fprintf(stderr, "Terminal type? ");
+        (void) fflush(stderr);
 
-	if (fgets(answer, sizeof(answer), stdin) == 0) {
-	    if (dflt == 0) {
-		exit_error();
-		/* NOTREACHED */
-	    }
-	    return (dflt);
-	}
+        if (fgets(answer, sizeof(answer), stdin) == 0) {
+            if (dflt == 0) {
+                exit_error();
+                /* NOTREACHED */
+            }
+            return (dflt);
+        }
 
-	if ((p = strchr(answer, '\n')) != 0)
-	    *p = '\0';
-	if (answer[0])
-	    return (answer);
-	if (dflt != 0)
-	    return (dflt);
+        if ((p = strchr(answer, '\n')) != 0)
+            *p = '\0';
+        if (answer[0])
+            return (answer);
+        if (dflt != 0)
+            return (dflt);
     }
 }
 
@@ -209,19 +209,19 @@ askuser(const char *dflt)
  **************************************************************************/
 
 /* Baud rate conditionals for mapping. */
-#define	GT		0x01
-#define	EQ		0x02
-#define	LT		0x04
-#define	NOT		0x08
-#define	GE		(GT | EQ)
-#define	LE		(LT | EQ)
+#define GT              0x01
+#define EQ              0x02
+#define LT              0x04
+#define NOT             0x08
+#define GE              (GT | EQ)
+#define LE              (LT | EQ)
 
 typedef struct map {
-    struct map *next;		/* Linked list of maps. */
-    const char *porttype;	/* Port type, or "" for any. */
-    const char *type;		/* Terminal type to select. */
-    int conditional;		/* Baud rate conditionals bitmask. */
-    int speed;			/* Baud rate to compare against. */
+    struct map *next;           /* Linked list of maps. */
+    const char *porttype;       /* Port type, or "" for any. */
+    const char *type;           /* Terminal type to select. */
+    int conditional;            /* Baud rate conditionals bitmask. */
+    int speed;                  /* Baud rate to compare against. */
 } MAP;
 
 static MAP *cur, *maplist;
@@ -349,20 +349,20 @@ tbaudrate(char *rate)
 
     /* The baudrate number can be preceded by a 'B', which is ignored. */
     if (*rate == 'B')
-	++rate;
+        ++rate;
 
     for (n = 0; n < SIZEOF(speeds); ++n) {
-	if (n > 0 && (speeds[n].speed <= speeds[n - 1].speed)) {
-	    /* if the speeds are not increasing, likely a numeric overflow */
-	    break;
-	}
-	if (!CaselessCmp(rate, speeds[n].string)) {
-	    sp = speeds + n;
-	    break;
-	}
+        if (n > 0 && (speeds[n].speed <= speeds[n - 1].speed)) {
+            /* if the speeds are not increasing, likely a numeric overflow */
+            break;
+        }
+        if (!CaselessCmp(rate, speeds[n].string)) {
+            sp = speeds + n;
+            break;
+        }
     }
     if (sp == 0)
-	err("unknown baud rate %s", rate);
+        err("unknown baud rate %s", rate);
     return (sp->speed);
 }
 
@@ -382,17 +382,17 @@ add_mapping(const char *port, char *arg)
     copy = strdup(arg);
     mapp = typeMalloc(MAP, 1);
     if (copy == 0 || mapp == 0)
-	failed("malloc");
+        failed("malloc");
 
     assert(copy != 0);
     assert(mapp != 0);
 
     mapp->next = 0;
     if (maplist == 0)
-	cur = maplist = mapp;
+        cur = maplist = mapp;
     else {
-	cur->next = mapp;
-	cur = mapp;
+        cur->next = mapp;
+        cur = mapp;
     }
 
     mapp->porttype = arg;
@@ -400,72 +400,72 @@ add_mapping(const char *port, char *arg)
 
     arg = strpbrk(arg, "><@=!:");
 
-    if (arg == 0) {		/* [?]term */
-	mapp->type = mapp->porttype;
-	mapp->porttype = 0;
-	goto done;
+    if (arg == 0) {             /* [?]term */
+        mapp->type = mapp->porttype;
+        mapp->porttype = 0;
+        goto done;
     }
 
-    if (arg == mapp->porttype)	/* [><@=! baud]:term */
-	termp = mapp->porttype = 0;
+    if (arg == mapp->porttype)  /* [><@=! baud]:term */
+        termp = mapp->porttype = 0;
     else
-	termp = base = arg;
+        termp = base = arg;
 
-    for (;; ++arg) {		/* Optional conditionals. */
-	switch (*arg) {
-	case '<':
-	    if (mapp->conditional & GT)
-		goto badmopt;
-	    mapp->conditional |= LT;
-	    break;
-	case '>':
-	    if (mapp->conditional & LT)
-		goto badmopt;
-	    mapp->conditional |= GT;
-	    break;
-	case '@':
-	case '=':		/* Not documented. */
-	    mapp->conditional |= EQ;
-	    break;
-	case '!':
-	    mapp->conditional |= NOT;
-	    break;
-	default:
-	    goto next;
-	}
+    for (;; ++arg) {            /* Optional conditionals. */
+        switch (*arg) {
+        case '<':
+            if (mapp->conditional & GT)
+                goto badmopt;
+            mapp->conditional |= LT;
+            break;
+        case '>':
+            if (mapp->conditional & LT)
+                goto badmopt;
+            mapp->conditional |= GT;
+            break;
+        case '@':
+        case '=':               /* Not documented. */
+            mapp->conditional |= EQ;
+            break;
+        case '!':
+            mapp->conditional |= NOT;
+            break;
+        default:
+            goto next;
+        }
     }
 
   next:
     if (*arg == ':') {
-	if (mapp->conditional)
-	    goto badmopt;
-	++arg;
-    } else {			/* Optional baudrate. */
-	arg = strchr(p = arg, ':');
-	if (arg == 0)
-	    goto badmopt;
-	*arg++ = '\0';
-	mapp->speed = tbaudrate(p);
+        if (mapp->conditional)
+            goto badmopt;
+        ++arg;
+    } else {                    /* Optional baudrate. */
+        arg = strchr(p = arg, ':');
+        if (arg == 0)
+            goto badmopt;
+        *arg++ = '\0';
+        mapp->speed = tbaudrate(p);
     }
 
     mapp->type = arg;
 
     /* Terminate porttype, if specified. */
     if (termp != 0)
-	*base = '\0';
+        *base = '\0';
 
     /* If a NOT conditional, reverse the test. */
     if (mapp->conditional & NOT)
-	mapp->conditional = ~mapp->conditional & (EQ | GT | LT);
+        mapp->conditional = ~mapp->conditional & (EQ | GT | LT);
 
     /* If user specified a port with an option flag, set it. */
   done:
     if (port) {
-	if (mapp->porttype) {
-	  badmopt:
-	    err("illegal -m option format: %s", copy);
-	}
-	mapp->porttype = port;
+        if (mapp->porttype) {
+          badmopt:
+            err("illegal -m option format: %s", copy);
+        }
+        mapp->porttype = port;
     }
     free(copy);
 #ifdef MAPDEBUG
@@ -474,15 +474,15 @@ add_mapping(const char *port, char *arg)
     (void) printf("conditional: ");
     p = "";
     if (mapp->conditional & GT) {
-	(void) printf("GT");
-	p = "/";
+        (void) printf("GT");
+        p = "/";
     }
     if (mapp->conditional & EQ) {
-	(void) printf("%sEQ", p);
-	p = "/";
+        (void) printf("%sEQ", p);
+        p = "/";
     }
     if (mapp->conditional & LT)
-	(void) printf("%sLT", p);
+        (void) printf("%sLT", p);
     (void) printf("\nspeed: %d\n", mapp->speed);
 #endif
 }
@@ -499,32 +499,32 @@ mapped(const char *type)
     int match;
 
     for (mapp = maplist; mapp; mapp = mapp->next)
-	if (mapp->porttype == 0 || !strcmp(mapp->porttype, type)) {
-	    switch (mapp->conditional) {
-	    case 0:		/* No test specified. */
-		match = TRUE;
-		break;
-	    case EQ:
-		match = ((int) ospeed == mapp->speed);
-		break;
-	    case GE:
-		match = ((int) ospeed >= mapp->speed);
-		break;
-	    case GT:
-		match = ((int) ospeed > mapp->speed);
-		break;
-	    case LE:
-		match = ((int) ospeed <= mapp->speed);
-		break;
-	    case LT:
-		match = ((int) ospeed < mapp->speed);
-		break;
-	    default:
-		match = FALSE;
-	    }
-	    if (match)
-		return (mapp->type);
-	}
+        if (mapp->porttype == 0 || !strcmp(mapp->porttype, type)) {
+            switch (mapp->conditional) {
+            case 0:             /* No test specified. */
+                match = TRUE;
+                break;
+            case EQ:
+                match = ((int) ospeed == mapp->speed);
+                break;
+            case GE:
+                match = ((int) ospeed >= mapp->speed);
+                break;
+            case GT:
+                match = ((int) ospeed > mapp->speed);
+                break;
+            case LE:
+                match = ((int) ospeed <= mapp->speed);
+                break;
+            case LT:
+                match = ((int) ospeed < mapp->speed);
+                break;
+            default:
+                match = FALSE;
+            }
+            if (match)
+                return (mapp->type);
+        }
     /* No match found; return given type. */
     return (type);
 }
@@ -555,49 +555,49 @@ get_termcap_entry(int fd, char *userarg)
     (void) fd;
 
     if (userarg) {
-	ttype = userarg;
-	goto found;
+        ttype = userarg;
+        goto found;
     }
 
     /* Try the environment. */
     if ((ttype = getenv("TERM")) != 0)
-	goto map;
+        goto map;
 
     if ((ttypath = ttyname(fd)) != 0) {
-	p = _nc_basename(ttypath);
+        p = _nc_basename(ttypath);
 #if HAVE_GETTTYNAM
-	/*
-	 * We have the 4.3BSD library call getttynam(3); that means
-	 * there's an /etc/ttys to look up device-to-type mappings in.
-	 * Try ttyname(3); check for dialup or other mapping.
-	 */
-	if ((t = getttynam(p))) {
-	    ttype = t->ty_type;
-	    goto map;
-	}
+        /*
+         * We have the 4.3BSD library call getttynam(3); that means
+         * there's an /etc/ttys to look up device-to-type mappings in.
+         * Try ttyname(3); check for dialup or other mapping.
+         */
+        if ((t = getttynam(p))) {
+            ttype = t->ty_type;
+            goto map;
+        }
 #else
-	if ((fp = fopen("/etc/ttytype", "r")) != 0
-	    || (fp = fopen("/etc/ttys", "r")) != 0) {
-	    char buffer[BUFSIZ];
-	    char *s, *t, *d;
+        if ((fp = fopen("/etc/ttytype", "r")) != 0
+            || (fp = fopen("/etc/ttys", "r")) != 0) {
+            char buffer[BUFSIZ];
+            char *s, *t, *d;
 
-	    while (fgets(buffer, sizeof(buffer) - 1, fp) != 0) {
-		for (s = buffer, t = d = 0; *s; s++) {
-		    if (isspace(UChar(*s)))
-			*s = '\0';
-		    else if (t == 0)
-			t = s;
-		    else if (d == 0 && s != buffer && s[-1] == '\0')
-			d = s;
-		}
-		if (t != 0 && d != 0 && !strcmp(d, p)) {
-		    ttype = strdup(t);
-		    fclose(fp);
-		    goto map;
-		}
-	    }
-	    fclose(fp);
-	}
+            while (fgets(buffer, sizeof(buffer) - 1, fp) != 0) {
+                for (s = buffer, t = d = 0; *s; s++) {
+                    if (isspace(UChar(*s)))
+                        *s = '\0';
+                    else if (t == 0)
+                        t = s;
+                    else if (d == 0 && s != buffer && s[-1] == '\0')
+                        d = s;
+                }
+                if (t != 0 && d != 0 && !strcmp(d, p)) {
+                    ttype = strdup(t);
+                    fclose(fp);
+                    goto map;
+                }
+            }
+            fclose(fp);
+        }
 #endif /* HAVE_GETTTYNAM */
     }
 
@@ -613,18 +613,18 @@ get_termcap_entry(int fd, char *userarg)
      */
   found:
     if ((p = getenv("TERMCAP")) != 0 && !_nc_is_abs_path(p)) {
-	/* 'unsetenv("TERMCAP")' is not portable.
-	 * The 'environ' array is better.
-	 */
-	int n;
-	for (n = 0; environ[n] != 0; n++) {
-	    if (!strncmp("TERMCAP=", environ[n], (size_t) 8)) {
-		while ((environ[n] = environ[n + 1]) != 0) {
-		    n++;
-		}
-		break;
-	    }
-	}
+        /* 'unsetenv("TERMCAP")' is not portable.
+         * The 'environ' array is better.
+         */
+        int n;
+        for (n = 0; environ[n] != 0; n++) {
+            if (!strncmp("TERMCAP=", environ[n], (size_t) 8)) {
+                while ((environ[n] = environ[n + 1]) != 0) {
+                    n++;
+                }
+                break;
+            }
+        }
     }
 
     /*
@@ -632,28 +632,28 @@ get_termcap_entry(int fd, char *userarg)
      * If the first character is '?', ask the user.
      */
     if (ttype[0] == '?') {
-	if (ttype[1] != '\0')
-	    ttype = askuser(ttype + 1);
-	else
-	    ttype = askuser(0);
+        if (ttype[1] != '\0')
+            ttype = askuser(ttype + 1);
+        else
+            ttype = askuser(0);
     }
     /* Find the terminfo entry.  If it doesn't exist, ask the user. */
     while (setupterm((NCURSES_CONST char *) ttype, fd, &errret)
-	   != OK) {
-	if (errret == 0) {
-	    (void) fprintf(stderr, "%s: unknown terminal type %s\n",
-			   _nc_progname, ttype);
-	    ttype = 0;
-	} else {
-	    (void) fprintf(stderr,
-			   "%s: can't initialize terminal type %s (error %d)\n",
-			   _nc_progname, ttype, errret);
-	    ttype = 0;
-	}
-	ttype = askuser(ttype);
+           != OK) {
+        if (errret == 0) {
+            (void) fprintf(stderr, "%s: unknown terminal type %s\n",
+                           _nc_progname, ttype);
+            ttype = 0;
+        } else {
+            (void) fprintf(stderr,
+                           "%s: can't initialize terminal type %s (error %d)\n",
+                           _nc_progname, ttype, errret);
+            ttype = 0;
+        }
+        ttype = askuser(ttype);
     }
 #if BROKEN_LINKER
-    tgetflag("am");		/* force lib_termcap.o to be linked for 'ospeed' */
+    tgetflag("am");             /* force lib_termcap.o to be linked for 'ospeed' */
 #endif
     return (ttype);
 }
@@ -672,29 +672,29 @@ static void
 obsolete(char **argv)
 {
     for (; *argv; ++argv) {
-	char *parm = argv[0];
+        char *parm = argv[0];
 
-	if (parm[0] == '-' && parm[1] == '\0') {
-	    argv[0] = strdup("-q");
-	    continue;
-	}
+        if (parm[0] == '-' && parm[1] == '\0') {
+            argv[0] = strdup("-q");
+            continue;
+        }
 
-	if ((parm[0] != '-')
-	    || (argv[1] && argv[1][0] != '-')
-	    || (parm[1] != 'e' && parm[1] != 'i' && parm[1] != 'k')
-	    || (parm[2] != '\0'))
-	    continue;
-	switch (argv[0][1]) {
-	case 'e':
-	    argv[0] = strdup("-e^H");
-	    break;
-	case 'i':
-	    argv[0] = strdup("-i^C");
-	    break;
-	case 'k':
-	    argv[0] = strdup("-k^U");
-	    break;
-	}
+        if ((parm[0] != '-')
+            || (argv[1] && argv[1][0] != '-')
+            || (parm[1] != 'e' && parm[1] != 'i' && parm[1] != 'k')
+            || (parm[2] != '\0'))
+            continue;
+        switch (argv[0][1]) {
+        case 'e':
+            argv[0] = strdup("-e^H");
+            break;
+        case 'i':
+            argv[0] = strdup("-i^C");
+            break;
+        case 'k':
+            argv[0] = strdup("-k^U");
+            break;
+        }
     }
 }
 
@@ -710,41 +710,41 @@ print_shell_commands(const char *ttype)
      * environmental variable SHELL ending in "csh".
      */
     if ((var = getenv("SHELL")) != 0
-	&& ((len = (int) strlen(leaf = _nc_basename(var))) >= 3)
-	&& !strcmp(leaf + len - 3, "csh"))
-	p = "set noglob;\nsetenv TERM %s;\nunset noglob;\n";
+        && ((len = (int) strlen(leaf = _nc_basename(var))) >= 3)
+        && !strcmp(leaf + len - 3, "csh"))
+        p = "set noglob;\nsetenv TERM %s;\nunset noglob;\n";
     else
-	p = "TERM=%s;\n";
+        p = "TERM=%s;\n";
     (void) printf(p, ttype);
 }
 
 static void
 usage(void)
 {
-#define SKIP(s)			/* nothing */
+#define SKIP(s)                 /* nothing */
 #define KEEP(s) s "\n"
     static const char msg[] =
     {
-	KEEP("")
-	KEEP("Options:")
-	SKIP("  -a arpanet  (obsolete)")
-	KEEP("  -c          set control characters")
-	SKIP("  -d dialup   (obsolete)")
-	KEEP("  -e ch       erase character")
-	KEEP("  -I          no initialization strings")
-	KEEP("  -i ch       interrupt character")
-	KEEP("  -k ch       kill character")
-	KEEP("  -m mapping  map identifier to type")
-	SKIP("  -p plugboard (obsolete)")
-	KEEP("  -Q          do not output control key settings")
-	KEEP("  -q          display term only, do no changes")
-	KEEP("  -r          display term on stderr")
-	SKIP("  -S          (obsolete)")
-	KEEP("  -s          output TERM set command")
-	KEEP("  -V          print curses-version")
-	KEEP("  -w          set window-size")
-	KEEP("")
-	KEEP("If neither -c/-w are given, both are assumed.")
+        KEEP("")
+        KEEP("Options:")
+        SKIP("  -a arpanet  (obsolete)")
+        KEEP("  -c          set control characters")
+        SKIP("  -d dialup   (obsolete)")
+        KEEP("  -e ch       erase character")
+        KEEP("  -I          no initialization strings")
+        KEEP("  -i ch       interrupt character")
+        KEEP("  -k ch       kill character")
+        KEEP("  -m mapping  map identifier to type")
+        SKIP("  -p plugboard (obsolete)")
+        KEEP("  -Q          do not output control key settings")
+        KEEP("  -q          display term only, do no changes")
+        KEEP("  -r          display term on stderr")
+        SKIP("  -S          (obsolete)")
+        KEEP("  -s          output TERM set command")
+        KEEP("  -V          print curses-version")
+        KEEP("  -w          set window-size")
+        KEEP("")
+        KEEP("If neither -c/-w are given, both are assumed.")
     };
 #undef KEEP
 #undef SKIP
@@ -758,8 +758,8 @@ static char
 arg_to_char(void)
 {
     return (char) ((optarg[0] == '^' && optarg[1] != '\0')
-		   ? ((optarg[1] == '?') ? '\177' : CTRL(optarg[1]))
-		   : optarg[0]);
+                   ? ((optarg[1] == '?') ? '\177' : CTRL(optarg[1]))
+                   : optarg[0]);
 }
 
 int
@@ -767,81 +767,81 @@ main(int argc, char **argv)
 {
     int ch, noinit, noset, quiet, Sflag, sflag, showterm;
     const char *ttype;
-    int terasechar = -1;	/* new erase character */
-    int intrchar = -1;		/* new interrupt character */
-    int tkillchar = -1;		/* new kill character */
+    int terasechar = -1;        /* new erase character */
+    int intrchar = -1;          /* new interrupt character */
+    int tkillchar = -1;         /* new kill character */
     int my_fd;
-    bool opt_c = FALSE;		/* set control-chars */
-    bool opt_w = FALSE;		/* set window-size */
+    bool opt_c = FALSE;         /* set control-chars */
+    bool opt_w = FALSE;         /* set window-size */
     TTY mode, oldmode;
 
     _nc_progname = _nc_rootname(*argv);
     obsolete(argv);
     noinit = noset = quiet = Sflag = sflag = showterm = 0;
     while ((ch = getopt(argc, argv, "a:cd:e:Ii:k:m:p:qQrSsVw")) != -1) {
-	switch (ch) {
-	case 'c':		/* set control-chars */
-	    opt_c = TRUE;
-	    break;
-	case 'a':		/* OBSOLETE: map identifier to type */
-	    add_mapping("arpanet", optarg);
-	    break;
-	case 'd':		/* OBSOLETE: map identifier to type */
-	    add_mapping("dialup", optarg);
-	    break;
-	case 'e':		/* erase character */
-	    terasechar = arg_to_char();
-	    break;
-	case 'I':		/* no initialization strings */
-	    noinit = 1;
-	    break;
-	case 'i':		/* interrupt character */
-	    intrchar = arg_to_char();
-	    break;
-	case 'k':		/* kill character */
-	    tkillchar = arg_to_char();
-	    break;
-	case 'm':		/* map identifier to type */
-	    add_mapping(0, optarg);
-	    break;
-	case 'p':		/* OBSOLETE: map identifier to type */
-	    add_mapping("plugboard", optarg);
-	    break;
-	case 'Q':		/* don't output control key settings */
-	    quiet = 1;
-	    break;
-	case 'q':		/* display term only */
-	    noset = 1;
-	    break;
-	case 'r':		/* display term on stderr */
-	    showterm = 1;
-	    break;
-	case 'S':		/* OBSOLETE: output TERM & TERMCAP */
-	    Sflag = 1;
-	    break;
-	case 's':		/* output TERM set command */
-	    sflag = 1;
-	    break;
-	case 'V':		/* print curses-version */
-	    puts(curses_version());
-	    ExitProgram(EXIT_SUCCESS);
-	case 'w':		/* set window-size */
-	    opt_w = TRUE;
-	    break;
-	case '?':
-	default:
-	    usage();
-	}
+        switch (ch) {
+        case 'c':               /* set control-chars */
+            opt_c = TRUE;
+            break;
+        case 'a':               /* OBSOLETE: map identifier to type */
+            add_mapping("arpanet", optarg);
+            break;
+        case 'd':               /* OBSOLETE: map identifier to type */
+            add_mapping("dialup", optarg);
+            break;
+        case 'e':               /* erase character */
+            terasechar = arg_to_char();
+            break;
+        case 'I':               /* no initialization strings */
+            noinit = 1;
+            break;
+        case 'i':               /* interrupt character */
+            intrchar = arg_to_char();
+            break;
+        case 'k':               /* kill character */
+            tkillchar = arg_to_char();
+            break;
+        case 'm':               /* map identifier to type */
+            add_mapping(0, optarg);
+            break;
+        case 'p':               /* OBSOLETE: map identifier to type */
+            add_mapping("plugboard", optarg);
+            break;
+        case 'Q':               /* don't output control key settings */
+            quiet = 1;
+            break;
+        case 'q':               /* display term only */
+            noset = 1;
+            break;
+        case 'r':               /* display term on stderr */
+            showterm = 1;
+            break;
+        case 'S':               /* OBSOLETE: output TERM & TERMCAP */
+            Sflag = 1;
+            break;
+        case 's':               /* output TERM set command */
+            sflag = 1;
+            break;
+        case 'V':               /* print curses-version */
+            puts(curses_version());
+            ExitProgram(EXIT_SUCCESS);
+        case 'w':               /* set window-size */
+            opt_w = TRUE;
+            break;
+        case '?':
+        default:
+            usage();
+        }
     }
 
     argc -= optind;
     argv += optind;
 
     if (argc > 1)
-	usage();
+        usage();
 
     if (!opt_c && !opt_w)
-	opt_c = opt_w = TRUE;
+        opt_c = opt_w = TRUE;
 
     my_fd = save_tty_settings(&mode, TRUE);
     oldmode = mode;
@@ -854,55 +854,55 @@ main(int argc, char **argv)
 #endif
 
     if (same_program(_nc_progname, PROG_RESET)) {
-	reset_start(stderr, TRUE, FALSE);
-	reset_tty_settings(my_fd, &mode, noset);
+        reset_start(stderr, TRUE, FALSE);
+        reset_tty_settings(my_fd, &mode, noset);
     } else {
-	reset_start(stderr, FALSE, TRUE);
+        reset_start(stderr, FALSE, TRUE);
     }
 
     ttype = get_termcap_entry(my_fd, *argv);
 
     if (!noset) {
 #if HAVE_SIZECHANGE
-	if (opt_w) {
-	    set_window_size(my_fd, &lines, &columns);
-	}
+        if (opt_w) {
+            set_window_size(my_fd, &lines, &columns);
+        }
 #endif
-	if (opt_c) {
-	    set_control_chars(&mode, terasechar, intrchar, tkillchar);
-	    set_conversions(&mode);
+        if (opt_c) {
+            set_control_chars(&mode, terasechar, intrchar, tkillchar);
+            set_conversions(&mode);
 
-	    if (!noinit) {
-		if (send_init_strings(my_fd, &oldmode)) {
-		    (void) putc('\r', stderr);
-		    (void) fflush(stderr);
-		    (void) napms(1000);		/* Settle the terminal. */
-		}
-	    }
+            if (!noinit) {
+                if (send_init_strings(my_fd, &oldmode)) {
+                    (void) putc('\r', stderr);
+                    (void) fflush(stderr);
+                    (void) napms(1000);         /* Settle the terminal. */
+                }
+            }
 
-	    update_tty_settings(&oldmode, &mode);
-	}
+            update_tty_settings(&oldmode, &mode);
+        }
     }
 
     if (noset) {
-	(void) printf("%s\n", ttype);
+        (void) printf("%s\n", ttype);
     } else {
-	if (showterm)
-	    (void) fprintf(stderr, "Terminal type is %s.\n", ttype);
-	/*
-	 * If erase, kill and interrupt characters could have been
-	 * modified and not -Q, display the changes.
-	 */
-	if (!quiet) {
-	    print_tty_chars(&oldmode, &mode);
-	}
+        if (showterm)
+            (void) fprintf(stderr, "Terminal type is %s.\n", ttype);
+        /*
+         * If erase, kill and interrupt characters could have been
+         * modified and not -Q, display the changes.
+         */
+        if (!quiet) {
+            print_tty_chars(&oldmode, &mode);
+        }
     }
 
     if (Sflag)
-	err("The -S option is not supported under terminfo.");
+        err("The -S option is not supported under terminfo.");
 
     if (sflag) {
-	print_shell_commands(ttype);
+        print_shell_commands(ttype);
     }
 
     ExitProgram(EXIT_SUCCESS);

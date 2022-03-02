@@ -50,13 +50,13 @@ decode_wchar(const char *value)
     int radix = 0;
 
     if (!strncmp(value, "U+", 2)) {
-	value += 2;
-	radix = 16;
+        value += 2;
+        radix = 16;
     }
     result = strtol(value, &next, radix);
     if (next == value || (next == NULL || *next != '\0')) {
-	fprintf(stderr, "decoding wchar_t: %s\n", value);
-	exit(EXIT_FAILURE);
+        fprintf(stderr, "decoding wchar_t: %s\n", value);
+        exit(EXIT_FAILURE);
     }
     return (wchar_t) result;
 }
@@ -72,9 +72,9 @@ test_background(void)
     cchar_t data;
 
     if (pair_content(0, &f, &b) == ERR) {
-	printw("pair 0 contains no data\n");
+        printw("pair 0 contains no data\n");
     } else {
-	printw("pair 0 contains (%d,%d)\n", (int) f, (int) b);
+        printw("pair 0 contains (%d,%d)\n", (int) f, (int) b);
     }
     dump_window(stdscr);
 
@@ -116,19 +116,19 @@ test_background(void)
     row = 7;
     mvprintw(row++, 10, "l");
     for (chr = 0; chr < 32; ++chr)
-	AddCh(' ');
+        AddCh(' ');
     printw("x\n");
     chr = 32;
     while (chr < 128) {
-	if ((chr % 32) == 0)
-	    mvprintw(row++, 10, "x");
-	AddCh((chr == 127) ? ' ' : chr);
-	if ((++chr % 32) == 0)
-	    printw("x\n");
+        if ((chr % 32) == 0)
+            mvprintw(row++, 10, "x");
+        AddCh((chr == 127) ? ' ' : chr);
+        if ((++chr % 32) == 0)
+            printw("x\n");
     }
     mvprintw(row++, 10, "m");
     for (chr = 0; chr < 32; ++chr)
-	AddCh(' ');
+        AddCh(' ');
     printw("j\n");
     dump_window(stdscr);
 
@@ -174,25 +174,25 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: background [options]"
-	,""
-	,"Options:"
+        "Usage: background [options]"
+        ,""
+        ,"Options:"
 #if HAVE_ASSUME_DEFAULT_COLORS
-	," -a       invoke assume_default_colors, repeat to use in init_pair"
+        ," -a       invoke assume_default_colors, repeat to use in init_pair"
 #endif
-	," -b XXX   specify background color"
+        ," -b XXX   specify background color"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors, repeat to use in init_pair"
+        ," -d       invoke use_default_colors, repeat to use in init_pair"
 #endif
-	," -f XXX   specify foreground color"
-	," -l FILE  log window-dumps to this file"
-	," -w       fill background with stipple pattern"
-	," -W CODE  fill background with this Unicode value"
+        ," -f XXX   specify foreground color"
+        ," -l FILE  log window-dumps to this file"
+        ," -w       fill background with stipple pattern"
+        ," -W CODE  fill background with this Unicode value"
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -211,41 +211,41 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     setlocale(LC_ALL, "");
 
     while ((n = getopt(argc, argv, "ab:df:l:wW:")) != -1) {
-	switch (n) {
+        switch (n) {
 #if HAVE_ASSUME_DEFAULT_COLORS
-	case 'a':
-	    ++a_option;
-	    break;
+        case 'a':
+            ++a_option;
+            break;
 #endif
-	case 'b':
-	    default_bg = color_code(optarg);
-	    break;
+        case 'b':
+            default_bg = color_code(optarg);
+            break;
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    ++d_option;
-	    break;
+        case 'd':
+            ++d_option;
+            break;
 #endif
-	case 'f':
-	    default_fg = color_code(optarg);
-	    break;
-	case 'l':
-	    if (!open_dump(optarg))
-		usage();
-	    break;
-	case 'w':
-	    wide_fill = L'\u2591';
-	    break;
-	case 'W':
-	    wide_fill = decode_wchar(optarg);
-	    break;
-	default:
-	    usage();
-	}
+        case 'f':
+            default_fg = color_code(optarg);
+            break;
+        case 'l':
+            if (!open_dump(optarg))
+                usage();
+            break;
+        case 'w':
+            wide_fill = L'\u2591';
+            break;
+        case 'W':
+            wide_fill = decode_wchar(optarg);
+            break;
+        default:
+            usage();
+        }
     }
 #if HAVE_USE_DEFAULT_COLORS && HAVE_ASSUME_DEFAULT_COLORS
     if (a_option && d_option) {
-	fprintf(stderr, "Use either -a or -d option, but not both\n");
-	ExitProgram(EXIT_FAILURE);
+        fprintf(stderr, "Use either -a or -d option, but not both\n");
+        ExitProgram(EXIT_FAILURE);
     }
 #endif
 
@@ -254,36 +254,36 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     noecho();
 
     if (has_colors()) {
-	start_color();
+        start_color();
 
 #if HAVE_USE_DEFAULT_COLORS
-	if (d_option) {
-	    printw("Using default colors...\n");
-	    use_default_colors();
-	    if (d_option > 1) {
-		default_fg = -1;
-		default_bg = -1;
-	    }
-	}
+        if (d_option) {
+            printw("Using default colors...\n");
+            use_default_colors();
+            if (d_option > 1) {
+                default_fg = -1;
+                default_bg = -1;
+            }
+        }
 #endif
 #if HAVE_ASSUME_DEFAULT_COLORS
-	if (a_option) {
-	    printw("Using assumed colors %s/%s...\n",
-		   color_name(default_fg),
-		   color_name(default_bg));
-	    assume_default_colors(default_fg, default_bg);
-	    if (a_option > 1) {
-		default_fg = -1;
-		default_bg = -1;
-	    }
-	}
+        if (a_option) {
+            printw("Using assumed colors %s/%s...\n",
+                   color_name(default_fg),
+                   color_name(default_bg));
+            assume_default_colors(default_fg, default_bg);
+            if (a_option > 1) {
+                default_fg = -1;
+                default_bg = -1;
+            }
+        }
 #endif
 
-	test_background();
+        test_background();
 
     } else {
-	printw("This demo requires a color terminal");
-	getch();
+        printw("This demo requires a color terminal");
+        getch();
     }
     endwin();
     close_dump();

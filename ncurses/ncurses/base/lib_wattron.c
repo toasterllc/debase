@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_wattron.c
+**      lib_wattron.c
 **
-**	The routines wattr_on().
+**      The routines wattr_on().
 **
 */
 
@@ -50,16 +50,16 @@ wattr_on(WINDOW *win, attr_t at, void *opts GCC_UNUSED)
 {
     T((T_CALLED("wattr_on(%p,%s)"), (void *) win, _traceattr(at)));
     if (win != 0) {
-	T(("... current %s (%d)",
-	   _traceattr(WINDOW_ATTRS(win)),
-	   GET_WINDOW_PAIR(win)));
+        T(("... current %s (%d)",
+           _traceattr(WINDOW_ATTRS(win)),
+           GET_WINDOW_PAIR(win)));
 
-	if_EXT_COLORS({
-	    if (at & A_COLOR)
-		win->_color = PairNumber(at);
-	});
-	toggle_attr_on(WINDOW_ATTRS(win), at);
-	returnCode(OK);
+        if_EXT_COLORS({
+            if (at & A_COLOR)
+                win->_color = PairNumber(at);
+        });
+        toggle_attr_on(WINDOW_ATTRS(win), at);
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

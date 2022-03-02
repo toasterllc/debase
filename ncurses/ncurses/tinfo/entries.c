@@ -48,17 +48,17 @@ MODULE_ID("$Id: entries.c,v 1.30 2020/02/02 23:34:34 tom Exp $")
 /*
  *  The entry list is a doubly linked list with NULLs terminating the lists:
  *
- *	  ---------   ---------   ---------
- *	  |       |   |       |   |       |   offset
+ *        ---------   ---------   ---------
+ *        |       |   |       |   |       |   offset
  *        |-------|   |-------|   |-------|
- *	  |   ----+-->|   ----+-->|  NULL |   next
- *	  |-------|   |-------|   |-------|
- *	  |  NULL |<--+----   |<--+----   |   last
- *	  ---------   ---------   ---------
- *	      ^                       ^
- *	      |                       |
- *	      |                       |
- *	   _nc_head                _nc_tail
+ *        |   ----+-->|   ----+-->|  NULL |   next
+ *        |-------|   |-------|   |-------|
+ *        |  NULL |<--+----   |<--+----   |   last
+ *        ---------   ---------   ---------
+ *            ^                       ^
+ *            |                       |
+ *            |                       |
+ *         _nc_head                _nc_tail
  */
 
 NCURSES_EXPORT_VAR(ENTRY *) _nc_head = 0;
@@ -71,21 +71,21 @@ _nc_delink_entry(ENTRY * headp, TERMTYPE2 *tterm)
     ENTRY *ep, *last;
 
     for (last = 0, ep = headp; ep != 0; last = ep, ep = ep->next) {
-	if (&(ep->tterm) == tterm) {
-	    if (last != 0) {
-		last->next = ep->next;
-	    }
-	    if (ep->next != 0) {
-		ep->next->last = last;
-	    }
-	    if (ep == _nc_head) {
-		_nc_head = ep->next;
-	    }
-	    if (ep == _nc_tail) {
-		_nc_tail = last;
-	    }
-	    break;
-	}
+        if (&(ep->tterm) == tterm) {
+            if (last != 0) {
+                last->next = ep->next;
+            }
+            if (ep->next != 0) {
+                ep->next->last = last;
+            }
+            if (ep == _nc_head) {
+                _nc_head = ep->next;
+            }
+            if (ep == _nc_tail) {
+                _nc_tail = last;
+            }
+            break;
+        }
     }
     return ep;
 }
@@ -97,7 +97,7 @@ _nc_free_entry(ENTRY * headp, TERMTYPE2 *tterm)
     ENTRY *ep;
 
     if ((ep = _nc_delink_entry(headp, tterm)) != 0) {
-	free(ep);
+        free(ep);
     }
 }
 
@@ -105,10 +105,10 @@ NCURSES_EXPORT(void)
 _nc_free_entries(ENTRY * headp)
 /* free the allocated storage consumed by list entries */
 {
-    (void) headp;		/* unused - _nc_head is altered here! */
+    (void) headp;               /* unused - _nc_head is altered here! */
 
     while (_nc_head != 0) {
-	_nc_free_termtype2(&(_nc_head->tterm));
+        _nc_free_termtype2(&(_nc_head->tterm));
     }
 }
 
@@ -126,7 +126,7 @@ _nc_leaks_tinfo(void)
     _nc_tgetent_leaks();
 
     if (TerminalOf(CURRENT_SCREEN) != 0) {
-	del_curterm(TerminalOf(CURRENT_SCREEN));
+        del_curterm(TerminalOf(CURRENT_SCREEN));
     }
     _nc_forget_prescr();
 
@@ -145,7 +145,7 @@ _nc_leaks_tinfo(void)
     _nc_comp_error_leaks();
 
     if ((s = _nc_home_terminfo()) != 0)
-	free(s);
+        free(s);
 
 #ifdef TRACE
     T((T_RETURN("")));

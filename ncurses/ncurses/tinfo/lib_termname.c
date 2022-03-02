@@ -40,11 +40,11 @@ NCURSES_SP_NAME(termname) (NCURSES_SP_DCL0)
 
 #if NCURSES_SP_FUNCS
     if (TerminalOf(SP_PARM) != 0) {
-	name = TerminalOf(SP_PARM)->_termname;
+        name = TerminalOf(SP_PARM)->_termname;
     }
 #else
     if (cur_term != 0)
-	name = cur_term->_termname;
+        name = cur_term->_termname;
 #endif
 
     returnPtr(name);

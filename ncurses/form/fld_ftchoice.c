@@ -49,8 +49,8 @@ MODULE_ID("$Id: fld_ftchoice.c,v 1.18 2021/06/17 21:26:02 tom Exp $")
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(int)
 set_fieldtype_choice(FIELDTYPE *typ,
-		     bool (*const next_choice) (FIELD *, const void *),
-		     bool (*const prev_choice) (FIELD *, const void *))
+                     bool (*const next_choice) (FIELD *, const void *),
+                     bool (*const prev_choice) (FIELD *, const void *))
 {
   TR_FUNC_BFR(2);
 

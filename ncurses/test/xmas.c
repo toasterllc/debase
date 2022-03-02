@@ -139,15 +139,15 @@ static void
 set_color(WINDOW *win, chtype color)
 {
     if (has_colors()) {
-	int n = (int) (color + 1);
-	if (my_pairs == 0)
-	    my_pairs = typeCalloc(bool, (size_t) (COLORS + 1));
-	if (!my_pairs[n]) {
-	    init_pair((short) n, (short) color, (short) my_bg);
-	    my_pairs[n] = TRUE;
-	}
-	wattroff(win, A_COLOR);
-	wattron(win, COLOR_PAIR(n));
+        int n = (int) (color + 1);
+        if (my_pairs == 0)
+            my_pairs = typeCalloc(bool, (size_t) (COLORS + 1));
+        if (!my_pairs[n]) {
+            init_pair((short) n, (short) color, (short) my_bg);
+            my_pairs[n] = TRUE;
+        }
+        wattroff(win, A_COLOR);
+        wattron(win, COLOR_PAIR(n));
     }
 }
 
@@ -155,7 +155,7 @@ static void
 unset_color(WINDOW *win)
 {
     if (has_colors())
-	(void) wattrset(win, COLOR_PAIR(0));
+        (void) wattrset(win, COLOR_PAIR(0));
 }
 
 static void
@@ -163,8 +163,8 @@ look_out(int msecs)
 {
     napms(msecs);
     if (getch() != ERR) {
-	beep();
-	done(0);
+        beep();
+        done(0);
     }
 }
 
@@ -174,22 +174,22 @@ boxit(void)
     int x = 0;
 
     while (x < 20) {
-	MvAddCh(x, 7, '|');
-	++x;
+        MvAddCh(x, 7, '|');
+        ++x;
     }
 
     x = 8;
 
     while (x < 80) {
-	MvAddCh(19, x, '_');
-	++x;
+        MvAddCh(19, x, '_');
+        ++x;
     }
 
     x = 0;
 
     while (x < 80) {
-	MvAddCh(22, x, '_');
-	++x;
+        MvAddCh(22, x, '_');
+        ++x;
     }
 
     return (0);
@@ -446,27 +446,27 @@ blinkit(void)
     static int cycle;
 
     if (cycle > 4) {
-	cycle = 0;
+        cycle = 0;
     }
 
     touchwin(treescrn8);
 
     switch (cycle) {
     case 0:
-	overlay(treescrn3, treescrn8);
-	break;
+        overlay(treescrn3, treescrn8);
+        break;
     case 1:
-	overlay(treescrn4, treescrn8);
-	break;
+        overlay(treescrn4, treescrn8);
+        break;
     case 2:
-	overlay(treescrn5, treescrn8);
-	break;
+        overlay(treescrn5, treescrn8);
+        break;
     case 3:
-	overlay(treescrn6, treescrn8);
-	break;
+        overlay(treescrn6, treescrn8);
+        break;
     case 4:
-	overlay(treescrn7, treescrn8);
-	break;
+        overlay(treescrn7, treescrn8);
+        break;
     }
     touchwin(treescrn8);
     wrefresh(treescrn8);
@@ -500,86 +500,86 @@ reindeer(void)
     y_pos = 0;
 
     for (x_pos = 70; x_pos > 62; x_pos--) {
-	for (looper = 0; looper < 4; looper++) {
-	    MvWAddCh(dotdeer0, y_pos, x_pos, (chtype) '.');
-	    wrefresh(dotdeer0);
-	    wrefresh(w_del_msg);
-	    werase(dotdeer0);
-	    wrefresh(dotdeer0);
-	    wrefresh(w_del_msg);
-	    look_out(50);
-	}
+        for (looper = 0; looper < 4; looper++) {
+            MvWAddCh(dotdeer0, y_pos, x_pos, (chtype) '.');
+            wrefresh(dotdeer0);
+            wrefresh(w_del_msg);
+            werase(dotdeer0);
+            wrefresh(dotdeer0);
+            wrefresh(w_del_msg);
+            look_out(50);
+        }
     }
 
     y_pos = 2;
 
     for (; x_pos > 50; x_pos--) {
-	for (looper = 0; looper < 4; looper++) {
+        for (looper = 0; looper < 4; looper++) {
 
-	    if (x_pos < 56) {
-		y_pos = 3;
+            if (x_pos < 56) {
+                y_pos = 3;
 
-		MvWAddCh(stardeer0, y_pos, x_pos, (chtype) '*');
-		wrefresh(stardeer0);
-		wrefresh(w_del_msg);
-		werase(stardeer0);
-		wrefresh(stardeer0);
-		wrefresh(w_del_msg);
-	    } else {
-		MvWAddCh(dotdeer0, y_pos, x_pos, (chtype) '*');
-		wrefresh(dotdeer0);
-		wrefresh(w_del_msg);
-		werase(dotdeer0);
-		wrefresh(dotdeer0);
-		wrefresh(w_del_msg);
-	    }
-	}
+                MvWAddCh(stardeer0, y_pos, x_pos, (chtype) '*');
+                wrefresh(stardeer0);
+                wrefresh(w_del_msg);
+                werase(stardeer0);
+                wrefresh(stardeer0);
+                wrefresh(w_del_msg);
+            } else {
+                MvWAddCh(dotdeer0, y_pos, x_pos, (chtype) '*');
+                wrefresh(dotdeer0);
+                wrefresh(w_del_msg);
+                werase(dotdeer0);
+                wrefresh(dotdeer0);
+                wrefresh(w_del_msg);
+            }
+        }
     }
 
     x_pos = 58;
 
     for (y_pos = 2; y_pos < 5; y_pos++) {
 
-	touchwin(lildeer0);
-	wrefresh(lildeer0);
-	wrefresh(w_del_msg);
+        touchwin(lildeer0);
+        wrefresh(lildeer0);
+        wrefresh(w_del_msg);
 
-	for (looper = 0; looper < 4; looper++) {
-	    deer_step(lildeer3, y_pos, x_pos);
-	    deer_step(lildeer2, y_pos, x_pos);
-	    deer_step(lildeer1, y_pos, x_pos);
-	    deer_step(lildeer2, y_pos, x_pos);
-	    deer_step(lildeer3, y_pos, x_pos);
+        for (looper = 0; looper < 4; looper++) {
+            deer_step(lildeer3, y_pos, x_pos);
+            deer_step(lildeer2, y_pos, x_pos);
+            deer_step(lildeer1, y_pos, x_pos);
+            deer_step(lildeer2, y_pos, x_pos);
+            deer_step(lildeer3, y_pos, x_pos);
 
-	    touchwin(lildeer0);
-	    wrefresh(lildeer0);
-	    wrefresh(w_del_msg);
+            touchwin(lildeer0);
+            wrefresh(lildeer0);
+            wrefresh(w_del_msg);
 
-	    x_pos -= 2;
-	}
+            x_pos -= 2;
+        }
     }
 
     x_pos = 35;
 
     for (y_pos = 5; y_pos < 10; y_pos++) {
 
-	touchwin(middeer0);
-	wrefresh(middeer0);
-	wrefresh(w_del_msg);
+        touchwin(middeer0);
+        wrefresh(middeer0);
+        wrefresh(w_del_msg);
 
-	for (looper = 0; looper < 2; looper++) {
-	    deer_step(middeer3, y_pos, x_pos);
-	    deer_step(middeer2, y_pos, x_pos);
-	    deer_step(middeer1, y_pos, x_pos);
-	    deer_step(middeer2, y_pos, x_pos);
-	    deer_step(middeer3, y_pos, x_pos);
+        for (looper = 0; looper < 2; looper++) {
+            deer_step(middeer3, y_pos, x_pos);
+            deer_step(middeer2, y_pos, x_pos);
+            deer_step(middeer1, y_pos, x_pos);
+            deer_step(middeer2, y_pos, x_pos);
+            deer_step(middeer3, y_pos, x_pos);
 
-	    touchwin(middeer0);
-	    wrefresh(middeer0);
-	    wrefresh(w_del_msg);
+            touchwin(middeer0);
+            wrefresh(middeer0);
+            wrefresh(w_del_msg);
 
-	    x_pos -= 3;
-	}
+            x_pos -= 3;
+        }
     }
 
     look_out(300);
@@ -587,41 +587,41 @@ reindeer(void)
     y_pos = 1;
 
     for (x_pos = 8; x_pos < 16; x_pos++) {
-	deer_step(bigdeer4, y_pos, x_pos);
-	deer_step(bigdeer3, y_pos, x_pos);
-	deer_step(bigdeer2, y_pos, x_pos);
-	deer_step(bigdeer1, y_pos, x_pos);
-	deer_step(bigdeer2, y_pos, x_pos);
-	deer_step(bigdeer3, y_pos, x_pos);
-	deer_step(bigdeer4, y_pos, x_pos);
-	deer_step(bigdeer0, y_pos, x_pos);
+        deer_step(bigdeer4, y_pos, x_pos);
+        deer_step(bigdeer3, y_pos, x_pos);
+        deer_step(bigdeer2, y_pos, x_pos);
+        deer_step(bigdeer1, y_pos, x_pos);
+        deer_step(bigdeer2, y_pos, x_pos);
+        deer_step(bigdeer3, y_pos, x_pos);
+        deer_step(bigdeer4, y_pos, x_pos);
+        deer_step(bigdeer0, y_pos, x_pos);
     }
 
     --x_pos;
 
     for (looper = 0; looper < 6; looper++) {
-	deer_step(lookdeer4, y_pos, x_pos);
-	deer_step(lookdeer3, y_pos, x_pos);
-	deer_step(lookdeer2, y_pos, x_pos);
-	deer_step(lookdeer1, y_pos, x_pos);
-	deer_step(lookdeer2, y_pos, x_pos);
-	deer_step(lookdeer3, y_pos, x_pos);
-	deer_step(lookdeer4, y_pos, x_pos);
+        deer_step(lookdeer4, y_pos, x_pos);
+        deer_step(lookdeer3, y_pos, x_pos);
+        deer_step(lookdeer2, y_pos, x_pos);
+        deer_step(lookdeer1, y_pos, x_pos);
+        deer_step(lookdeer2, y_pos, x_pos);
+        deer_step(lookdeer3, y_pos, x_pos);
+        deer_step(lookdeer4, y_pos, x_pos);
     }
 
     deer_step(lookdeer0, y_pos, x_pos);
 
     for (; y_pos < 10; y_pos++) {
-	for (looper = 0; looper < 2; looper++) {
-	    deer_step(bigdeer4, y_pos, x_pos);
-	    deer_step(bigdeer3, y_pos, x_pos);
-	    deer_step(bigdeer2, y_pos, x_pos);
-	    deer_step(bigdeer1, y_pos, x_pos);
-	    deer_step(bigdeer2, y_pos, x_pos);
-	    deer_step(bigdeer3, y_pos, x_pos);
-	    deer_step(bigdeer4, y_pos, x_pos);
-	}
-	deer_step(bigdeer0, y_pos, x_pos);
+        for (looper = 0; looper < 2; looper++) {
+            deer_step(bigdeer4, y_pos, x_pos);
+            deer_step(bigdeer3, y_pos, x_pos);
+            deer_step(bigdeer2, y_pos, x_pos);
+            deer_step(bigdeer1, y_pos, x_pos);
+            deer_step(bigdeer2, y_pos, x_pos);
+            deer_step(bigdeer3, y_pos, x_pos);
+            deer_step(bigdeer4, y_pos, x_pos);
+        }
+        deer_step(bigdeer0, y_pos, x_pos);
     }
 
     --y_pos;
@@ -639,7 +639,7 @@ done(int sig GCC_UNUSED)
 
 #if NO_LEAKS
     if (my_pairs != 0)
-	free(my_pairs);
+        free(my_pairs);
 #endif
 
     ExitProgram(EXIT_SUCCESS);
@@ -650,18 +650,18 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: xmas [options]"
-	,""
-	,"Options:"
+        "Usage: xmas [options]"
+        ,""
+        ,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors"
+        ," -d       invoke use_default_colors"
 #endif
-	," -q       execute once, then quit"
+        ," -q       execute once, then quit"
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -677,19 +677,19 @@ main(int argc, char *argv[])
     bool opt_q = FALSE;
 
     while ((ch = getopt(argc, argv, "dq")) != -1) {
-	switch (ch) {
+        switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    opt_d = TRUE;
-	    break;
+        case 'd':
+            opt_d = TRUE;
+            break;
 #endif
-	case 'q':
-	    opt_q = TRUE;
-	    break;
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        case 'q':
+            opt_q = TRUE;
+            break;
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
 
     setlocale(LC_ALL, "");
@@ -700,55 +700,55 @@ main(int argc, char *argv[])
     refresh();
 
     if (has_colors()) {
-	start_color();
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (opt_d && (use_default_colors() == OK))
-	    my_bg = -1;
+        if (opt_d && (use_default_colors() == OK))
+            my_bg = -1;
 #endif
     }
     curs_set(0);
 
     if ((treescrn = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn2 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn3 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn4 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn5 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn6 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn7 = newwin(16, 27, 3, 53)) == 0 ||
-	(treescrn8 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn2 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn3 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn4 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn5 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn6 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn7 = newwin(16, 27, 3, 53)) == 0 ||
+        (treescrn8 = newwin(16, 27, 3, 53)) == 0 ||
 
-	(dotdeer0 = newwin(3, 71, 0, 8)) == 0 ||
+        (dotdeer0 = newwin(3, 71, 0, 8)) == 0 ||
 
-	(stardeer0 = newwin(4, 56, 0, 8)) == 0 ||
+        (stardeer0 = newwin(4, 56, 0, 8)) == 0 ||
 
-	(lildeer0 = newwin(7, 53, 0, 8)) == 0 ||
-	(lildeer1 = newwin(2, 4, 0, 0)) == 0 ||
-	(lildeer2 = newwin(2, 4, 0, 0)) == 0 ||
-	(lildeer3 = newwin(2, 4, 0, 0)) == 0 ||
+        (lildeer0 = newwin(7, 53, 0, 8)) == 0 ||
+        (lildeer1 = newwin(2, 4, 0, 0)) == 0 ||
+        (lildeer2 = newwin(2, 4, 0, 0)) == 0 ||
+        (lildeer3 = newwin(2, 4, 0, 0)) == 0 ||
 
-	(middeer0 = newwin(15, 42, 0, 8)) == 0 ||
-	(middeer1 = newwin(3, 7, 0, 0)) == 0 ||
-	(middeer2 = newwin(3, 7, 0, 0)) == 0 ||
-	(middeer3 = newwin(3, 7, 0, 0)) == 0 ||
+        (middeer0 = newwin(15, 42, 0, 8)) == 0 ||
+        (middeer1 = newwin(3, 7, 0, 0)) == 0 ||
+        (middeer2 = newwin(3, 7, 0, 0)) == 0 ||
+        (middeer3 = newwin(3, 7, 0, 0)) == 0 ||
 
-	(bigdeer0 = newwin(10, 23, 0, 0)) == 0 ||
-	(bigdeer1 = newwin(10, 23, 0, 0)) == 0 ||
-	(bigdeer2 = newwin(10, 23, 0, 0)) == 0 ||
-	(bigdeer3 = newwin(10, 23, 0, 0)) == 0 ||
-	(bigdeer4 = newwin(10, 23, 0, 0)) == 0 ||
+        (bigdeer0 = newwin(10, 23, 0, 0)) == 0 ||
+        (bigdeer1 = newwin(10, 23, 0, 0)) == 0 ||
+        (bigdeer2 = newwin(10, 23, 0, 0)) == 0 ||
+        (bigdeer3 = newwin(10, 23, 0, 0)) == 0 ||
+        (bigdeer4 = newwin(10, 23, 0, 0)) == 0 ||
 
-	(lookdeer0 = newwin(10, 25, 0, 0)) == 0 ||
-	(lookdeer1 = newwin(10, 25, 0, 0)) == 0 ||
-	(lookdeer2 = newwin(10, 25, 0, 0)) == 0 ||
-	(lookdeer3 = newwin(10, 25, 0, 0)) == 0 ||
-	(lookdeer4 = newwin(10, 25, 0, 0)) == 0 ||
+        (lookdeer0 = newwin(10, 25, 0, 0)) == 0 ||
+        (lookdeer1 = newwin(10, 25, 0, 0)) == 0 ||
+        (lookdeer2 = newwin(10, 25, 0, 0)) == 0 ||
+        (lookdeer3 = newwin(10, 25, 0, 0)) == 0 ||
+        (lookdeer4 = newwin(10, 25, 0, 0)) == 0 ||
 
-	(w_holiday = newwin(1, 26, 3, 27)) == 0 ||
+        (w_holiday = newwin(1, 26, 3, 27)) == 0 ||
 
-	(w_del_msg = newwin(1, 19, 23, 60)) == 0) {
-	stop_curses();
-	fprintf(stderr, "Cannot create windows - screen too small\n");
-	ExitProgram(EXIT_FAILURE);
+        (w_del_msg = newwin(1, 19, 23, 60)) == 0) {
+        stop_curses();
+        fprintf(stderr, "Cannot create windows - screen too small\n");
+        ExitProgram(EXIT_FAILURE);
     }
 
     MvWAddStr(w_del_msg, 0, 0, "Hit any key to quit");
@@ -949,223 +949,223 @@ main(int argc, char *argv[])
     MvWAddStr(lookdeer4, 7, 5, "(/          \\");
     MvWAddStr(lookdeer4, 8, 0, "v___=             ----^");
 
-	/***********************************************/
+        /***********************************************/
     cbreak();
     nodelay(stdscr, TRUE);
     do {
-	clear();
-	werase(treescrn);
-	touchwin(w_del_msg);
-	touchwin(treescrn);
-	werase(treescrn2);
-	touchwin(treescrn2);
-	werase(treescrn8);
-	touchwin(treescrn8);
-	refresh();
-	look_out(150);
-	boxit();
-	refresh();
-	look_out(150);
-	seas();
-	refresh();
-	look_out(150);
-	greet();
-	refresh();
-	look_out(150);
-	fromwho();
-	refresh();
-	look_out(150);
-	tree();
-	look_out(150);
-	balls();
-	look_out(150);
-	star();
-	look_out(150);
-	strng1();
-	strng2();
-	strng3();
-	strng4();
-	strng5();
+        clear();
+        werase(treescrn);
+        touchwin(w_del_msg);
+        touchwin(treescrn);
+        werase(treescrn2);
+        touchwin(treescrn2);
+        werase(treescrn8);
+        touchwin(treescrn8);
+        refresh();
+        look_out(150);
+        boxit();
+        refresh();
+        look_out(150);
+        seas();
+        refresh();
+        look_out(150);
+        greet();
+        refresh();
+        look_out(150);
+        fromwho();
+        refresh();
+        look_out(150);
+        tree();
+        look_out(150);
+        balls();
+        look_out(150);
+        star();
+        look_out(150);
+        strng1();
+        strng2();
+        strng3();
+        strng4();
+        strng5();
 
-	/* set up the windows for our blinking trees */
-	/* **************************************** */
-	/* treescrn3 */
+        /* set up the windows for our blinking trees */
+        /* **************************************** */
+        /* treescrn3 */
 
-	overlay(treescrn, treescrn3);
+        overlay(treescrn, treescrn3);
 
-	/*balls */
-	MvWAddCh(treescrn3, 4, 18, ' ');
-	MvWAddCh(treescrn3, 7, 6, ' ');
-	MvWAddCh(treescrn3, 8, 19, ' ');
-	MvWAddCh(treescrn3, 11, 22, ' ');
+        /*balls */
+        MvWAddCh(treescrn3, 4, 18, ' ');
+        MvWAddCh(treescrn3, 7, 6, ' ');
+        MvWAddCh(treescrn3, 8, 19, ' ');
+        MvWAddCh(treescrn3, 11, 22, ' ');
 
-	/*star */
-	MvWAddCh(treescrn3, 0, 12, '*');
+        /*star */
+        MvWAddCh(treescrn3, 0, 12, '*');
 
-	/*strng1 */
-	MvWAddCh(treescrn3, 3, 11, ' ');
+        /*strng1 */
+        MvWAddCh(treescrn3, 3, 11, ' ');
 
-	/*strng2 */
-	MvWAddCh(treescrn3, 5, 13, ' ');
-	MvWAddCh(treescrn3, 6, 10, ' ');
+        /*strng2 */
+        MvWAddCh(treescrn3, 5, 13, ' ');
+        MvWAddCh(treescrn3, 6, 10, ' ');
 
-	/*strng3 */
-	MvWAddCh(treescrn3, 7, 16, ' ');
-	MvWAddCh(treescrn3, 7, 14, ' ');
+        /*strng3 */
+        MvWAddCh(treescrn3, 7, 16, ' ');
+        MvWAddCh(treescrn3, 7, 14, ' ');
 
-	/*strng4 */
-	MvWAddCh(treescrn3, 10, 13, ' ');
-	MvWAddCh(treescrn3, 10, 10, ' ');
-	MvWAddCh(treescrn3, 11, 8, ' ');
+        /*strng4 */
+        MvWAddCh(treescrn3, 10, 13, ' ');
+        MvWAddCh(treescrn3, 10, 10, ' ');
+        MvWAddCh(treescrn3, 11, 8, ' ');
 
-	/*strng5 */
-	MvWAddCh(treescrn3, 11, 18, ' ');
-	MvWAddCh(treescrn3, 12, 13, ' ');
+        /*strng5 */
+        MvWAddCh(treescrn3, 11, 18, ' ');
+        MvWAddCh(treescrn3, 12, 13, ' ');
 
-	/* treescrn4 */
+        /* treescrn4 */
 
-	overlay(treescrn, treescrn4);
+        overlay(treescrn, treescrn4);
 
-	/*balls */
-	MvWAddCh(treescrn4, 3, 9, ' ');
-	MvWAddCh(treescrn4, 4, 16, ' ');
-	MvWAddCh(treescrn4, 7, 6, ' ');
-	MvWAddCh(treescrn4, 8, 19, ' ');
-	MvWAddCh(treescrn4, 11, 2, ' ');
-	MvWAddCh(treescrn4, 12, 23, ' ');
+        /*balls */
+        MvWAddCh(treescrn4, 3, 9, ' ');
+        MvWAddCh(treescrn4, 4, 16, ' ');
+        MvWAddCh(treescrn4, 7, 6, ' ');
+        MvWAddCh(treescrn4, 8, 19, ' ');
+        MvWAddCh(treescrn4, 11, 2, ' ');
+        MvWAddCh(treescrn4, 12, 23, ' ');
 
-	/*star */
-	(void) wstandout(treescrn4);
-	MvWAddCh(treescrn4, 0, 12, '*');
-	(void) wstandend(treescrn4);
+        /*star */
+        (void) wstandout(treescrn4);
+        MvWAddCh(treescrn4, 0, 12, '*');
+        (void) wstandend(treescrn4);
 
-	/*strng1 */
-	MvWAddCh(treescrn4, 3, 13, ' ');
+        /*strng1 */
+        MvWAddCh(treescrn4, 3, 13, ' ');
 
-	/*strng2 */
+        /*strng2 */
 
-	/*strng3 */
-	MvWAddCh(treescrn4, 7, 15, ' ');
-	MvWAddCh(treescrn4, 8, 11, ' ');
+        /*strng3 */
+        MvWAddCh(treescrn4, 7, 15, ' ');
+        MvWAddCh(treescrn4, 8, 11, ' ');
 
-	/*strng4 */
-	MvWAddCh(treescrn4, 9, 16, ' ');
-	MvWAddCh(treescrn4, 10, 12, ' ');
-	MvWAddCh(treescrn4, 11, 8, ' ');
+        /*strng4 */
+        MvWAddCh(treescrn4, 9, 16, ' ');
+        MvWAddCh(treescrn4, 10, 12, ' ');
+        MvWAddCh(treescrn4, 11, 8, ' ');
 
-	/*strng5 */
-	MvWAddCh(treescrn4, 11, 18, ' ');
-	MvWAddCh(treescrn4, 12, 14, ' ');
+        /*strng5 */
+        MvWAddCh(treescrn4, 11, 18, ' ');
+        MvWAddCh(treescrn4, 12, 14, ' ');
 
-	/* treescrn5 */
+        /* treescrn5 */
 
-	overlay(treescrn, treescrn5);
+        overlay(treescrn, treescrn5);
 
-	/*balls */
-	MvWAddCh(treescrn5, 3, 15, ' ');
-	MvWAddCh(treescrn5, 10, 20, ' ');
-	MvWAddCh(treescrn5, 12, 1, ' ');
+        /*balls */
+        MvWAddCh(treescrn5, 3, 15, ' ');
+        MvWAddCh(treescrn5, 10, 20, ' ');
+        MvWAddCh(treescrn5, 12, 1, ' ');
 
-	/*star */
-	MvWAddCh(treescrn5, 0, 12, '*');
+        /*star */
+        MvWAddCh(treescrn5, 0, 12, '*');
 
-	/*strng1 */
-	MvWAddCh(treescrn5, 3, 11, ' ');
+        /*strng1 */
+        MvWAddCh(treescrn5, 3, 11, ' ');
 
-	/*strng2 */
-	MvWAddCh(treescrn5, 5, 12, ' ');
+        /*strng2 */
+        MvWAddCh(treescrn5, 5, 12, ' ');
 
-	/*strng3 */
-	MvWAddCh(treescrn5, 7, 14, ' ');
-	MvWAddCh(treescrn5, 8, 10, ' ');
+        /*strng3 */
+        MvWAddCh(treescrn5, 7, 14, ' ');
+        MvWAddCh(treescrn5, 8, 10, ' ');
 
-	/*strng4 */
-	MvWAddCh(treescrn5, 9, 15, ' ');
-	MvWAddCh(treescrn5, 10, 11, ' ');
-	MvWAddCh(treescrn5, 11, 7, ' ');
+        /*strng4 */
+        MvWAddCh(treescrn5, 9, 15, ' ');
+        MvWAddCh(treescrn5, 10, 11, ' ');
+        MvWAddCh(treescrn5, 11, 7, ' ');
 
-	/*strng5 */
-	MvWAddCh(treescrn5, 11, 17, ' ');
-	MvWAddCh(treescrn5, 12, 13, ' ');
+        /*strng5 */
+        MvWAddCh(treescrn5, 11, 17, ' ');
+        MvWAddCh(treescrn5, 12, 13, ' ');
 
-	/* treescrn6 */
+        /* treescrn6 */
 
-	overlay(treescrn, treescrn6);
+        overlay(treescrn, treescrn6);
 
-	/*balls */
-	MvWAddCh(treescrn6, 6, 7, ' ');
-	MvWAddCh(treescrn6, 7, 18, ' ');
-	MvWAddCh(treescrn6, 10, 4, ' ');
-	MvWAddCh(treescrn6, 11, 23, ' ');
+        /*balls */
+        MvWAddCh(treescrn6, 6, 7, ' ');
+        MvWAddCh(treescrn6, 7, 18, ' ');
+        MvWAddCh(treescrn6, 10, 4, ' ');
+        MvWAddCh(treescrn6, 11, 23, ' ');
 
-	/*star */
-	(void) wstandout(treescrn6);
-	MvWAddCh(treescrn6, 0, 12, '*');
-	(void) wstandend(treescrn6);
+        /*star */
+        (void) wstandout(treescrn6);
+        MvWAddCh(treescrn6, 0, 12, '*');
+        (void) wstandend(treescrn6);
 
-	/*strng1 */
+        /*strng1 */
 
-	/*strng2 */
-	MvWAddCh(treescrn6, 5, 11, ' ');
+        /*strng2 */
+        MvWAddCh(treescrn6, 5, 11, ' ');
 
-	/*strng3 */
-	MvWAddCh(treescrn6, 7, 13, ' ');
-	MvWAddCh(treescrn6, 8, 9, ' ');
+        /*strng3 */
+        MvWAddCh(treescrn6, 7, 13, ' ');
+        MvWAddCh(treescrn6, 8, 9, ' ');
 
-	/*strng4 */
-	MvWAddCh(treescrn6, 9, 14, ' ');
-	MvWAddCh(treescrn6, 10, 10, ' ');
-	MvWAddCh(treescrn6, 11, 6, ' ');
+        /*strng4 */
+        MvWAddCh(treescrn6, 9, 14, ' ');
+        MvWAddCh(treescrn6, 10, 10, ' ');
+        MvWAddCh(treescrn6, 11, 6, ' ');
 
-	/*strng5 */
-	MvWAddCh(treescrn6, 11, 16, ' ');
-	MvWAddCh(treescrn6, 12, 12, ' ');
+        /*strng5 */
+        MvWAddCh(treescrn6, 11, 16, ' ');
+        MvWAddCh(treescrn6, 12, 12, ' ');
 
-	/* treescrn7 */
+        /* treescrn7 */
 
-	overlay(treescrn, treescrn7);
+        overlay(treescrn, treescrn7);
 
-	/*balls */
-	MvWAddCh(treescrn7, 3, 15, ' ');
-	MvWAddCh(treescrn7, 6, 7, ' ');
-	MvWAddCh(treescrn7, 7, 18, ' ');
-	MvWAddCh(treescrn7, 10, 4, ' ');
-	MvWAddCh(treescrn7, 11, 22, ' ');
+        /*balls */
+        MvWAddCh(treescrn7, 3, 15, ' ');
+        MvWAddCh(treescrn7, 6, 7, ' ');
+        MvWAddCh(treescrn7, 7, 18, ' ');
+        MvWAddCh(treescrn7, 10, 4, ' ');
+        MvWAddCh(treescrn7, 11, 22, ' ');
 
-	/*star */
-	MvWAddCh(treescrn7, 0, 12, '*');
+        /*star */
+        MvWAddCh(treescrn7, 0, 12, '*');
 
-	/*strng1 */
-	MvWAddCh(treescrn7, 3, 12, ' ');
+        /*strng1 */
+        MvWAddCh(treescrn7, 3, 12, ' ');
 
-	/*strng2 */
-	MvWAddCh(treescrn7, 5, 13, ' ');
-	MvWAddCh(treescrn7, 6, 9, ' ');
+        /*strng2 */
+        MvWAddCh(treescrn7, 5, 13, ' ');
+        MvWAddCh(treescrn7, 6, 9, ' ');
 
-	/*strng3 */
-	MvWAddCh(treescrn7, 7, 15, ' ');
-	MvWAddCh(treescrn7, 8, 11, ' ');
+        /*strng3 */
+        MvWAddCh(treescrn7, 7, 15, ' ');
+        MvWAddCh(treescrn7, 8, 11, ' ');
 
-	/*strng4 */
-	MvWAddCh(treescrn7, 9, 16, ' ');
-	MvWAddCh(treescrn7, 10, 12, ' ');
-	MvWAddCh(treescrn7, 11, 8, ' ');
+        /*strng4 */
+        MvWAddCh(treescrn7, 9, 16, ' ');
+        MvWAddCh(treescrn7, 10, 12, ' ');
+        MvWAddCh(treescrn7, 11, 8, ' ');
 
-	/*strng5 */
-	MvWAddCh(treescrn7, 11, 18, ' ');
-	MvWAddCh(treescrn7, 12, 14, ' ');
+        /*strng5 */
+        MvWAddCh(treescrn7, 11, 18, ' ');
+        MvWAddCh(treescrn7, 12, 14, ' ');
 
-	look_out(150);
-	reindeer();
+        look_out(150);
+        reindeer();
 
-	touchwin(w_holiday);
-	wrefresh(w_holiday);
-	wrefresh(w_del_msg);
+        touchwin(w_holiday);
+        wrefresh(w_holiday);
+        wrefresh(w_del_msg);
 
-	look_out(500);
-	for (loopy = 0; loopy < 100; loopy++) {
-	    blinkit();
-	}
+        look_out(500);
+        for (loopy = 0; loopy < 100; loopy++) {
+            blinkit();
+        }
     } while (!opt_q);
     done(0);
 }

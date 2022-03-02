@@ -59,9 +59,9 @@ do_pair_content(SCREEN *sp, int pair)
 
     (void) sp;
     i = if_opt_s(extended_pair_content_sp(sp, pair, &f, &b),
-		 extended_pair_content(0, &f, &b));
+                 extended_pair_content(0, &f, &b));
     if (i != OK)
-	failed("pair_content");
+        failed("pair_content");
     printw("pair %d contains (%d,%d)\n", pair, f, b);
     getch();
 }
@@ -73,9 +73,9 @@ do_init_pair(SCREEN *sp, int pair, int fg, int bg)
 
     (void) sp;
     i = if_opt_s(init_extended_pair_sp(sp, pair, fg, bg),
-		 init_extended_pair(pair, fg, bg));
+                 init_extended_pair(pair, fg, bg));
     if (i != OK)
-	failed("init_pair");
+        failed("init_pair");
 }
 
 static void
@@ -86,18 +86,18 @@ do_init_color(SCREEN *sp, int color, int adjust)
 
     (void) sp;
     i = if_opt_s(extended_color_content_sp(sp, color, &r, &g, &b),
-		 extended_color_content(color, &r, &g, &b));
+                 extended_color_content(color, &r, &g, &b));
     if (i != OK)
-	failed("color_content");
+        failed("color_content");
 
     r = (adjust + 1000 + r) % 1000;
     g = (adjust + 1000 + g) % 1000;
     b = (adjust + 1000 + b) % 1000;
 
     i = if_opt_s(init_extended_color_sp(sp, color, r, g, b),
-		 init_extended_color(color, r, g, b));
+                 init_extended_color(color, r, g, b));
     if (i != OK)
-	failed("init_color");
+        failed("init_color");
 }
 
 static void
@@ -106,7 +106,7 @@ do_color_set(const char *expected, int pair)
     int i = color_set((short) pair, (void *) &pair);
     printw("%s (%s)\n", expected, SHOW(i));
     if (i != OK)
-	failed("color_set");
+        failed("color_set");
     getch();
 }
 
@@ -118,12 +118,12 @@ show_1_rgb(SCREEN *sp, const char *name, int color, int y, int x)
 
     (void) sp;
     i = if_opt_s(extended_color_content_sp(sp, color, &r, &g, &b),
-		 extended_color_content(color, &r, &g, &b));
+                 extended_color_content(color, &r, &g, &b));
     wmove(stdscr, y, x);
     if (i == OK) {
-	printw("%-8s %3d/%3d/%3d", name, r, g, b);
+        printw("%-8s %3d/%3d/%3d", name, r, g, b);
     } else {
-	printw("%-8s %s", name, SHOW(i));
+        printw("%-8s %s", name, SHOW(i));
     }
 }
 
@@ -143,15 +143,15 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: extended_color",
-	"",
-	"Options:",
-	" -s   use sp-funcs",
-	NULL
+        "Usage: extended_color",
+        "",
+        "Options:",
+        " -s   use sp-funcs",
+        NULL
     };
     size_t n;
     for (n = 0; n < SIZEOF(tbl); ++n) {
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     }
     ExitProgram(EXIT_FAILURE);
 }
@@ -163,16 +163,16 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     SCREEN *sp;
 
     while ((i = getopt(argc, argv, "s")) != -1) {
-	switch (i) {
+        switch (i) {
 #if USE_SP_FUNCS
-	case 's':
-	    opt_s = TRUE;
-	    break;
+        case 's':
+            opt_s = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	    /* NOTREACHED */
-	}
+        default:
+            usage();
+            /* NOTREACHED */
+        }
     }
 
     slk_init(1);
@@ -181,9 +181,9 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     noecho();
 
     if (!has_colors()) {
-	endwin();
-	fprintf(stderr, "This demo requires a color terminal\n");
-	ExitProgram(EXIT_FAILURE);
+        endwin();
+        fprintf(stderr, "This demo requires a color terminal\n");
+        ExitProgram(EXIT_FAILURE);
     }
 
     start_color();
@@ -209,32 +209,32 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     do_color_set("RED/BLACK", 1);
 
     printw("Drawing soft-key tabs with pair 2\n");
-    slk_attrset(A_BOLD);	/* reverse-video is hard to see */
+    slk_attrset(A_BOLD);        /* reverse-video is hard to see */
     (void) if_opt_s(extended_slk_color_sp(sp, 2),
-		    extended_slk_color(2));
+                    extended_slk_color(2));
     for (i = 1; i <= 8; ++i) {
-	char temp[80];
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "(SLK-%d)", i);
-	slk_set(i, temp, 0);
+        char temp[80];
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "(SLK-%d)", i);
+        slk_set(i, temp, 0);
     }
     slk_touch();
     slk_noutrefresh();
 
     i = if_opt_s(can_change_color_sp(sp),
-		 can_change_color());
+                 can_change_color());
     if (i) {
-	do_color_set("Default Colors", 0);
-	printw("Press any key to stop...\n");
-	nodelay(stdscr, TRUE);
-	while (getch() == ERR) {
-	    show_rgb(sp);
-	    do_init_color(sp, COLOR_RED, 1);
-	    do_init_color(sp, COLOR_BLUE, -1);
-	    napms(50);
-	}
-	printw("...done");
-	nodelay(stdscr, FALSE);
-	getch();
+        do_color_set("Default Colors", 0);
+        printw("Press any key to stop...\n");
+        nodelay(stdscr, TRUE);
+        while (getch() == ERR) {
+            show_rgb(sp);
+            do_init_color(sp, COLOR_RED, 1);
+            do_init_color(sp, COLOR_BLUE, -1);
+            napms(50);
+        }
+        printw("...done");
+        nodelay(stdscr, FALSE);
+        getch();
     }
 
     endwin();

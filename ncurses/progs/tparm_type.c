@@ -44,29 +44,29 @@ TParams
 tparm_type(const char *name)
 {
 #define TD(code, longname, ti, tc) \
-    	{code, {longname} }, \
-	{code, {ti} }, \
-	{code, {tc} }
+        {code, {longname} }, \
+        {code, {ti} }, \
+        {code, {tc} }
     TParams result = Numbers;
     /* *INDENT-OFF* */
     static const struct {
-	TParams code;
-	const char name[12];
+        TParams code;
+        const char name[12];
     } table[] = {
-	TD(Num_Str,	"pkey_key",	"pfkey",	"pk"),
-	TD(Num_Str,	"pkey_local",	"pfloc",	"pl"),
-	TD(Num_Str,	"pkey_xmit",	"pfx",		"px"),
-	TD(Num_Str,	"plab_norm",	"pln",		"pn"),
-	TD(Num_Str_Str, "pkey_plab",	"pfxl",		"xl"),
+        TD(Num_Str,     "pkey_key",     "pfkey",        "pk"),
+        TD(Num_Str,     "pkey_local",   "pfloc",        "pl"),
+        TD(Num_Str,     "pkey_xmit",    "pfx",          "px"),
+        TD(Num_Str,     "plab_norm",    "pln",          "pn"),
+        TD(Num_Str_Str, "pkey_plab",    "pfxl",         "xl"),
     };
     /* *INDENT-ON* */
 
     unsigned n;
     for (n = 0; n < SIZEOF(table); n++) {
-	if (!strcmp(name, table[n].name)) {
-	    result = table[n].code;
-	    break;
-	}
+        if (!strcmp(name, table[n].name)) {
+            result = table[n].code;
+            break;
+        }
     }
     return result;
 }
@@ -78,23 +78,23 @@ guess_tparm_type(int nparam, char **p_is_s)
     switch (nparam) {
     case 0:
     case 1:
-	if (!p_is_s[0])
-	    result = Numbers;
-	break;
+        if (!p_is_s[0])
+            result = Numbers;
+        break;
     case 2:
-	if (!p_is_s[0] && !p_is_s[1])
-	    result = Numbers;
-	if (!p_is_s[0] && p_is_s[1])
-	    result = Num_Str;
-	break;
+        if (!p_is_s[0] && !p_is_s[1])
+            result = Numbers;
+        if (!p_is_s[0] && p_is_s[1])
+            result = Num_Str;
+        break;
     case 3:
-	if (!p_is_s[0] && !p_is_s[1] && !p_is_s[2])
-	    result = Numbers;
-	if (!p_is_s[0] && p_is_s[1] && p_is_s[2])
-	    result = Num_Str_Str;
-	break;
+        if (!p_is_s[0] && !p_is_s[1] && !p_is_s[2])
+            result = Numbers;
+        if (!p_is_s[0] && p_is_s[1] && p_is_s[2])
+            result = Num_Str_Str;
+        break;
     default:
-	break;
+        break;
     }
     return result;
 }

@@ -48,26 +48,26 @@ fill(WINDOW *w, const char *str)
     limit = maxy * maxx;
 
     for (;;) {
-	for (s = str; *s; s++) {
-	    getyx(w, y1, x1);
-	    if (waddch(w, UChar(*s)) == ERR
-		|| (x1 == x0 && y1 == y0)) {
-		wmove(w, 0, 0);
-		return;
-	    }
-	    /* waddch() should return ERR at the lower-right corner */
-	    if (--limit < 0) {
-		beep();
-		if (*str == '?')
-		    return;
-		napms(500);
-		wmove(w, maxy - 1, 0);
-		str = "?";
-		limit = maxx + 1;
-	    }
-	    x0 = x1;
-	    y0 = y1;
-	}
+        for (s = str; *s; s++) {
+            getyx(w, y1, x1);
+            if (waddch(w, UChar(*s)) == ERR
+                || (x1 == x0 && y1 == y0)) {
+                wmove(w, 0, 0);
+                return;
+            }
+            /* waddch() should return ERR at the lower-right corner */
+            if (--limit < 0) {
+                beep();
+                if (*str == '?')
+                    return;
+                napms(500);
+                wmove(w, maxy - 1, 0);
+                str = "?";
+                limit = maxx + 1;
+            }
+            x0 = x1;
+            y0 = y1;
+        }
     }
 }
 

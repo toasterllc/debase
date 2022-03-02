@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_erase.c
+**      lib_erase.c
 **
-**	The routine werase().
+**      The routine werase().
 **
 */
 
@@ -54,44 +54,44 @@ werase(WINDOW *win)
     T((T_CALLED("werase(%p)"), (void *) win));
 
     if (win) {
-	NCURSES_CH_T *sp;
-	int y;
+        NCURSES_CH_T *sp;
+        int y;
 
-	blank = win->_nc_bkgd;
-	for (y = 0; y <= win->_maxy; y++) {
-	    NCURSES_CH_T *end;
+        blank = win->_nc_bkgd;
+        for (y = 0; y <= win->_maxy; y++) {
+            NCURSES_CH_T *end;
 
-	    start = win->_line[y].text;
-	    end = &start[win->_maxx];
+            start = win->_line[y].text;
+            end = &start[win->_maxx];
 
-	    /*
-	     * If this is a derived window, we have to handle the case where
-	     * a multicolumn character extends into the window that we are
-	     * erasing.
-	     */
-	    if_WIDEC({
-		if (isWidecExt(start[0])) {
-		    int x = (win->_parent != 0) ? (win->_begx) : 0;
-		    while (x-- > 0) {
-			if (isWidecBase(start[-1])) {
-			    --start;
-			    break;
-			}
-			--start;
-		    }
-		}
-	    });
+            /*
+             * If this is a derived window, we have to handle the case where
+             * a multicolumn character extends into the window that we are
+             * erasing.
+             */
+            if_WIDEC({
+                if (isWidecExt(start[0])) {
+                    int x = (win->_parent != 0) ? (win->_begx) : 0;
+                    while (x-- > 0) {
+                        if (isWidecBase(start[-1])) {
+                            --start;
+                            break;
+                        }
+                        --start;
+                    }
+                }
+            });
 
-	    for (sp = start; sp <= end; sp++)
-		*sp = blank;
+            for (sp = start; sp <= end; sp++)
+                *sp = blank;
 
-	    win->_line[y].firstchar = 0;
-	    win->_line[y].lastchar = win->_maxx;
-	}
-	win->_curx = win->_cury = 0;
-	win->_flags &= ~_WRAPPED;
-	_nc_synchook(win);
-	code = OK;
+            win->_line[y].firstchar = 0;
+            win->_line[y].lastchar = win->_maxx;
+        }
+        win->_curx = win->_cury = 0;
+        win->_flags &= ~_WRAPPED;
+        _nc_synchook(win);
+        code = OK;
     }
     returnCode(code);
 }

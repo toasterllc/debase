@@ -50,10 +50,10 @@ replace_panel(PANEL * pan, WINDOW *win)
     {
       GetHook(pan);
       if (IS_LINKED(pan))
-	{
-	  Touchpan(pan);
-	  PANEL_UPDATE(pan, (PANEL *) 0);
-	}
+        {
+          Touchpan(pan);
+          PANEL_UPDATE(pan, (PANEL *) 0);
+        }
       pan->win = win;
       rc = OK;
     }

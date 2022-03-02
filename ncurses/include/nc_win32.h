@@ -66,11 +66,11 @@
 #include <windows.h>
 
 #if HAVE_SYS_TIME_H
-#include <sys/time.h>		/* for struct timeval */
+#include <sys/time.h>           /* for struct timeval */
 #endif
 
 #ifdef _NC_MSC
-#include <winsock2.h>		/* for struct timeval */
+#include <winsock2.h>           /* for struct timeval */
 #endif
 
 #ifdef __cplusplus
@@ -112,12 +112,12 @@ extern NCURSES_EXPORT(int)    _nc_console_checkmintty(int fd, LPHANDLE pMinTTY);
 #undef VALID_TERM_ENV
 #define MS_TERMINAL "ms-terminal"
 #define VALID_TERM_ENV(term_env, no_terminal) \
-	(term_env = (NonEmpty(term_env) \
-		      ? term_env \
-		      : (_nc_console_vt_supported() \
-		         ? MS_TERMINAL \
-		         : no_terminal)), \
-	 NonEmpty(term_env))
+        (term_env = (NonEmpty(term_env) \
+                      ? term_env \
+                      : (_nc_console_vt_supported() \
+                         ? MS_TERMINAL \
+                         : no_terminal)), \
+         NonEmpty(term_env))
 
   /*
    * Various Console mode definitions

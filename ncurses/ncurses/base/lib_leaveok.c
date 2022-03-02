@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_leaveok.c
+**      lib_leaveok.c
 **
-**	The routine leaveok.
+**      The routine leaveok.
 **
 */
 
@@ -49,8 +49,8 @@ leaveok(WINDOW *win, bool flag)
     T((T_CALLED("leaveok(%p,%d)"), (void *) win, flag));
 
     if (win) {
-	win->_leaveok = flag;
-	returnCode(OK);
+        win->_leaveok = flag;
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

@@ -51,10 +51,10 @@ move_panel(PANEL * pan, int starty, int startx)
     {
       GetHook(pan);
       if (IS_LINKED(pan))
-	{
-	  Touchpan(pan);
-	  PANEL_UPDATE(pan, (PANEL *) 0);
-	}
+        {
+          Touchpan(pan);
+          PANEL_UPDATE(pan, (PANEL *) 0);
+        }
       rc = mvwin(pan->win, starty, startx);
     }
   returnCode(rc);

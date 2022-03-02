@@ -36,37 +36,37 @@
 MODULE_ID("$Id: report_offsets.c,v 1.22 2021/08/19 19:51:33 tom Exp $")
 
 #define show_size(type) \
-	flag = 0; \
-	last = 0; \
-	printf("%5lu   " #type "\n", (unsigned long)sizeof(type))
+        flag = 0; \
+        last = 0; \
+        printf("%5lu   " #type "\n", (unsigned long)sizeof(type))
 #define show_offset(type,member) \
-	next = (unsigned long)offsetof(type,member); \
-	if (last > next) \
-		printf("?? incorrect order for " #type "." #member "\n"); \
-	printf("%5lu %c " #type "." #member "\n", next, flag ? *flag : ' '); \
-	last = next; \
-	flag = 0
+        next = (unsigned long)offsetof(type,member); \
+        if (last > next) \
+                printf("?? incorrect order for " #type "." #member "\n"); \
+        printf("%5lu %c " #type "." #member "\n", next, flag ? *flag : ' '); \
+        last = next; \
+        flag = 0
 
 #if NCURSES_WIDECHAR && NCURSES_EXT_COLORS
 #define show_COLORS(type,member) { flag = "c"; show_offset(type,member); }
 #else
-#define show_COLORS(type,member)	/* nothing */
+#define show_COLORS(type,member)        /* nothing */
 #endif
 
 #ifdef USE_TERM_DRIVER
 #define show_DRIVER(type,member) { flag = "d"; show_offset(type,member); }
 #else
-#define show_DRIVER(type,member)	/* nothing */
+#define show_DRIVER(type,member)        /* nothing */
 #endif
 
 #if NO_LEAKS
 #define show_MLEAKS(type,member) { flag = "L"; show_offset(type,member); }
 #else
-#define show_MLEAKS(type,member)	/* nothing */
+#define show_MLEAKS(type,member)        /* nothing */
 #endif
 
 #ifdef USE_TERM_DRIVER
-#define show_NORMAL(type,member)	/* nothing */
+#define show_NORMAL(type,member)        /* nothing */
 #else
 #define show_NORMAL(type,member) { flag = "n"; show_offset(type,member); }
 #endif
@@ -76,31 +76,31 @@ MODULE_ID("$Id: report_offsets.c,v 1.22 2021/08/19 19:51:33 tom Exp $")
 #if USE_REENTRANT
 #define show_REENTR(type,member) { flag = "r"; show_offset(type,member); }
 #else
-#define show_REENTR(type,member)	/* nothing */
+#define show_REENTR(type,member)        /* nothing */
 #endif
 
 #if NCURSES_SP_FUNCS
 #define show_SPFUNC(type,member) { flag = "s"; show_offset(type,member); }
 #else
-#define show_SPFUNC(type,member)	/* nothing */
+#define show_SPFUNC(type,member)        /* nothing */
 #endif
 
 #ifdef USE_PTHREADS
 #define show_THREAD(type,member) { flag = "t"; show_offset(type,member); }
 #else
-#define show_THREAD(type,member)	/* nothing */
+#define show_THREAD(type,member)        /* nothing */
 #endif
 
 #ifdef TRACE
 #define show_TRACES(type,member) { flag = "T"; show_offset(type,member); }
 #else
-#define show_TRACES(type,member)	/* nothing */
+#define show_TRACES(type,member)        /* nothing */
 #endif
 
 #if USE_WIDEC_SUPPORT
 #define show_WIDECH(type,member) { flag = "w"; show_offset(type,member); }
 #else
-#define show_WIDECH(type,member)	/* nothing */
+#define show_WIDECH(type,member)        /* nothing */
 #endif
 
 int

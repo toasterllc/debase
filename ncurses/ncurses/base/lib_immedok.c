@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_immedok.c
+**      lib_immedok.c
 **
-**	The routine immedok.
+**      The routine immedok.
 **
 */
 
@@ -49,7 +49,7 @@ immedok(WINDOW *win, bool flag)
     T((T_CALLED("immedok(%p,%d)"), (void *) win, flag));
 
     if (win)
-	win->_immed = flag;
+        win->_immed = flag;
 
     returnVoid;
 }

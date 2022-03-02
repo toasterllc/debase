@@ -33,12 +33,12 @@
  ****************************************************************************/
 
 /*
-**	lib_touch.c
+**      lib_touch.c
 **
-**	   The routines	untouchwin(),
-**			wtouchln(),
-**			is_linetouched()
-**			is_wintouched().
+**         The routines untouchwin(),
+**                      wtouchln(),
+**                      is_linetouched()
+**                      is_wintouched().
 **
 */
 
@@ -55,7 +55,7 @@ is_linetouched(WINDOW *win, int line)
 
     /* XSI doesn't define any error, and gcc ultimately made it impossible */
     if (!win || (line > win->_maxy) || (line < 0)) {
-	returnCode(FALSE);
+        returnCode(FALSE);
     }
 
     returnCode(win->_line[line].firstchar != _NOCHANGE ? TRUE : FALSE);
@@ -67,11 +67,11 @@ is_wintouched(WINDOW *win)
     T((T_CALLED("is_wintouched(%p)"), (void *) win));
 
     if (win) {
-	int i;
+        int i;
 
-	for (i = 0; i <= win->_maxy; i++)
-	    if (win->_line[i].firstchar != _NOCHANGE)
-		returnCode(TRUE);
+        for (i = 0; i <= win->_maxy; i++)
+            if (win->_line[i].firstchar != _NOCHANGE)
+                returnCode(TRUE);
     }
     returnCode(FALSE);
 }
@@ -84,15 +84,15 @@ wtouchln(WINDOW *win, int y, int n, int changed)
     T((T_CALLED("wtouchln(%p,%d,%d,%d)"), (void *) win, y, n, changed));
 
     if (!win || (n < 0) || (y < 0) || (y > win->_maxy))
-	returnCode(ERR);
+        returnCode(ERR);
 
     for (i = y; i < y + n; i++) {
-	if (i > win->_maxy)
-	    break;
-	win->_line[i].firstchar = (NCURSES_SIZE_T) (changed ? 0 : _NOCHANGE);
-	win->_line[i].lastchar = (NCURSES_SIZE_T) (changed
-						   ? win->_maxx
-						   : _NOCHANGE);
+        if (i > win->_maxy)
+            break;
+        win->_line[i].firstchar = (NCURSES_SIZE_T) (changed ? 0 : _NOCHANGE);
+        win->_line[i].lastchar = (NCURSES_SIZE_T) (changed
+                                                   ? win->_maxx
+                                                   : _NOCHANGE);
     }
     returnCode(OK);
 }

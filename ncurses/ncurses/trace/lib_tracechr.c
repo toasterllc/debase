@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 /*
- *	lib_tracechr.c - Tracing/Debugging routines
+ *      lib_tracechr.c - Tracing/Debugging routines
  */
 #include <curses.priv.h>
 
@@ -51,29 +51,29 @@ _nc_tracechar(SCREEN *sp, int ch)
 {
     NCURSES_CONST char *name;
     char *MyBuffer = ((sp != 0)
-		      ? sp->tracechr_buf
-		      : _nc_globals.tracechr_buf);
+                      ? sp->tracechr_buf
+                      : _nc_globals.tracechr_buf);
 
     if (ch > KEY_MIN || ch < 0) {
-	name = safe_keyname(SP_PARM, ch);
-	if (name == 0 || *name == '\0')
-	    name = "NULL";
-	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "'%.30s' = %#03o", name, ch);
+        name = safe_keyname(SP_PARM, ch);
+        if (name == 0 || *name == '\0')
+            name = "NULL";
+        _nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
+                    "'%.30s' = %#03o", name, ch);
     } else if (!is8bits(ch) || !isprint(UChar(ch))) {
-	/*
-	 * workaround for glibc bug:
-	 * sprintf changes the result from unctrl() to an empty string if it
-	 * does not correspond to a valid multibyte sequence.
-	 */
-	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "%#03o", ch);
+        /*
+         * workaround for glibc bug:
+         * sprintf changes the result from unctrl() to an empty string if it
+         * does not correspond to a valid multibyte sequence.
+         */
+        _nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
+                    "%#03o", ch);
     } else {
-	name = safe_unctrl(SP_PARM, (chtype) ch);
-	if (name == 0 || *name == 0)
-	    name = "null";	/* shouldn't happen */
-	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "'%.30s' = %#03o", name, ch);
+        name = safe_unctrl(SP_PARM, (chtype) ch);
+        if (name == 0 || *name == 0)
+            name = "null";      /* shouldn't happen */
+        _nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
+                    "'%.30s' = %#03o", name, ch);
     }
     return (MyBuffer);
 }

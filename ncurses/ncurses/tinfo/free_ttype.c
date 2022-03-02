@@ -34,8 +34,8 @@
 /*
  * free_ttype.c -- allocation functions for TERMTYPE
  *
- *	_nc_free_termtype()
- *	use_extended_names()
+ *      _nc_free_termtype()
+ *      use_extended_names()
  *
  */
 
@@ -51,14 +51,14 @@ really_free_termtype(TERMTYPE2 *ptr, bool freeStrings)
     T(("_nc_free_termtype(%s)", ptr->term_names));
 
     if (freeStrings) {
-	FreeIfNeeded(ptr->str_table);
+        FreeIfNeeded(ptr->str_table);
     }
     FreeIfNeeded(ptr->Booleans);
     FreeIfNeeded(ptr->Numbers);
     FreeIfNeeded(ptr->Strings);
 #if NCURSES_XNAMES
     if (freeStrings) {
-	FreeIfNeeded(ptr->ext_str_table);
+        FreeIfNeeded(ptr->ext_str_table);
     }
     FreeIfNeeded(ptr->ext_Names);
 #endif

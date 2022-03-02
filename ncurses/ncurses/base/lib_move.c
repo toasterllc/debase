@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_move.c
+**      lib_move.c
 **
-**	The routine wmove().
+**      The routine wmove().
 **
 */
 
@@ -50,12 +50,12 @@ wmove(WINDOW *win, int y, int x)
     T((T_CALLED("wmove(%p,%d,%d)"), (void *) win, y, x));
 
     if (LEGALYX(win, y, x)) {
-	win->_curx = (NCURSES_SIZE_T) x;
-	win->_cury = (NCURSES_SIZE_T) y;
+        win->_curx = (NCURSES_SIZE_T) x;
+        win->_cury = (NCURSES_SIZE_T) y;
 
-	win->_flags &= ~_WRAPPED;
-	win->_flags |= _HASMOVED;
-	returnCode(OK);
+        win->_flags &= ~_WRAPPED;
+        win->_flags |= _HASMOVED;
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

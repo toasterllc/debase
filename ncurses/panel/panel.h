@@ -53,7 +53,7 @@ typedef struct panel
 #endif /* !NCURSES_OPAQUE_PANEL */
 PANEL;
 
-#if	defined(__cplusplus)
+#if     defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -91,7 +91,7 @@ extern PANEL_EXPORT(PANEL *) ceiling_panel(SCREEN *);
 extern PANEL_EXPORT(void)    NCURSES_SP_NAME(update_panels) (SCREEN*);
 #endif
 
-#if	defined(__cplusplus)
+#if     defined(__cplusplus)
 }
 #endif
 

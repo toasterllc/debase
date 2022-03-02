@@ -51,12 +51,12 @@ TPUTS_PROTO(outc, c)
     int rc = c;
 
     if (interrupted) {
-	char tmp = (char) c;
-	if (write(STDOUT_FILENO, &tmp, (size_t) 1) == -1)
-	    rc = EOF;
+        char tmp = (char) c;
+        if (write(STDOUT_FILENO, &tmp, (size_t) 1) == -1)
+            rc = EOF;
     } else {
-	if (putc(c, stdout) == EOF)
-	    rc = EOF;
+        if (putc(c, stdout) == EOF)
+            rc = EOF;
     }
     TPUTS_RETURN(rc);
 }
@@ -65,8 +65,8 @@ static bool
 outs(const char *s)
 {
     if (VALID_STRING(s)) {
-	tputs(s, 1, outc);
-	return TRUE;
+        tputs(s, 1, outc);
+        return TRUE;
     }
     return FALSE;
 }
@@ -76,14 +76,14 @@ cleanup(void)
 {
     outs(exit_attribute_mode);
     if (!outs(orig_colors))
-	outs(orig_pair);
+        outs(orig_pair);
     outs(clear_screen);
     outs(cursor_normal);
 
     fflush(stdout);
     fprintf(stderr, "\n\n%ld total cells, rate %.2f/sec\n",
-	    total_chars,
-	    ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
+            total_chars,
+            ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
 }
 
 static void
@@ -104,9 +104,9 @@ get_number(NCURSES_CONST char *cap, int map)
 {
     int result = map;
     if (cap != 0) {
-	int check = tigetnum(cap);
-	if (check > 0)
-	    result = check;
+        int check = tigetnum(cap);
+        if (check > 0)
+            result = check;
     }
     return result;
 }
@@ -116,22 +116,22 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: dots_termcap [options]"
-	,""
-	,"Options:"
-	," -T TERM  override $TERM"
+        "Usage: dots_termcap [options]"
+        ,""
+        ,"Options:"
+        ," -T TERM  override $TERM"
 #if HAVE_USE_ENV
-	," -e       allow environment $LINES / $COLUMNS"
+        ," -e       allow environment $LINES / $COLUMNS"
 #endif
-	," -f       use tigetnum rather than <term.h> mapping"
-	," -m SIZE  set margin (default: 2)"
-	," -r SECS  self-interrupt/exit after specified number of seconds"
-	," -s MSECS delay 1% of the time (default: 1 msecs)"
+        ," -f       use tigetnum rather than <term.h> mapping"
+        ," -m SIZE  set margin (default: 2)"
+        ," -r SECS  self-interrupt/exit after specified number of seconds"
+        ," -s MSECS delay 1% of the time (default: 1 msecs)"
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -154,43 +154,43 @@ main(int argc GCC_UNUSED,
     char *my_env;
 
     while ((ch = getopt(argc, argv, "T:efm:r:s:")) != -1) {
-	switch (ch) {
-	case 'T':
-	    need = 6 + strlen(optarg);
-	    my_env = malloc(need);
-	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
-	    putenv(my_env);
-	    break;
+        switch (ch) {
+        case 'T':
+            need = 6 + strlen(optarg);
+            my_env = malloc(need);
+            _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+            putenv(my_env);
+            break;
 #if HAVE_USE_ENV
-	case 'e':
-	    use_env(TRUE);
-	    break;
+        case 'e':
+            use_env(TRUE);
+            break;
 #endif
-	case 'f':
-	    f_option = 1;
-	    break;
-	case 'm':
-	    m_option = atoi(optarg);
-	    break;
-	case 'r':
-	    r_option = atoi(optarg);
-	    break;
-	case 's':
-	    s_option = atoi(optarg);
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+        case 'f':
+            f_option = 1;
+            break;
+        case 'm':
+            m_option = atoi(optarg);
+            break;
+        case 'r':
+            r_option = atoi(optarg);
+            break;
+        case 's':
+            s_option = atoi(optarg);
+            break;
+        default:
+            usage();
+            break;
+        }
     }
 
     SetupAlarm(r_option);
     InitAndCatch((sp = newterm((char *) 0, stdout, stdin)), onsig);
-    refresh();			/* needed with Solaris curses to cancel endwin */
+    refresh();                  /* needed with Solaris curses to cancel endwin */
 
     if (sp == 0) {
-	fprintf(stderr, "Cannot initialize terminal\n");
-	ExitProgram(EXIT_FAILURE);
+        fprintf(stderr, "Cannot initialize terminal\n");
+        ExitProgram(EXIT_FAILURE);
     }
 
     srand((unsigned) time(0));
@@ -202,10 +202,10 @@ main(int argc GCC_UNUSED,
 #define GetNumber(ln,sn) get_number(f_option ? #sn : 0, ln)
     my_colors = GetNumber(max_colors, colors);
     if (my_colors > 1) {
-	if (!VALID_STRING(set_a_foreground)
-	    || !VALID_STRING(set_a_background)
-	    || (!VALID_STRING(orig_colors) && !VALID_STRING(orig_pair)))
-	    my_colors = -1;
+        if (!VALID_STRING(set_a_foreground)
+            || !VALID_STRING(set_a_background)
+            || (!VALID_STRING(orig_colors) && !VALID_STRING(orig_pair)))
+            my_colors = -1;
     }
 
     r = (double) (GetNumber(lines, lines) - (m_option * 2));
@@ -213,38 +213,38 @@ main(int argc GCC_UNUSED,
     started = time((time_t *) 0);
 
     while (!interrupted) {
-	int x = (int) (c * ranf()) + m_option;
-	int y = (int) (r * ranf()) + m_option;
-	int p = (ranf() > 0.9) ? '*' : ' ';
+        int x = (int) (c * ranf()) + m_option;
+        int y = (int) (r * ranf()) + m_option;
+        int p = (ranf() > 0.9) ? '*' : ' ';
 
-	if (mvcur(y0, x0, y, x) != ERR) {
-	    x0 = x;
-	    y0 = y;
-	}
+        if (mvcur(y0, x0, y, x) != ERR) {
+            x0 = x;
+            y0 = y;
+        }
 
-	if (my_colors > 0) {
-	    int z = (int) (ranf() * my_colors);
-	    if (ranf() > 0.01) {
-		tputs(tparm2(set_a_foreground, z), 1, outc);
-	    } else {
-		tputs(tparm2(set_a_background, z), 1, outc);
-		if (s_option)
-		    napms(s_option);
-	    }
-	} else if (VALID_STRING(exit_attribute_mode)
-		   && VALID_STRING(enter_reverse_mode)) {
-	    if (ranf() <= 0.01) {
-		outs((ranf() > 0.6)
-		     ? enter_reverse_mode
-		     : exit_attribute_mode);
-		if (s_option)
-		    napms(s_option);
-	    }
-	}
-	outc(p);
-	++x0;
-	fflush(stdout);
-	++total_chars;
+        if (my_colors > 0) {
+            int z = (int) (ranf() * my_colors);
+            if (ranf() > 0.01) {
+                tputs(tparm2(set_a_foreground, z), 1, outc);
+            } else {
+                tputs(tparm2(set_a_background, z), 1, outc);
+                if (s_option)
+                    napms(s_option);
+            }
+        } else if (VALID_STRING(exit_attribute_mode)
+                   && VALID_STRING(enter_reverse_mode)) {
+            if (ranf() <= 0.01) {
+                outs((ranf() > 0.6)
+                     ? enter_reverse_mode
+                     : exit_attribute_mode);
+                if (s_option)
+                    napms(s_option);
+            }
+        }
+        outc(p);
+        ++x0;
+        fflush(stdout);
+        ++total_chars;
     }
     cleanup();
     endwin();

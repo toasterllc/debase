@@ -35,11 +35,11 @@
  ****************************************************************************/
 
 /*
- *	nl.c
+ *      nl.c
  *
- *	Routines:
- *		nl()
- *		nonl()
+ *      Routines:
+ *              nl()
+ *              nonl()
  *
  */
 
@@ -56,7 +56,7 @@ NCURSES_SP_NAME(nl) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("nl(%p)"), (void *) SP_PARM));
     if (0 == SP_PARM)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_nl = TRUE;
 #ifdef __EMX__
     _nc_flush();
@@ -78,7 +78,7 @@ NCURSES_SP_NAME(nonl) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("nonl(%p)"), (void *) SP_PARM));
     if (0 == SP_PARM)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_nl = FALSE;
 #ifdef __EMX__
     _nc_flush();

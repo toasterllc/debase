@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_has_cap.c
+**      lib_has_cap.c
 **
-**	The routines to query terminal capabilities
+**      The routines to query terminal capabilities
 **
 */
 
@@ -57,9 +57,9 @@ NCURSES_SP_NAME(has_ic) (NCURSES_SP_DCL0)
     T((T_CALLED("has_ic(%p)"), (void *) SP_PARM));
 
     if (HasTInfoTerminal(SP_PARM)) {
-	code = ((insert_character || parm_ich
-		 || (enter_insert_mode && exit_insert_mode))
-		&& (delete_character || parm_dch)) ? TRUE : FALSE;
+        code = ((insert_character || parm_ich
+                 || (enter_insert_mode && exit_insert_mode))
+                && (delete_character || parm_dch)) ? TRUE : FALSE;
     }
 
     returnCode(code);
@@ -79,8 +79,8 @@ NCURSES_SP_NAME(has_il) (NCURSES_SP_DCL0)
     bool code = FALSE;
     T((T_CALLED("has_il(%p)"), (void *) SP_PARM));
     if (HasTInfoTerminal(SP_PARM)) {
-	code = ((insert_line || parm_insert_line)
-		&& (delete_line || parm_delete_line)) ? TRUE : FALSE;
+        code = ((insert_line || parm_insert_line)
+                && (delete_line || parm_delete_line)) ? TRUE : FALSE;
     }
 
     returnCode(code);

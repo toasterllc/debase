@@ -54,25 +54,25 @@
  */
 
 #ifdef __cplusplus
-#define NCURSES_VOID		/* nothing */
+#define NCURSES_VOID            /* nothing */
 #else
 #define NCURSES_VOID (void)
 #endif
 
 #if USE_STRING_HACKS && HAVE_STRLCAT
-#define _nc_STRCAT(d,s,n)	NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,n))
-#define _nc_STRNCAT(d,s,m,n)	NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,m))
+#define _nc_STRCAT(d,s,n)       NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRNCAT(d,s,m,n)    NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,m))
 #else
-#define _nc_STRCAT(d,s,n)	NCURSES_VOID strcat((d),(s))
-#define _nc_STRNCAT(d,s,m,n)	NCURSES_VOID strncat((d),(s),(n))
+#define _nc_STRCAT(d,s,n)       NCURSES_VOID strcat((d),(s))
+#define _nc_STRNCAT(d,s,m,n)    NCURSES_VOID strncat((d),(s),(n))
 #endif
 
 #if USE_STRING_HACKS && HAVE_STRLCPY
-#define _nc_STRCPY(d,s,n)	NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
-#define _nc_STRNCPY(d,s,n)	NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRCPY(d,s,n)       NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRNCPY(d,s,n)      NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
 #else
-#define _nc_STRCPY(d,s,n)	NCURSES_VOID strcpy((d),(s))
-#define _nc_STRNCPY(d,s,n)	NCURSES_VOID strncpy((d),(s),(n))
+#define _nc_STRCPY(d,s,n)       NCURSES_VOID strcpy((d),(s))
+#define _nc_STRNCPY(d,s,n)      NCURSES_VOID strncpy((d),(s),(n))
 #endif
 
 #if USE_STRING_HACKS && HAVE_SNPRINTF
@@ -84,7 +84,7 @@
 #define _nc_SLIMIT(n)           NCURSES_CAST(size_t,n),
 #else
 #define _nc_SPRINTF             NCURSES_VOID sprintf
-#define _nc_SLIMIT(n)		/* nothing */
+#define _nc_SLIMIT(n)           /* nothing */
 #endif
 
 #endif /* STRING_HACKS_H */

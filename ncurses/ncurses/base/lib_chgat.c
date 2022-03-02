@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_chgat.c
+**      lib_chgat.c
 **
-**	The routine wchgat().
+**      The routine wchgat().
 **
 */
 
@@ -63,18 +63,18 @@ wchgat(WINDOW *win,
 
     set_extended_pair(opts, color_pair);
     if (win) {
-	struct ldat *line = &(win->_line[win->_cury]);
-	int i;
+        struct ldat *line = &(win->_line[win->_cury]);
+        int i;
 
-	toggle_attr_on(attr, ColorPair(color_pair));
+        toggle_attr_on(attr, ColorPair(color_pair));
 
-	for (i = win->_curx; i <= win->_maxx && (n == -1 || (n-- > 0)); i++) {
-	    SetAttr(line->text[i], attr);
-	    SetPair(line->text[i], color_pair);
-	    CHANGED_CELL(line, i);
-	}
+        for (i = win->_curx; i <= win->_maxx && (n == -1 || (n-- > 0)); i++) {
+            SetAttr(line->text[i], attr);
+            SetPair(line->text[i], color_pair);
+            CHANGED_CELL(line, i);
+        }
 
-	code = OK;
+        code = OK;
     }
     returnCode(code);
 }

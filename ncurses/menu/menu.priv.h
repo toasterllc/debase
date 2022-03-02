@@ -62,7 +62,7 @@ extern MENU_EXPORT_VAR(MENU) _nc_Default_Menu;
 #define Normalize_Menu( menu ) ((menu)=(menu)?(menu):&_nc_Default_Menu)
 
 #define Get_Menu_Screen( menu ) (menu->userwin ? \
-				 _nc_screen_of(menu->userwin) : CURRENT_SCREEN)
+                                 _nc_screen_of(menu->userwin) : CURRENT_SCREEN)
 
 /* Get the user defined (framing) window of the menu */
 #define Get_Menu_UserWin(menu) ((menu)->userwin ? \
@@ -77,13 +77,13 @@ extern MENU_EXPORT_VAR(MENU) _nc_Default_Menu;
 #define _MARK_ALLOCATED (0x08)
 
 #define ALL_MENU_OPTS (                 \
-		       O_ONEVALUE     | \
-		       O_SHOWDESC     | \
-		       O_ROWMAJOR     | \
-		       O_IGNORECASE   | \
-		       O_SHOWMATCH    | \
-		       O_NONCYCLIC    | \
-		       O_MOUSE_MENU   )
+                       O_ONEVALUE     | \
+                       O_SHOWDESC     | \
+                       O_ROWMAJOR     | \
+                       O_IGNORECASE   | \
+                       O_SHOWMATCH    | \
+                       O_NONCYCLIC    | \
+                       O_MOUSE_MENU   )
 
 #define ALL_ITEM_OPTS (O_SELECTABLE)
 
@@ -109,7 +109,7 @@ extern MENU_EXPORT_VAR(MENU) _nc_Default_Menu;
     if ( (item)->y >= (row + (menu)->arows) ) \
       row = (short) (( (item)->y < ((menu)->rows - row) ) \
                      ? (item)->y \
-		     : (menu)->rows - (menu)->arows); \
+                     : (menu)->rows - (menu)->arows); \
     _nc_New_TopRow_and_CurrentItem(menu,row,item); }
 
 /* Reset the match pattern buffer */
@@ -117,7 +117,7 @@ extern MENU_EXPORT_VAR(MENU) _nc_Default_Menu;
   { (menu)->pindex = 0; \
     (menu)->pattern[0] = '\0'; }
 
-#define UChar(c)	((unsigned char)(c))
+#define UChar(c)        ((unsigned char)(c))
 
 /* Internal functions. */
 extern MENU_EXPORT(void) _nc_Draw_Menu (const MENU *);
@@ -131,32 +131,32 @@ extern MENU_EXPORT(void) _nc_New_TopRow_and_CurrentItem (MENU *,int, ITEM *);
 extern MENU_EXPORT(void) _nc_Link_Items (MENU *);
 extern MENU_EXPORT(int)  _nc_Match_Next_Character_In_Item_Name (MENU*,int,ITEM**);
 extern MENU_EXPORT(int)  _nc_menu_cursor_pos (const MENU* menu, const ITEM* item,
-				int* pY, int* pX);
+                                int* pY, int* pX);
 
 #ifdef TRACE
 
-#define returnItem(code)	TRACE_RETURN1(code,item)
-#define returnItemPtr(code)	TRACE_RETURN1(code,item_ptr)
-#define returnItemOpts(code)	TRACE_RETURN1(code,item_opts)
-#define returnMenu(code)	TRACE_RETURN1(code,menu)
-#define returnMenuHook(code)	TRACE_RETURN1(code,menu_hook)
-#define returnMenuOpts(code)	TRACE_RETURN1(code,menu_opts)
+#define returnItem(code)        TRACE_RETURN1(code,item)
+#define returnItemPtr(code)     TRACE_RETURN1(code,item_ptr)
+#define returnItemOpts(code)    TRACE_RETURN1(code,item_opts)
+#define returnMenu(code)        TRACE_RETURN1(code,menu)
+#define returnMenuHook(code)    TRACE_RETURN1(code,menu_hook)
+#define returnMenuOpts(code)    TRACE_RETURN1(code,menu_opts)
 
-extern MENU_EXPORT(ITEM *)	    _nc_retrace_item (ITEM *);
-extern MENU_EXPORT(ITEM **)	    _nc_retrace_item_ptr (ITEM **);
+extern MENU_EXPORT(ITEM *)          _nc_retrace_item (ITEM *);
+extern MENU_EXPORT(ITEM **)         _nc_retrace_item_ptr (ITEM **);
 extern MENU_EXPORT(Item_Options) _nc_retrace_item_opts (Item_Options);
-extern MENU_EXPORT(MENU *)	    _nc_retrace_menu (MENU *);
+extern MENU_EXPORT(MENU *)          _nc_retrace_menu (MENU *);
 extern MENU_EXPORT(Menu_Hook)    _nc_retrace_menu_hook (Menu_Hook);
 extern MENU_EXPORT(Menu_Options) _nc_retrace_menu_opts (Menu_Options);
 
 #else /* !TRACE */
 
-#define returnItem(code)	return code
-#define returnItemPtr(code)	return code
-#define returnItemOpts(code)	return code
-#define returnMenu(code)	return code
-#define returnMenuHook(code)	return code
-#define returnMenuOpts(code)	return code
+#define returnItem(code)        return code
+#define returnItemPtr(code)     return code
+#define returnItemOpts(code)    return code
+#define returnMenu(code)        return code
+#define returnMenuHook(code)    return code
+#define returnMenuOpts(code)    return code
 
 #endif /* TRACE/!TRACE */
 /* *INDENT-ON* */

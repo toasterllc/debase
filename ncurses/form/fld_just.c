@@ -59,12 +59,12 @@ set_field_just(FIELD *field, int just)
     {
       Normalize_Field(field);
       if (field->just != just)
-	{
-	  field->just = (short)just;
-	  res = _nc_Synchronize_Attributes(field);
-	}
+        {
+          field->just = (short)just;
+          res = _nc_Synchronize_Attributes(field);
+        }
       else
-	res = E_OK;
+        res = E_OK;
     }
   RETURN(res);
 }

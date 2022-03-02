@@ -57,22 +57,22 @@ set_menu_win(MENU *menu, WINDOW *win)
   if (menu)
     {
       if (menu->status & _POSTED)
-	RETURN(E_POSTED);
+        RETURN(E_POSTED);
       else
 #if NCURSES_SP_FUNCS
-	{
-	  /* We ensure that userwin is never null. So even if a null
-	     WINDOW parameter is passed, we store the SCREENS stdscr.
-	     The only MENU that can have a null userwin is the static
-	     _nc_default_Menu.
-	   */
-	  SCREEN *sp = _nc_screen_of(menu->userwin);
+        {
+          /* We ensure that userwin is never null. So even if a null
+             WINDOW parameter is passed, we store the SCREENS stdscr.
+             The only MENU that can have a null userwin is the static
+             _nc_default_Menu.
+           */
+          SCREEN *sp = _nc_screen_of(menu->userwin);
 
-	  menu->userwin = win ? win : sp->_stdscr;
-	  _nc_Calculate_Item_Length_and_Width(menu);
-	}
+          menu->userwin = win ? win : sp->_stdscr;
+          _nc_Calculate_Item_Length_and_Width(menu);
+        }
 #else
-	menu->userwin = win;
+        menu->userwin = win;
 #endif
     }
   else

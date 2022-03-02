@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 /*
- *	tparm.c
+ *      tparm.c
  *
  */
 
@@ -56,82 +56,82 @@
 MODULE_ID("$Id: lib_tparm.c,v 1.134 2021/08/21 21:52:08 tom Exp $")
 
 /*
- *	char *
- *	tparm(string, ...)
+ *      char *
+ *      tparm(string, ...)
  *
- *	Substitute the given parameters into the given string by the following
- *	rules (taken from terminfo(5)):
+ *      Substitute the given parameters into the given string by the following
+ *      rules (taken from terminfo(5)):
  *
- *	     Cursor addressing and other strings  requiring  parame-
- *	ters in the terminal are described by a parameterized string
- *	capability, with escapes like %x in  it.   For  example,  to
- *	address  the  cursor, the cup capability is given, using two
- *	parameters: the row and column to  address  to.   (Rows  and
- *	columns  are  numbered  from  zero and refer to the physical
- *	screen visible to the user, not to any  unseen  memory.)  If
- *	the terminal has memory relative cursor addressing, that can
- *	be indicated by
+ *           Cursor addressing and other strings  requiring  parame-
+ *      ters in the terminal are described by a parameterized string
+ *      capability, with escapes like %x in  it.   For  example,  to
+ *      address  the  cursor, the cup capability is given, using two
+ *      parameters: the row and column to  address  to.   (Rows  and
+ *      columns  are  numbered  from  zero and refer to the physical
+ *      screen visible to the user, not to any  unseen  memory.)  If
+ *      the terminal has memory relative cursor addressing, that can
+ *      be indicated by
  *
- *	     The parameter mechanism uses  a  stack  and  special  %
- *	codes  to manipulate it.  Typically a sequence will push one
- *	of the parameters onto the stack and then print it  in  some
- *	format.  Often more complex operations are necessary.
+ *           The parameter mechanism uses  a  stack  and  special  %
+ *      codes  to manipulate it.  Typically a sequence will push one
+ *      of the parameters onto the stack and then print it  in  some
+ *      format.  Often more complex operations are necessary.
  *
- *	     The % encodings have the following meanings:
+ *           The % encodings have the following meanings:
  *
- *	     %%        outputs `%'
- *	     %c        print pop() like %c in printf()
- *	     %s        print pop() like %s in printf()
+ *           %%        outputs `%'
+ *           %c        print pop() like %c in printf()
+ *           %s        print pop() like %s in printf()
  *           %[[:]flags][width[.precision]][doxXs]
  *                     as in printf, flags are [-+#] and space
  *                     The ':' is used to avoid making %+ or %-
  *                     patterns (see below).
  *
- *	     %p[1-9]   push ith parm
- *	     %P[a-z]   set dynamic variable [a-z] to pop()
- *	     %g[a-z]   get dynamic variable [a-z] and push it
- *	     %P[A-Z]   set static variable [A-Z] to pop()
- *	     %g[A-Z]   get static variable [A-Z] and push it
- *	     %l        push strlen(pop)
- *	     %'c'      push char constant c
- *	     %{nn}     push integer constant nn
+ *           %p[1-9]   push ith parm
+ *           %P[a-z]   set dynamic variable [a-z] to pop()
+ *           %g[a-z]   get dynamic variable [a-z] and push it
+ *           %P[A-Z]   set static variable [A-Z] to pop()
+ *           %g[A-Z]   get static variable [A-Z] and push it
+ *           %l        push strlen(pop)
+ *           %'c'      push char constant c
+ *           %{nn}     push integer constant nn
  *
- *	     %+ %- %* %/ %m
- *	               arithmetic (%m is mod): push(pop() op pop())
- *	     %& %| %^  bit operations: push(pop() op pop())
- *	     %= %> %<  logical operations: push(pop() op pop())
- *	     %A %O     logical and & or operations for conditionals
- *	     %! %~     unary operations push(op pop())
- *	     %i        add 1 to first two parms (for ANSI terminals)
+ *           %+ %- %* %/ %m
+ *                     arithmetic (%m is mod): push(pop() op pop())
+ *           %& %| %^  bit operations: push(pop() op pop())
+ *           %= %> %<  logical operations: push(pop() op pop())
+ *           %A %O     logical and & or operations for conditionals
+ *           %! %~     unary operations push(op pop())
+ *           %i        add 1 to first two parms (for ANSI terminals)
  *
- *	     %? expr %t thenpart %e elsepart %;
- *	               if-then-else, %e elsepart is optional.
- *	               else-if's are possible ala Algol 68:
- *	               %? c1 %t b1 %e c2 %t b2 %e c3 %t b3 %e c4 %t b4 %e b5 %;
+ *           %? expr %t thenpart %e elsepart %;
+ *                     if-then-else, %e elsepart is optional.
+ *                     else-if's are possible ala Algol 68:
+ *                     %? c1 %t b1 %e c2 %t b2 %e c3 %t b3 %e c4 %t b4 %e b5 %;
  *
- *	For those of the above operators which are binary and not commutative,
- *	the stack works in the usual way, with
- *			%gx %gy %m
- *	resulting in x mod y, not the reverse.
+ *      For those of the above operators which are binary and not commutative,
+ *      the stack works in the usual way, with
+ *                      %gx %gy %m
+ *      resulting in x mod y, not the reverse.
  */
 
 NCURSES_EXPORT_VAR(int) _nc_tparm_err = 0;
 
 #define TPS(var) tps->var
-#define popcount _nc_popcount	/* workaround for NetBSD 6.0 defect */
+#define popcount _nc_popcount   /* workaround for NetBSD 6.0 defect */
 
 #define get_tparm_state(term) \
-	    (term != NULL \
-	      ? &(term->tparm_state) \
-	      : &(_nc_prescreen.tparm_state))
+            (term != NULL \
+              ? &(term->tparm_state) \
+              : &(_nc_prescreen.tparm_state))
 
 #define isUPPER(c) ((c) >= 'A' && (c) <= 'Z')
 #define isLOWER(c) ((c) >= 'a' && (c) <= 'z')
 #define tc_BUMP()  if (level < 0 && number < 2) number++
 
 typedef struct {
-    const char *format;		/* format-string can be used as cache-key */
-    int tparm_type;		/* bit-set for each string-parameter */
+    const char *format;         /* format-string can be used as cache-key */
+    int tparm_type;             /* bit-set for each string-parameter */
     int num_actual;
     int num_parsed;
     int num_popped;
@@ -148,7 +148,7 @@ static TPARM_DATA **delete_tparm;
 #endif
 #endif /* HAVE_TSEARCH */
 
-static char dummy[] = "";	/* avoid const-cast */
+static char dummy[] = "";       /* avoid const-cast */
 
 #if HAVE_TSEARCH
 static int
@@ -167,8 +167,8 @@ visit_nodes(const void *nodep, const VISIT which, const int depth)
 {
     (void) depth;
     if (which == preorder || which == leaf) {
-	delete_tparm[which_tparm] = *(TPARM_DATA **) nodep;
-	which_tparm++;
+        delete_tparm[which_tparm] = *(TPARM_DATA **) nodep;
+        which_tparm++;
     }
 }
 #endif
@@ -176,25 +176,25 @@ visit_nodes(const void *nodep, const VISIT which, const int depth)
 NCURSES_EXPORT(void)
 _nc_free_tparm(void)
 {
-    TPARM_STATE *tps = get_tparm_state(cur_term);	/* FIXME */
+    TPARM_STATE *tps = get_tparm_state(cur_term);       /* FIXME */
 #if HAVE_TSEARCH
     if (MyCount != 0) {
-	delete_tparm = typeCalloc(TPARM_DATA *, MyCount);
-	which_tparm = 0;
-	twalk(MyCache, visit_nodes);
-	for (which_tparm = 0; which_tparm < MyCount; ++which_tparm) {
-	    TPARM_DATA *ptr = delete_tparm[which_tparm];
-	    if (ptr != NULL) {
-		tdelete(ptr, &MyCache, cmp_format);
-		free((char *) ptr->format);
-		free(ptr);
-	    }
-	}
-	which_tparm = 0;
-	twalk(MyCache, visit_nodes);
-	FreeAndNull(delete_tparm);
-	MyCount = 0;
-	which_tparm = 0;
+        delete_tparm = typeCalloc(TPARM_DATA *, MyCount);
+        which_tparm = 0;
+        twalk(MyCache, visit_nodes);
+        for (which_tparm = 0; which_tparm < MyCount; ++which_tparm) {
+            TPARM_DATA *ptr = delete_tparm[which_tparm];
+            if (ptr != NULL) {
+                tdelete(ptr, &MyCache, cmp_format);
+                free((char *) ptr->format);
+                free(ptr);
+            }
+        }
+        which_tparm = 0;
+        twalk(MyCache, visit_nodes);
+        FreeAndNull(delete_tparm);
+        MyCount = 0;
+        which_tparm = 0;
     }
 #endif
     FreeAndNull(TPS(out_buff));
@@ -217,8 +217,8 @@ tparm_error(TPARM_STATE *tps, const char *message)
 { \
     size_t need2get = need + TPS(out_used); \
     if (need2get > TPS(out_size)) { \
-	TPS(out_size) = need2get * 2; \
-	TYPE_REALLOC(char, TPS(out_size), TPS(out_buff)); \
+        TPS(out_size) = need2get * 2; \
+        TYPE_REALLOC(char, TPS(out_size), TPS(out_buff)); \
     } \
 }
 
@@ -236,8 +236,8 @@ static NCURSES_INLINE void
     size_t s_len = (size_t) len + strlen(s) + strlen(fmt); \
     get_space(tps, s_len + 1); \
     _nc_SPRINTF(TPS(out_buff) + TPS(out_used), \
-		_nc_SLIMIT(TPS(out_size) - TPS(out_used)) \
-		fmt, s); \
+                _nc_SLIMIT(TPS(out_size) - TPS(out_used)) \
+                fmt, s); \
     TPS(out_used) += strlen(TPS(out_buff) + TPS(out_used)); \
 }
 
@@ -255,8 +255,8 @@ static NCURSES_INLINE void
     size_t s_len = (size_t) len + 30 + strlen(fmt); \
     get_space(tps, s_len + 1); \
     _nc_SPRINTF(TPS(out_buff) + TPS(out_used), \
-		_nc_SLIMIT(TPS(out_size) - TPS(out_used)) \
-		fmt, number); \
+                _nc_SLIMIT(TPS(out_size) - TPS(out_used)) \
+                fmt, number); \
     TPS(out_used) += strlen(TPS(out_buff) + TPS(out_used)); \
 }
 
@@ -287,11 +287,11 @@ static NCURSES_INLINE void
 #define npush(tps, x) \
 { \
     if (TPS(stack_ptr) < STACKSIZE) { \
-	TPS(stack)[TPS(stack_ptr)].num_type = TRUE; \
-	TPS(stack)[TPS(stack_ptr)].data.num = x; \
-	TPS(stack_ptr)++; \
+        TPS(stack)[TPS(stack_ptr)].num_type = TRUE; \
+        TPS(stack)[TPS(stack_ptr)].data.num = x; \
+        TPS(stack_ptr)++; \
     } else { \
-	(void) tparm_error(tps, "npush: stack overflow"); \
+        (void) tparm_error(tps, "npush: stack overflow"); \
     } \
 }
 
@@ -307,11 +307,11 @@ static NCURSES_INLINE void
 #define spush(tps, x) \
 { \
     if (TPS(stack_ptr) < STACKSIZE) { \
-	TPS(stack)[TPS(stack_ptr)].num_type = FALSE; \
-	TPS(stack)[TPS(stack_ptr)].data.str = x; \
-	TPS(stack_ptr)++; \
+        TPS(stack)[TPS(stack_ptr)].num_type = FALSE; \
+        TPS(stack)[TPS(stack_ptr)].data.str = x; \
+        TPS(stack_ptr)++; \
     } else { \
-	(void) tparm_error(tps, "spush: stack overflow"); \
+        (void) tparm_error(tps, "spush: stack overflow"); \
     } \
 }
 
@@ -327,8 +327,8 @@ static NCURSES_INLINE void
 #define npop(tps) \
     ((TPS(stack_ptr)-- > 0) \
      ? ((TPS(stack)[TPS(stack_ptr)].num_type) \
-	 ? TPS(stack)[TPS(stack_ptr)].data.num \
-	 : 0) \
+         ? TPS(stack)[TPS(stack_ptr)].data.num \
+         : 0) \
      : (tparm_error(tps, "npop: stack underflow"), \
         TPS(stack_ptr) = 0))
 
@@ -362,92 +362,92 @@ parse_format(const char *s, char *format, int *len)
 {
     *len = 0;
     if (format != 0) {
-	bool done = FALSE;
-	bool allowminus = FALSE;
-	bool dot = FALSE;
-	bool err = FALSE;
-	char *fmt = format;
-	int my_width = 0;
-	int my_prec = 0;
-	int value = 0;
+        bool done = FALSE;
+        bool allowminus = FALSE;
+        bool dot = FALSE;
+        bool err = FALSE;
+        char *fmt = format;
+        int my_width = 0;
+        int my_prec = 0;
+        int value = 0;
 
-	*len = 0;
-	*format++ = '%';
-	while (*s != '\0' && !done) {
-	    switch (*s) {
-	    case 'c':		/* FALLTHRU */
-	    case 'd':		/* FALLTHRU */
-	    case 'o':		/* FALLTHRU */
-	    case 'x':		/* FALLTHRU */
-	    case 'X':		/* FALLTHRU */
-	    case 's':
+        *len = 0;
+        *format++ = '%';
+        while (*s != '\0' && !done) {
+            switch (*s) {
+            case 'c':           /* FALLTHRU */
+            case 'd':           /* FALLTHRU */
+            case 'o':           /* FALLTHRU */
+            case 'x':           /* FALLTHRU */
+            case 'X':           /* FALLTHRU */
+            case 's':
 #ifdef EXP_XTERM_1005
-	    case 'u':
+            case 'u':
 #endif
-		*format++ = *s;
-		done = TRUE;
-		break;
-	    case '.':
-		*format++ = *s++;
-		if (dot) {
-		    err = TRUE;
-		} else {	/* value before '.' is the width */
-		    dot = TRUE;
-		    my_width = value;
-		}
-		value = 0;
-		break;
-	    case '#':
-		*format++ = *s++;
-		break;
-	    case ' ':
-		*format++ = *s++;
-		break;
-	    case ':':
-		s++;
-		allowminus = TRUE;
-		break;
-	    case '-':
-		if (allowminus) {
-		    *format++ = *s++;
-		} else {
-		    done = TRUE;
-		}
-		break;
-	    default:
-		if (isdigit(UChar(*s))) {
-		    value = (value * 10) + (*s - '0');
-		    if (value > 10000)
-			err = TRUE;
-		    *format++ = *s++;
-		} else {
-		    done = TRUE;
-		}
-	    }
-	}
+                *format++ = *s;
+                done = TRUE;
+                break;
+            case '.':
+                *format++ = *s++;
+                if (dot) {
+                    err = TRUE;
+                } else {        /* value before '.' is the width */
+                    dot = TRUE;
+                    my_width = value;
+                }
+                value = 0;
+                break;
+            case '#':
+                *format++ = *s++;
+                break;
+            case ' ':
+                *format++ = *s++;
+                break;
+            case ':':
+                s++;
+                allowminus = TRUE;
+                break;
+            case '-':
+                if (allowminus) {
+                    *format++ = *s++;
+                } else {
+                    done = TRUE;
+                }
+                break;
+            default:
+                if (isdigit(UChar(*s))) {
+                    value = (value * 10) + (*s - '0');
+                    if (value > 10000)
+                        err = TRUE;
+                    *format++ = *s++;
+                } else {
+                    done = TRUE;
+                }
+            }
+        }
 
-	/*
-	 * If we found an error, ignore (and remove) the flags.
-	 */
-	if (err) {
-	    my_width = my_prec = value = 0;
-	    format = fmt;
-	    *format++ = '%';
-	    *format++ = *s;
-	}
+        /*
+         * If we found an error, ignore (and remove) the flags.
+         */
+        if (err) {
+            my_width = my_prec = value = 0;
+            format = fmt;
+            *format++ = '%';
+            *format++ = *s;
+        }
 
-	/*
-	 * Any value after '.' is the precision.  If we did not see '.', then
-	 * the value is the width.
-	 */
-	if (dot)
-	    my_prec = value;
-	else
-	    my_width = value;
+        /*
+         * Any value after '.' is the precision.  If we did not see '.', then
+         * the value is the width.
+         */
+        if (dot)
+            my_prec = value;
+        else
+            my_width = value;
 
-	*format = '\0';
-	/* return maximum string length in print */
-	*len = (my_width > my_prec) ? my_width : my_prec;
+        *format = '\0';
+        /* return maximum string length in print */
+        *len = (my_width > my_prec) ? my_width : my_prec;
     }
     return s;
 }
@@ -476,119 +476,119 @@ _nc_tparm_analyze(TERMINAL *term, const char *string, char **p_is_s, int *popcou
     const char *cp = string;
 
     if (cp == 0)
-	return 0;
+        return 0;
 
     if ((len2 = strlen(cp)) + 2 > TPS(fmt_size)) {
-	TPS(fmt_size) += len2 + 2;
-	TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
-	if (TPS(fmt_buff) == 0)
-	    return 0;
+        TPS(fmt_size) += len2 + 2;
+        TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
+        if (TPS(fmt_buff) == 0)
+            return 0;
     }
 
     memset(p_is_s, 0, sizeof(p_is_s[0]) * NUM_PARM);
     *popcount = 0;
 
     while ((cp - string) < (int) len2) {
-	if (*cp == '%') {
-	    cp++;
-	    cp = parse_format(cp, TPS(fmt_buff), &len);
-	    switch (*cp) {
-	    default:
-		break;
+        if (*cp == '%') {
+            cp++;
+            cp = parse_format(cp, TPS(fmt_buff), &len);
+            switch (*cp) {
+            default:
+                break;
 
-	    case 'd':		/* FALLTHRU */
-	    case 'o':		/* FALLTHRU */
-	    case 'x':		/* FALLTHRU */
-	    case 'X':		/* FALLTHRU */
-	    case 'c':		/* FALLTHRU */
+            case 'd':           /* FALLTHRU */
+            case 'o':           /* FALLTHRU */
+            case 'x':           /* FALLTHRU */
+            case 'X':           /* FALLTHRU */
+            case 'c':           /* FALLTHRU */
 #ifdef EXP_XTERM_1005
-	    case 'u':
+            case 'u':
 #endif
-		if (lastpop <= 0) {
-		    tc_BUMP();
-		}
-		level -= 1;
-		lastpop = -1;
-		break;
+                if (lastpop <= 0) {
+                    tc_BUMP();
+                }
+                level -= 1;
+                lastpop = -1;
+                break;
 
-	    case 'l':
-	    case 's':
-		if (lastpop > 0) {
-		    level -= 1;
-		    p_is_s[lastpop - 1] = dummy;
-		}
-		tc_BUMP();
-		break;
+            case 'l':
+            case 's':
+                if (lastpop > 0) {
+                    level -= 1;
+                    p_is_s[lastpop - 1] = dummy;
+                }
+                tc_BUMP();
+                break;
 
-	    case 'p':
-		cp++;
-		i = (UChar(*cp) - '0');
-		if (i >= 0 && i <= NUM_PARM) {
-		    ++level;
-		    lastpop = i;
-		    if (lastpop > *popcount)
-			*popcount = lastpop;
-		}
-		break;
+            case 'p':
+                cp++;
+                i = (UChar(*cp) - '0');
+                if (i >= 0 && i <= NUM_PARM) {
+                    ++level;
+                    lastpop = i;
+                    if (lastpop > *popcount)
+                        *popcount = lastpop;
+                }
+                break;
 
-	    case 'P':
-		++cp;
-		break;
+            case 'P':
+                ++cp;
+                break;
 
-	    case 'g':
-		++level;
-		cp++;
-		break;
+            case 'g':
+                ++level;
+                cp++;
+                break;
 
-	    case S_QUOTE:
-		++level;
-		cp += 2;
-		lastpop = -1;
-		break;
+            case S_QUOTE:
+                ++level;
+                cp += 2;
+                lastpop = -1;
+                break;
 
-	    case L_BRACE:
-		++level;
-		cp++;
-		while (isdigit(UChar(*cp))) {
-		    cp++;
-		}
-		break;
+            case L_BRACE:
+                ++level;
+                cp++;
+                while (isdigit(UChar(*cp))) {
+                    cp++;
+                }
+                break;
 
-	    case '+':
-	    case '-':
-	    case '*':
-	    case '/':
-	    case 'm':
-	    case 'A':
-	    case 'O':
-	    case '&':
-	    case '|':
-	    case '^':
-	    case '=':
-	    case '<':
-	    case '>':
-		tc_BUMP();
-		level -= 1;	/* pop 2, operate, push 1 */
-		lastpop = -1;
-		break;
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case 'm':
+            case 'A':
+            case 'O':
+            case '&':
+            case '|':
+            case '^':
+            case '=':
+            case '<':
+            case '>':
+                tc_BUMP();
+                level -= 1;     /* pop 2, operate, push 1 */
+                lastpop = -1;
+                break;
 
-	    case '!':
-	    case '~':
-		tc_BUMP();
-		lastpop = -1;
-		break;
+            case '!':
+            case '~':
+                tc_BUMP();
+                lastpop = -1;
+                break;
 
-	    case 'i':
-		/* will add 1 to first (usually two) parameters */
-		break;
-	    }
-	}
-	if (*cp != '\0')
-	    cp++;
+            case 'i':
+                /* will add 1 to first (usually two) parameters */
+                break;
+            }
+        }
+        if (*cp != '\0')
+            cp++;
     }
 
     if (number > NUM_PARM)
-	number = NUM_PARM;
+        number = NUM_PARM;
     return number;
 }
 
@@ -608,71 +608,71 @@ tparm_setup(TERMINAL *term, const char *string, TPARM_DATA *result)
     memset(result, 0, sizeof(*result));
 
     if (string == NULL) {
-	TR(TRACE_CALLS, ("%s: format is null", TPS(tname)));
-	rc = ERR;
+        TR(TRACE_CALLS, ("%s: format is null", TPS(tname)));
+        rc = ERR;
     } else {
 #if HAVE_TSEARCH
-	TPARM_DATA *fs;
-	void *ft;
+        TPARM_DATA *fs;
+        void *ft;
 
-	result->format = string;
-	if ((ft = tfind(result, &MyCache, cmp_format)) != 0) {
-	    size_t len2;
-	    fs = *(TPARM_DATA **) ft;
-	    *result = *fs;
-	    if ((len2 = strlen(string)) + 2 > TPS(fmt_size)) {
-		TPS(fmt_size) += len2 + 2;
-		TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
-		if (TPS(fmt_buff) == 0)
-		    return ERR;
-	    }
-	} else
+        result->format = string;
+        if ((ft = tfind(result, &MyCache, cmp_format)) != 0) {
+            size_t len2;
+            fs = *(TPARM_DATA **) ft;
+            *result = *fs;
+            if ((len2 = strlen(string)) + 2 > TPS(fmt_size)) {
+                TPS(fmt_size) += len2 + 2;
+                TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
+                if (TPS(fmt_buff) == 0)
+                    return ERR;
+            }
+        } else
 #endif
-	{
-	    /*
-	     * Find the highest parameter-number referred to in the format
-	     * string.  Use this value to limit the number of arguments copied
-	     * from the variable-length argument list.
-	     */
-	    result->num_parsed = _nc_tparm_analyze(term, string,
-						   result->p_is_s,
-						   &(result->num_popped));
-	    if (TPS(fmt_buff) == 0) {
-		TR(TRACE_CALLS, ("%s: error in analysis", TPS(tname)));
-		rc = ERR;
-	    } else {
-		int n;
+        {
+            /*
+             * Find the highest parameter-number referred to in the format
+             * string.  Use this value to limit the number of arguments copied
+             * from the variable-length argument list.
+             */
+            result->num_parsed = _nc_tparm_analyze(term, string,
+                                                   result->p_is_s,
+                                                   &(result->num_popped));
+            if (TPS(fmt_buff) == 0) {
+                TR(TRACE_CALLS, ("%s: error in analysis", TPS(tname)));
+                rc = ERR;
+            } else {
+                int n;
 
-		if (result->num_parsed > NUM_PARM)
-		    result->num_parsed = NUM_PARM;
-		if (result->num_popped > NUM_PARM)
-		    result->num_popped = NUM_PARM;
-		result->num_actual = max(result->num_popped, result->num_parsed);
+                if (result->num_parsed > NUM_PARM)
+                    result->num_parsed = NUM_PARM;
+                if (result->num_popped > NUM_PARM)
+                    result->num_popped = NUM_PARM;
+                result->num_actual = max(result->num_popped, result->num_parsed);
 
-		for (n = 0; n < result->num_actual; ++n) {
-		    if (result->p_is_s[n])
-			result->tparm_type |= (1 << n);
-		}
+                for (n = 0; n < result->num_actual; ++n) {
+                    if (result->p_is_s[n])
+                        result->tparm_type |= (1 << n);
+                }
 #if HAVE_TSEARCH
-		if ((fs = typeCalloc(TPARM_DATA, 1)) != 0) {
-		    *fs = *result;
-		    if ((fs->format = strdup(string)) != 0) {
-			if (tsearch(fs, &MyCache, cmp_format) != 0) {
-			    ++MyCount;
-			} else {
-			    free(fs);
-			    rc = ERR;
-			}
-		    } else {
-			free(fs);
-			rc = ERR;
-		    }
-		} else {
-		    rc = ERR;
-		}
+                if ((fs = typeCalloc(TPARM_DATA, 1)) != 0) {
+                    *fs = *result;
+                    if ((fs->format = strdup(string)) != 0) {
+                        if (tsearch(fs, &MyCache, cmp_format) != 0) {
+                            ++MyCount;
+                        } else {
+                            free(fs);
+                            rc = ERR;
+                        }
+                    } else {
+                        free(fs);
+                        rc = ERR;
+                    }
+                } else {
+                    rc = ERR;
+                }
 #endif
-	    }
-	}
+            }
+        }
     }
 
     return rc;
@@ -690,17 +690,17 @@ tparm_copy_valist(TPARM_DATA *data, int use_TPARM_ARG, va_list ap)
     int i;
 
     for (i = 0; i < data->num_actual; i++) {
-	if (data->p_is_s[i] != 0) {
-	    char *value = va_arg(ap, char *);
-	    if (value == 0)
-		value = dummy;
-	    data->p_is_s[i] = value;
-	    data->param[i] = 0;
-	} else if (use_TPARM_ARG) {
-	    data->param[i] = va_arg(ap, TPARM_ARG);
-	} else {
-	    data->param[i] = (TPARM_ARG) va_arg(ap, int);
-	}
+        if (data->p_is_s[i] != 0) {
+            char *value = va_arg(ap, char *);
+            if (value == 0)
+                value = dummy;
+            data->p_is_s[i] = value;
+            data->param[i] = 0;
+        } else if (use_TPARM_ARG) {
+            data->param[i] = va_arg(ap, TPARM_ARG);
+        } else {
+            data->param[i] = (TPARM_ARG) va_arg(ap, int);
+        }
     }
 }
 
@@ -719,16 +719,16 @@ tparm_tc_compat(TPARM_STATE *tps, TPARM_DATA *data)
     TPS(stack_ptr) = 0;
 
     if (data->num_popped == 0) {
-	int i;
+        int i;
 
-	termcap_hack = TRUE;
-	for (i = data->num_parsed - 1; i >= 0; i--) {
-	    if (data->p_is_s[i]) {
-		spush(tps, data->p_is_s[i]);
-	    } else {
-		npush(tps, (int) data->param[i]);
-	    }
-	}
+        termcap_hack = TRUE;
+        for (i = data->num_parsed - 1; i >= 0; i--) {
+            if (data->p_is_s[i]) {
+                spush(tps, data->p_is_s[i]);
+            } else {
+                npush(tps, (int) data->param[i]);
+            }
+        }
     }
     return termcap_hack;
 }
@@ -738,34 +738,34 @@ static void
 tparm_trace_call(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
 {
     if (USE_TRACEF(TRACE_CALLS)) {
-	int i;
-	for (i = 0; i < data->num_actual; i++) {
-	    if (data->p_is_s[i] != 0) {
-		save_text(tps, ", %s", _nc_visbuf(data->p_is_s[i]), 0);
-	    } else if ((long) data->param[i] > MAX_OF_TYPE(NCURSES_INT2) ||
-		       (long) data->param[i] < 0) {
-		_tracef("BUG: problem with tparm parameter #%d of %d",
-			i + 1, data->num_actual);
-		break;
-	    } else {
-		save_number(tps, ", %d", (int) data->param[i], 0);
-	    }
-	}
-	_tracef(T_CALLED("%s(%s%s)"), TPS(tname), _nc_visbuf(string), TPS(out_buff));
-	TPS(out_used) = 0;
-	_nc_unlock_global(tracef);
+        int i;
+        for (i = 0; i < data->num_actual; i++) {
+            if (data->p_is_s[i] != 0) {
+                save_text(tps, ", %s", _nc_visbuf(data->p_is_s[i]), 0);
+            } else if ((long) data->param[i] > MAX_OF_TYPE(NCURSES_INT2) ||
+                       (long) data->param[i] < 0) {
+                _tracef("BUG: problem with tparm parameter #%d of %d",
+                        i + 1, data->num_actual);
+                break;
+            } else {
+                save_number(tps, ", %d", (int) data->param[i], 0);
+            }
+        }
+        _tracef(T_CALLED("%s(%s%s)"), TPS(tname), _nc_visbuf(string), TPS(out_buff));
+        TPS(out_used) = 0;
+        _nc_unlock_global(tracef);
     }
 }
 
 #else
-#define tparm_trace_call(tps, string, data)	/* nothing */
+#define tparm_trace_call(tps, string, data)     /* nothing */
 #endif /* TRACE */
 
 #define init_vars(name) \
-	if (!name##_used) { \
-	    name##_used = TRUE; \
-	    memset(name##_vars, 0, sizeof(name##_vars)); \
-	}
+        if (!name##_used) { \
+            name##_used = TRUE; \
+            memset(name##_vars, 0, sizeof(name##_vars)); \
+        }
 
 static NCURSES_INLINE char *
 tparam_internal(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
@@ -799,289 +799,289 @@ tparam_internal(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
     tparm_trace_call(tps, string, data);
 
     while ((cp - string) < (int) len2) {
-	if (*cp != '%') {
-	    save_char(tps, UChar(*cp));
-	} else {
-	    TPS(tparam_base) = cp++;
-	    cp = parse_format(cp, TPS(fmt_buff), &len);
-	    switch (*cp) {
-	    default:
-		break;
-	    case '%':
-		save_char(tps, '%');
-		break;
+        if (*cp != '%') {
+            save_char(tps, UChar(*cp));
+        } else {
+            TPS(tparam_base) = cp++;
+            cp = parse_format(cp, TPS(fmt_buff), &len);
+            switch (*cp) {
+            default:
+                break;
+            case '%':
+                save_char(tps, '%');
+                break;
 
-	    case 'd':		/* FALLTHRU */
-	    case 'o':		/* FALLTHRU */
-	    case 'x':		/* FALLTHRU */
-	    case 'X':		/* FALLTHRU */
-		x = npop(tps);
-		save_number(tps, TPS(fmt_buff), x, len);
-		break;
+            case 'd':           /* FALLTHRU */
+            case 'o':           /* FALLTHRU */
+            case 'x':           /* FALLTHRU */
+            case 'X':           /* FALLTHRU */
+                x = npop(tps);
+                save_number(tps, TPS(fmt_buff), x, len);
+                break;
 
-	    case 'c':		/* FALLTHRU */
-		x = npop(tps);
-		save_char(tps, x);
-		break;
+            case 'c':           /* FALLTHRU */
+                x = npop(tps);
+                save_char(tps, x);
+                break;
 
 #ifdef EXP_XTERM_1005
-	    case 'u':
-		{
-		    unsigned char target[10];
-		    unsigned source = (unsigned) npop(tps);
-		    int rc = _nc_conv_to_utf8(target, source, (unsigned)
-					      sizeof(target));
-		    int n;
-		    for (n = 0; n < rc; ++n) {
-			save_char(tps, target[n]);
-		    }
-		}
-		break;
+            case 'u':
+                {
+                    unsigned char target[10];
+                    unsigned source = (unsigned) npop(tps);
+                    int rc = _nc_conv_to_utf8(target, source, (unsigned)
+                                              sizeof(target));
+                    int n;
+                    for (n = 0; n < rc; ++n) {
+                        save_char(tps, target[n]);
+                    }
+                }
+                break;
 #endif
-	    case 'l':
-		s = spop(tps);
-		npush(tps, (int) strlen(s));
-		break;
+            case 'l':
+                s = spop(tps);
+                npush(tps, (int) strlen(s));
+                break;
 
-	    case 's':
-		s = spop(tps);
-		save_text(tps, TPS(fmt_buff), s, len);
-		break;
+            case 's':
+                s = spop(tps);
+                save_text(tps, TPS(fmt_buff), s, len);
+                break;
 
-	    case 'p':
-		cp++;
-		i = (UChar(*cp) - '1');
-		if (i >= 0 && i < NUM_PARM) {
-		    if (data->p_is_s[i]) {
-			spush(tps, data->p_is_s[i]);
-		    } else {
-			npush(tps, (int) data->param[i]);
-		    }
-		}
-		break;
+            case 'p':
+                cp++;
+                i = (UChar(*cp) - '1');
+                if (i >= 0 && i < NUM_PARM) {
+                    if (data->p_is_s[i]) {
+                        spush(tps, data->p_is_s[i]);
+                    } else {
+                        npush(tps, (int) data->param[i]);
+                    }
+                }
+                break;
 
-	    case 'P':
-		cp++;
-		if (isUPPER(*cp)) {
-		    i = (UChar(*cp) - 'A');
-		    TPS(static_vars)[i] = npop(tps);
-		} else if (isLOWER(*cp)) {
-		    i = (UChar(*cp) - 'a');
-		    init_vars(dynamic);
-		    dynamic_vars[i] = npop(tps);
-		}
-		break;
+            case 'P':
+                cp++;
+                if (isUPPER(*cp)) {
+                    i = (UChar(*cp) - 'A');
+                    TPS(static_vars)[i] = npop(tps);
+                } else if (isLOWER(*cp)) {
+                    i = (UChar(*cp) - 'a');
+                    init_vars(dynamic);
+                    dynamic_vars[i] = npop(tps);
+                }
+                break;
 
-	    case 'g':
-		cp++;
-		if (isUPPER(*cp)) {
-		    i = (UChar(*cp) - 'A');
-		    npush(tps, TPS(static_vars)[i]);
-		} else if (isLOWER(*cp)) {
-		    i = (UChar(*cp) - 'a');
-		    init_vars(dynamic);
-		    npush(tps, dynamic_vars[i]);
-		}
-		break;
+            case 'g':
+                cp++;
+                if (isUPPER(*cp)) {
+                    i = (UChar(*cp) - 'A');
+                    npush(tps, TPS(static_vars)[i]);
+                } else if (isLOWER(*cp)) {
+                    i = (UChar(*cp) - 'a');
+                    init_vars(dynamic);
+                    npush(tps, dynamic_vars[i]);
+                }
+                break;
 
-	    case S_QUOTE:
-		cp++;
-		npush(tps, UChar(*cp));
-		cp++;
-		break;
+            case S_QUOTE:
+                cp++;
+                npush(tps, UChar(*cp));
+                cp++;
+                break;
 
-	    case L_BRACE:
-		number = 0;
-		cp++;
-		while (isdigit(UChar(*cp))) {
-		    number = (number * 10) + (UChar(*cp) - '0');
-		    cp++;
-		}
-		npush(tps, number);
-		break;
+            case L_BRACE:
+                number = 0;
+                cp++;
+                while (isdigit(UChar(*cp))) {
+                    number = (number * 10) + (UChar(*cp) - '0');
+                    cp++;
+                }
+                npush(tps, number);
+                break;
 
-	    case '+':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x + y);
-		break;
+            case '+':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x + y);
+                break;
 
-	    case '-':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x - y);
-		break;
+            case '-':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x - y);
+                break;
 
-	    case '*':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x * y);
-		break;
+            case '*':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x * y);
+                break;
 
-	    case '/':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, y ? (x / y) : 0);
-		break;
+            case '/':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, y ? (x / y) : 0);
+                break;
 
-	    case 'm':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, y ? (x % y) : 0);
-		break;
+            case 'm':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, y ? (x % y) : 0);
+                break;
 
-	    case 'A':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, y && x);
-		break;
+            case 'A':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, y && x);
+                break;
 
-	    case 'O':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, y || x);
-		break;
+            case 'O':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, y || x);
+                break;
 
-	    case '&':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x & y);
-		break;
+            case '&':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x & y);
+                break;
 
-	    case '|':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x | y);
-		break;
+            case '|':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x | y);
+                break;
 
-	    case '^':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x ^ y);
-		break;
+            case '^':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x ^ y);
+                break;
 
-	    case '=':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x == y);
-		break;
+            case '=':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x == y);
+                break;
 
-	    case '<':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x < y);
-		break;
+            case '<':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x < y);
+                break;
 
-	    case '>':
-		y = npop(tps);
-		x = npop(tps);
-		npush(tps, x > y);
-		break;
+            case '>':
+                y = npop(tps);
+                x = npop(tps);
+                npush(tps, x > y);
+                break;
 
-	    case '!':
-		x = npop(tps);
-		npush(tps, !x);
-		break;
+            case '!':
+                x = npop(tps);
+                npush(tps, !x);
+                break;
 
-	    case '~':
-		x = npop(tps);
-		npush(tps, ~x);
-		break;
+            case '~':
+                x = npop(tps);
+                npush(tps, ~x);
+                break;
 
-	    case 'i':
-		/*
-		 * Increment the first two parameters -- if they are numbers
-		 * rather than strings.  As a side effect, assign into the
-		 * stack; if this is termcap, then the stack was populated
-		 * using the termcap hack above rather than via the terminfo
-		 * 'p' case.
-		 */
-		if (!incremented_two) {
-		    incremented_two = TRUE;
-		    if (data->p_is_s[0] == 0) {
-			data->param[0]++;
-			if (termcap_hack)
-			    TPS(stack)[0].data.num = (int) data->param[0];
-		    }
-		    if (data->p_is_s[1] == 0) {
-			data->param[1]++;
-			if (termcap_hack)
-			    TPS(stack)[1].data.num = (int) data->param[1];
-		    }
-		}
-		break;
+            case 'i':
+                /*
+                 * Increment the first two parameters -- if they are numbers
+                 * rather than strings.  As a side effect, assign into the
+                 * stack; if this is termcap, then the stack was populated
+                 * using the termcap hack above rather than via the terminfo
+                 * 'p' case.
+                 */
+                if (!incremented_two) {
+                    incremented_two = TRUE;
+                    if (data->p_is_s[0] == 0) {
+                        data->param[0]++;
+                        if (termcap_hack)
+                            TPS(stack)[0].data.num = (int) data->param[0];
+                    }
+                    if (data->p_is_s[1] == 0) {
+                        data->param[1]++;
+                        if (termcap_hack)
+                            TPS(stack)[1].data.num = (int) data->param[1];
+                    }
+                }
+                break;
 
-	    case '?':
-		break;
+            case '?':
+                break;
 
-	    case 't':
-		x = npop(tps);
-		if (!x) {
-		    /* scan forward for %e or %; at level zero */
-		    cp++;
-		    level = 0;
-		    while (*cp) {
-			if (*cp == '%') {
-			    cp++;
-			    if (*cp == '?')
-				level++;
-			    else if (*cp == ';') {
-				if (level > 0)
-				    level--;
-				else
-				    break;
-			    } else if (*cp == 'e' && level == 0)
-				break;
-			}
+            case 't':
+                x = npop(tps);
+                if (!x) {
+                    /* scan forward for %e or %; at level zero */
+                    cp++;
+                    level = 0;
+                    while (*cp) {
+                        if (*cp == '%') {
+                            cp++;
+                            if (*cp == '?')
+                                level++;
+                            else if (*cp == ';') {
+                                if (level > 0)
+                                    level--;
+                                else
+                                    break;
+                            } else if (*cp == 'e' && level == 0)
+                                break;
+                        }
 
-			if (*cp)
-			    cp++;
-		    }
-		}
-		break;
+                        if (*cp)
+                            cp++;
+                    }
+                }
+                break;
 
-	    case 'e':
-		/* scan forward for a %; at level zero */
-		cp++;
-		level = 0;
-		while (*cp) {
-		    if (*cp == '%') {
-			cp++;
-			if (*cp == '?')
-			    level++;
-			else if (*cp == ';') {
-			    if (level > 0)
-				level--;
-			    else
-				break;
-			}
-		    }
+            case 'e':
+                /* scan forward for a %; at level zero */
+                cp++;
+                level = 0;
+                while (*cp) {
+                    if (*cp == '%') {
+                        cp++;
+                        if (*cp == '?')
+                            level++;
+                        else if (*cp == ';') {
+                            if (level > 0)
+                                level--;
+                            else
+                                break;
+                        }
+                    }
 
-		    if (*cp)
-			cp++;
-		}
-		break;
+                    if (*cp)
+                        cp++;
+                }
+                break;
 
-	    case ';':
-		break;
+            case ';':
+                break;
 
-	    }			/* endswitch (*cp) */
-	}			/* endelse (*cp == '%') */
+            }                   /* endswitch (*cp) */
+        }                       /* endelse (*cp == '%') */
 
-	if (*cp == '\0')
-	    break;
+        if (*cp == '\0')
+            break;
 
-	cp++;
-    }				/* endwhile (*cp) */
+        cp++;
+    }                           /* endwhile (*cp) */
 
     get_space(tps, (size_t) 1);
     TPS(out_buff)[TPS(out_used)] = '\0';
 
     if (TPS(stack_ptr) && !_nc_tparm_err) {
-	DEBUG(2, ("tparm: stack has %d item%s on return",
-		  TPS(stack_ptr),
-		  TPS(stack_ptr) == 1 ? "" : "s"));
-	_nc_tparm_err++;
+        DEBUG(2, ("tparm: stack has %d item%s on return",
+                  TPS(stack_ptr),
+                  TPS(stack_ptr) == 1 ? "" : "s"));
+        _nc_tparm_err++;
     }
 
     T((T_RETURN("%s"), _nc_visbuf(TPS(out_buff))));
@@ -1103,13 +1103,13 @@ tparm(const char *string, ...)
 #endif /* TRACE */
 
     if (tparm_setup(cur_term, string, &myData) == OK) {
-	va_list ap;
+        va_list ap;
 
-	va_start(ap, string);
-	tparm_copy_valist(&myData, TRUE, ap);
-	va_end(ap);
+        va_start(ap, string);
+        tparm_copy_valist(&myData, TRUE, ap);
+        va_end(ap);
 
-	result = tparam_internal(tps, string, &myData);
+        result = tparam_internal(tps, string, &myData);
     }
     return result;
 }
@@ -1139,17 +1139,17 @@ tparm(const char *string,
 
     if (tparm_setup(cur_term, string, &myData) == OK) {
 
-	myData.param[0] = a1;
-	myData.param[1] = a2;
-	myData.param[2] = a3;
-	myData.param[3] = a4;
-	myData.param[4] = a5;
-	myData.param[5] = a6;
-	myData.param[6] = a7;
-	myData.param[7] = a8;
-	myData.param[8] = a9;
+        myData.param[0] = a1;
+        myData.param[1] = a2;
+        myData.param[2] = a3;
+        myData.param[3] = a4;
+        myData.param[4] = a5;
+        myData.param[5] = a6;
+        myData.param[6] = a7;
+        myData.param[7] = a8;
+        myData.param[8] = a9;
 
-	result = tparam_internal(tps, string, &myData);
+        result = tparam_internal(tps, string, &myData);
     }
     return result;
 }
@@ -1169,13 +1169,13 @@ tiparm(const char *string, ...)
 #endif /* TRACE */
 
     if (tparm_setup(cur_term, string, &myData) == OK) {
-	va_list ap;
+        va_list ap;
 
-	va_start(ap, string);
-	tparm_copy_valist(&myData, FALSE, ap);
-	va_end(ap);
+        va_start(ap, string);
+        tparm_copy_valist(&myData, FALSE, ap);
+        va_end(ap);
 
-	result = tparam_internal(tps, string, &myData);
+        result = tparam_internal(tps, string, &myData);
     }
     return result;
 }
@@ -1196,15 +1196,15 @@ _nc_tiparm(int expected, const char *string, ...)
 #endif /* TRACE */
 
     if (tparm_setup(cur_term, string, &myData) == OK
-	&& myData.num_actual <= expected
-	&& myData.tparm_type == 0) {
-	va_list ap;
+        && myData.num_actual <= expected
+        && myData.tparm_type == 0) {
+        va_list ap;
 
-	va_start(ap, string);
-	tparm_copy_valist(&myData, FALSE, ap);
-	va_end(ap);
+        va_start(ap, string);
+        tparm_copy_valist(&myData, FALSE, ap);
+        va_end(ap);
 
-	result = tparam_internal(tps, string, &myData);
+        result = tparam_internal(tps, string, &myData);
     }
     return result;
 }

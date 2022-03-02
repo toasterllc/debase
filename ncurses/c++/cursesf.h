@@ -107,7 +107,7 @@ class NCURSES_CXX_IMPEXP NCursesFormField
   friend class NCursesForm;
 
 protected:
-  FIELD *field;		     // lowlevel structure
+  FIELD *field;              // lowlevel structure
   NCursesFieldType* ftype;   // Associated field type
 
   // Error handler
@@ -126,18 +126,18 @@ public:
 
   // Create a new field
   NCursesFormField (int rows,
-		    int ncols,
-		    int first_row = 0,
-		    int first_col = 0,
-		    int offscreen_rows = 0,
-		    int additional_buffers = 0)
+                    int ncols,
+                    int first_row = 0,
+                    int first_col = 0,
+                    int offscreen_rows = 0,
+                    int additional_buffers = 0)
     : field(0),
       ftype(STATIC_CAST(NCursesFieldType*)(0))
   {
       field = ::new_field(rows, ncols, first_row, first_col,
-			  offscreen_rows, additional_buffers);
+                          offscreen_rows, additional_buffers);
       if (!field)
-	OnError(errno);
+        OnError(errno);
   }
 
   NCursesFormField& operator=(const NCursesFormField& rhs)
@@ -165,7 +165,7 @@ public:
       f->ftype = ftype;
       f->field = ::dup_field(field,first_row,first_col);
       if (!f->field)
-	OnError(errno);
+        OnError(errno);
     }
     return f;
   }
@@ -179,7 +179,7 @@ public:
       f->ftype = ftype;
       f->field = ::link_field(field,first_row,first_col);
       if (!f->field)
-	OnError(errno);
+        OnError(errno);
     }
     return f;
   }
@@ -191,18 +191,18 @@ public:
 
   // Retrieve info about the field
   inline void info(int& rows, int& ncols,
-		   int& first_row, int& first_col,
-		   int& offscreen_rows, int& additional_buffers) const {
+                   int& first_row, int& first_col,
+                   int& offscreen_rows, int& additional_buffers) const {
     OnError(::field_info(field, &rows, &ncols,
-			 &first_row, &first_col,
-			 &offscreen_rows, &additional_buffers));
+                         &first_row, &first_col,
+                         &offscreen_rows, &additional_buffers));
   }
 
   // Retrieve info about the fields dynamic properties.
   inline void dynamic_info(int& dynamic_rows, int& dynamic_cols,
-			   int& max_growth) const {
+                           int& max_growth) const {
     OnError(::dynamic_field_info(field, &dynamic_rows, &dynamic_cols,
-				 &max_growth));
+                                 &max_growth));
   }
 
   // For a dynamic field you may set the maximum growth limit.
@@ -347,7 +347,7 @@ protected:
 private:
   NCursesWindow* sub;   // the subwindow object
   bool b_sub_owner;     // is this our own subwindow?
-  bool b_framed;	// has the form a border?
+  bool b_framed;        // has the form a border?
   bool b_autoDelete;    // Delete fields when deleting form?
 
   NCursesFormField** my_fields; // The array of fields for this form
@@ -355,9 +355,9 @@ private:
   // This structure is used for the form's user data field to link the
   // FORM* to the C++ object and to provide extra space for a user pointer.
   typedef struct {
-    void*	       m_user;	    // the pointer for the user's data
+    void*              m_user;      // the pointer for the user's data
     const NCursesForm* m_back;      // backward pointer to C++ object
-    const FORM*	       m_owner;
+    const FORM*        m_owner;
   } UserHook;
 
   // Get the backward pointer to the C++ object from a FORM
@@ -390,8 +390,8 @@ protected:
   }
 
   void InitForm (NCursesFormField* Fields[],
-		 bool with_frame,
-		 bool autoDeleteFields);
+                 bool with_frame,
+                 bool autoDeleteFields);
 
   inline void OnError (int err) const THROW2(NCursesException const, NCursesFormException) {
     if (err != E_OK)
@@ -404,9 +404,9 @@ protected:
   // 'Internal' constructor, builds an object without association to a
   // field array.
   NCursesForm( int  nlines,
-	       int  ncols,
-	       int  begin_y = 0,
-	       int  begin_x = 0)
+               int  ncols,
+               int  begin_y = 0,
+               int  begin_x = 0)
     : NCursesPanel(nlines, ncols, begin_y, begin_x),
       form (STATIC_CAST(FORM*)(0)),
       sub(0),
@@ -420,8 +420,8 @@ protected:
 public:
   // Create form for the default panel.
   NCursesForm (NCursesFormField* Fields[],
-	       bool with_frame=FALSE,	      // reserve space for a frame?
-	       bool autoDelete_Fields=FALSE)  // do automatic cleanup?
+               bool with_frame=FALSE,         // reserve space for a frame?
+               bool autoDelete_Fields=FALSE)  // do automatic cleanup?
     : NCursesPanel(),
       form(0),
       sub(0),
@@ -435,12 +435,12 @@ public:
 
   // Create a form in a panel with the given position and size.
   NCursesForm (NCursesFormField* Fields[],
-	       int  nlines,
-	       int  ncols,
-	       int  begin_y,
-	       int  begin_x,
-	       bool with_frame=FALSE,	     // reserve space for a frame?
-	       bool autoDelete_Fields=FALSE) // do automatic cleanup?
+               int  nlines,
+               int  ncols,
+               int  begin_y,
+               int  begin_x,
+               bool with_frame=FALSE,        // reserve space for a frame?
+               bool autoDelete_Fields=FALSE) // do automatic cleanup?
     : NCursesPanel(nlines, ncols, begin_y, begin_x),
       form(0),
       sub(0),
@@ -634,17 +634,17 @@ template<class T> class NCURSES_CXX_IMPEXP NCursesUserField : public NCursesForm
 {
 public:
   NCursesUserField (int rows,
-		    int ncols,
-		    int first_row = 0,
-		    int first_col = 0,
-		    const T* p_UserData = STATIC_CAST(T*)(0),
-		    int offscreen_rows = 0,
-		    int additional_buffers = 0)
+                    int ncols,
+                    int first_row = 0,
+                    int first_col = 0,
+                    const T* p_UserData = STATIC_CAST(T*)(0),
+                    int offscreen_rows = 0,
+                    int additional_buffers = 0)
     : NCursesFormField (rows, ncols,
-			first_row, first_col,
-			offscreen_rows, additional_buffers) {
+                        first_row, first_col,
+                        offscreen_rows, additional_buffers) {
       if (field)
-	OnError(::set_field_userptr(field, STATIC_CAST(void *)(p_UserData)));
+        OnError(::set_field_userptr(field, STATIC_CAST(void *)(p_UserData)));
   }
 
   virtual ~NCursesUserField() THROWS(NCursesException) {};
@@ -669,39 +669,39 @@ protected:
   // 'Internal' constructor, builds an object without association to a
   // field array.
   NCursesUserForm( int  nlines,
-		   int  ncols,
-		   int  begin_y = 0,
-		   int  begin_x = 0,
-		   const T* p_UserData = STATIC_CAST(T*)(0))
+                   int  ncols,
+                   int  begin_y = 0,
+                   int  begin_x = 0,
+                   const T* p_UserData = STATIC_CAST(T*)(0))
     : NCursesForm(nlines,ncols,begin_y,begin_x) {
       if (form)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>
-				     (p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>
+                                     (p_UserData)));
   }
 
 public:
   NCursesUserForm (NCursesFormField* Fields[],
-		   const T* p_UserData = STATIC_CAST(T*)(0),
-		   bool with_frame=FALSE,
-		   bool autoDelete_Fields=FALSE)
+                   const T* p_UserData = STATIC_CAST(T*)(0),
+                   bool with_frame=FALSE,
+                   bool autoDelete_Fields=FALSE)
     : NCursesForm (Fields, with_frame, autoDelete_Fields) {
       if (form)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
   NCursesUserForm (NCursesFormField* Fields[],
-		   int nlines,
-		   int ncols,
-		   int begin_y = 0,
-		   int begin_x = 0,
-		   const T* p_UserData = STATIC_CAST(T*)(0),
-		   bool with_frame=FALSE,
-		   bool autoDelete_Fields=FALSE)
+                   int nlines,
+                   int ncols,
+                   int begin_y = 0,
+                   int begin_x = 0,
+                   const T* p_UserData = STATIC_CAST(T*)(0),
+                   bool with_frame=FALSE,
+                   bool autoDelete_Fields=FALSE)
     : NCursesForm (Fields, nlines, ncols, begin_y, begin_x,
-		   with_frame, autoDelete_Fields) {
+                   with_frame, autoDelete_Fields) {
       if (form)
-	set_user (const_cast<void *>(reinterpret_cast<const void*>
-				     (p_UserData)));
+        set_user (const_cast<void *>(reinterpret_cast<const void*>
+                                     (p_UserData)));
   };
 
   virtual ~NCursesUserForm() THROWS(NCursesException) {
@@ -762,7 +762,7 @@ private:
 
   void set(NCursesFormField& f) {
     OnError(::set_field_type(f.get_field(),fieldtype,
-			     precision,lower_limit,upper_limit));
+                             precision,lower_limit,upper_limit));
   }
 
 public:
@@ -780,7 +780,7 @@ private:
 
   void set(NCursesFormField& f) {
     OnError(::set_field_type(f.get_field(),fieldtype,
-			     precision,lower_limit,upper_limit));
+                             precision,lower_limit,upper_limit));
   }
 
 public:
@@ -844,12 +844,12 @@ private:
 
   void set(NCursesFormField& f) {
     OnError(::set_field_type(f.get_field(),fieldtype,
-			     list,case_sensitive,non_unique_matches));
+                             list,case_sensitive,non_unique_matches));
   }
 public:
   Enumeration_Field(const char* enums[],
-		    bool case_sens=FALSE,
-		    bool non_unique=FALSE)
+                    bool case_sens=FALSE,
+                    bool non_unique=FALSE)
     : NCursesFieldType(TYPE_ENUM),
       list(enums),
       case_sensitive(case_sens ? -1 : 0),

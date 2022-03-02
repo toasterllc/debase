@@ -57,14 +57,14 @@ _nc_sigprocmask(int mode, sigset_t * mask, sigset_t * omask)
     sigset_t current = sigsetmask(0);
 
     if (omask)
-	*omask = current;
+        *omask = current;
 
     if (mode == SIG_BLOCK)
-	current |= *mask;
+        current |= *mask;
     else if (mode == SIG_UNBLOCK)
-	current &= ~*mask;
+        current &= ~*mask;
     else if (mode == SIG_SETMASK)
-	current = *mask;
+        current = *mask;
 
     sigsetmask(current);
     return 0;

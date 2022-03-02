@@ -45,8 +45,8 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     WINDOW *win;
 
     initscr();
-    (void) cbreak();		/* take input chars one at a time, no wait for \n */
-    (void) noecho();		/* don't echo input */
+    (void) cbreak();            /* take input chars one at a time, no wait for \n */
+    (void) noecho();            /* don't echo input */
 
     printw("Typing any function key will disable it, but typing it twice in\n");
     printw("a row will turn it back on (just for a demo).");
@@ -58,21 +58,21 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     wmove(win, 0, 0);
 
     while ((ch = wgetch(win)) != ERR) {
-	const char *name = keyname(ch);
-	if (ch == ESCAPE && prior == ch)
-	    break;
-	prior = ch;
-	wprintw(win, "Keycode %d, name %s\n",
-		ch,
-		name != 0 ? name : "<null>");
-	wclrtoeol(win);
-	wrefresh(win);
-	if (ch >= KEY_MIN) {
-	    keyok(ch, FALSE);
-	    lastch = ch;
-	} else if (lastch >= KEY_MIN) {
-	    keyok(lastch, TRUE);
-	}
+        const char *name = keyname(ch);
+        if (ch == ESCAPE && prior == ch)
+            break;
+        prior = ch;
+        wprintw(win, "Keycode %d, name %s\n",
+                ch,
+                name != 0 ? name : "<null>");
+        wclrtoeol(win);
+        wrefresh(win);
+        if (ch >= KEY_MIN) {
+            keyok(ch, FALSE);
+            lastch = ch;
+        } else if (lastch >= KEY_MIN) {
+            keyok(lastch, TRUE);
+        }
     }
     endwin();
     ExitProgram(EXIT_SUCCESS);

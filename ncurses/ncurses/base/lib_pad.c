@@ -36,9 +36,9 @@
 
 /*
  * lib_pad.c
- * newpad	-- create a new pad
+ * newpad       -- create a new pad
  * pnoutrefresh -- refresh a pad, no update
- * pechochar	-- add a char to a pad and refresh
+ * pechochar    -- add a char to a pad and refresh
  */
 
 #include <curses.priv.h>
@@ -55,20 +55,20 @@ NCURSES_SP_NAME(newpad) (NCURSES_SP_DCLx int l, int c)
     T((T_CALLED("newpad(%p,%d, %d)"), (void *) SP_PARM, l, c));
 
     if (l <= 0 || c <= 0)
-	returnWin(0);
+        returnWin(0);
 
     win = NCURSES_SP_NAME(_nc_makenew) (NCURSES_SP_ARGx l, c, 0, 0, _ISPAD);
     if (win == NULL)
-	returnWin(0);
+        returnWin(0);
 
     for (i = 0; i < l; i++) {
-	if_USE_SCROLL_HINTS(win->_line[i].oldindex = _NEWINDEX);
-	if ((win->_line[i].text = typeCalloc(NCURSES_CH_T, ((size_t) c))) == 0) {
-	    (void) _nc_freewin(win);
-	    returnWin(0);
-	}
-	for (ptr = win->_line[i].text; ptr < win->_line[i].text + c; ptr++)
-	    SetChar(*ptr, BLANK_TEXT, BLANK_ATTR);
+        if_USE_SCROLL_HINTS(win->_line[i].oldindex = _NEWINDEX);
+        if ((win->_line[i].text = typeCalloc(NCURSES_CH_T, ((size_t) c))) == 0) {
+            (void) _nc_freewin(win);
+            returnWin(0);
+        }
+        for (ptr = win->_line[i].text; ptr < win->_line[i].text + c; ptr++)
+            SetChar(*ptr, BLANK_TEXT, BLANK_ATTR);
     }
 
     returnWin(win);
@@ -90,21 +90,21 @@ subpad(WINDOW *orig, int l, int c, int begy, int begx)
     T((T_CALLED("subpad(%d, %d)"), l, c));
 
     if (orig) {
-	if (!(orig->_flags & _ISPAD)
-	    || ((win = derwin(orig, l, c, begy, begx)) == NULL))
-	    returnWin(0);
+        if (!(orig->_flags & _ISPAD)
+            || ((win = derwin(orig, l, c, begy, begx)) == NULL))
+            returnWin(0);
     }
     returnWin(win);
 }
 
 NCURSES_EXPORT(int)
 prefresh(WINDOW *win,
-	 int pminrow,
-	 int pmincol,
-	 int sminrow,
-	 int smincol,
-	 int smaxrow,
-	 int smaxcol)
+         int pminrow,
+         int pmincol,
+         int sminrow,
+         int smincol,
+         int smaxrow,
+         int smaxcol)
 {
 #if NCURSES_SP_FUNCS
     SCREEN *sp = _nc_screen_of(win);
@@ -112,21 +112,21 @@ prefresh(WINDOW *win,
 
     T((T_CALLED("prefresh()")));
     if (pnoutrefresh(win, pminrow, pmincol, sminrow, smincol, smaxrow,
-		     smaxcol) != ERR
-	&& NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG) != ERR) {
-	returnCode(OK);
+                     smaxcol) != ERR
+        && NCURSES_SP_NAME(doupdate) (NCURSES_SP_ARG) != ERR) {
+        returnCode(OK);
     }
     returnCode(ERR);
 }
 
 NCURSES_EXPORT(int)
 pnoutrefresh(WINDOW *win,
-	     int pminrow,
-	     int pmincol,
-	     int sminrow,
-	     int smincol,
-	     int smaxrow,
-	     int smaxcol)
+             int pminrow,
+             int pmincol,
+             int sminrow,
+             int smincol,
+             int smaxrow,
+             int smaxcol)
 {
     int i, j;
     int m, n;
@@ -135,7 +135,7 @@ pnoutrefresh(WINDOW *win,
     SCREEN *sp;
 
 #if USE_SCROLL_HINTS
-    const int my_len = 2;	/* parameterize the threshold for hardscroll */
+    const int my_len = 2;       /* parameterize the threshold for hardscroll */
     NCURSES_SIZE_T displaced;
     bool wide;
 #endif
@@ -144,22 +144,22 @@ pnoutrefresh(WINDOW *win,
        (void *) win, pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol));
 
     if (win == 0)
-	returnCode(ERR);
+        returnCode(ERR);
 
     if (!(win->_flags & _ISPAD))
-	returnCode(ERR);
+        returnCode(ERR);
 
     sp = _nc_screen_of(win);
 
     /* negative values are interpreted as zero */
     if (pminrow < 0)
-	pminrow = 0;
+        pminrow = 0;
     if (pmincol < 0)
-	pmincol = 0;
+        pmincol = 0;
     if (sminrow < 0)
-	sminrow = 0;
+        sminrow = 0;
     if (smincol < 0)
-	smincol = 0;
+        smincol = 0;
 
     pmaxrow = pminrow + smaxrow - sminrow;
     pmaxcol = pmincol + smaxcol - smincol;
@@ -173,35 +173,35 @@ pnoutrefresh(WINDOW *win,
      * Trim the caller's screen size back to the actual limits.
      */
     if (pmaxrow > win->_maxy) {
-	smaxrow -= (pmaxrow - win->_maxy);
-	pmaxrow = pminrow + smaxrow - sminrow;
+        smaxrow -= (pmaxrow - win->_maxy);
+        pmaxrow = pminrow + smaxrow - sminrow;
     }
     if (pmaxcol > win->_maxx) {
-	smaxcol -= (pmaxcol - win->_maxx);
-	pmaxcol = pmincol + smaxcol - smincol;
+        smaxcol -= (pmaxcol - win->_maxx);
+        pmaxcol = pmincol + smaxcol - smincol;
     }
 
     if (smaxrow >= screen_lines(sp)
-	|| smaxcol >= screen_columns(sp)
-	|| sminrow > smaxrow
-	|| smincol > smaxcol)
-	returnCode(ERR);
+        || smaxcol >= screen_columns(sp)
+        || sminrow > smaxrow
+        || smincol > smaxcol)
+        returnCode(ERR);
 
     T(("pad being refreshed"));
 
 #ifdef TRACE
     if (USE_TRACEF(TRACE_UPDATE)) {
-	_tracedump("...pad", win);
-	_nc_unlock_global(tracef);
+        _tracedump("...pad", win);
+        _nc_unlock_global(tracef);
     }
 #endif /* TRACE */
 #if USE_SCROLL_HINTS
     if (win->_pad._pad_y >= 0) {
-	displaced = pminrow - win->_pad._pad_y
-	    - (sminrow - win->_pad._pad_top);
-	T(("pad being shifted by %d line(s)", displaced));
+        displaced = pminrow - win->_pad._pad_y
+            - (sminrow - win->_pad._pad_top);
+        T(("pad being shifted by %d line(s)", displaced));
     } else
-	displaced = 0;
+        displaced = 0;
 #endif
 
     /*
@@ -223,53 +223,53 @@ pnoutrefresh(WINDOW *win,
 #endif
 
     for (i = pminrow, m = sminrow + win->_yoffset;
-	 i <= pmaxrow && m <= NewScreen(sp)->_maxy;
-	 i++, m++) {
-	register struct ldat *nline = &NewScreen(sp)->_line[m];
-	register struct ldat *oline = &win->_line[i];
-	for (j = pmincol, n = smincol; j <= pmaxcol; j++, n++) {
-	    NCURSES_CH_T ch = oline->text[j];
+         i <= pmaxrow && m <= NewScreen(sp)->_maxy;
+         i++, m++) {
+        register struct ldat *nline = &NewScreen(sp)->_line[m];
+        register struct ldat *oline = &win->_line[i];
+        for (j = pmincol, n = smincol; j <= pmaxcol; j++, n++) {
+            NCURSES_CH_T ch = oline->text[j];
 #if USE_WIDEC_SUPPORT
-	    /*
-	     * Special case for leftmost character of the displayed area.
-	     * Only half of a double-width character may be visible.
-	     */
-	    if (j == pmincol
-		&& j > 0
-		&& isWidecExt(ch)) {
-		SetChar(ch, L(' '), AttrOf(oline->text[j - 1]));
-	    }
+            /*
+             * Special case for leftmost character of the displayed area.
+             * Only half of a double-width character may be visible.
+             */
+            if (j == pmincol
+                && j > 0
+                && isWidecExt(ch)) {
+                SetChar(ch, L(' '), AttrOf(oline->text[j - 1]));
+            }
 #endif
-	    if (!CharEq(ch, nline->text[n])) {
-		nline->text[n] = ch;
-		CHANGED_CELL(nline, n);
-	    }
-	}
+            if (!CharEq(ch, nline->text[n])) {
+                nline->text[n] = ch;
+                CHANGED_CELL(nline, n);
+            }
+        }
 
 #if USE_SCROLL_HINTS
-	if (wide) {
-	    int nind = m + displaced;
-	    if (oline->oldindex < 0
-		|| nind < sminrow
-		|| nind > smaxrow) {
-		nind = _NEWINDEX;
-	    } else if (displaced) {
-		register struct ldat *pline = &CurScreen(sp)->_line[nind];
-		for (j = 0; j <= my_len; j++) {
-		    int k = NewScreen(sp)->_maxx - j;
-		    if (pline->text[j] != nline->text[j]
-			|| pline->text[k] != nline->text[k]) {
-			nind = _NEWINDEX;
-			break;
-		    }
-		}
-	    }
+        if (wide) {
+            int nind = m + displaced;
+            if (oline->oldindex < 0
+                || nind < sminrow
+                || nind > smaxrow) {
+                nind = _NEWINDEX;
+            } else if (displaced) {
+                register struct ldat *pline = &CurScreen(sp)->_line[nind];
+                for (j = 0; j <= my_len; j++) {
+                    int k = NewScreen(sp)->_maxx - j;
+                    if (pline->text[j] != nline->text[j]
+                        || pline->text[k] != nline->text[k]) {
+                        nind = _NEWINDEX;
+                        break;
+                    }
+                }
+            }
 
-	    nline->oldindex = nind;
-	}
+            nline->oldindex = nind;
+        }
 #endif /* USE_SCROLL_HINTS */
-	oline->firstchar = oline->lastchar = _NOCHANGE;
-	if_USE_SCROLL_HINTS(oline->oldindex = i);
+        oline->firstchar = oline->lastchar = _NOCHANGE;
+        if_USE_SCROLL_HINTS(oline->oldindex = i);
     }
 
     /*
@@ -280,18 +280,18 @@ pnoutrefresh(WINDOW *win,
      */
 #if USE_SCROLL_HINTS
     for (i = pminrow - 1; (i >= 0) && (win->_line[i].oldindex >= 0); i--)
-	win->_line[i].oldindex = _NEWINDEX;
+        win->_line[i].oldindex = _NEWINDEX;
     for (i = pmaxrow + 1; (i <= win->_maxy)
-	 && (win->_line[i].oldindex >= 0); i++)
-	win->_line[i].oldindex = _NEWINDEX;
+         && (win->_line[i].oldindex >= 0); i++)
+        win->_line[i].oldindex = _NEWINDEX;
 #endif
 
     win->_begx = (NCURSES_SIZE_T) smincol;
     win->_begy = (NCURSES_SIZE_T) sminrow;
 
     if (win->_clear) {
-	win->_clear = FALSE;
-	NewScreen(sp)->_clear = TRUE;
+        win->_clear = FALSE;
+        NewScreen(sp)->_clear = TRUE;
     }
 
     /*
@@ -299,14 +299,14 @@ pnoutrefresh(WINDOW *win,
      * If not, don't do anything; it is not an error.
      */
     if (win->_leaveok == FALSE
-	&& win->_cury >= pminrow
-	&& win->_curx >= pmincol
-	&& win->_cury <= pmaxrow
-	&& win->_curx <= pmaxcol) {
-	NewScreen(sp)->_cury = (NCURSES_SIZE_T) (win->_cury - pminrow
-						 + win->_begy + win->_yoffset);
-	NewScreen(sp)->_curx = (NCURSES_SIZE_T) (win->_curx - pmincol
-						 + win->_begx);
+        && win->_cury >= pminrow
+        && win->_curx >= pmincol
+        && win->_cury <= pmaxrow
+        && win->_curx <= pmaxcol) {
+        NewScreen(sp)->_cury = (NCURSES_SIZE_T) (win->_cury - pminrow
+                                                 + win->_begy + win->_yoffset);
+        NewScreen(sp)->_curx = (NCURSES_SIZE_T) (win->_curx - pmincol
+                                                 + win->_begx);
     }
     NewScreen(sp)->_leaveok = win->_leaveok;
     win->_flags &= ~_HASMOVED;
@@ -332,18 +332,18 @@ pechochar(WINDOW *pad, const chtype ch)
     T((T_CALLED("pechochar(%p, %s)"), (void *) pad, _tracechtype(ch)));
 
     if (pad == 0)
-	returnCode(ERR);
+        returnCode(ERR);
 
     if (!(pad->_flags & _ISPAD))
-	returnCode(wechochar(pad, ch));
+        returnCode(wechochar(pad, ch));
 
     waddch(pad, ch);
     prefresh(pad, pad->_pad._pad_y,
-	     pad->_pad._pad_x,
-	     pad->_pad._pad_top,
-	     pad->_pad._pad_left,
-	     pad->_pad._pad_bottom,
-	     pad->_pad._pad_right);
+             pad->_pad._pad_x,
+             pad->_pad._pad_top,
+             pad->_pad._pad_left,
+             pad->_pad._pad_bottom,
+             pad->_pad._pad_right);
 
     returnCode(OK);
 }

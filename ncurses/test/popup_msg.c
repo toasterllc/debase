@@ -79,17 +79,17 @@ popup_msg(WINDOW *parent, const char *const *msg)
     int ch = ERR;
 
     for (n = 0; msg[n] != 0; ++n) {
-	int check = (int) strlen(msg[n]);
-	if (width < check)
-	    width = check;
+        int check = (int) strlen(msg[n]);
+        if (width < check)
+            width = check;
     }
     length = n;
 
     if ((help = newwin(high, wide, y0, x0)) == 0)
-	return;
+        return;
     if ((data = newpad(length + 1, width)) == 0) {
-	delwin(help);
-	return;
+        delwin(help);
+        return;
     }
 
     begin_popup();
@@ -97,67 +97,67 @@ popup_msg(WINDOW *parent, const char *const *msg)
     keypad(data, TRUE);
 
     for (n = 0; n < length; ++n) {
-	waddstr(data, msg[n]);
-	if ((n + 1) < length) {
-	    waddch(data, '\n');
-	}
+        waddstr(data, msg[n]);
+        if ((n + 1) < length) {
+            waddch(data, '\n');
+        }
     }
     y2 = getcury(data);
     last_y = (y2 - (high - 3));
 
     do {
-	switch (ch) {
-	case KEY_HOME:
-	    y1 = 0;
-	    break;
-	case KEY_END:
-	    y1 = last_y;
-	    break;
-	case KEY_PREVIOUS:
-	case KEY_PPAGE:
-	    if (y1 > 0) {
-		y1 -= high / 2;
-		if (y1 < 0)
-		    y1 = 0;
-	    } else {
-		beep();
-	    }
-	    break;
-	case KEY_NEXT:
-	case KEY_NPAGE:
-	    if (y1 < last_y) {
-		y1 += high / 2;
-		if (y1 > last_y)
-		    y1 = last_y;
-	    } else {
-		beep();
-	    }
-	    break;
-	case CTRL('P'):
-	case KEY_UP:
-	    if (y1 > 0)
-		--y1;
-	    else
-		beep();
-	    break;
-	case CTRL('N'):
-	case KEY_DOWN:
-	    if (y1 < last_y)
-		++y1;
-	    else
-		beep();
-	    break;
-	default:
-	    beep();
-	    break;
-	case ERR:
-	    break;
-	}
-	werase(help);
-	box(help, 0, 0);
-	wnoutrefresh(help);
-	pnoutrefresh(data, y1, 0, y0 + 1, x0 + 1, high, wide);
-	doupdate();
+        switch (ch) {
+        case KEY_HOME:
+            y1 = 0;
+            break;
+        case KEY_END:
+            y1 = last_y;
+            break;
+        case KEY_PREVIOUS:
+        case KEY_PPAGE:
+            if (y1 > 0) {
+                y1 -= high / 2;
+                if (y1 < 0)
+                    y1 = 0;
+            } else {
+                beep();
+            }
+            break;
+        case KEY_NEXT:
+        case KEY_NPAGE:
+            if (y1 < last_y) {
+                y1 += high / 2;
+                if (y1 > last_y)
+                    y1 = last_y;
+            } else {
+                beep();
+            }
+            break;
+        case CTRL('P'):
+        case KEY_UP:
+            if (y1 > 0)
+                --y1;
+            else
+                beep();
+            break;
+        case CTRL('N'):
+        case KEY_DOWN:
+            if (y1 < last_y)
+                ++y1;
+            else
+                beep();
+            break;
+        default:
+            beep();
+            break;
+        case ERR:
+            break;
+        }
+        werase(help);
+        box(help, 0, 0);
+        wnoutrefresh(help);
+        pnoutrefresh(data, y1, 0, y0 + 1, x0 + 1, high, wide);
+        doupdate();
     } while ((ch = wgetch(data)) != ERR && ch != QUIT && ch != ESCAPE);
     werase(help);
     wrefresh(help);

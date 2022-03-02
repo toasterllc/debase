@@ -48,15 +48,15 @@ _nc_doalloc(void *oldp, size_t amount)
     void *newp;
 
     if (oldp != NULL) {
-	if (amount == 0) {
-	    free(oldp);
-	    newp = NULL;
-	} else if ((newp = realloc(oldp, amount)) == 0) {
-	    free(oldp);
-	    errno = ENOMEM;	/* just in case 'free' reset */
-	}
+        if (amount == 0) {
+            free(oldp);
+            newp = NULL;
+        } else if ((newp = realloc(oldp, amount)) == 0) {
+            free(oldp);
+            errno = ENOMEM;     /* just in case 'free' reset */
+        }
     } else {
-	newp = malloc(amount);
+        newp = malloc(amount);
     }
     return newp;
 }

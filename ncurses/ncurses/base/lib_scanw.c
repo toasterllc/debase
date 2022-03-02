@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_scanw.c
+**      lib_scanw.c
 **
-**	The routines scanw(), wscanw() and friends.
+**      The routines scanw(), wscanw() and friends.
 **
 */
 
@@ -50,9 +50,9 @@ vwscanw(WINDOW *win, const char *fmt, va_list argp)
     int code = ERR;
 
     if (wgetnstr(win, buf, (int) sizeof(buf) - 1) != ERR) {
-	if ((code = vsscanf(buf, fmt, argp)) == EOF) {
-	    code = ERR;
-	}
+        if ((code = vsscanf(buf, fmt, argp)) == EOF) {
+            code = ERR;
+        }
     }
 
     return code;
@@ -65,9 +65,9 @@ vw_scanw(WINDOW *win, const char *fmt, va_list argp)
     int code = ERR;
 
     if (wgetnstr(win, buf, (int) sizeof(buf) - 1) != ERR) {
-	if ((code = vsscanf(buf, fmt, argp)) == EOF) {
-	    code = ERR;
-	}
+        if ((code = vsscanf(buf, fmt, argp)) == EOF) {
+            code = ERR;
+        }
     }
 
     return code;

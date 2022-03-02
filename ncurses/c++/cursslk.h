@@ -151,7 +151,7 @@ public:
   {
     if (this != &rhs) {
       *this = rhs;
-      init();		// allocate a new slk_array[]
+      init();           // allocate a new slk_array[]
     }
     return *this;
   }
@@ -160,7 +160,7 @@ public:
     : b_attrInit(rhs.b_attrInit),
       slk_array(NULL)
   {
-    init();		// allocate a new slk_array[]
+    init();             // allocate a new slk_array[]
   }
 
   virtual ~Soft_Label_Key_Set() THROWS(NCursesException);

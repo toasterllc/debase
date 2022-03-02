@@ -63,9 +63,9 @@ MODULE_ID("$Id: fld_arg.c,v 1.18 2020/12/11 22:05:24 tom Exp $")
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(int)
 set_fieldtype_arg(FIELDTYPE *typ,
-		  void *(*const make_arg)(va_list *),
-		  void *(*const copy_arg)(const void *),
-		  void (*const free_arg) (void *))
+                  void *(*const make_arg)(va_list *),
+                  void *(*const copy_arg)(const void *),
+                  void (*const free_arg) (void *))
 {
   TR_FUNC_BFR(3);
 

@@ -45,7 +45,7 @@ extern "C" {
 
 #if defined(HAVE_LIBDMALLOC) && HAVE_LIBDMALLOC
 #include <string.h>
-#undef strndup		/* workaround for #define in GLIBC 2.7 */
+#undef strndup          /* workaround for #define in GLIBC 2.7 */
 #include <dmalloc.h>    /* Gray Watson's library */
 #else
 #undef  HAVE_LIBDMALLOC

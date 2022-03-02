@@ -33,8 +33,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slktouch.c
- *	Soft key routines.
+ *      lib_slktouch.c
+ *      Soft key routines.
  *      Force the code to believe that the soft keys have been changed.
  */
 #include <curses.priv.h>
@@ -47,7 +47,7 @@ NCURSES_SP_NAME(slk_touch) (NCURSES_SP_DCL0)
     T((T_CALLED("slk_touch(%p)"), (void *) SP_PARM));
 
     if (SP_PARM == 0 || SP_PARM->_slk == 0)
-	returnCode(ERR);
+        returnCode(ERR);
     SP_PARM->_slk->dirty = TRUE;
 
     returnCode(OK);

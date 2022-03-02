@@ -66,17 +66,17 @@ color_code(const char *color)
     size_t n;
 
     if ((result = (int) strtol(color, &endp, 0)) >= 0
-	&& (endp == 0 || *endp == 0)) {
-	;
+        && (endp == 0 || *endp == 0)) {
+        ;
     } else if (!strcmp(color, "default")) {
-	result = -1;
+        result = -1;
     } else {
-	for (n = 0; n < SIZEOF(the_color_names); ++n) {
-	    if (!strcmp(the_color_names[n], color)) {
-		result = (int) n;
-		break;
-	    }
-	}
+        for (n = 0; n < SIZEOF(the_color_names); ++n) {
+            if (!strcmp(the_color_names[n], color)) {
+                result = (int) n;
+                break;
+            }
+        }
     }
     return result;
 }
@@ -90,12 +90,12 @@ color_name(int color)
     const char *result = 0;
 
     if (color >= (int) SIZEOF(the_color_names)) {
-	_nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%d", color);
-	result = temp;
+        _nc_SPRINTF(temp, _nc_SLIMIT(sizeof(temp)) "%d", color);
+        result = temp;
     } else if (color < 0) {
-	result = "default";
+        result = "default";
     } else {
-	result = the_color_names[color];
+        result = the_color_names[color];
     }
     return result;
 }

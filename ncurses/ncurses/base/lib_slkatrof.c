@@ -33,8 +33,8 @@
  ****************************************************************************/
 
 /*
- *	lib_slkatrof.c
- *	Soft key routines.
+ *      lib_slkatrof.c
+ *      Soft key routines.
  *      Switch off labels attributes
  */
 #include <curses.priv.h>
@@ -47,15 +47,15 @@ NCURSES_SP_NAME(slk_attroff) (NCURSES_SP_DCLx const chtype attr)
     T((T_CALLED("slk_attroff(%p,%s)"), (void *) SP_PARM, _traceattr(attr)));
 
     if (SP_PARM != 0 && SP_PARM->_slk != 0) {
-	TR(TRACE_ATTRS, ("... current %s", _tracech_t(CHREF(SP_PARM->_slk->attr))));
-	RemAttr(SP_PARM->_slk->attr, attr);
-	if ((attr & A_COLOR) != 0) {
-	    SetPair(SP_PARM->_slk->attr, 0);
-	}
-	TR(TRACE_ATTRS, ("new attribute is %s", _tracech_t(CHREF(SP_PARM->_slk->attr))));
-	returnCode(OK);
+        TR(TRACE_ATTRS, ("... current %s", _tracech_t(CHREF(SP_PARM->_slk->attr))));
+        RemAttr(SP_PARM->_slk->attr, attr);
+        if ((attr & A_COLOR) != 0) {
+            SetPair(SP_PARM->_slk->attr, 0);
+        }
+        TR(TRACE_ATTRS, ("new attribute is %s", _tracech_t(CHREF(SP_PARM->_slk->attr))));
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }
 
 #if NCURSES_SP_FUNCS

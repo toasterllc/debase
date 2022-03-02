@@ -60,7 +60,7 @@ get_tty_settings(int fd, TTY * tty_settings)
     bool success = TRUE;
     my_fd = fd;
     if (fd < 0 || GET_TTY(my_fd, tty_settings) < 0) {
-	success = FALSE;
+        success = FALSE;
     }
     return success;
 }
@@ -73,19 +73,19 @@ int
 save_tty_settings(TTY * tty_settings, bool need_tty)
 {
     if (!get_tty_settings(STDERR_FILENO, tty_settings) &&
-	!get_tty_settings(STDOUT_FILENO, tty_settings) &&
-	!get_tty_settings(STDIN_FILENO, tty_settings)) {
-	if (need_tty) {
-	    int fd = open("/dev/tty", O_RDWR);
-	    if (!get_tty_settings(fd, tty_settings)) {
-		failed("terminal attributes");
-	    }
-	} else {
-	    my_fd = fileno(stdout);
-	}
+        !get_tty_settings(STDOUT_FILENO, tty_settings) &&
+        !get_tty_settings(STDIN_FILENO, tty_settings)) {
+        if (need_tty) {
+            int fd = open("/dev/tty", O_RDWR);
+            if (!get_tty_settings(fd, tty_settings)) {
+                failed("terminal attributes");
+            }
+        } else {
+            my_fd = fileno(stdout);
+        }
     } else {
-	can_restore = TRUE;
-	original_settings = *tty_settings;
+        can_restore = TRUE;
+        original_settings = *tty_settings;
     }
     return my_fd;
 }
@@ -94,7 +94,7 @@ void
 restore_tty_settings(void)
 {
     if (can_restore)
-	SET_TTY(my_fd, &original_settings);
+        SET_TTY(my_fd, &original_settings);
 }
 
 /* Set the modes if they've changed. */
@@ -102,6 +102,6 @@ void
 update_tty_settings(TTY * old_settings, TTY * new_settings)
 {
     if (memcmp(new_settings, old_settings, sizeof(TTY))) {
-	SET_TTY(my_fd, new_settings);
+        SET_TTY(my_fd, new_settings);
     }
 }

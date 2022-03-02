@@ -42,18 +42,18 @@ trash(int beg_x, int max_x, int cur_x)
     int x;
 
     for (x = cur_x; x > beg_x; --x) {
-	putchar('\b');
+        putchar('\b');
     }
     for (x = beg_x; x < max_x; ++x) {
-	if (x < cur_x)
-	    putchar('<');
-	else if (x == cur_x)
-	    putchar('=');
-	else if (x > cur_x)
-	    putchar('>');
+        if (x < cur_x)
+            putchar('<');
+        else if (x == cur_x)
+            putchar('=');
+        else if (x > cur_x)
+            putchar('>');
     }
     for (x = max_x; x > cur_x; --x) {
-	putchar('\b');
+        putchar('\b');
     }
     fflush(stdout);
 }
@@ -63,20 +63,20 @@ test_redraw(WINDOW *win)
 {
     static const char *help[] =
     {
-	"Commands:",
-	"  ^Q/ESC/q   - quit",
-	"  w          - recur in a new window",
-	"  !          - overwrite current line using stdio outside curses.",
+        "Commands:",
+        "  ^Q/ESC/q   - quit",
+        "  w          - recur in a new window",
+        "  !          - overwrite current line using stdio outside curses.",
 #ifdef NCURSES_VERSION
-	"  @          - run \"date\" command, to put its output on screen.",
+        "  @          - run \"date\" command, to put its output on screen.",
 #endif
-	"  ^L         - call redrawwin() for current window.",
-	"  ^W         - call wredrawln() for current line/current window.",
-	"  arrow-keys - move cursor on the screen",
-	"",
-	"Other control characters are added to the screen in printable form.",
-	"Other printable characters are added to the screen as is.",
-	0
+        "  ^L         - call redrawwin() for current window.",
+        "  ^W         - call wredrawln() for current line/current window.",
+        "  arrow-keys - move cursor on the screen",
+        "",
+        "Other control characters are added to the screen in printable form.",
+        "Other printable characters are added to the screen as is.",
+        0
     };
 
     WINDOW *win1;
@@ -93,98 +93,98 @@ test_redraw(WINDOW *win)
     getbegyx(win, beg_y, beg_x);
 
     while (!done) {
-	int ch = wgetch(win);
-	int y, x;
+        int ch = wgetch(win);
+        int y, x;
 
-	getyx(win, y, x);
-	switch (ch) {
-	case 'q':
-	    /* FALLTHRU */
-	case QUIT:
-	case ESCAPE:
-	    done = TRUE;
-	    break;
-	case 'w':
-	    win1 = newwin(max_y, max_x,
-			  beg_y, beg_x);
-	    win2 = newwin(max_y - 2, max_x - 2,
-			  beg_y + 1, beg_x + 1);
-	    box(win1, 0, 0);
-	    wrefresh(win1);
+        getyx(win, y, x);
+        switch (ch) {
+        case 'q':
+            /* FALLTHRU */
+        case QUIT:
+        case ESCAPE:
+            done = TRUE;
+            break;
+        case 'w':
+            win1 = newwin(max_y, max_x,
+                          beg_y, beg_x);
+            win2 = newwin(max_y - 2, max_x - 2,
+                          beg_y + 1, beg_x + 1);
+            box(win1, 0, 0);
+            wrefresh(win1);
 
-	    test_redraw(win2);
+            test_redraw(win2);
 
-	    delwin(win2);
-	    delwin(win1);
+            delwin(win2);
+            delwin(win1);
 
-	    touchwin(win);
-	    break;
+            touchwin(win);
+            break;
 
-	case '!':
-	    /*
-	     * redrawwin() and wredrawln() do not take into account the
-	     * possibility that the cursor may have moved.  That makes them
-	     * cumbersome for using with a shell command.  So we simply
-	     * trash the current line of the window using backspace/overwrite.
-	     */
-	    trash(beg_x, max_x, x + beg_x);
-	    break;
+        case '!':
+            /*
+             * redrawwin() and wredrawln() do not take into account the
+             * possibility that the cursor may have moved.  That makes them
+             * cumbersome for using with a shell command.  So we simply
+             * trash the current line of the window using backspace/overwrite.
+             */
+            trash(beg_x, max_x, x + beg_x);
+            break;
 
 #ifdef NCURSES_VERSION
-	case '@':
-	    /*
-	     * For a shell command, we can work around the problem noted above
-	     * using mvcur().  It is ifdef'd for NCURSES, since X/Open does
-	     * not define the case where the old location is unknown.
-	     */
-	    IGNORE_RC(system("date"));
-	    mvcur(-1, -1, y, x);
-	    break;
+        case '@':
+            /*
+             * For a shell command, we can work around the problem noted above
+             * using mvcur().  It is ifdef'd for NCURSES, since X/Open does
+             * not define the case where the old location is unknown.
+             */
+            IGNORE_RC(system("date"));
+            mvcur(-1, -1, y, x);
+            break;
 #endif
 
-	case CTRL('W'):
-	    redrawwin(win);
-	    break;
+        case CTRL('W'):
+            redrawwin(win);
+            break;
 
-	case CTRL('L'):
-	    wredrawln(win, y, 1);
-	    break;
+        case CTRL('L'):
+            wredrawln(win, y, 1);
+            break;
 
-	case KEY_UP:
-	    if (y > 0)
-		wmove(win, y - 1, x);
-	    break;
+        case KEY_UP:
+            if (y > 0)
+                wmove(win, y - 1, x);
+            break;
 
-	case KEY_DOWN:
-	    if (y < max_y)
-		wmove(win, y + 1, x);
-	    break;
+        case KEY_DOWN:
+            if (y < max_y)
+                wmove(win, y + 1, x);
+            break;
 
-	case KEY_LEFT:
-	    if (x > 0)
-		wmove(win, y, x - 1);
-	    break;
+        case KEY_LEFT:
+            if (x > 0)
+                wmove(win, y, x - 1);
+            break;
 
-	case KEY_RIGHT:
-	    if (x < max_x)
-		wmove(win, y, x + 1);
-	    break;
+        case KEY_RIGHT:
+            if (x < max_x)
+                wmove(win, y, x + 1);
+            break;
 
-	case HELP_KEY_1:
-	    popup_msg(win, help);
-	    break;
+        case HELP_KEY_1:
+            popup_msg(win, help);
+            break;
 
-	default:
-	    if (ch > KEY_MIN) {
-		waddstr(win, keyname(ch));
-		waddch(win, '\n');
-	    } else {
-		waddstr(win, unctrl(UChar(ch)));
-	    }
-	    break;
-	}
-	wnoutrefresh(win);
-	doupdate();
+        default:
+            if (ch > KEY_MIN) {
+                waddstr(win, keyname(ch));
+                waddch(win, '\n');
+            } else {
+                waddstr(win, unctrl(UChar(ch)));
+            }
+            break;
+        }
+        wnoutrefresh(win);
+        doupdate();
     }
 }
 
@@ -193,15 +193,15 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: redraw [options]"
-	,""
-	,"Options:"
-	,"  -e      use stderr (default stdout)"
-	,"  -n      do not initialize terminal"
+        "Usage: redraw [options]"
+        ,""
+        ,"Options:"
+        ,"  -e      use stderr (default stdout)"
+        ,"  -n      do not initialize terminal"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -213,25 +213,25 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     FILE *my_fp = stdout;
 
     while ((ch = getopt(argc, argv, "en")) != -1) {
-	switch (ch) {
-	case 'e':
-	    my_fp = stderr;
-	    break;
-	case 'n':
-	    no_init = TRUE;
-	    break;
-	default:
-	    usage();
-	    break;
-	}
+        switch (ch) {
+        case 'e':
+            my_fp = stderr;
+            break;
+        case 'n':
+            no_init = TRUE;
+            break;
+        default:
+            usage();
+            break;
+        }
     }
     if (optind < argc)
-	usage();
+        usage();
 
     if (no_init) {
-	START_TRACE();
+        START_TRACE();
     } else {
-	newterm((char *) 0, my_fp, stdin);
+        newterm((char *) 0, my_fp, stdin);
     }
 
     raw();

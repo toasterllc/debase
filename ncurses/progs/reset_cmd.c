@@ -48,7 +48,7 @@
 
 #if NEED_PTEM_H
 /* they neglected to define struct winsize in termios.h -- it is only
-   in termio.h	*/
+   in termio.h  */
 #include <sys/stream.h>
 #include <sys/ptem.h>
 #endif
@@ -77,8 +77,8 @@ MODULE_ID("$Id: reset_cmd.c,v 1.28 2021/10/02 18:08:44 tom Exp $")
 
 static FILE *my_file;
 
-static bool use_reset = FALSE;	/* invoked as reset */
-static bool use_init = FALSE;	/* invoked as init */
+static bool use_reset = FALSE;  /* invoked as reset */
+static bool use_init = FALSE;   /* invoked as init */
 
 static GCC_NORETURN void
 failed(const char *msg)
@@ -102,16 +102,16 @@ cat_file(char *file)
     bool sent = FALSE;
 
     if (file != 0) {
-	if ((fp = safe_fopen(file, "r")) == 0)
-	    failed(file);
+        if ((fp = safe_fopen(file, "r")) == 0)
+            failed(file);
 
-	while ((nr = fread(buf, sizeof(char), sizeof(buf), fp)) != 0) {
-	    if (fwrite(buf, sizeof(char), nr, my_file) != nr) {
-		failed(file);
-	    }
-	    sent = TRUE;
-	}
-	fclose(fp);
+        while ((nr = fread(buf, sizeof(char), sizeof(buf), fp)) != 0) {
+            if (fwrite(buf, sizeof(char), nr, my_file) != nr) {
+                failed(file);
+            }
+            sent = TRUE;
+        }
+        fclose(fp);
     }
     return sent;
 }
@@ -145,16 +145,16 @@ out_char(int c)
 
 /* control-character defaults */
 #ifndef CEOF
-#define CEOF	CTRL('D')
+#define CEOF    CTRL('D')
 #endif
 #ifndef CERASE
-#define CERASE	CTRL('H')
+#define CERASE  CTRL('H')
 #endif
 #ifndef CINTR
-#define CINTR	127		/* ^? */
+#define CINTR   127             /* ^? */
 #endif
 #ifndef CKILL
-#define CKILL	CTRL('U')
+#define CKILL   CTRL('U')
 #endif
 #ifndef CLNEXT
 #define CLNEXT  CTRL('v')
@@ -163,22 +163,22 @@ out_char(int c)
 #define CRPRNT  CTRL('r')
 #endif
 #ifndef CQUIT
-#define CQUIT	CTRL('\\')
+#define CQUIT   CTRL('\\')
 #endif
 #ifndef CSTART
-#define CSTART	CTRL('Q')
+#define CSTART  CTRL('Q')
 #endif
 #ifndef CSTOP
-#define CSTOP	CTRL('S')
+#define CSTOP   CTRL('S')
 #endif
 #ifndef CSUSP
-#define CSUSP	CTRL('Z')
+#define CSUSP   CTRL('Z')
 #endif
 
 #if defined(_POSIX_VDISABLE)
 #define DISABLED(val)   (((_POSIX_VDISABLE != -1) \
-		       && ((val) == _POSIX_VDISABLE)) \
-		      || ((val) <= 0))
+                       && ((val) == _POSIX_VDISABLE)) \
+                      || ((val) <= 0))
 #else
 #define DISABLED(val)   ((int)(val) <= 0)
 #endif
@@ -229,108 +229,108 @@ reset_tty_settings(int fd, TTY * tty_settings, int noset)
 #endif
 
     tty_settings->c_iflag &= ~((unsigned) (IGNBRK
-					   | PARMRK
-					   | INPCK
-					   | ISTRIP
-					   | INLCR
-					   | IGNCR
+                                           | PARMRK
+                                           | INPCK
+                                           | ISTRIP
+                                           | INLCR
+                                           | IGNCR
 #ifdef IUCLC
-					   | IUCLC
+                                           | IUCLC
 #endif
 #ifdef IXANY
-					   | IXANY
+                                           | IXANY
 #endif
-					   | IXOFF));
+                                           | IXOFF));
 
     tty_settings->c_iflag |= (BRKINT
-			      | IGNPAR
-			      | ICRNL
-			      | IXON
+                              | IGNPAR
+                              | ICRNL
+                              | IXON
 #ifdef IMAXBEL
-			      | IMAXBEL
+                              | IMAXBEL
 #endif
-	);
+        );
 
     tty_settings->c_oflag &= ~((unsigned) (0
 #ifdef OLCUC
-					   | OLCUC
+                                           | OLCUC
 #endif
 #ifdef OCRNL
-					   | OCRNL
+                                           | OCRNL
 #endif
 #ifdef ONOCR
-					   | ONOCR
+                                           | ONOCR
 #endif
 #ifdef ONLRET
-					   | ONLRET
+                                           | ONLRET
 #endif
 #ifdef OFILL
-					   | OFILL
+                                           | OFILL
 #endif
 #ifdef OFDEL
-					   | OFDEL
+                                           | OFDEL
 #endif
 #ifdef NLDLY
-					   | NLDLY
+                                           | NLDLY
 #endif
 #ifdef CRDLY
-					   | CRDLY
+                                           | CRDLY
 #endif
 #ifdef TABDLY
-					   | TABDLY
+                                           | TABDLY
 #endif
 #ifdef BSDLY
-					   | BSDLY
+                                           | BSDLY
 #endif
 #ifdef VTDLY
-					   | VTDLY
+                                           | VTDLY
 #endif
 #ifdef FFDLY
-					   | FFDLY
+                                           | FFDLY
 #endif
-			       ));
+                               ));
 
     tty_settings->c_oflag |= (OPOST
 #ifdef ONLCR
-			      | ONLCR
+                              | ONLCR
 #endif
-	);
+        );
 
     tty_settings->c_cflag &= ~((unsigned) (CSIZE
-					   | CSTOPB
-					   | PARENB
-					   | PARODD
-					   | CLOCAL));
+                                           | CSTOPB
+                                           | PARENB
+                                           | PARODD
+                                           | CLOCAL));
     tty_settings->c_cflag |= (CS8 | CREAD);
     tty_settings->c_lflag &= ~((unsigned) (ECHONL
-					   | NOFLSH
+                                           | NOFLSH
 #ifdef TOSTOP
-					   | TOSTOP
+                                           | TOSTOP
 #endif
 #ifdef ECHOPTR
-					   | ECHOPRT
+                                           | ECHOPRT
 #endif
 #ifdef XCASE
-					   | XCASE
+                                           | XCASE
 #endif
-			       ));
+                               ));
 
     tty_settings->c_lflag |= (ISIG
-			      | ICANON
-			      | ECHO
-			      | ECHOE
-			      | ECHOK
+                              | ICANON
+                              | ECHO
+                              | ECHOE
+                              | ECHOK
 #ifdef ECHOCTL
-			      | ECHOCTL
+                              | ECHOCTL
 #endif
 #ifdef ECHOKE
-			      | ECHOKE
+                              | ECHOKE
 #endif
-	);
+        );
 #endif
 
     if (!noset) {
-	SET_TTY(fd, tty_settings);
+        SET_TTY(fd, tty_settings);
     }
 }
 
@@ -344,11 +344,11 @@ default_erase(void)
     int result;
 
     if (over_strike
-	&& VALID_STRING(key_backspace)
-	&& strlen(key_backspace) == 1) {
-	result = key_backspace[0];
+        && VALID_STRING(key_backspace)
+        && strlen(key_backspace) == 1) {
+        result = key_backspace[0];
     } else {
-	result = CERASE;
+        result = CERASE;
     }
 
     return result;
@@ -373,21 +373,21 @@ set_control_chars(TTY * tty_settings, int my_erase, int my_intr, int my_kill)
     (void) my_kill;
 #else
     if (DISABLED(tty_settings->c_cc[VERASE]) || my_erase >= 0) {
-	tty_settings->c_cc[VERASE] = UChar((my_erase >= 0)
-					   ? my_erase
-					   : default_erase());
+        tty_settings->c_cc[VERASE] = UChar((my_erase >= 0)
+                                           ? my_erase
+                                           : default_erase());
     }
 
     if (DISABLED(tty_settings->c_cc[VINTR]) || my_intr >= 0) {
-	tty_settings->c_cc[VINTR] = UChar((my_intr >= 0)
-					  ? my_intr
-					  : CINTR);
+        tty_settings->c_cc[VINTR] = UChar((my_intr >= 0)
+                                          ? my_intr
+                                          : CINTR);
     }
 
     if (DISABLED(tty_settings->c_cc[VKILL]) || my_kill >= 0) {
-	tty_settings->c_cc[VKILL] = UChar((my_kill >= 0)
-					  ? my_kill
-					  : CKILL);
+        tty_settings->c_cc[VKILL] = UChar((my_kill >= 0)
+                                          ? my_kill
+                                          : CKILL);
     }
 #endif
 }
@@ -413,16 +413,16 @@ set_conversions(TTY * tty_settings)
 
     /* test used to be tgetflag("NL") */
     if (VALID_STRING(newline) && newline[0] == '\n' && !newline[1]) {
-	/* Newline, not linefeed. */
+        /* Newline, not linefeed. */
 #ifdef ONLCR
-	tty_settings->c_oflag &= ~((unsigned) ONLCR);
+        tty_settings->c_oflag &= ~((unsigned) ONLCR);
 #endif
-	tty_settings->c_iflag &= ~((unsigned) ICRNL);
+        tty_settings->c_iflag &= ~((unsigned) ICRNL);
     }
 #ifdef OXTABS
     /* test used to be tgetflag("pt") */
     if (VALID_STRING(set_tab) && VALID_STRING(clear_all_tabs))
-	tty_settings->c_oflag &= ~OXTABS;
+        tty_settings->c_oflag &= ~OXTABS;
 #endif /* OXTABS */
     tty_settings->c_lflag |= (ECHOE | ECHOK);
 #endif
@@ -433,8 +433,8 @@ sent_string(const char *s)
 {
     bool sent = FALSE;
     if (VALID_STRING(s)) {
-	tputs(s, 0, out_char);
-	sent = TRUE;
+        tputs(s, 0, out_char);
+        sent = TRUE;
     }
     return sent;
 }
@@ -443,9 +443,9 @@ static bool
 to_left_margin(void)
 {
     if (VALID_STRING(carriage_return)) {
-	sent_string(carriage_return);
+        sent_string(carriage_return);
     } else {
-	out_char('\r');
+        out_char('\r');
     }
     return TRUE;
 }
@@ -461,23 +461,23 @@ static bool
 reset_tabstops(int wide)
 {
     if ((init_tabs != 8)
-	&& VALID_NUMERIC(init_tabs)
-	&& VALID_STRING(set_tab)
-	&& VALID_STRING(clear_all_tabs)) {
-	int c;
+        && VALID_NUMERIC(init_tabs)
+        && VALID_STRING(set_tab)
+        && VALID_STRING(clear_all_tabs)) {
+        int c;
 
-	to_left_margin();
-	tputs(clear_all_tabs, 0, out_char);
-	if (init_tabs > 1) {
-	    if (init_tabs > wide)
-		init_tabs = (short) wide;
-	    for (c = init_tabs; c < wide; c += init_tabs) {
-		fprintf(my_file, "%*s", init_tabs, " ");
-		tputs(set_tab, 0, out_char);
-	    }
-	    to_left_margin();
-	}
-	return (TRUE);
+        to_left_margin();
+        tputs(clear_all_tabs, 0, out_char);
+        if (init_tabs > 1) {
+            if (init_tabs > wide)
+                init_tabs = (short) wide;
+            for (c = init_tabs; c < wide; c += init_tabs) {
+                fprintf(my_file, "%*s", init_tabs, " ");
+                tputs(set_tab, 0, out_char);
+            }
+            to_left_margin();
+        }
+        return (TRUE);
     }
     return (FALSE);
 }
@@ -492,64 +492,64 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
     (void) old_settings;
 #ifdef TAB3
     if (old_settings != 0 &&
-	old_settings->c_oflag & (TAB3 | ONLCR | OCRNL | ONLRET)) {
-	old_settings->c_oflag &= (TAB3 | ONLCR | OCRNL | ONLRET);
-	SET_TTY(fd, old_settings);
+        old_settings->c_oflag & (TAB3 | ONLCR | OCRNL | ONLRET)) {
+        old_settings->c_oflag &= (TAB3 | ONLCR | OCRNL | ONLRET);
+        SET_TTY(fd, old_settings);
     }
 #endif
     if (use_reset || use_init) {
-	if (VALID_STRING(init_prog)) {
-	    IGNORE_RC(system(init_prog));
-	}
+        if (VALID_STRING(init_prog)) {
+            IGNORE_RC(system(init_prog));
+        }
 
-	need_flush |= sent_string((use_reset && (reset_1string != 0))
-				  ? reset_1string
-				  : init_1string);
+        need_flush |= sent_string((use_reset && (reset_1string != 0))
+                                  ? reset_1string
+                                  : init_1string);
 
-	need_flush |= sent_string((use_reset && (reset_2string != 0))
-				  ? reset_2string
-				  : init_2string);
+        need_flush |= sent_string((use_reset && (reset_2string != 0))
+                                  ? reset_2string
+                                  : init_2string);
 
-	if (VALID_STRING(clear_margins)) {
-	    need_flush |= sent_string(clear_margins);
-	} else
+        if (VALID_STRING(clear_margins)) {
+            need_flush |= sent_string(clear_margins);
+        } else
 #if defined(set_lr_margin)
-	if (VALID_STRING(set_lr_margin)) {
-	    need_flush |= sent_string(TIPARM_2(set_lr_margin, 0, columns - 1));
-	} else
+        if (VALID_STRING(set_lr_margin)) {
+            need_flush |= sent_string(TIPARM_2(set_lr_margin, 0, columns - 1));
+        } else
 #endif
 #if defined(set_left_margin_parm) && defined(set_right_margin_parm)
-	    if (VALID_STRING(set_left_margin_parm)
-		&& VALID_STRING(set_right_margin_parm)) {
-	    need_flush |= sent_string(TIPARM_1(set_left_margin_parm, 0));
-	    need_flush |= sent_string(TIPARM_1(set_right_margin_parm,
-					       columns - 1));
-	} else
+            if (VALID_STRING(set_left_margin_parm)
+                && VALID_STRING(set_right_margin_parm)) {
+            need_flush |= sent_string(TIPARM_1(set_left_margin_parm, 0));
+            need_flush |= sent_string(TIPARM_1(set_right_margin_parm,
+                                               columns - 1));
+        } else
 #endif
-	    if (VALID_STRING(set_left_margin)
-		&& VALID_STRING(set_right_margin)) {
-	    need_flush |= to_left_margin();
-	    need_flush |= sent_string(set_left_margin);
-	    if (VALID_STRING(parm_right_cursor)) {
-		need_flush |= sent_string(TIPARM_1(parm_right_cursor,
-						   columns - 1));
-	    } else {
-		for (i = 0; i < columns - 1; i++) {
-		    out_char(' ');
-		    need_flush = TRUE;
-		}
-	    }
-	    need_flush |= sent_string(set_right_margin);
-	    need_flush |= to_left_margin();
-	}
+            if (VALID_STRING(set_left_margin)
+                && VALID_STRING(set_right_margin)) {
+            need_flush |= to_left_margin();
+            need_flush |= sent_string(set_left_margin);
+            if (VALID_STRING(parm_right_cursor)) {
+                need_flush |= sent_string(TIPARM_1(parm_right_cursor,
+                                                   columns - 1));
+            } else {
+                for (i = 0; i < columns - 1; i++) {
+                    out_char(' ');
+                    need_flush = TRUE;
+                }
+            }
+            need_flush |= sent_string(set_right_margin);
+            need_flush |= to_left_margin();
+        }
 
-	need_flush |= reset_tabstops(columns);
+        need_flush |= reset_tabstops(columns);
 
-	need_flush |= cat_file((use_reset && reset_file) ? reset_file : init_file);
+        need_flush |= cat_file((use_reset && reset_file) ? reset_file : init_file);
 
-	need_flush |= sent_string((use_reset && (reset_3string != 0))
-				  ? reset_3string
-				  : init_3string);
+        need_flush |= sent_string((use_reset && (reset_3string != 0))
+                                  ? reset_3string
+                                  : init_3string);
     }
 
     return need_flush;
@@ -560,10 +560,10 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
  */
 static void
 show_tty_change(TTY * old_settings,
-		TTY * new_settings,
-		const char *name,
-		int which,
-		unsigned def)
+                TTY * new_settings,
+                const char *name,
+                int which,
+                unsigned def)
 {
     unsigned older = 0, newer = 0;
     char *p;
@@ -580,27 +580,27 @@ show_tty_change(TTY * old_settings,
     older = old_settings->c_cc[which];
 
     if (older == newer && older == def)
-	return;
+        return;
 #endif
     (void) fprintf(stderr, "%s %s ", name, older == newer ? "is" : "set to");
 
     if (DISABLED(newer)) {
-	(void) fprintf(stderr, "undef.\n");
-	/*
-	 * Check 'delete' before 'backspace', since the key_backspace value
-	 * is ambiguous.
-	 */
+        (void) fprintf(stderr, "undef.\n");
+        /*
+         * Check 'delete' before 'backspace', since the key_backspace value
+         * is ambiguous.
+         */
     } else if (newer == 0177) {
-	(void) fprintf(stderr, "delete.\n");
+        (void) fprintf(stderr, "delete.\n");
     } else if ((p = key_backspace) != 0
-	       && newer == (unsigned char) p[0]
-	       && p[1] == '\0') {
-	(void) fprintf(stderr, "backspace.\n");
+               && newer == (unsigned char) p[0]
+               && p[1] == '\0') {
+        (void) fprintf(stderr, "backspace.\n");
     } else if (newer < 040) {
-	newer ^= 0100;
-	(void) fprintf(stderr, "control-%c (^%c).\n", UChar(newer), UChar(newer));
+        newer ^= 0100;
+        (void) fprintf(stderr, "control-%c (^%c).\n", UChar(newer), UChar(newer));
     } else
-	(void) fprintf(stderr, "%c.\n", UChar(newer));
+        (void) fprintf(stderr, "%c.\n", UChar(newer));
 }
 
 /**************************************************************************
@@ -619,7 +619,7 @@ void
 reset_flush(void)
 {
     if (my_file != 0)
-	fflush(my_file);
+        fflush(my_file);
 }
 
 void
@@ -645,16 +645,16 @@ set_window_size(int fd, short *high, short *wide)
     STRUCT_WINSIZE win;
     (void) ioctl(fd, IOCTL_GET_WINSIZE, &win);
     if (WINSIZE_ROWS(win) == 0 &&
-	WINSIZE_COLS(win) == 0) {
-	if (*high > 0 && *wide > 0) {
-	    WINSIZE_ROWS(win) = (unsigned short) *high;
-	    WINSIZE_COLS(win) = (unsigned short) *wide;
-	    (void) ioctl(fd, IOCTL_SET_WINSIZE, &win);
-	}
+        WINSIZE_COLS(win) == 0) {
+        if (*high > 0 && *wide > 0) {
+            WINSIZE_ROWS(win) = (unsigned short) *high;
+            WINSIZE_COLS(win) = (unsigned short) *wide;
+            (void) ioctl(fd, IOCTL_SET_WINSIZE, &win);
+        }
     } else if (WINSIZE_ROWS(win) > 0 &&
-	       WINSIZE_COLS(win) > 0) {
-	*high = (short) WINSIZE_ROWS(win);
-	*wide = (short) WINSIZE_COLS(win);
+               WINSIZE_COLS(win) > 0) {
+        *high = (short) WINSIZE_ROWS(win);
+        *wide = (short) WINSIZE_COLS(win);
     }
 }
 #endif

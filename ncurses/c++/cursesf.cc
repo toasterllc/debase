@@ -83,15 +83,15 @@ void NCursesForm::setDefaultAttributes()
     for(int i=0; i<n; i++) {
       NCursesFormField* f = (*this)[i];
       if ((f->options() & (O_EDIT|O_ACTIVE))==(O_EDIT|O_ACTIVE)) {
-	if (S) {
-	  f->set_foreground(S->foregrounds());
-	  f->set_background(S->backgrounds());
-	}
-	f->set_pad_character('_');
+        if (S) {
+          f->set_foreground(S->foregrounds());
+          f->set_background(S->backgrounds());
+        }
+        f->set_pad_character('_');
       }
       else {
-	if (S)
-	  f->set_background(S->labels());
+        if (S)
+          f->set_background(S->labels());
       }
     }
   }
@@ -105,8 +105,8 @@ void NCursesForm::setDefaultAttributes()
 
 void
 NCursesForm::InitForm(NCursesFormField* nfields[],
-		      bool with_frame,
-		      bool autoDelete_Fields)
+                      bool with_frame,
+                      bool autoDelete_Fields)
 {
   int mrows, mcols;
 
@@ -166,8 +166,8 @@ NCursesForm::~NCursesForm() THROWS(NCursesException)
 
     if (b_autoDelete) {
       if (cnt>0) {
-	for (int i=0; i <= cnt; i++)
-	  delete my_fields[i];
+        for (int i=0; i <= cnt; i++)
+          delete my_fields[i];
       }
       delete[] my_fields;
     }
@@ -404,7 +404,7 @@ void* _nc_xx_fld_makearg(va_list* va)
 
 FIELDTYPE* UserDefinedFieldType::generic_fieldtype =
   ::new_fieldtype(_nc_xx_fld_fcheck,
-		  _nc_xx_fld_ccheck);
+                  _nc_xx_fld_ccheck);
 
 
 UserDefinedFieldType::UserDefinedFieldType() : NCursesFieldType(generic_fieldtype) {
@@ -412,7 +412,7 @@ UserDefinedFieldType::UserDefinedFieldType() : NCursesFieldType(generic_fieldtyp
 
 FIELDTYPE* UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice =
   ::new_fieldtype(_nc_xx_fld_fcheck,
-		  _nc_xx_fld_ccheck);
+                  _nc_xx_fld_ccheck);
 
 
 UserDefinedFieldType_With_Choice::UserDefinedFieldType_With_Choice() {
@@ -452,20 +452,20 @@ public:
     : code(0)
   {
     code = ::set_fieldtype_arg(UserDefinedFieldType::generic_fieldtype,
-			       _nc_xx_fld_makearg,
-			       NULL,
-			       NULL);
+                               _nc_xx_fld_makearg,
+                               NULL,
+                               NULL);
     if (code==E_OK)
       code = ::set_fieldtype_arg
-	(UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice,
-	 _nc_xx_fld_makearg,
-	 NULL,
-	 NULL);
+        (UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice,
+         _nc_xx_fld_makearg,
+         NULL,
+         NULL);
     if (code==E_OK)
       code = ::set_fieldtype_choice
-	(UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice,
-	 _nc_xx_next_choice,
-	 _nc_xx_prev_choice);
+        (UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice,
+         _nc_xx_next_choice,
+         _nc_xx_prev_choice);
   }
 };
 

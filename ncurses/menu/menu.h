@@ -81,78 +81,78 @@ extern "C"
       unsigned short length;
     }
   TEXT;
-#endif				/* !NCURSES_OPAQUE_MENU */
+#endif                          /* !NCURSES_OPAQUE_MENU */
 
   struct tagMENU;
 
   typedef struct tagITEM
 #if !NCURSES_OPAQUE_MENU
     {
-      TEXT name;		/* name of menu item                         */
-      TEXT description;		/* description of item, optional in display  */
-      struct tagMENU *imenu;	/* Pointer to parent menu                    */
-      void *userptr;		/* Pointer to user defined per item data     */
-      Item_Options opt;		/* Item options                              */
-      short index;		/* Item number if connected to a menu        */
-      short y;			/* y and x location of item in menu          */
+      TEXT name;                /* name of menu item                         */
+      TEXT description;         /* description of item, optional in display  */
+      struct tagMENU *imenu;    /* Pointer to parent menu                    */
+      void *userptr;            /* Pointer to user defined per item data     */
+      Item_Options opt;         /* Item options                              */
+      short index;              /* Item number if connected to a menu        */
+      short y;                  /* y and x location of item in menu          */
       short x;
-      bool value;		/* Selection value                           */
+      bool value;               /* Selection value                           */
 
-      struct tagITEM *left;	/* neighbor items                            */
+      struct tagITEM *left;     /* neighbor items                            */
       struct tagITEM *right;
       struct tagITEM *up;
       struct tagITEM *down;
 
     }
-#endif				/* !NCURSES_OPAQUE_MENU */
+#endif                          /* !NCURSES_OPAQUE_MENU */
   ITEM;
 
   typedef void (*Menu_Hook) (struct tagMENU *);
 
   typedef struct tagMENU
-#if 1				/* not yet: !NCURSES_OPAQUE_MENU   */
+#if 1                           /* not yet: !NCURSES_OPAQUE_MENU   */
     {
-      short height;		/* Nr. of chars high               */
-      short width;		/* Nr. of chars wide               */
-      short rows;		/* Nr. of items high               */
-      short cols;		/* Nr. of items wide               */
-      short frows;		/* Nr. of formatted items high     */
-      short fcols;		/* Nr. of formatted items wide     */
-      short arows;		/* Nr. of items high (actual)      */
-      short namelen;		/* Max. name length                */
-      short desclen;		/* Max. description length         */
-      short marklen;		/* Length of mark, if any          */
-      short itemlen;		/* Length of one item              */
-      short spc_desc;		/* Spacing for descriptor          */
-      short spc_cols;		/* Spacing for columns             */
-      short spc_rows;		/* Spacing for rows                */
-      char *pattern;		/* Buffer to store match chars     */
-      short pindex;		/* Index into pattern buffer       */
-      WINDOW *win;		/* Window containing menu          */
-      WINDOW *sub;		/* Subwindow for menu display      */
-      WINDOW *userwin;		/* User's window                   */
-      WINDOW *usersub;		/* User's subwindow                */
-      ITEM **items;		/* array of items                  */
-      short nitems;		/* Nr. of items in menu            */
-      ITEM *curitem;		/* Current item                    */
-      short toprow;		/* Top row of menu                 */
-      chtype fore;		/* Selection attribute             */
-      chtype back;		/* Nonselection attribute          */
-      chtype grey;		/* Inactive attribute              */
-      unsigned char pad;	/* Pad character                   */
+      short height;             /* Nr. of chars high               */
+      short width;              /* Nr. of chars wide               */
+      short rows;               /* Nr. of items high               */
+      short cols;               /* Nr. of items wide               */
+      short frows;              /* Nr. of formatted items high     */
+      short fcols;              /* Nr. of formatted items wide     */
+      short arows;              /* Nr. of items high (actual)      */
+      short namelen;            /* Max. name length                */
+      short desclen;            /* Max. description length         */
+      short marklen;            /* Length of mark, if any          */
+      short itemlen;            /* Length of one item              */
+      short spc_desc;           /* Spacing for descriptor          */
+      short spc_cols;           /* Spacing for columns             */
+      short spc_rows;           /* Spacing for rows                */
+      char *pattern;            /* Buffer to store match chars     */
+      short pindex;             /* Index into pattern buffer       */
+      WINDOW *win;              /* Window containing menu          */
+      WINDOW *sub;              /* Subwindow for menu display      */
+      WINDOW *userwin;          /* User's window                   */
+      WINDOW *usersub;          /* User's subwindow                */
+      ITEM **items;             /* array of items                  */
+      short nitems;             /* Nr. of items in menu            */
+      ITEM *curitem;            /* Current item                    */
+      short toprow;             /* Top row of menu                 */
+      chtype fore;              /* Selection attribute             */
+      chtype back;              /* Nonselection attribute          */
+      chtype grey;              /* Inactive attribute              */
+      unsigned char pad;        /* Pad character                   */
 
-      Menu_Hook menuinit;	/* User hooks                      */
+      Menu_Hook menuinit;       /* User hooks                      */
       Menu_Hook menuterm;
       Menu_Hook iteminit;
       Menu_Hook itemterm;
 
-      void *userptr;		/* Pointer to menus user data      */
-      char *mark;		/* Pointer to marker string        */
+      void *userptr;            /* Pointer to menus user data      */
+      char *mark;               /* Pointer to marker string        */
 
-      Menu_Options opt;		/* Menu options                    */
-      unsigned short status;	/* Internal state of menu          */
+      Menu_Options opt;         /* Menu options                    */
+      unsigned short status;    /* Internal state of menu          */
     }
-#endif				/* !NCURSES_OPAQUE_MENU */
+#endif                          /* !NCURSES_OPAQUE_MENU */
   MENU;
 
 /* Define keys */
@@ -278,4 +278,4 @@ extern "C"
 }
 #endif
 
-#endif				/* ETI_MENU */
+#endif                          /* ETI_MENU */

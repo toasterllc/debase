@@ -54,11 +54,11 @@
 #define gettimeofday(tv,tz) _nc_gettimeofday(tv,tz)
 
 #if HAVE_SYS_TIME_H
-#include <sys/time.h>		/* for struct timeval */
+#include <sys/time.h>           /* for struct timeval */
 #endif
 
 #ifdef _MSC_VER
-#include <winsock2.h>		/* for struct timeval */
+#include <winsock2.h>           /* for struct timeval */
 #endif
 
 #ifdef __cplusplus

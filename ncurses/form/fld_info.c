@@ -49,9 +49,9 @@ MODULE_ID("$Id: fld_info.c,v 1.16 2021/06/17 21:20:30 tom Exp $")
 +--------------------------------------------------------------------------*/
 FORM_EXPORT(int)
 field_info(const FIELD *field,
-	   int *rows, int *cols,
-	   int *frow, int *fcol,
-	   int *nrow, int *nbuf)
+           int *rows, int *cols,
+           int *frow, int *fcol,
+           int *nrow, int *nbuf)
 {
   T((T_CALLED("field_info(%p,%p,%p,%p,%p,%p,%p)"),
      (const void *)field,

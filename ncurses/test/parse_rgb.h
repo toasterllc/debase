@@ -45,49 +45,49 @@ parse_rgb(int *r_max, int *g_max, int *b_max)
     *r_max = *g_max = *b_max = 0;
 
     if (colors > 0) {
-	int max_bits;
-	int bits;
-	int pwr2;
-	int r = 0, g = 0, b = 0;
-	char *data;
-	char ch;
+        int max_bits;
+        int bits;
+        int pwr2;
+        int r = 0, g = 0, b = 0;
+        char *data;
+        char ch;
 
-	for (max_bits = 0, pwr2 = 1;
-	     pwr2 < colors;
-	     ++max_bits, pwr2 <<= 1) {
-	    ;
-	}
+        for (max_bits = 0, pwr2 = 1;
+             pwr2 < colors;
+             ++max_bits, pwr2 <<= 1) {
+            ;
+        }
 
-	if (tigetflag("RGB") > 0) {
-	    result = OK;
-	    r = g = b = (max_bits + 2) / 3;
-	} else if ((bits = tigetnum("RGB")) > 0) {
-	    result = OK;
-	    r = g = b = bits;
-	} else if ((data = tigetstr("RGB")) != ABSENT_STRING
-		   && data != CANCELLED_STRING
-		   && sscanf(data, "%d/%d/%d%c", &r, &g, &b, &ch) == 3) {
-	    result = OK;
-	}
+        if (tigetflag("RGB") > 0) {
+            result = OK;
+            r = g = b = (max_bits + 2) / 3;
+        } else if ((bits = tigetnum("RGB")) > 0) {
+            result = OK;
+            r = g = b = bits;
+        } else if ((data = tigetstr("RGB")) != ABSENT_STRING
+                   && data != CANCELLED_STRING
+                   && sscanf(data, "%d/%d/%d%c", &r, &g, &b, &ch) == 3) {
+            result = OK;
+        }
 
-	if ((r + g + b) < max_bits) {
-	    result = ERR;
-	} else if (result == 0) {
-	    if (r > max_bits) {
-		r = max_bits;
-		g = b = 0;
-	    }
-	    *r_max = r;
-	    if (g > (max_bits -= r)) {
-		g = max_bits;
-		b = 0;
-	    }
-	    *g_max = g;
-	    if (b > (max_bits -= g)) {
-		b = max_bits;
-	    }
-	    *b_max = b;
-	}
+        if ((r + g + b) < max_bits) {
+            result = ERR;
+        } else if (result == 0) {
+            if (r > max_bits) {
+                r = max_bits;
+                g = b = 0;
+            }
+            *r_max = r;
+            if (g > (max_bits -= r)) {
+                g = max_bits;
+                b = 0;
+            }
+            *g_max = g;
+            if (b > (max_bits -= g)) {
+                b = max_bits;
+            }
+            *b_max = b;
+        }
     }
     return result;
 }

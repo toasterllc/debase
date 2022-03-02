@@ -59,14 +59,14 @@ static int current_lines;
 static int current_cols;
 #define CurLines current_lines
 #define CurCols  current_cols
-#define EXTRA_ARGS		/* nothing */
-#define EXTRA_DCLS		/* nothing */
+#define EXTRA_ARGS              /* nothing */
+#define EXTRA_DCLS              /* nothing */
 #endif
 
 #if NCURSES_SP_FUNCS && !defined(USE_SP_WINDOWLIST)
 #define UNUSED_SP  (void) sp
 #else
-#define UNUSED_SP		/* nothing */
+#define UNUSED_SP               /* nothing */
 #endif
 
 #ifdef TRACE
@@ -78,18 +78,18 @@ show_window_sizes(const char *name)
 
     _nc_lock_global(curses);
     for (each_screen(sp)) {
-	_tracef("%s resizing: %p: %2d x %2d (%2d x %2d)", name, (void *) sp,
-		*(ptrLines(sp)),
-		*(ptrCols(sp)),
-		screen_lines(sp), screen_columns(sp));
-	for (each_window(sp, wp)) {
-	    _tracef("  window %p is %2ld x %2ld at %2ld,%2ld",
-		    (void *) &(wp->win),
-		    (long) wp->win._maxy + 1,
-		    (long) wp->win._maxx + 1,
-		    (long) wp->win._begy,
-		    (long) wp->win._begx);
-	}
+        _tracef("%s resizing: %p: %2d x %2d (%2d x %2d)", name, (void *) sp,
+                *(ptrLines(sp)),
+                *(ptrCols(sp)),
+                screen_lines(sp), screen_columns(sp));
+        for (each_window(sp, wp)) {
+            _tracef("  window %p is %2ld x %2ld at %2ld,%2ld",
+                    (void *) &(wp->win),
+                    (long) wp->win._maxy + 1,
+                    (long) wp->win._maxx + 1,
+                    (long) wp->win._begy,
+                    (long) wp->win._begx);
+        }
     }
     _nc_unlock_global(curses);
 }
@@ -104,9 +104,9 @@ NCURSES_SP_NAME(is_term_resized) (NCURSES_SP_DCLx int ToLines, int ToCols)
 {
     T((T_CALLED("is_term_resized(%p, %d, %d)"), (void *) SP_PARM, ToLines, ToCols));
     returnCode(ToLines > 0
-	       && ToCols > 0
-	       && (ToLines != screen_lines(SP_PARM)
-		   || ToCols != screen_columns(SP_PARM)));
+               && ToCols > 0
+               && (ToLines != screen_lines(SP_PARM)
+                   || ToCols != screen_columns(SP_PARM)));
 }
 
 #if NCURSES_SP_FUNCS
@@ -127,14 +127,14 @@ ripped_window(WINDOW *win)
 
     if (win != 0) {
 #ifdef USE_SP_RIPOFF
-	SCREEN *sp = _nc_screen_of(win);
+        SCREEN *sp = _nc_screen_of(win);
 #endif
-	for (each_ripoff(rop)) {
-	    if (rop->win == win && rop->line != 0) {
-		result = rop;
-		break;
-	    }
-	}
+        for (each_ripoff(rop)) {
+            if (rop->win == win && rop->line != 0) {
+                result = rop;
+                break;
+            }
+        }
     }
     return result;
 }
@@ -149,19 +149,19 @@ ripped_bottom(WINDOW *win)
     int result = 0;
 
     if (win != 0) {
-	ripoff_t *rop;
+        ripoff_t *rop;
 
 #ifdef USE_SP_RIPOFF
-	SCREEN *sp = _nc_screen_of(win);
+        SCREEN *sp = _nc_screen_of(win);
 #endif
-	for (each_ripoff(rop)) {
-	    if (rop->line < 0) {
-		result -= rop->line;
-		if (rop->win == win) {
-		    break;
-		}
-	    }
-	}
+        for (each_ripoff(rop)) {
+            if (rop->line < 0) {
+                result -= rop->line;
+                if (rop->win == win) {
+                    break;
+                }
+            }
+        }
     }
     return result;
 }
@@ -176,17 +176,17 @@ child_depth(WINDOW *cmp)
 
     if (cmp != 0) {
 #ifdef USE_SP_WINDOWLIST
-	SCREEN *sp = _nc_screen_of(cmp);
+        SCREEN *sp = _nc_screen_of(cmp);
 #endif
-	WINDOWLIST *wp;
+        WINDOWLIST *wp;
 
-	for (each_window(sp, wp)) {
-	    WINDOW *tst = &(wp->win);
-	    if (tst->_parent == cmp) {
-		depth = 1 + child_depth(tst);
-		break;
-	    }
-	}
+        for (each_window(sp, wp)) {
+            WINDOW *tst = &(wp->win);
+            if (tst->_parent == cmp) {
+                depth = 1 + child_depth(tst);
+                break;
+            }
+        }
     }
     return depth;
 }
@@ -200,11 +200,11 @@ parent_depth(WINDOW *cmp)
     int depth = 0;
 
     if (cmp != 0) {
-	WINDOW *tst;
-	while ((tst = cmp->_parent) != 0) {
-	    ++depth;
-	    cmp = tst;
-	}
+        WINDOW *tst;
+        while ((tst = cmp->_parent) != 0) {
+            ++depth;
+            cmp = tst;
+        }
     }
     return depth;
 }
@@ -230,43 +230,43 @@ adjust_window(WINDOW *win, int ToLines, int ToCols, int stolen EXTRA_DCLS)
        (long) getbegy(win) + win->_yoffset, (long) getbegx(win)));
 
     if (rop != 0 && rop->line < 0) {
-	/*
-	 * If it is a ripped-off window at the bottom of the screen, simply
-	 * move it to the same relative position.
-	 */
-	win->_begy = (NCURSES_SIZE_T) (ToLines - ripped_bottom(win) - 0 - win->_yoffset);
-	if (rop->hook == _nc_slk_initialize)
-	    _nc_format_slks(
+        /*
+         * If it is a ripped-off window at the bottom of the screen, simply
+         * move it to the same relative position.
+         */
+        win->_begy = (NCURSES_SIZE_T) (ToLines - ripped_bottom(win) - 0 - win->_yoffset);
+        if (rop->hook == _nc_slk_initialize)
+            _nc_format_slks(
 #if NCURSES_SP_FUNCS
-			       _nc_screen_of(win),
+                               _nc_screen_of(win),
 #endif
-			       ToCols);
+                               ToCols);
     } else if (win->_begy >= bottom) {
-	/*
-	 * If it is below the bottom of the new screen, move up by the same
-	 * amount that the screen shrank.
-	 */
-	win->_begy = (NCURSES_SIZE_T) (win->_begy + (ToLines - CurLines));
+        /*
+         * If it is below the bottom of the new screen, move up by the same
+         * amount that the screen shrank.
+         */
+        win->_begy = (NCURSES_SIZE_T) (win->_begy + (ToLines - CurLines));
     } else {
-	if (myLines == (CurLines - stolen)
-	    && ToLines != CurLines) {
-	    myLines = ToLines - stolen;
-	} else if (myLines == CurLines
-		   && ToLines != CurLines) {
-	    myLines = ToLines;
-	}
+        if (myLines == (CurLines - stolen)
+            && ToLines != CurLines) {
+            myLines = ToLines - stolen;
+        } else if (myLines == CurLines
+                   && ToLines != CurLines) {
+            myLines = ToLines;
+        }
     }
 
     if (myLines > ToLines) {
-	myLines = ToLines;
+        myLines = ToLines;
     }
 
     if (myCols > ToCols)
-	myCols = ToCols;
+        myCols = ToCols;
 
     if (myCols == CurCols
-	&& ToCols != CurCols)
-	myCols = ToCols;
+        && ToCols != CurCols)
+        myCols = ToCols;
 
     result = wresize(win, myLines, myCols);
     returnCode(result);
@@ -287,22 +287,22 @@ decrease_size(NCURSES_SP_DCLx int ToLines, int ToCols, int stolen EXTRA_DCLS)
     UNUSED_SP;
 
     do {
-	found = FALSE;
-	TR(TRACE_UPDATE, ("decreasing size of windows to %dx%d, depth=%d",
-			  ToLines, ToCols, depth));
-	for (each_window(SP_PARM, wp)) {
-	    WINDOW *win = &(wp->win);
+        found = FALSE;
+        TR(TRACE_UPDATE, ("decreasing size of windows to %dx%d, depth=%d",
+                          ToLines, ToCols, depth));
+        for (each_window(SP_PARM, wp)) {
+            WINDOW *win = &(wp->win);
 
-	    if (!(win->_flags & _ISPAD)) {
-		if (child_depth(win) == depth) {
-		    found = TRUE;
-		    if (adjust_window(win, ToLines, ToCols,
-				      stolen EXTRA_ARGS) != OK)
-			returnCode(ERR);
-		}
-	    }
-	}
-	++depth;
+            if (!(win->_flags & _ISPAD)) {
+                if (child_depth(win) == depth) {
+                    found = TRUE;
+                    if (adjust_window(win, ToLines, ToCols,
+                                      stolen EXTRA_ARGS) != OK)
+                        returnCode(ERR);
+                }
+            }
+        }
+        ++depth;
     } while (found);
     returnCode(OK);
 }
@@ -322,22 +322,22 @@ increase_size(NCURSES_SP_DCLx int ToLines, int ToCols, int stolen EXTRA_DCLS)
     UNUSED_SP;
 
     do {
-	found = FALSE;
-	TR(TRACE_UPDATE, ("increasing size of windows to %dx%d, depth=%d",
-			  ToLines, ToCols, depth));
-	for (each_window(SP_PARM, wp)) {
-	    WINDOW *win = &(wp->win);
+        found = FALSE;
+        TR(TRACE_UPDATE, ("increasing size of windows to %dx%d, depth=%d",
+                          ToLines, ToCols, depth));
+        for (each_window(SP_PARM, wp)) {
+            WINDOW *win = &(wp->win);
 
-	    if (!(win->_flags & _ISPAD)) {
-		if (parent_depth(win) == depth) {
-		    found = TRUE;
-		    if (adjust_window(win, ToLines, ToCols,
-				      stolen EXTRA_ARGS) != OK)
-			returnCode(ERR);
-		}
-	    }
-	}
-	++depth;
+            if (!(win->_flags & _ISPAD)) {
+                if (parent_depth(win) == depth) {
+                    found = TRUE;
+                    if (adjust_window(win, ToLines, ToCols,
+                                      stolen EXTRA_ARGS) != OK)
+                        returnCode(ERR);
+                }
+            }
+        }
+        ++depth;
     } while (found);
     returnCode(OK);
 }
@@ -358,87 +358,87 @@ NCURSES_SP_NAME(resize_term) (NCURSES_SP_DCLx int ToLines, int ToCols)
        (SP_PARM == 0) ? -1 : screen_columns(SP_PARM)));
 
     if (SP_PARM == 0 || ToLines <= 0 || ToCols <= 0) {
-	returnCode(ERR);
+        returnCode(ERR);
     }
 
     _nc_nonsp_lock_global(curses);
 
     was_stolen = (screen_lines(SP_PARM) - SP_PARM->_lines_avail);
     if (NCURSES_SP_NAME(is_term_resized) (NCURSES_SP_ARGx ToLines, ToCols)) {
-	int myLines = CurLines = screen_lines(SP_PARM);
-	int myCols = CurCols = screen_columns(SP_PARM);
+        int myLines = CurLines = screen_lines(SP_PARM);
+        int myCols = CurCols = screen_columns(SP_PARM);
 
 #ifdef TRACE
-	if (USE_TRACEF(TRACE_UPDATE)) {
-	    show_window_sizes("before");
-	    _nc_unlock_global(tracef);
-	}
+        if (USE_TRACEF(TRACE_UPDATE)) {
+            show_window_sizes("before");
+            _nc_unlock_global(tracef);
+        }
 #endif
-	if (ToLines > screen_lines(SP_PARM)) {
-	    result = increase_size(NCURSES_SP_ARGx
-				   myLines = ToLines,
-				   myCols,
-				   was_stolen EXTRA_ARGS);
-	    CurLines = myLines;
-	    CurCols = myCols;
-	}
+        if (ToLines > screen_lines(SP_PARM)) {
+            result = increase_size(NCURSES_SP_ARGx
+                                   myLines = ToLines,
+                                   myCols,
+                                   was_stolen EXTRA_ARGS);
+            CurLines = myLines;
+            CurCols = myCols;
+        }
 
-	if ((result == OK)
-	    && (ToCols > screen_columns(SP_PARM))) {
-	    result = increase_size(NCURSES_SP_ARGx
-				   myLines,
-				   myCols = ToCols,
-				   was_stolen EXTRA_ARGS);
-	    CurLines = myLines;
-	    CurCols = myCols;
-	}
+        if ((result == OK)
+            && (ToCols > screen_columns(SP_PARM))) {
+            result = increase_size(NCURSES_SP_ARGx
+                                   myLines,
+                                   myCols = ToCols,
+                                   was_stolen EXTRA_ARGS);
+            CurLines = myLines;
+            CurCols = myCols;
+        }
 
-	if ((result == OK)
-	    && (ToLines < myLines ||
-		ToCols < myCols)) {
-	    result = decrease_size(NCURSES_SP_ARGx
-				   ToLines,
-				   ToCols,
-				   was_stolen EXTRA_ARGS);
-	}
+        if ((result == OK)
+            && (ToLines < myLines ||
+                ToCols < myCols)) {
+            result = decrease_size(NCURSES_SP_ARGx
+                                   ToLines,
+                                   ToCols,
+                                   was_stolen EXTRA_ARGS);
+        }
 
-	if (result == OK) {
-	    screen_lines(SP_PARM) = (NCURSES_SIZE_T) ToLines;
-	    screen_columns(SP_PARM) = (NCURSES_SIZE_T) ToCols;
+        if (result == OK) {
+            screen_lines(SP_PARM) = (NCURSES_SIZE_T) ToLines;
+            screen_columns(SP_PARM) = (NCURSES_SIZE_T) ToCols;
 
 #ifdef USE_TERM_DRIVER
-	    CallDriver_2(SP_PARM, td_setsize, ToLines, ToCols);
+            CallDriver_2(SP_PARM, td_setsize, ToLines, ToCols);
 #else
-	    lines = (NCURSES_SIZE_T) ToLines;
-	    columns = (NCURSES_SIZE_T) ToCols;
+            lines = (NCURSES_SIZE_T) ToLines;
+            columns = (NCURSES_SIZE_T) ToCols;
 #endif
 
-	    SP_PARM->_lines_avail = (NCURSES_SIZE_T) (ToLines - was_stolen);
+            SP_PARM->_lines_avail = (NCURSES_SIZE_T) (ToLines - was_stolen);
 
-	    if (SP_PARM->oldhash) {
-		FreeAndNull(SP_PARM->oldhash);
-	    }
-	    if (SP_PARM->newhash) {
-		FreeAndNull(SP_PARM->newhash);
-	    }
+            if (SP_PARM->oldhash) {
+                FreeAndNull(SP_PARM->oldhash);
+            }
+            if (SP_PARM->newhash) {
+                FreeAndNull(SP_PARM->newhash);
+            }
 #ifdef TRACE
-	    if (USE_TRACEF(TRACE_UPDATE)) {
-		SET_LINES(ToLines - was_stolen);
-		SET_COLS(ToCols);
-		show_window_sizes("after");
-		_nc_unlock_global(tracef);
-	    }
+            if (USE_TRACEF(TRACE_UPDATE)) {
+                SET_LINES(ToLines - was_stolen);
+                SET_COLS(ToCols);
+                show_window_sizes("after");
+                _nc_unlock_global(tracef);
+            }
 #endif
-	}
+        }
     }
 
     if (result == OK) {
-	/*
-	 * Always update LINES, to allow for call from lib_doupdate.c which
-	 * needs to have the count adjusted by the stolen (ripped off) lines.
-	 */
-	SET_LINES(ToLines - was_stolen);
-	SET_COLS(ToCols);
+        /*
+         * Always update LINES, to allow for call from lib_doupdate.c which
+         * needs to have the count adjusted by the stolen (ripped off) lines.
+         */
+        SET_LINES(ToLines - was_stolen);
+        SET_COLS(ToCols);
     }
 
     _nc_nonsp_unlock_global(curses);
@@ -477,54 +477,54 @@ NCURSES_SP_NAME(resizeterm) (NCURSES_SP_DCLx int ToLines, int ToCols)
        (SP_PARM == 0) ? -1 : screen_columns(SP_PARM)));
 
     if (SP_PARM != 0 && ToLines > 0 && ToCols > 0) {
-	result = OK;
-	SP_PARM->_sig_winch = FALSE;
+        result = OK;
+        SP_PARM->_sig_winch = FALSE;
 
-	if (NCURSES_SP_NAME(is_term_resized) (NCURSES_SP_ARGx ToLines, ToCols)) {
+        if (NCURSES_SP_NAME(is_term_resized) (NCURSES_SP_ARGx ToLines, ToCols)) {
 #if USE_SIGWINCH
-	    ripoff_t *rop;
-	    bool slk_visible = (SP_PARM != 0
-				&& SP_PARM->_slk != 0
-				&& !(SP_PARM->_slk->hidden));
+            ripoff_t *rop;
+            bool slk_visible = (SP_PARM != 0
+                                && SP_PARM->_slk != 0
+                                && !(SP_PARM->_slk->hidden));
 
-	    if (slk_visible) {
-		slk_clear();
-	    }
+            if (slk_visible) {
+                slk_clear();
+            }
 #endif
-	    result = NCURSES_SP_NAME(resize_term) (NCURSES_SP_ARGx ToLines, ToCols);
+            result = NCURSES_SP_NAME(resize_term) (NCURSES_SP_ARGx ToLines, ToCols);
 
 #if USE_SIGWINCH
-	    clearok(CurScreen(SP_PARM), TRUE);	/* screen contents are unknown */
+            clearok(CurScreen(SP_PARM), TRUE);  /* screen contents are unknown */
 
-	    /* ripped-off lines are a special case: if we did not lengthen
-	     * them, we haven't moved them either.  repaint them, too.
-	     *
-	     * for the rest - stdscr and other windows - the client has to
-	     * decide which to repaint, since without panels, ncurses does
-	     * not know which are really on top.
-	     */
-	    for (each_ripoff(rop)) {
-		if (rop->win != StdScreen(SP_PARM)
-		    && rop->win != 0
-		    && rop->line < 0) {
+            /* ripped-off lines are a special case: if we did not lengthen
+             * them, we haven't moved them either.  repaint them, too.
+             *
+             * for the rest - stdscr and other windows - the client has to
+             * decide which to repaint, since without panels, ncurses does
+             * not know which are really on top.
+             */
+            for (each_ripoff(rop)) {
+                if (rop->win != StdScreen(SP_PARM)
+                    && rop->win != 0
+                    && rop->line < 0) {
 
-		    if (rop->hook != _nc_slk_initialize) {
-			touchwin(rop->win);
-			wnoutrefresh(rop->win);
-		    }
-		}
-	    }
+                    if (rop->hook != _nc_slk_initialize) {
+                        touchwin(rop->win);
+                        wnoutrefresh(rop->win);
+                    }
+                }
+            }
 
-	    /* soft-keys are a special case: we _know_ how to repaint them */
-	    if (slk_visible) {
-		NCURSES_SP_NAME(slk_restore) (NCURSES_SP_ARG);
-		NCURSES_SP_NAME(slk_touch) (NCURSES_SP_ARG);
-		NCURSES_SP_NAME(slk_refresh) (NCURSES_SP_ARG);
-	    }
+            /* soft-keys are a special case: we _know_ how to repaint them */
+            if (slk_visible) {
+                NCURSES_SP_NAME(slk_restore) (NCURSES_SP_ARG);
+                NCURSES_SP_NAME(slk_touch) (NCURSES_SP_ARG);
+                NCURSES_SP_NAME(slk_refresh) (NCURSES_SP_ARG);
+            }
 #endif
-	}
+        }
 #if USE_SIGWINCH
-	safe_ungetch(SP_PARM, KEY_RESIZE);	/* so application can know this */
+        safe_ungetch(SP_PARM, KEY_RESIZE);      /* so application can know this */
 #endif
     }
 

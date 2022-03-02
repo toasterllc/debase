@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_clear.c
+**      lib_clear.c
 **
-**	The routine wclear().
+**      The routine wclear().
 **
 */
 
@@ -51,7 +51,7 @@ wclear(WINDOW *win)
     T((T_CALLED("wclear(%p)"), (void *) win));
 
     if ((code = werase(win)) != ERR)
-	win->_clear = TRUE;
+        win->_clear = TRUE;
 
     returnCode(code);
 }

@@ -46,39 +46,39 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     noecho();
 
     if (has_colors()) {
-	int i;
+        int i;
 
-	start_color();
+        start_color();
 
-	(void) pair_content(0, &f, &b);
-	printw("pair 0 contains (%d,%d)\n", (int) f, (int) b);
-	getch();
+        (void) pair_content(0, &f, &b);
+        printw("pair 0 contains (%d,%d)\n", (int) f, (int) b);
+        getch();
 
-	printw("Initializing pair 1 to red/black\n");
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-	i = color_set(1, NULL);
-	printw("RED/BLACK (%s)\n", SHOW(i));
-	getch();
+        printw("Initializing pair 1 to red/black\n");
+        init_pair(1, COLOR_RED, COLOR_BLACK);
+        i = color_set(1, NULL);
+        printw("RED/BLACK (%s)\n", SHOW(i));
+        getch();
 
-	printw("Initializing pair 2 to white/blue\n");
-	init_pair(2, COLOR_WHITE, COLOR_BLUE);
-	i = color_set(2, NULL);
-	printw("WHITE/BLUE (%s)\n", SHOW(i));
-	getch();
+        printw("Initializing pair 2 to white/blue\n");
+        init_pair(2, COLOR_WHITE, COLOR_BLUE);
+        i = color_set(2, NULL);
+        printw("WHITE/BLUE (%s)\n", SHOW(i));
+        getch();
 
-	printw("Resetting colors to pair 0\n");
-	i = color_set(0, NULL);
-	printw("Default Colors (%s)\n", SHOW(i));
-	getch();
+        printw("Resetting colors to pair 0\n");
+        i = color_set(0, NULL);
+        printw("Default Colors (%s)\n", SHOW(i));
+        getch();
 
-	printw("Resetting colors to pair 1\n");
-	i = color_set(1, NULL);
-	printw("RED/BLACK (%s)\n", SHOW(i));
-	getch();
+        printw("Resetting colors to pair 1\n");
+        i = color_set(1, NULL);
+        printw("RED/BLACK (%s)\n", SHOW(i));
+        getch();
 
     } else {
-	printw("This demo requires a color terminal");
-	getch();
+        printw("This demo requires a color terminal");
+        getch();
     }
     endwin();
 

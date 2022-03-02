@@ -47,10 +47,10 @@ NCURSES_SP_NAME(keybound) (NCURSES_SP_DCLx int code, int count)
 
     T((T_CALLED("keybound(%p, %d,%d)"), (void *) SP_PARM, code, count));
     if (SP_PARM != 0 && code >= 0) {
-	result = _nc_expand_try(SP_PARM->_keytry,
-				(unsigned) code,
-				&count,
-				(size_t) 0);
+        result = _nc_expand_try(SP_PARM->_keytry,
+                                (unsigned) code,
+                                &count,
+                                (size_t) 0);
     }
     returnPtr(result);
 }

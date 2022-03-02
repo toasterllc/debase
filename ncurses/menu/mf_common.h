@@ -64,7 +64,7 @@ extern int errno;
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;
 #else
-#define MODULE_ID(id)		/*nothing */
+#define MODULE_ID(id)           /*nothing */
 #endif
 
 /* Maximum regular 8-bit character code */
@@ -80,8 +80,8 @@ extern int errno;
 #endif
 
 /* The few common values in the status fields for menus and forms */
-#define _POSTED         (0x01U)	/* menu or form is posted                  */
-#define _IN_DRIVER      (0x02U)	/* menu or form is processing hook routine */
+#define _POSTED         (0x01U) /* menu or form is posted                  */
+#define _IN_DRIVER      (0x02U) /* menu or form is processing hook routine */
 
 #define SetStatus(target,mask) (target)->status |= (unsigned short) (mask)
 #define ClrStatus(target,mask) (target)->status = (unsigned short) (target->status & (~mask))
@@ -90,9 +90,9 @@ extern int errno;
 #define Call_Hook( object, handler ) \
    if ( (object) != 0 && ((object)->handler) != (void *) 0 )\
    {\
-	SetStatus(object, _IN_DRIVER);\
-	(object)->handler(object);\
-	ClrStatus(object, _IN_DRIVER);\
+        SetStatus(object, _IN_DRIVER);\
+        (object)->handler(object);\
+        ClrStatus(object, _IN_DRIVER);\
    }
 
 #endif /* MF_COMMON_H_incl */

@@ -73,16 +73,16 @@ NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM **items)
       menu->usersub = SP_PARM->_stdscr;
 #endif
       if (items && *items)
-	{
-	  if (!_nc_Connect_Items(menu, items))
-	    {
-	      err = E_NOT_CONNECTED;
-	      free(menu);
-	      menu = (MENU *)0;
-	    }
-	  else
-	    err = E_OK;
-	}
+        {
+          if (!_nc_Connect_Items(menu, items))
+            {
+              err = E_NOT_CONNECTED;
+              free(menu);
+              menu = (MENU *)0;
+            }
+          else
+            err = E_OK;
+        }
     }
 
   if (!menu)

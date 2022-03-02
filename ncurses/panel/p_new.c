@@ -54,14 +54,14 @@ AllocPanel(const char *name)
   return result;
 }
 #define InitUser(name) \
-	if (!name ## _id) \
-	    name ## _id = strdup(#name); \
-	pan->user = name ## _id; \
-	_tracef("create :user_ptr %p", pan->user)
+        if (!name ## _id) \
+            name ## _id = strdup(#name); \
+        pan->user = name ## _id; \
+        _tracef("create :user_ptr %p", pan->user)
 #else
 #define AllocPanel(name) typeMalloc(PANEL, 1)
 #define InitUser(name) \
-	  pan->user = (void *)0
+          pan->user = (void *)0
 #endif
 
 /*+-------------------------------------------------------------------------
@@ -87,16 +87,16 @@ root_panel(NCURSES_SP_DCL0)
 #endif
       _nc_stdscr_pseudo_panel = AllocPanel("root_panel");
       if (_nc_stdscr_pseudo_panel != 0)
-	{
-	  PANEL *pan = _nc_stdscr_pseudo_panel;
-	  WINDOW *win = SP_PARM->_stdscr;
+        {
+          PANEL *pan = _nc_stdscr_pseudo_panel;
+          WINDOW *win = SP_PARM->_stdscr;
 
-	  pan->win = win;
-	  pan->below = (PANEL *)0;
-	  pan->above = (PANEL *)0;
-	  InitUser(stdscr);
-	  _nc_bottom_panel = _nc_top_panel = pan;
-	}
+          pan->win = win;
+          pan->below = (PANEL *)0;
+          pan->above = (PANEL *)0;
+          InitUser(stdscr);
+          _nc_bottom_panel = _nc_top_panel = pan;
+        }
     }
   return _nc_stdscr_pseudo_panel;
 }

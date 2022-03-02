@@ -35,9 +35,9 @@
  ****************************************************************************/
 
 /*
-**	lib_box.c
+**      lib_box.c
 **
-**	The routine wborder().
+**      The routine wborder().
 **
 */
 
@@ -62,10 +62,10 @@ _my_render(WINDOW *win, chtype ch)
 
 NCURSES_EXPORT(int)
 wborder(WINDOW *win,
-	chtype ls, chtype rs,
-	chtype ts, chtype bs,
-	chtype tl, chtype tr,
-	chtype bl, chtype br)
+        chtype ls, chtype rs,
+        chtype ts, chtype bs,
+        chtype tl, chtype tr,
+        chtype bl, chtype br)
 {
     NCURSES_SIZE_T i;
     NCURSES_SIZE_T endx, endy;
@@ -83,7 +83,7 @@ wborder(WINDOW *win,
        _tracechtype2(8, br)));
 
     if (!win)
-	returnCode(ERR);
+        returnCode(ERR);
 
     RENDER_WITH_DEFAULT(ls, ACS_VLINE);
     RENDER_WITH_DEFAULT(rs, ACS_VLINE);
@@ -108,26 +108,26 @@ wborder(WINDOW *win,
     endy = win->_maxy;
 
     for (i = 0; i <= endx; i++) {
-	SetChar2(win->_line[0].text[i], wts);
-	SetChar2(win->_line[endy].text[i], wbs);
+        SetChar2(win->_line[0].text[i], wts);
+        SetChar2(win->_line[endy].text[i], wbs);
     }
     win->_line[endy].firstchar = win->_line[0].firstchar = 0;
     win->_line[endy].lastchar = win->_line[0].lastchar = endx;
 
     for (i = 0; i <= endy; i++) {
 #if USE_WIDEC_SUPPORT
-	if (endx > 0 && isWidecExt(win->_line[i].text[endx])) {
-	    SetChar2(win->_line[i].text[endx - 1], ' ');
-	}
+        if (endx > 0 && isWidecExt(win->_line[i].text[endx])) {
+            SetChar2(win->_line[i].text[endx - 1], ' ');
+        }
 #endif
-	SetChar2(win->_line[i].text[0], wls);
-	SetChar2(win->_line[i].text[endx], wrs);
-	win->_line[i].firstchar = 0;
-	win->_line[i].lastchar = endx;
+        SetChar2(win->_line[i].text[0], wls);
+        SetChar2(win->_line[i].text[endx], wrs);
+        win->_line[i].firstchar = 0;
+        win->_line[i].lastchar = endx;
 #if USE_WIDEC_SUPPORT
-	if (isWidecExt(win->_line[i].text[1])) {
-	    SetChar2(win->_line[i].text[1], ' ');
-	}
+        if (isWidecExt(win->_line[i].text[1])) {
+            SetChar2(win->_line[i].text[1], ' ');
+        }
 #endif
     }
     SetChar2(win->_line[0].text[0], wtl);

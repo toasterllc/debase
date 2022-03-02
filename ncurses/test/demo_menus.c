@@ -33,35 +33,35 @@
  * Thomas Dickey - 2005/4/9
  */
 /*
-item_description		-
-item_init			-
-item_opts			-
-item_opts_off			-
-item_opts_on			-
-item_term			-
-item_visible			-
-menu_back			-
-menu_fore			-
-menu_format			-
-menu_grey			-
-menu_init			-
-menu_opts			-
-menu_pad			-
-menu_request_by_name		-
-menu_request_name		-
-menu_term			-
-menu_userptr			-
-set_current_item		-
-set_item_opts			-
-set_menu_grey			-
-set_menu_items			-
-set_menu_opts			-
-set_menu_pad			-
-set_menu_pattern		-
-set_menu_spacing		-
-set_menu_userptr		-
-set_top_row			-
-top_row				-
+item_description                -
+item_init                       -
+item_opts                       -
+item_opts_off                   -
+item_opts_on                    -
+item_term                       -
+item_visible                    -
+menu_back                       -
+menu_fore                       -
+menu_format                     -
+menu_grey                       -
+menu_init                       -
+menu_opts                       -
+menu_pad                        -
+menu_request_by_name            -
+menu_request_name               -
+menu_term                       -
+menu_userptr                    -
+set_current_item                -
+set_item_opts                   -
+set_menu_grey                   -
+set_menu_items                  -
+set_menu_opts                   -
+set_menu_pad                    -
+set_menu_pattern                -
+set_menu_spacing                -
+set_menu_userptr                -
+set_top_row                     -
+top_row                         -
 */
 
 #include <test.priv.h>
@@ -92,7 +92,7 @@ typedef enum {
 
 #define okMenuNo(n) (((n) > eBanner) && ((n) < eMAX))
 
-#define MENU_Y	1
+#define MENU_Y  1
 
 typedef struct {
     NCURSES_CONST char *name;
@@ -133,16 +133,16 @@ wGetchar(WINDOW *win)
     int c;
 #ifdef TRACE
     while ((c = wgetch(win)) == CTRL('T')) {
-	if (_nc_tracing) {
-	    save_trace = _nc_tracing;
-	    Trace(("TOGGLE-TRACING OFF"));
-	    _nc_tracing = 0;
-	} else {
-	    _nc_tracing = save_trace;
-	}
-	curses_trace(_nc_tracing);
-	if (_nc_tracing)
-	    Trace(("TOGGLE-TRACING ON"));
+        if (_nc_tracing) {
+            save_trace = _nc_tracing;
+            Trace(("TOGGLE-TRACING OFF"));
+            _nc_tracing = 0;
+        } else {
+            _nc_tracing = save_trace;
+        }
+        curses_trace(_nc_tracing);
+        if (_nc_tracing)
+            Trace(("TOGGLE-TRACING ON"));
     }
 #else
     c = wgetch(win);
@@ -157,29 +157,29 @@ menu_virtualize(int c)
     int result;
 
     if (c == '\n' || c == KEY_EXIT)
-	result = (MAX_COMMAND + 1);
+        result = (MAX_COMMAND + 1);
     else if (c == 'u')
-	result = (REQ_SCR_ULINE);
+        result = (REQ_SCR_ULINE);
     else if (c == 'd')
-	result = (REQ_SCR_DLINE);
+        result = (REQ_SCR_DLINE);
     else if (c == 'b' || c == KEY_NPAGE)
-	result = (REQ_SCR_UPAGE);
+        result = (REQ_SCR_UPAGE);
     else if (c == 'f' || c == KEY_PPAGE)
-	result = (REQ_SCR_DPAGE);
+        result = (REQ_SCR_DPAGE);
     else if (c == 'l' || c == KEY_LEFT || c == KEY_BTAB)
-	result = (REQ_LEFT_ITEM);
+        result = (REQ_LEFT_ITEM);
     else if (c == 'n' || c == KEY_DOWN)
-	result = (REQ_NEXT_ITEM);
+        result = (REQ_NEXT_ITEM);
     else if (c == 'p' || c == KEY_UP)
-	result = (REQ_PREV_ITEM);
+        result = (REQ_PREV_ITEM);
     else if (c == 'r' || c == KEY_RIGHT || c == '\t')
-	result = (REQ_RIGHT_ITEM);
+        result = (REQ_RIGHT_ITEM);
     else if (c == ' ')
-	result = (REQ_TOGGLE_ITEM);
+        result = (REQ_TOGGLE_ITEM);
     else {
-	if (c != KEY_MOUSE)
-	    beep();
-	result = (c);
+        if (c != KEY_MOUSE)
+            beep();
+        result = (c);
     }
     return result;
 }
@@ -196,16 +196,16 @@ menu_offset(MenuNo number)
     int result = 0;
 
     if (okMenuNo(number)) {
-	int spc_rows;
+        int spc_rows;
 #ifdef NCURSES_VERSION
-	int spc_desc, spc_cols;
-	menu_spacing(mpBanner, &spc_desc, &spc_rows, &spc_cols);
+        int spc_desc, spc_cols;
+        menu_spacing(mpBanner, &spc_desc, &spc_rows, &spc_cols);
 #else
-	spc_rows = 0;
+        spc_rows = 0;
 #endif
 
-	/* FIXME: MENU.itemlen seems the only way to get actual width of items */
-	result = (number - (eBanner + 1)) * (menu_itemwidth(mpBanner) + spc_rows);
+        /* FIXME: MENU.itemlen seems the only way to get actual width of items */
+        result = (number - (eBanner + 1)) * (menu_itemwidth(mpBanner) + spc_rows);
     }
     return result;
 }
@@ -265,34 +265,34 @@ menu_create(ITEM ** items, int count, int ncols, MenuNo number)
     int maxrow = (count + 1) / ncols;
 
     if ((maxrow + y) >= (LINES - 4))
-	maxrow = LINES - 4 - y;
+        maxrow = LINES - 4 - y;
 
     result = new_menu(items);
 
     if (has_colors()) {
-	set_menu_fore(result, (chtype) COLOR_PAIR(1));
-	set_menu_back(result, (chtype) COLOR_PAIR(2));
+        set_menu_fore(result, (chtype) COLOR_PAIR(1));
+        set_menu_back(result, (chtype) COLOR_PAIR(2));
     }
 
     set_menu_format(result, maxrow, maxcol);
     scale_menu(result, &mrows, &mcols);
 
     if (mcols + (2 * margin + x) >= COLS)
-	mcols = COLS - (2 * margin + x);
+        mcols = COLS - (2 * margin + x);
 
     menuwin = newwin(mrows + (2 * margin), mcols + (2 * margin), y, x);
     set_menu_win(result, menuwin);
     keypad(menuwin, TRUE);
     if (margin)
-	box(menuwin, 0, 0);
+        box(menuwin, 0, 0);
 
     set_menu_sub(result, derwin(menuwin, mrows, mcols, margin, margin));
 
 #ifdef TRACE
     if (number == eTrace)
-	menu_opts_off(result, O_ONEVALUE);
+        menu_opts_off(result, O_ONEVALUE);
     else
-	menu_opts_on(result, O_ONEVALUE);
+        menu_opts_on(result, O_ONEVALUE);
 #endif
 #if defined(NCURSES_MOUSE_VERSION) && defined(O_MOUSE_MENU)
     menu_opts_on(result, O_MOUSE_MENU);
@@ -312,36 +312,36 @@ menu_destroy(MENU * m)
 {
     Trace(("menu_destroy %p", (void *) m));
     if (m != 0) {
-	ITEM **items = menu_items(m);
-	const char *blob = 0;
-	int count;
+        ITEM **items = menu_items(m);
+        const char *blob = 0;
+        int count;
 
-	count = item_count(m);
-	Trace(("menu_destroy %p count %d", (void *) m, count));
-	if ((count > 0) && (m == mpSelect)) {
-	    blob = item_name(*items);
-	}
+        count = item_count(m);
+        Trace(("menu_destroy %p count %d", (void *) m, count));
+        if ((count > 0) && (m == mpSelect)) {
+            blob = item_name(*items);
+        }
 
-	unpost_menu(m);
-	free_menu(m);
+        unpost_menu(m);
+        free_menu(m);
 
-	/* free the extra data allocated in build_select_menu() */
-	if ((count > 0) && (m == mpSelect)) {
-	    if (blob && loaded_file) {
-		Trace(("freeing blob %p", blob));
-		free((void *) blob);
-	    }
-	    free(items);
-	    items = 0;
-	}
+        /* free the extra data allocated in build_select_menu() */
+        if ((count > 0) && (m == mpSelect)) {
+            if (blob && loaded_file) {
+                Trace(("freeing blob %p", blob));
+                free((void *) blob);
+            }
+            free(items);
+            items = 0;
+        }
 #ifdef TRACE
-	if ((count > 0) && (m == mpTrace)) {
-	    ITEM **ip = items;
-	    if (ip != 0) {
-		while (*ip)
-		    free(*ip++);
-	    }
-	}
+        if ((count > 0) && (m == mpTrace)) {
+            ITEM **ip = items;
+            if (ip != 0) {
+                while (*ip)
+                    free(*ip++);
+            }
+        }
 #endif
     }
 }
@@ -361,8 +361,8 @@ build_file_menu(MenuNo number)
 {
     static MENU_DATA table[] =
     {
-	{"Exit", call_files, 0},
-	{(char *) 0, 0, 0}
+        {"Exit", call_files, 0},
+        {(char *) 0, 0, 0}
     };
     static ITEM *items[SIZEOF(table)];
 
@@ -370,9 +370,9 @@ build_file_menu(MenuNo number)
     int n;
 
     for (n = 0; table[n].name != 0; ++n) {
-	*ip = new_item(table[n].name, empty);
-	set_item_userptr(*ip, (void *) &table[n]);
-	++ip;
+        *ip = new_item(table[n].name, empty);
+        set_item_userptr(*ip, (void *) &table[n]);
+        ++ip;
     }
     *ip = (ITEM *) 0;
 
@@ -400,20 +400,20 @@ build_select_menu(MenuNo number, char *filename)
 #define MY_DATA(name) { name, call_select, 0 }
     static MENU_DATA table[] =
     {
-	MY_DATA("Lions"),
-	MY_DATA("Tigers"),
-	MY_DATA("Bears"),
-	MY_DATA("(Oh my!)"),
-	MY_DATA("Newts"),
-	MY_DATA("Platypi"),
-	MY_DATA("Lemurs"),
-	MY_DATA("(Oh really?!)"),
-	MY_DATA("Leopards"),
-	MY_DATA("Panthers"),
-	MY_DATA("Pumas"),
-	MY_DATA("Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs"),
-	MY_DATA("Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs, Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs"),
-	{(char *) 0, 0, 0}
+        MY_DATA("Lions"),
+        MY_DATA("Tigers"),
+        MY_DATA("Bears"),
+        MY_DATA("(Oh my!)"),
+        MY_DATA("Newts"),
+        MY_DATA("Platypi"),
+        MY_DATA("Lemurs"),
+        MY_DATA("(Oh really?!)"),
+        MY_DATA("Leopards"),
+        MY_DATA("Panthers"),
+        MY_DATA("Pumas"),
+        MY_DATA("Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs"),
+        MY_DATA("Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs, Lions, Tigers, Bears, (Oh my!), Newts, Platypi, Lemurs"),
+        {(char *) 0, 0, 0}
     };
     static ITEM **items;
 
@@ -424,69 +424,69 @@ build_select_menu(MenuNo number, char *filename)
     size_t count = 0;
 
     if (filename != 0) {
-	struct stat sb;
-	if (stat(filename, &sb) == 0
-	    && (sb.st_mode & S_IFMT) == S_IFREG
-	    && sb.st_size != 0) {
-	    size_t size = (size_t) sb.st_size;
-	    char *blob = typeMalloc(char, size + 1);
-	    MENU_DATA *list = typeCalloc(MENU_DATA, size + 1);
+        struct stat sb;
+        if (stat(filename, &sb) == 0
+            && (sb.st_mode & S_IFMT) == S_IFREG
+            && sb.st_size != 0) {
+            size_t size = (size_t) sb.st_size;
+            char *blob = typeMalloc(char, size + 1);
+            MENU_DATA *list = typeCalloc(MENU_DATA, size + 1);
 
-	    items = typeCalloc(ITEM *, size + 1);
-	    Trace(("build_select_menu blob=%p, items=%p",
-		   (void *) blob,
-		   (void *) items));
-	    if (blob != 0 && list != 0) {
-		FILE *fp = fopen(filename, "r");
-		if (fp != 0) {
-		    if (fread(blob, sizeof(char), size, fp) == size) {
-			bool mark = TRUE;
-			unsigned j, k;
-			for (j = k = 0; j < size; ++j) {
-			    if (mark) {
-				list[k++].name = blob + j;
-				mark = FALSE;
-			    }
-			    if (blob[j] == '\n') {
-				blob[j] = '\0';
-				if (k > 0 && *list[k - 1].name == '\0')
-				    --k;
-				mark = TRUE;
-			    } else if (blob[j] == '\t') {
-				blob[j] = ' ';	/* menu items are printable */
-			    }
-			}
-			list[k].name = 0;
-			count = k;
-			ap = myList = list;
-		    }
-		    fclose(fp);
-		}
-		loaded_file = TRUE;
-	    }
-	    if (ap == 0)
-		free(items);
-	}
+            items = typeCalloc(ITEM *, size + 1);
+            Trace(("build_select_menu blob=%p, items=%p",
+                   (void *) blob,
+                   (void *) items));
+            if (blob != 0 && list != 0) {
+                FILE *fp = fopen(filename, "r");
+                if (fp != 0) {
+                    if (fread(blob, sizeof(char), size, fp) == size) {
+                        bool mark = TRUE;
+                        unsigned j, k;
+                        for (j = k = 0; j < size; ++j) {
+                            if (mark) {
+                                list[k++].name = blob + j;
+                                mark = FALSE;
+                            }
+                            if (blob[j] == '\n') {
+                                blob[j] = '\0';
+                                if (k > 0 && *list[k - 1].name == '\0')
+                                    --k;
+                                mark = TRUE;
+                            } else if (blob[j] == '\t') {
+                                blob[j] = ' ';  /* menu items are printable */
+                            }
+                        }
+                        list[k].name = 0;
+                        count = k;
+                        ap = myList = list;
+                    }
+                    fclose(fp);
+                }
+                loaded_file = TRUE;
+            }
+            if (ap == 0)
+                free(items);
+        }
     }
     if (ap == 0) {
-	count = SIZEOF(table) - 1;
-	items = typeCalloc(ITEM *, count + 1);
-	ap = table;
+        count = SIZEOF(table) - 1;
+        items = typeCalloc(ITEM *, count + 1);
+        ap = table;
     }
 
     ip = items;
     for (i = 0; ap[i].name != 0; ++i) {
-	ap[i].func = call_select;
-	ap[i].mask = (unsigned) i;
-	*ip = new_item(ap[i].name, empty);
-	set_item_userptr(*ip, (void *) &table[i]);
-	++ip;
+        ap[i].func = call_select;
+        ap[i].mask = (unsigned) i;
+        *ip = new_item(ap[i].name, empty);
+        set_item_userptr(*ip, (void *) &table[i]);
+        ++ip;
     }
     *ip = 0;
 
     mpSelect = menu_create(items, (int) count, 1, number);
     if (myList != 0)
-	free(myList);
+        free(myList);
 }
 
 static int
@@ -527,7 +527,7 @@ static MENU_DATA t_tbl[] =
     T_TBL(TRACE_ATTRS),
     T_TBL(TRACE_MAXIMUM),
     {
-	(char *) 0, 0, 0
+        (char *) 0, 0, 0
     }
 };
 
@@ -540,9 +540,9 @@ build_trace_menu(MenuNo number)
     int n;
 
     for (n = 0; t_tbl[n].name != 0; n++) {
-	*ip = new_item(t_tbl[n].name, empty);
-	set_item_userptr(*ip, (void *) &t_tbl[n]);
-	++ip;
+        *ip = new_item(t_tbl[n].name, empty);
+        set_item_userptr(*ip, (void *) &t_tbl[n]);
+        ++ip;
     }
     *ip = (ITEM *) 0;
 
@@ -557,25 +557,25 @@ tracetrace(unsigned tlevel)
     int n;
 
     if (buf == 0) {
-	for (n = 0; t_tbl[n].name != 0; n++)
-	    need += strlen(t_tbl[n].name) + 2;
-	buf = typeMalloc(char, need);
-	if (!buf)
-	    failed("tracetrace");
+        for (n = 0; t_tbl[n].name != 0; n++)
+            need += strlen(t_tbl[n].name) + 2;
+        buf = typeMalloc(char, need);
+        if (!buf)
+            failed("tracetrace");
     }
     _nc_SPRINTF(buf, _nc_SLIMIT(need) "0x%02x = {", tlevel);
     if (tlevel == 0) {
-	_nc_STRCAT(buf, t_tbl[0].name ? t_tbl[0].name : "", need);
-	_nc_STRCAT(buf, ", ", need);
+        _nc_STRCAT(buf, t_tbl[0].name ? t_tbl[0].name : "", need);
+        _nc_STRCAT(buf, ", ", need);
     } else {
-	for (n = 1; t_tbl[n].name != 0; n++)
-	    if ((tlevel & t_tbl[n].mask) == t_tbl[n].mask) {
-		_nc_STRCAT(buf, t_tbl[n].name, need);
-		_nc_STRCAT(buf, ", ", need);
-	    }
+        for (n = 1; t_tbl[n].name != 0; n++)
+            if ((tlevel & t_tbl[n].mask) == t_tbl[n].mask) {
+                _nc_STRCAT(buf, t_tbl[n].name, need);
+                _nc_STRCAT(buf, ", ", need);
+            }
     }
     if (buf[strlen(buf) - 2] == ',')
-	buf[strlen(buf) - 2] = '\0';
+        buf[strlen(buf) - 2] = '\0';
     _nc_STRCAT(buf, "}", need);
     return buf;
 }
@@ -593,14 +593,14 @@ update_trace_menu(MENU * m)
     items = menu_items(m);
     i = current_item(m);
     if (i == items[0]) {
-	if (item_value(i)) {
-	    ITEM **p;
-	    for (p = items + 1; *p != 0; p++)
-		if (item_value(*p)) {
-		    set_item_value(*p, FALSE);
-		    changed = TRUE;
-		}
-	}
+        if (item_value(i)) {
+            ITEM **p;
+            for (p = items + 1; *p != 0; p++)
+                if (item_value(*p)) {
+                    set_item_value(*p, FALSE);
+                    changed = TRUE;
+                }
+        }
     }
     return changed;
 }
@@ -613,32 +613,32 @@ perform_trace_menu(int cmd)
     int result;
 
     for (ip = menu_items(mpTrace); *ip; ip++) {
-	MENU_DATA *td = (MENU_DATA *) item_userptr(*ip);
-	unsigned mask = td->mask;
-	if (mask == 0)
-	    set_item_value(*ip, _nc_tracing == 0);
-	else if ((mask & _nc_tracing) == mask)
-	    set_item_value(*ip, TRUE);
+        MENU_DATA *td = (MENU_DATA *) item_userptr(*ip);
+        unsigned mask = td->mask;
+        if (mask == 0)
+            set_item_value(*ip, _nc_tracing == 0);
+        else if ((mask & _nc_tracing) == mask)
+            set_item_value(*ip, TRUE);
     }
 
     result = menu_driver(mpTrace, cmd);
 
     if (result == E_OK) {
-	if (update_trace_menu(mpTrace) || cmd == REQ_TOGGLE_ITEM) {
-	    unsigned newtrace = 0;
-	    for (ip = menu_items(mpTrace); *ip; ip++) {
-		if (item_value(*ip)) {
-		    MENU_DATA *td = (MENU_DATA *) item_userptr(*ip);
-		    newtrace |= td->mask;
-		}
-	    }
-	    curses_trace(newtrace);
-	    Trace(("trace level interactively set to %s", tracetrace(_nc_tracing)));
+        if (update_trace_menu(mpTrace) || cmd == REQ_TOGGLE_ITEM) {
+            unsigned newtrace = 0;
+            for (ip = menu_items(mpTrace); *ip; ip++) {
+                if (item_value(*ip)) {
+                    MENU_DATA *td = (MENU_DATA *) item_userptr(*ip);
+                    newtrace |= td->mask;
+                }
+            }
+            curses_trace(newtrace);
+            Trace(("trace level interactively set to %s", tracetrace(_nc_tracing)));
 
-	    MvWPrintw(status, 1, 0,
-		      "Trace level is %s\n", tracetrace(_nc_tracing));
-	    wrefresh(status);
-	}
+            MvWPrintw(status, 1, 0,
+                      "Trace level is %s\n", tracetrace(_nc_tracing));
+            wrefresh(status);
+        }
     }
     return result;
 }
@@ -659,19 +659,19 @@ current_menu(void)
 
     switch (menu_number()) {
     case eFile:
-	result = mpFile;
-	break;
+        result = mpFile;
+        break;
     case eSelect:
-	result = mpSelect;
-	break;
+        result = mpSelect;
+        break;
 #ifdef TRACE
     case eTrace:
-	result = mpTrace;
-	break;
+        result = mpTrace;
+        break;
 #endif
     default:
-	result = 0;
-	break;
+        result = 0;
+        break;
     }
     return result;
 }
@@ -688,12 +688,12 @@ build_menus(char *filename)
 {
     static MENU_DATA table[] =
     {
-	{"File", call_menus, 0},
-	{"Select", call_menus, 1},
+        {"File", call_menus, 0},
+        {"Select", call_menus, 1},
 #ifdef TRACE
-	{"Trace", call_menus, 2},
+        {"Trace", call_menus, 2},
 #endif
-	{(char *) 0, 0, 0}
+        {(char *) 0, 0, 0}
     };
     static ITEM *items[SIZEOF(table)];
 
@@ -701,9 +701,9 @@ build_menus(char *filename)
     int n;
 
     for (n = 0; table[n].name != 0; ++n) {
-	*ip = new_item(table[n].name, empty);
-	set_item_userptr(*ip, (void *) &table[n]);
-	++ip;
+        *ip = new_item(table[n].name, empty);
+        set_item_userptr(*ip, (void *) &table[n]);
+        ++ip;
     }
     *ip = (ITEM *) 0;
 
@@ -736,15 +736,15 @@ move_menu(MENU * menu, MENU * current, int by_y, int by_x)
 
     if ((result = mvwin(top_win, y0, x0)) != ERR) {
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20060218)
-	sub_win->_begy = y1;
-	sub_win->_begx = x1;
+        sub_win->_begy = y1;
+        sub_win->_begx = x1;
 #else
-	mvwin(sub_win, y1, x1);
+        mvwin(sub_win, y1, x1);
 #endif
-	if (menu == current) {
-	    touchwin(top_win);
-	    wnoutrefresh(top_win);
-	}
+        if (menu == current) {
+            touchwin(top_win);
+            wnoutrefresh(top_win);
+        }
     }
     return result;
 }
@@ -756,14 +756,14 @@ static void
 move_menus(MENU * current, int by_y, int by_x)
 {
     if (move_menu(mpBanner, current, by_y, by_x) != ERR) {
-	erase();
-	wnoutrefresh(stdscr);
-	move_menu(mpFile, current, by_y, by_x);
-	move_menu(mpSelect, current, by_y, by_x);
+        erase();
+        wnoutrefresh(stdscr);
+        move_menu(mpFile, current, by_y, by_x);
+        move_menu(mpSelect, current, by_y, by_x);
 #ifdef TRACE
-	move_menu(mpTrace, current, by_y, by_x);
+        move_menu(mpTrace, current, by_y, by_x);
 #endif
-	doupdate();
+        doupdate();
     }
 }
 
@@ -802,10 +802,10 @@ show_status(int ch, MENU * menu)
 {
     wmove(status, 0, 0);
     wprintw(status, "key %s, menu %d, mark %s, match %s",
-	    keyname(ch),
-	    menu_number(),
-	    menu_mark(menu),
-	    menu_pattern(menu));
+            keyname(ch),
+            menu_number(),
+            menu_mark(menu),
+            menu_pattern(menu));
     wclrtoeol(status);
     wrefresh(status);
 }
@@ -827,105 +827,105 @@ perform_menus(void)
 
     for (;;) {
 
-	if (ch != ERR)
-	    show_status(ch, last_menu);
+        if (ch != ERR)
+            show_status(ch, last_menu);
 
-	ch = menu_getc(mpBanner);
+        ch = menu_getc(mpBanner);
 
-	/*
-	 * Provide for moving the menu around in the screen using shifted
-	 * cursor keys.
-	 */
-	switch (ch) {
-	case KEY_SF:
-	    move_menus(last_menu, 1, 0);
-	    continue;
-	case KEY_SR:
-	    move_menus(last_menu, -1, 0);
-	    continue;
-	case KEY_SLEFT:
-	    move_menus(last_menu, 0, -1);
-	    continue;
-	case KEY_SRIGHT:
-	    move_menus(last_menu, 0, 1);
-	    continue;
+        /*
+         * Provide for moving the menu around in the screen using shifted
+         * cursor keys.
+         */
+        switch (ch) {
+        case KEY_SF:
+            move_menus(last_menu, 1, 0);
+            continue;
+        case KEY_SR:
+            move_menus(last_menu, -1, 0);
+            continue;
+        case KEY_SLEFT:
+            move_menus(last_menu, 0, -1);
+            continue;
+        case KEY_SRIGHT:
+            move_menus(last_menu, 0, 1);
+            continue;
 #if defined(KEY_RESIZE) && NCURSES_EXT_FUNCS
-	case KEY_RESIZE:
-	    resize_menus(last_menu);
-	    continue;
+        case KEY_RESIZE:
+            resize_menus(last_menu);
+            continue;
 #endif
-	}
-	cmd = menu_virtualize(ch);
+        }
+        cmd = menu_virtualize(ch);
 
-	switch (cmd) {
-	    /*
-	     * The banner menu acts solely to select one of the other menus.
-	     * Move between its items, wrapping at the left/right limits.
-	     */
-	case REQ_LEFT_ITEM:
-	case REQ_RIGHT_ITEM:
-	    code = menu_driver(mpBanner, cmd);
-	    if (code == E_REQUEST_DENIED) {
-		if (menu_number() > 0)
-		    code = menu_driver(mpBanner, REQ_FIRST_ITEM);
-		else
-		    code = menu_driver(mpBanner, REQ_LAST_ITEM);
-	    }
-	    break;
-	default:
-	    switch (menu_number()) {
-	    case eFile:
-		code = perform_file_menu(cmd);
-		break;
-	    case eSelect:
-		code = perform_select_menu(cmd);
-		break;
+        switch (cmd) {
+            /*
+             * The banner menu acts solely to select one of the other menus.
+             * Move between its items, wrapping at the left/right limits.
+             */
+        case REQ_LEFT_ITEM:
+        case REQ_RIGHT_ITEM:
+            code = menu_driver(mpBanner, cmd);
+            if (code == E_REQUEST_DENIED) {
+                if (menu_number() > 0)
+                    code = menu_driver(mpBanner, REQ_FIRST_ITEM);
+                else
+                    code = menu_driver(mpBanner, REQ_LAST_ITEM);
+            }
+            break;
+        default:
+            switch (menu_number()) {
+            case eFile:
+                code = perform_file_menu(cmd);
+                break;
+            case eSelect:
+                code = perform_select_menu(cmd);
+                break;
 #ifdef TRACE
-	    case eTrace:
-		code = perform_trace_menu(cmd);
-		break;
+            case eTrace:
+                code = perform_trace_menu(cmd);
+                break;
 #endif
-	    }
+            }
 
 #if defined(NCURSES_MOUSE_VERSION) && defined(O_MOUSE_MENU)
-	    if ((code == E_REQUEST_DENIED) && (cmd == KEY_MOUSE)) {
-		(void) menu_getc(mpBanner);
-		code = menu_driver(mpBanner, cmd);
-		if (code == E_REQUEST_DENIED) {
-		    MEVENT event;
-		    if (menu_getc(mpBanner) == KEY_MOUSE)
-			getmouse(&event);	/* give up */
-		}
-	    }
+            if ((code == E_REQUEST_DENIED) && (cmd == KEY_MOUSE)) {
+                (void) menu_getc(mpBanner);
+                code = menu_driver(mpBanner, cmd);
+                if (code == E_REQUEST_DENIED) {
+                    MEVENT event;
+                    if (menu_getc(mpBanner) == KEY_MOUSE)
+                        getmouse(&event);       /* give up */
+                }
+            }
 #endif
 
-	    break;
-	}
+            break;
+        }
 
-	if (code == E_OK) {
-	    this_menu = current_menu();
-	    if (this_menu != last_menu) {
-		move(1, 0);
-		clrtobot();
-		box(menu_win(this_menu), 0, 0);
-		refresh();
+        if (code == E_OK) {
+            this_menu = current_menu();
+            if (this_menu != last_menu) {
+                move(1, 0);
+                clrtobot();
+                box(menu_win(this_menu), 0, 0);
+                refresh();
 
-		/* force the current menu to appear */
-		menu_display(this_menu);
+                /* force the current menu to appear */
+                menu_display(this_menu);
 
-		last_menu = this_menu;
-	    }
-	}
-	wrefresh(menu_win(last_menu));
-	if (code == E_UNKNOWN_COMMAND
-	    || code == E_NOT_POSTED) {
-	    ITEM *item = current_item(last_menu);
-	    MENU_DATA *td = (MENU_DATA *) item_userptr(item);
-	    td->func((int) td->mask);
-	}
-	if (code == E_REQUEST_DENIED)
-	    beep();
-	continue;
+                last_menu = this_menu;
+            }
+        }
+        wrefresh(menu_win(last_menu));
+        if (code == E_UNKNOWN_COMMAND
+            || code == E_NOT_POSTED) {
+            ITEM *item = current_item(last_menu);
+            MENU_DATA *td = (MENU_DATA *) item_userptr(item);
+            td->func((int) td->mask);
+        }
+        if (code == E_REQUEST_DENIED)
+            beep();
+        continue;
     }
 }
 
@@ -969,10 +969,10 @@ call_files(int code)
 {
     switch (code) {
     case 0:
-	destroy_menus();
-	endwin();
-	printf("DONE!\n");
-	ExitProgram(EXIT_SUCCESS);
+        destroy_menus();
+        endwin();
+        printf("DONE!\n");
+        ExitProgram(EXIT_SUCCESS);
     }
 }
 
@@ -981,20 +981,20 @@ usage(void)
 {
     static const char *const tbl[] =
     {
-	"Usage: demo_menus [options] [menu-file]"
-	,""
-	,"Options:"
+        "Usage: demo_menus [options] [menu-file]"
+        ,""
+        ,"Options:"
 #if HAVE_RIPOFFLINE
-	,"  -f       rip-off footer line (can repeat)"
-	,"  -h       rip-off header line (can repeat)"
+        ,"  -f       rip-off footer line (can repeat)"
+        ,"  -h       rip-off header line (can repeat)"
 #endif
 #ifdef TRACE
-	,"  -t mask  specify default trace-level (may toggle with ^T)"
+        ,"  -t mask  specify default trace-level (may toggle with ^T)"
 #endif
     };
     size_t n;
     for (n = 0; n < SIZEOF(tbl); n++)
-	fprintf(stderr, "%s\n", tbl[n]);
+        fprintf(stderr, "%s\n", tbl[n]);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -1006,23 +1006,23 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     while ((c = getopt(argc, argv, "fht:")) != -1) {
-	switch (c) {
+        switch (c) {
 #if HAVE_RIPOFFLINE
-	case 'f':
-	    ripoffline(-1, rip_footer);
-	    break;
-	case 'h':
-	    ripoffline(1, rip_header);
-	    break;
+        case 'f':
+            ripoffline(-1, rip_footer);
+            break;
+        case 'h':
+            ripoffline(1, rip_header);
+            break;
 #endif /* HAVE_RIPOFFLINE */
 #ifdef TRACE
-	case 't':
-	    curses_trace((unsigned) strtoul(optarg, 0, 0));
-	    break;
+        case 't':
+            curses_trace((unsigned) strtoul(optarg, 0, 0));
+            break;
 #endif
-	default:
-	    usage();
-	}
+        default:
+            usage();
+        }
     }
 
     initscr();
@@ -1031,9 +1031,9 @@ main(int argc, char *argv[])
     noecho();
 
     if (has_colors()) {
-	start_color();
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-	init_pair(2, COLOR_BLUE, COLOR_WHITE);
+        start_color();
+        init_pair(1, COLOR_RED, COLOR_BLACK);
+        init_pair(2, COLOR_BLUE, COLOR_WHITE);
     }
     status = newwin(3, COLS, LINES - 3, 0);
     build_menus(argc > 1 ? argv[1] : 0);

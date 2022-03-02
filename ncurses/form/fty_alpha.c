@@ -63,10 +63,10 @@ Generic_This_Type(void *arg)
       argp = typeMalloc(thisARG, 1);
 
       if (argp)
-	{
-	  T((T_CREATE("thisARG %p"), (void *)argp));
-	  argp->width = *((int *)arg);
-	}
+        {
+          T((T_CREATE("thisARG %p"), (void *)argp));
+          argp->width = *((int *)arg);
+        }
     }
   return ((void *)argp);
 }
@@ -171,7 +171,7 @@ Check_This_Field(FIELD *field, const void *argp)
 static FIELDTYPE typeTHIS =
 {
   _HAS_ARGS | _RESIDENT,
-  1,				/* this is mutable, so we can't be const */
+  1,                            /* this is mutable, so we can't be const */
   (FIELDTYPE *)0,
   (FIELDTYPE *)0,
   Make_This_Type,

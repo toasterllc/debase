@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /*
-**	lib_winch.c
+**      lib_winch.c
 **
-**	The routine winch().
+**      The routine winch().
 **
 */
 
@@ -47,9 +47,9 @@ winch(WINDOW *win)
 {
     T((T_CALLED("winch(%p)"), (void *) win));
     if (win != 0) {
-	returnChtype((chtype) CharOf(win->_line[win->_cury].text[win->_curx])
-		     | AttrOf(win->_line[win->_cury].text[win->_curx]));
+        returnChtype((chtype) CharOf(win->_line[win->_cury].text[win->_curx])
+                     | AttrOf(win->_line[win->_cury].text[win->_curx]));
     } else {
-	returnChtype(0);
+        returnChtype(0);
     }
 }

@@ -44,7 +44,7 @@
 
 #if USE_HASHED_DB
 
-#define DB_DBM_HSEARCH 0	/* quiet gcc -Wundef with db6 */
+#define DB_DBM_HSEARCH 0        /* quiet gcc -Wundef with db6 */
 
 #include <db.h>
 
@@ -55,7 +55,7 @@
 #ifdef DB_VERSION_MAJOR
 #define HASHED_DB_API DB_VERSION_MAJOR
 #else
-#define HASHED_DB_API 1		/* e.g., db 1.8.5 */
+#define HASHED_DB_API 1         /* e.g., db 1.8.5 */
 #endif
 
 extern NCURSES_EXPORT(DB *) _nc_db_open(const char * /* path */, bool /* modify */);

@@ -53,35 +53,35 @@ NCURSES_SP_NAME(mcprint) (NCURSES_SP_DCLx char *data, int len)
 
     errno = 0;
     if (!HasTInfoTerminal(SP_PARM)
-	|| len <= 0
-	|| (!prtr_non && (!prtr_on || !prtr_off))) {
-	errno = ENODEV;
-	return (ERR);
+        || len <= 0
+        || (!prtr_non && (!prtr_on || !prtr_off))) {
+        errno = ENODEV;
+        return (ERR);
     }
 
     if (prtr_non) {
-	switchon = TIPARM_1(prtr_non, len);
-	onsize = strlen(switchon);
-	offsize = 0;
+        switchon = TIPARM_1(prtr_non, len);
+        onsize = strlen(switchon);
+        offsize = 0;
     } else {
-	switchon = prtr_on;
-	onsize = strlen(prtr_on);
-	offsize = strlen(prtr_off);
+        switchon = prtr_on;
+        onsize = strlen(prtr_on);
+        offsize = strlen(prtr_off);
     }
 
     need = onsize + (size_t) len + offsize;
 
     if (switchon == 0
-	|| (mybuf = typeMalloc(char, need + 1)) == 0) {
-	free(mybuf);
-	errno = ENOMEM;
-	return (ERR);
+        || (mybuf = typeMalloc(char, need + 1)) == 0) {
+        free(mybuf);
+        errno = ENOMEM;
+        return (ERR);
     }
 
     _nc_STRCPY(mybuf, switchon, need);
     memcpy(mybuf + onsize, data, (size_t) len);
     if (offsize)
-	_nc_STRCPY(mybuf + onsize + len, prtr_off, need);
+        _nc_STRCPY(mybuf + onsize + len, prtr_off, need);
 
     /*
      * We're relying on the atomicity of UNIX writes here.  The

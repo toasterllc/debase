@@ -34,9 +34,9 @@
  ****************************************************************************/
 
 /*
-**	lib_wattroff.c
+**      lib_wattroff.c
 **
-**	The routine wattr_off().
+**      The routine wattr_off().
 **
 */
 
@@ -50,16 +50,16 @@ wattr_off(WINDOW *win, attr_t at, void *opts GCC_UNUSED)
 {
     T((T_CALLED("wattr_off(%p,%s)"), (void *) win, _traceattr(at)));
     if (win) {
-	T(("... current %s (%d)",
-	   _traceattr(WINDOW_ATTRS(win)),
-	   GET_WINDOW_PAIR(win)));
+        T(("... current %s (%d)",
+           _traceattr(WINDOW_ATTRS(win)),
+           GET_WINDOW_PAIR(win)));
 
-	if_EXT_COLORS({
-	    if (at & A_COLOR)
-		win->_color = 0;
-	});
-	toggle_attr_off(WINDOW_ATTRS(win), at);
-	returnCode(OK);
+        if_EXT_COLORS({
+            if (at & A_COLOR)
+                win->_color = 0;
+        });
+        toggle_attr_off(WINDOW_ATTRS(win), at);
+        returnCode(OK);
     } else
-	returnCode(ERR);
+        returnCode(ERR);
 }

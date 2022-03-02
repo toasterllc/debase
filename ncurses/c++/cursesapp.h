@@ -43,7 +43,7 @@
 # define NCURSES_CXX_MAIN_NAME cursespp_main
 # define NCURSES_CXX_MAIN \
   int main(int argc, char *argv[]) { \
-  	return NCURSES_CXX_MAIN_NAME(argc, argv); \
+        return NCURSES_CXX_MAIN_NAME(argc, argv); \
   }
 #else
 # define NCURSES_CXX_MAIN_NAME main

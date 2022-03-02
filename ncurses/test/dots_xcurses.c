@@ -67,8 +67,8 @@ cleanup(void)
 
     fflush(stdout);
     fprintf(stderr, "\n\n%ld total cells, rate %.2f/sec\n",
-	    total_chars,
-	    ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
+            total_chars,
+            ((double) (total_chars) / (double) (time((time_t *) 0) - started)));
 }
 
 static void
@@ -90,12 +90,12 @@ mypair(int fg, int bg)
     int result;
 #if HAVE_ALLOC_PAIR
     if (x_option) {
-	result = alloc_pair(fg, bg);
+        result = alloc_pair(fg, bg);
     } else
 #endif
     {
-	int pair = (fg * COLORS) + bg;
-	result = (pair >= COLOR_PAIRS) ? -1 : pair;
+        int pair = (fg * COLORS) + bg;
+        result = (pair >= COLOR_PAIRS) ? -1 : pair;
     }
     return result;
 }
@@ -105,7 +105,7 @@ set_colors(int fg, int bg)
 {
     int pair = mypair(fg, bg);
     if (pair > 0) {
-	(void) color_set((short) pair, NewPair(pair));
+        (void) color_set((short) pair, NewPair(pair));
     }
 }
 
@@ -114,27 +114,27 @@ usage(void)
 {
     static const char *msg[] =
     {
-	"Usage: dots_xcurses [options]"
-	,""
-	,"Options:"
-	," -T TERM  override $TERM"
+        "Usage: dots_xcurses [options]"
+        ,""
+        ,"Options:"
+        ," -T TERM  override $TERM"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors()"
+        ," -d       invoke use_default_colors()"
 #endif
 #if HAVE_USE_ENV
-	," -e       allow environment $LINES / $COLUMNS"
+        ," -e       allow environment $LINES / $COLUMNS"
 #endif
-	," -m SIZE  set margin (default: 2)"
-	," -r SECS  self-interrupt/exit after specified number of seconds"
-	," -s MSECS delay 1% of the time (default: 1 msecs)"
+        ," -m SIZE  set margin (default: 2)"
+        ," -r SECS  self-interrupt/exit after specified number of seconds"
+        ," -s MSECS delay 1% of the time (default: 1 msecs)"
 #if HAVE_ALLOC_PAIR
-	," -x       use alloc_pair() rather than init_pair()"
+        ," -x       use alloc_pair() rather than init_pair()"
 #endif
     };
     size_t n;
 
     for (n = 0; n < SIZEOF(msg); n++)
-	fprintf(stderr, "%s\n", msg[n]);
+        fprintf(stderr, "%s\n", msg[n]);
 
     ExitProgram(EXIT_FAILURE);
 }
@@ -156,41 +156,41 @@ main(int argc, char *argv[])
     char *my_env;
 
     while ((ch = getopt(argc, argv, "T:dem:r:s:x")) != -1) {
-	switch (ch) {
-	case 'T':
-	    need = 6 + strlen(optarg);
-	    my_env = malloc(need);
-	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
-	    putenv(my_env);
-	    break;
+        switch (ch) {
+        case 'T':
+            need = 6 + strlen(optarg);
+            my_env = malloc(need);
+            _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+            putenv(my_env);
+            break;
 #if HAVE_USE_DEFAULT_COLORS
-	case 'd':
-	    d_option = TRUE;
-	    break;
+        case 'd':
+            d_option = TRUE;
+            break;
 #endif
 #if HAVE_USE_ENV
-	case 'e':
-	    use_env(TRUE);
-	    break;
+        case 'e':
+            use_env(TRUE);
+            break;
 #endif
-	case 'm':
-	    m_option = atoi(optarg);
-	    break;
-	case 'r':
-	    r_option = atoi(optarg);
-	    break;
-	case 's':
-	    s_option = atoi(optarg);
-	    break;
+        case 'm':
+            m_option = atoi(optarg);
+            break;
+        case 'r':
+            r_option = atoi(optarg);
+            break;
+        case 's':
+            s_option = atoi(optarg);
+            break;
 #if HAVE_ALLOC_PAIR
-	case 'x':
-	    x_option = TRUE;
-	    break;
+        case 'x':
+            x_option = TRUE;
+            break;
 #endif
-	default:
-	    usage();
-	    break;
-	}
+        default:
+            usage();
+            break;
+        }
     }
 
     srand((unsigned) time(0));
@@ -198,31 +198,31 @@ main(int argc, char *argv[])
     SetupAlarm(r_option);
     InitAndCatch(initscr(), onsig);
     if (has_colors()) {
-	start_color();
+        start_color();
 #if HAVE_USE_DEFAULT_COLORS
-	if (d_option)
-	    use_default_colors();
+        if (d_option)
+            use_default_colors();
 #endif
 #if HAVE_ALLOC_PAIR
-	if (x_option) {
-	    ;			/* nothing */
-	} else
+        if (x_option) {
+            ;                   /* nothing */
+        } else
 #endif
-	{
-	    for (fg = 0; fg < COLORS; fg++) {
-		for (bg = 0; bg < COLORS; bg++) {
-		    int pair;
-		    if (interrupted) {
-			cleanup();
-			ExitProgram(EXIT_FAILURE);
-		    }
-		    pair = mypair(fg, bg);
-		    if (pair > 0) {
-			InitPair(pair, fg, bg);
-		    }
-		}
-	    }
-	}
+        {
+            for (fg = 0; fg < COLORS; fg++) {
+                for (bg = 0; bg < COLORS; bg++) {
+                    int pair;
+                    if (interrupted) {
+                        cleanup();
+                        ExitProgram(EXIT_FAILURE);
+                    }
+                    pair = mypair(fg, bg);
+                    if (pair > 0) {
+                        InitPair(pair, fg, bg);
+                    }
+                }
+            }
+        }
     }
 
     r = (double) (LINES - (2 * m_option));
@@ -233,35 +233,35 @@ main(int argc, char *argv[])
     bg = COLOR_BLACK;
     wch[1] = 0;
     while (!interrupted) {
-	int x = (int) (c * ranf()) + m_option;
-	int y = (int) (r * ranf()) + m_option;
-	int p = (ranf() > 0.9) ? '*' : ' ';
+        int x = (int) (c * ranf()) + m_option;
+        int y = (int) (r * ranf()) + m_option;
+        int p = (ranf() > 0.9) ? '*' : ' ';
 
-	move(y, x);
-	if (has_colors()) {
-	    int z = (int) (ranf() * COLORS);
-	    if (ranf() > 0.01) {
-		set_colors(fg = z, bg);
-	    } else {
-		set_colors(fg, bg = z);
-		if (s_option)
-		    napms(s_option);
-	    }
-	} else {
-	    if (ranf() <= 0.01) {
-		if (ranf() > 0.6) {
-		    attr_on(WA_REVERSE, NULL);
-		} else {
-		    attr_off(WA_REVERSE, NULL);
-		}
-		if (s_option)
-		    napms(s_option);
-	    }
-	}
-	wch[0] = (wchar_t) p;
-	addnwstr(wch, 1);
-	refresh();
-	++total_chars;
+        move(y, x);
+        if (has_colors()) {
+            int z = (int) (ranf() * COLORS);
+            if (ranf() > 0.01) {
+                set_colors(fg = z, bg);
+            } else {
+                set_colors(fg, bg = z);
+                if (s_option)
+                    napms(s_option);
+            }
+        } else {
+            if (ranf() <= 0.01) {
+                if (ranf() > 0.6) {
+                    attr_on(WA_REVERSE, NULL);
+                } else {
+                    attr_off(WA_REVERSE, NULL);
+                }
+                if (s_option)
+                    napms(s_option);
+            }
+        }
+        wch[0] = (wchar_t) p;
+        addnwstr(wch, 1);
+        refresh();
+        ++total_chars;
     }
     cleanup();
     ExitProgram(EXIT_SUCCESS);

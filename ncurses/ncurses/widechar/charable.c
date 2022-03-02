@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 /*
-**	Support functions for wide/narrow conversion.
+**      Support functions for wide/narrow conversion.
 */
 
 #include <curses.priv.h>
@@ -55,9 +55,9 @@ NCURSES_EXPORT(int) _nc_to_char(wint_t ch)
     char temp[MB_LEN_MAX];
     result = wctomb(temp, ch);
     if (strlen(temp) == 1)
-	result = UChar(temp[0]);
+        result = UChar(temp[0]);
     else
-	result = -1;
+        result = -1;
 #else
 #error expected either wctob/wctomb
 #endif
@@ -75,9 +75,9 @@ NCURSES_EXPORT(wint_t) _nc_to_widechar(int ch)
     temp[0] = ch;
     temp[1] = '\0';
     if (mbtowc(&convert, temp, 1) >= 0)
-	result = convert;
+        result = convert;
     else
-	result = WEOF;
+        result = WEOF;
 #else
 #error expected either btowc/mbtowc
 #endif

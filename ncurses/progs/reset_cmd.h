@@ -41,11 +41,11 @@
 /* *INDENT-OFF* */
 
 #define USE_LIBTINFO
-#define __INTERNAL_CAPS_VISIBLE	/* we need to see has_hardware_tabs */
+#define __INTERNAL_CAPS_VISIBLE /* we need to see has_hardware_tabs */
 #include <progs.priv.h>
 
 #undef CTRL
-#define CTRL(x)	((x) & 0x1f)
+#define CTRL(x) ((x) & 0x1f)
 
 extern bool send_init_strings(int /* fd */, TTY * /* old_settings */);
 extern void print_tty_chars(TTY * /* old_settings */, TTY * /* new_settings */);

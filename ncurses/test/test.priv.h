@@ -363,7 +363,7 @@
  * Workaround for HPUX
  */
 #if defined(__hpux) && !defined(NCURSES_VERSION)
-#define _ACS_COMPAT_CODE	/* needed for acs_map vs __acs_map */
+#define _ACS_COMPAT_CODE        /* needed for acs_map vs __acs_map */
 #endif
 
 #include <stdlib.h>
@@ -376,7 +376,7 @@
 #include <unistd.h>
 #endif
 
-#include <signal.h>		/* include before curses.h to work around glibc bug */
+#include <signal.h>             /* include before curses.h to work around glibc bug */
 
 #if NEED_WCHAR_H
 #include <wchar.h>
@@ -402,16 +402,16 @@
 #endif
 
 #if !(defined(NCURSES_WGETCH_EVENTS) && defined(NEED_KEY_EVENT))
-#undef KEY_EVENT		/* reduce compiler-warnings with Visual C++ */
+#undef KEY_EVENT                /* reduce compiler-warnings with Visual C++ */
 #endif
 
 #if defined(HAVE_XCURSES) || defined(PDCURSES)
 /* no other headers */
-#undef  HAVE_SETUPTERM		/* nonfunctional */
+#undef  HAVE_SETUPTERM          /* nonfunctional */
 #define HAVE_SETUPTERM 0
-#undef  HAVE_TGETENT		/* nonfunctional */
+#undef  HAVE_TGETENT            /* nonfunctional */
 #define HAVE_TGETENT 0
-#undef  HAVE_TIGETSTR		/* nonfunctional */
+#undef  HAVE_TIGETSTR           /* nonfunctional */
 #define HAVE_TIGETSTR 0
 #elif defined(HAVE_NCURSESW_TERM_H)
 #include <ncursesw/term.h>
@@ -445,7 +445,7 @@ extern int optind;
 #if HAVE_LOCALE_H
 #include <locale.h>
 #else
-#define setlocale(name,string)	/* nothing */
+#define setlocale(name,string)  /* nothing */
 #endif
 
 #include <assert.h>
@@ -459,16 +459,16 @@ extern int optind;
 #endif
 
 #ifndef GCC_NORETURN
-#define GCC_NORETURN		/* nothing */
+#define GCC_NORETURN            /* nothing */
 #endif
 #ifndef GCC_PRINTFLIKE
-#define GCC_PRINTFLIKE(a,b)	/* nothing */
+#define GCC_PRINTFLIKE(a,b)     /* nothing */
 #endif
 #ifndef GCC_SCANFLIKE
-#define GCC_SCANFLIKE(a,b)	/* nothing */
+#define GCC_SCANFLIKE(a,b)      /* nothing */
 #endif
 #ifndef GCC_UNUSED
-#define GCC_UNUSED		/* nothing */
+#define GCC_UNUSED              /* nothing */
 #endif
 
 #ifndef HAVE_GETNSTR
@@ -490,9 +490,9 @@ extern int optind;
 #endif
 
 #if !USE_SOFTKEYS
-#define slk_init()		/* nothing */
-#define slk_restore()		/* nothing */
-#define slk_clear()		/* nothing */
+#define slk_init()              /* nothing */
+#define slk_restore()           /* nothing */
+#define slk_clear()             /* nothing */
 #endif
 
 #ifndef HAVE_CURSES_DATA_TABSIZE
@@ -501,9 +501,9 @@ extern int optind;
 
 #if !NCURSES_EXT_FUNCS
 #if HAVE_CURSES_DATA_TABSIZE
-#define set_tabsize(n)	TABSIZE = (n)
+#define set_tabsize(n)  TABSIZE = (n)
 #else
-#define set_tabsize(n)		/* nothing */
+#define set_tabsize(n)          /* nothing */
 #endif
 #endif
 
@@ -514,7 +514,7 @@ extern int optind;
 #endif
 
 #ifndef HAVE_WSYNCDOWN
-#define wsyncdown(win)		/* nothing */
+#define wsyncdown(win)          /* nothing */
 #endif
 
 #ifndef USE_WIDEC_SUPPORT
@@ -591,38 +591,38 @@ extern int optind;
 
 #if defined(CURSES_WACS_ARRAY) && !defined(CURSES_WACS_SYMBOLS)
 /* NetBSD 5.1 defines these incorrectly */
-#undef	WACS_RARROW
-#undef	WACS_LARROW
-#undef	WACS_UARROW
-#undef	WACS_DARROW
-#undef	WACS_BLOCK
-#undef	WACS_DIAMOND
-#undef	WACS_CKBOARD
-#undef	WACS_DEGREE
-#undef	WACS_PLMINUS
-#undef	WACS_BOARD
-#undef	WACS_LANTERN
-#undef	WACS_LRCORNER
-#undef	WACS_URCORNER
-#undef	WACS_ULCORNER
-#undef	WACS_LLCORNER
-#undef	WACS_PLUS
-#undef	WACS_HLINE
-#undef	WACS_S1
-#undef	WACS_S9
-#undef	WACS_LTEE
-#undef	WACS_RTEE
-#undef	WACS_BTEE
-#undef	WACS_TTEE
-#undef	WACS_VLINE
-#undef	WACS_BULLET
-#undef	WACS_S3
-#undef	WACS_S7
-#undef	WACS_LEQUAL
-#undef	WACS_GEQUAL
-#undef	WACS_PI
-#undef	WACS_NEQUAL
-#undef	WACS_STERLING
+#undef  WACS_RARROW
+#undef  WACS_LARROW
+#undef  WACS_UARROW
+#undef  WACS_DARROW
+#undef  WACS_BLOCK
+#undef  WACS_DIAMOND
+#undef  WACS_CKBOARD
+#undef  WACS_DEGREE
+#undef  WACS_PLMINUS
+#undef  WACS_BOARD
+#undef  WACS_LANTERN
+#undef  WACS_LRCORNER
+#undef  WACS_URCORNER
+#undef  WACS_ULCORNER
+#undef  WACS_LLCORNER
+#undef  WACS_PLUS
+#undef  WACS_HLINE
+#undef  WACS_S1
+#undef  WACS_S9
+#undef  WACS_LTEE
+#undef  WACS_RTEE
+#undef  WACS_BTEE
+#undef  WACS_TTEE
+#undef  WACS_VLINE
+#undef  WACS_BULLET
+#undef  WACS_S3
+#undef  WACS_S7
+#undef  WACS_LEQUAL
+#undef  WACS_GEQUAL
+#undef  WACS_PI
+#undef  WACS_NEQUAL
+#undef  WACS_STERLING
 
 #define WACS_RARROW     &(CURSES_WACS_ARRAY['+'])
 #define WACS_LARROW     &(CURSES_WACS_ARRAY[','])
@@ -683,17 +683,17 @@ extern int optind;
 #endif
 
 #undef CTRL
-#define CTRL(x)	((x) & 0x1f)
+#define CTRL(x) ((x) & 0x1f)
 
-#define QUIT		CTRL('Q')
-#define ESCAPE		CTRL('[')
+#define QUIT            CTRL('Q')
+#define ESCAPE          CTRL('[')
 
 #ifndef KEY_MIN
-#define KEY_MIN 256		/* not defined in Solaris 8 */
+#define KEY_MIN 256             /* not defined in Solaris 8 */
 #endif
 
-#define HELP_KEY_1	'?'
-#define HELP_KEY_2	KEY_F(1)
+#define HELP_KEY_1      '?'
+#define HELP_KEY_2      KEY_F(1)
 
 /* from nc_string.h, to make this stand alone */
 #if HAVE_BSD_STRING_H
@@ -701,7 +701,7 @@ extern int optind;
 #endif
 
 #ifdef __cplusplus
-#define NCURSES_VOID		/* nothing */
+#define NCURSES_VOID            /* nothing */
 #else
 #define NCURSES_VOID (void)
 #endif
@@ -732,19 +732,19 @@ extern "C" {
 #endif
 
 #if USE_STRING_HACKS && HAVE_STRLCAT
-#define _nc_STRCAT(d,s,n)	NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,n))
-#define _nc_STRNCAT(d,s,m,n)	NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,m))
+#define _nc_STRCAT(d,s,n)       NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRNCAT(d,s,m,n)    NCURSES_VOID strlcat((d),(s),NCURSES_CAST(size_t,m))
 #else
-#define _nc_STRCAT(d,s,n)	NCURSES_VOID strcat((d),(s))
-#define _nc_STRNCAT(d,s,m,n)	NCURSES_VOID strncat((d),(s),(n))
+#define _nc_STRCAT(d,s,n)       NCURSES_VOID strcat((d),(s))
+#define _nc_STRNCAT(d,s,m,n)    NCURSES_VOID strncat((d),(s),(n))
 #endif
 
 #if USE_STRING_HACKS && HAVE_STRLCPY
-#define _nc_STRCPY(d,s,n)	NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
-#define _nc_STRNCPY(d,s,n)	NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRCPY(d,s,n)       NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
+#define _nc_STRNCPY(d,s,n)      NCURSES_VOID strlcpy((d),(s),NCURSES_CAST(size_t,n))
 #else
-#define _nc_STRCPY(d,s,n)	NCURSES_VOID strcpy((d),(s))
-#define _nc_STRNCPY(d,s,n)	NCURSES_VOID strncpy((d),(s),(n))
+#define _nc_STRCPY(d,s,n)       NCURSES_VOID strcpy((d),(s))
+#define _nc_STRNCPY(d,s,n)      NCURSES_VOID strncpy((d),(s),(n))
 #endif
 
 #if USE_STRING_HACKS && HAVE_SNPRINTF
@@ -752,7 +752,7 @@ extern "C" {
 #define _nc_SLIMIT(n)           NCURSES_CAST(size_t,n),
 #else
 #define _nc_SPRINTF             NCURSES_VOID (sprintf)
-#define _nc_SLIMIT(n)		/* nothing */
+#define _nc_SLIMIT(n)           /* nothing */
 #endif
 
 /*
@@ -799,7 +799,7 @@ extern int TABSIZE;
 #endif
 
 #define colored_chtype(ch, attr, pair) \
-	((chtype) (ch) | (chtype) (attr) | (chtype) COLOR_PAIR(pair))
+        ((chtype) (ch) | (chtype) (attr) | (chtype) COLOR_PAIR(pair))
 
 /*
  * Workaround for HPUX
@@ -820,20 +820,20 @@ extern int TABSIZE;
  * string produces only a L'\0'.
  */
 #define TEST_CCHAR(s, count, then_stmt, else_stmt) \
-	if ((count = getcchar(s, NULL, NULL, NULL, NULL)) > 0) { \
-	    wchar_t test_wch[CCHARW_MAX + 2]; \
-	    attr_t test_attrs; \
-	    NCURSES_PAIRS_T test_pair; \
-	    \
-	    if (getcchar( s, test_wch, &test_attrs, &test_pair, NULL) == OK \
-		&& test_wch[0] != L'\0') { \
-		then_stmt \
-	    } else { \
-		else_stmt \
-	    } \
-	} else { \
-	    else_stmt \
-	}
+        if ((count = getcchar(s, NULL, NULL, NULL, NULL)) > 0) { \
+            wchar_t test_wch[CCHARW_MAX + 2]; \
+            attr_t test_attrs; \
+            NCURSES_PAIRS_T test_pair; \
+            \
+            if (getcchar( s, test_wch, &test_attrs, &test_pair, NULL) == OK \
+                && test_wch[0] != L'\0') { \
+                then_stmt \
+            } else { \
+                else_stmt \
+            } \
+        } else { \
+            else_stmt \
+        }
 /*
  * These usually are implemented as macros, but may be functions.
  */
@@ -854,8 +854,8 @@ extern int TABSIZE;
 
 /*
  * Solaris 10 xpg4:
-#define	__m_getparx(w)		((w)->_parent == (WINDOW *) 0 ? -1 \
-				: (w)->_begx - (w)->_parent->_begx)
+#define __m_getparx(w)          ((w)->_parent == (WINDOW *) 0 ? -1 \
+                                : (w)->_begx - (w)->_parent->_begx)
  */
 #if !defined(getparx) && !HAVE_GETPARX
 #ifdef __m_getparx
@@ -920,7 +920,7 @@ extern int TABSIZE;
 
 #define UChar(c)    ((unsigned char)(c))
 
-#define SIZEOF(table)	(sizeof(table)/sizeof(table[0]))
+#define SIZEOF(table)   (sizeof(table)/sizeof(table[0]))
 
 #if defined(NCURSES_VERSION) && HAVE_NC_ALLOC_H
 #include <nc_alloc.h>
@@ -964,7 +964,7 @@ extern int TABSIZE;
 #  define WINVER 0x0501
 #endif
 #include <windows.h>
-#include <sys/time.h>		/* for struct timeval */
+#include <sys/time.h>           /* for struct timeval */
 #undef sleep
 #define sleep(n) Sleep((n) * 1000)
 #define SIGHUP  1
@@ -1030,34 +1030,34 @@ extern char *_nc_strstr(const char *, const char *);
  */
 #ifndef NCURSES_CONST
 #ifdef PDCURSES
-#define NCURSES_CONST		const	/* close enough */
+#define NCURSES_CONST           const   /* close enough */
 #else
-#define NCURSES_CONST		/* nothing */
+#define NCURSES_CONST           /* nothing */
 #endif
 #endif
 
 /* out-of-band values for representing absent capabilities */
-#define ABSENT_BOOLEAN		((signed char)-1)	/* 255 */
-#define ABSENT_NUMERIC		(-1)
-#define ABSENT_STRING		(char *)0
+#define ABSENT_BOOLEAN          ((signed char)-1)       /* 255 */
+#define ABSENT_NUMERIC          (-1)
+#define ABSENT_STRING           (char *)0
 
 /* out-of-band values for representing cancels */
-#define CANCELLED_BOOLEAN	((signed char)-2)	/* 254 */
-#define CANCELLED_NUMERIC	(-2)
-#define CANCELLED_STRING	(char *)(-1)
+#define CANCELLED_BOOLEAN       ((signed char)-2)       /* 254 */
+#define CANCELLED_NUMERIC       (-2)
+#define CANCELLED_STRING        (char *)(-1)
 
-#define VALID_BOOLEAN(s) ((unsigned char)(s) <= 1)	/* reject "-1" */
+#define VALID_BOOLEAN(s) ((unsigned char)(s) <= 1)      /* reject "-1" */
 #define VALID_NUMERIC(s) ((s) >= 0)
 #define VALID_STRING(s)  ((s) != CANCELLED_STRING && (s) != ABSENT_STRING)
 
 #define VT_ACSC "``aaffggiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~"
 
 #define CATCHALL(handler) do { \
-		int nsig; \
-		for (nsig = SIGHUP; nsig < SIGTERM; ++nsig) \
-		    if (nsig != SIGKILL) \
-			signal(nsig, handler); \
-	    } while(0)
+                int nsig; \
+                for (nsig = SIGHUP; nsig < SIGTERM; ++nsig) \
+                    if (nsig != SIGKILL) \
+                        signal(nsig, handler); \
+            } while(0)
 
 #ifdef NCURSES_VERSION
 #define InitAndCatch(init,handler) do { CATCHALL(handler); init; } while (0)
@@ -1066,9 +1066,9 @@ extern char *_nc_strstr(const char *, const char *);
 #endif
 
 #if defined(_NC_WINDOWS) || defined(USE_WIN32CON_DRIVER)
-#define SetupAlarm(opt)	(void)opt
+#define SetupAlarm(opt) (void)opt
 #else
-#define SetupAlarm(opt)	if (opt) alarm((unsigned)opt)
+#define SetupAlarm(opt) if (opt) alarm((unsigned)opt)
 #endif
 
 /*
@@ -1082,7 +1082,7 @@ extern char *_nc_strstr(const char *, const char *);
 #if defined(sun) && !defined(_XOPEN_CURSES) && !defined(NCURSES_VERSION_PATCH)
 #undef TPUTS_ARG
 #define TPUTS_ARG char
-extern char *tgoto(char *, int, int);	/* available, but not prototyped */
+extern char *tgoto(char *, int, int);   /* available, but not prototyped */
 #endif
 
 #ifndef TPUTS_PROTO
@@ -1145,7 +1145,7 @@ extern char *tgoto(char *, int, int);	/* available, but not prototyped */
 #elif defined(PDCURSES)
 #define CONST_MENUS const
 #else
-#define CONST_MENUS		/* nothing */
+#define CONST_MENUS             /* nothing */
 #endif
 
 /*
@@ -1176,35 +1176,35 @@ extern char *tgoto(char *, int, int);	/* available, but not prototyped */
 #define Trace(p) _tracef p
 #define USE_TRACE 1
 #define START_TRACE() \
-	if ((_nc_tracing & TRACE_MAXIMUM) == 0) { \
-	    int t = _nc_getenv_num("NCURSES_TRACE"); \
-	    if (t >= 0) \
-		curses_trace((unsigned) t); \
-	}
+        if ((_nc_tracing & TRACE_MAXIMUM) == 0) { \
+            int t = _nc_getenv_num("NCURSES_TRACE"); \
+            if (t >= 0) \
+                curses_trace((unsigned) t); \
+        }
 extern unsigned _nc_tracing;
 extern int _nc_getenv_num(const char *);
 #else
 #undef TRACE
-#define Trace(p)		/* nothing */
+#define Trace(p)                /* nothing */
 #define USE_TRACE 0
-#define START_TRACE()		/* nothing */
+#define START_TRACE()           /* nothing */
 #endif
 
-#define Trace2(p)		/* nothing */
+#define Trace2(p)               /* nothing */
 
-#define AddCh(c)		(void) addch((chtype)(c))
-#define WAddCh(w,c)		(void) waddch((w),(chtype)(c))
-#define MvAddCh(y,x,c)		(void) mvaddch((y),(x),(chtype)(c))
-#define MvWAddCh(w,y,x,c)	(void) mvwaddch((w),(y),(x),(chtype)(c))
-#define MvAddStr(y,x,s)		(void) mvaddstr((y),(x),(s))
-#define MvWAddStr(w,y,x,s)	(void) mvwaddstr((w),(y),(x),(s))
-#define MvWAddChStr(w,y,x,s)	(void) mvwaddchstr((w),(y),(x),(s))
-#define MvPrintw		(void) mvprintw
-#define MvWPrintw		(void) mvwprintw
-#define MvHLine			(void) mvhline
-#define MvWHLine		(void) mvwhline
-#define MvVLine			(void) mvvline
-#define MvWVLine		(void) mvwvline
+#define AddCh(c)                (void) addch((chtype)(c))
+#define WAddCh(w,c)             (void) waddch((w),(chtype)(c))
+#define MvAddCh(y,x,c)          (void) mvaddch((y),(x),(chtype)(c))
+#define MvWAddCh(w,y,x,c)       (void) mvwaddch((w),(y),(x),(chtype)(c))
+#define MvAddStr(y,x,s)         (void) mvaddstr((y),(x),(s))
+#define MvWAddStr(w,y,x,s)      (void) mvwaddstr((w),(y),(x),(s))
+#define MvWAddChStr(w,y,x,s)    (void) mvwaddchstr((w),(y),(x),(s))
+#define MvPrintw                (void) mvprintw
+#define MvWPrintw               (void) mvwprintw
+#define MvHLine                 (void) mvhline
+#define MvWHLine                (void) mvwhline
+#define MvVLine                 (void) mvvline
+#define MvWVLine                (void) mvwvline
 
 /*
  * The macro likely uses unsigned values, while X/Open prototype uses int.
@@ -1224,6 +1224,6 @@ extern int _nc_getenv_num(const char *);
 #define IGNORE_RC(func) (void) func
 #endif /* gcc workarounds */
 
-#define init_mb(state)	memset(&state, 0, sizeof(state))
+#define init_mb(state)  memset(&state, 0, sizeof(state))
 
 #endif /* __TEST_PRIV_H */

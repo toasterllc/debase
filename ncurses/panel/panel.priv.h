@@ -57,7 +57,7 @@ struct screen;              /* forward declaration */
 #    define USER_PTR(ptr,n) _nc_my_visbuf((const char *)ptr, n)
 #  endif
 
-#  define returnPanel(code)	TRACE_RETURN1(code,panel)
+#  define returnPanel(code)     TRACE_RETURN1(code,panel)
 
    extern PANEL_EXPORT(PANEL *) _nc_retrace_panel (PANEL *);
    extern PANEL_EXPORT(void) _nc_dPanel (const char*, const PANEL*);
@@ -73,7 +73,7 @@ struct screen;              /* forward declaration */
 #  define Touchpan(pan) _nc_Touchpan(pan)
 #  define Touchline(pan,start,count) _nc_Touchline(pan,start,count)
 #else /* !TRACE */
-#  define returnPanel(code)	return code
+#  define returnPanel(code)     return code
 #  define dBug(x)
 #  define dPanel(text,pan)
 #  define dStack(fmt,num,pan)
@@ -84,20 +84,20 @@ struct screen;              /* forward declaration */
 
 #if NCURSES_SP_FUNCS
 #define GetScreenHook(sp) \
-			struct panelhook* ph = NCURSES_SP_NAME(_nc_panelhook)(sp)
+                        struct panelhook* ph = NCURSES_SP_NAME(_nc_panelhook)(sp)
 #define GetPanelHook(pan) \
-			GetScreenHook(pan ? _nc_screen_of((pan)->win) : 0)
+                        GetScreenHook(pan ? _nc_screen_of((pan)->win) : 0)
 #define GetWindowHook(win) \
-			SCREEN* sp = _nc_screen_of(win); \
-			GetScreenHook(sp)
-#define GetHook(pan)	SCREEN* sp = _nc_screen_of(pan->win); \
-			GetScreenHook(sp)
+                        SCREEN* sp = _nc_screen_of(win); \
+                        GetScreenHook(sp)
+#define GetHook(pan)    SCREEN* sp = _nc_screen_of(pan->win); \
+                        GetScreenHook(sp)
 
 #define _nc_stdscr_pseudo_panel ((ph)->stdscr_pseudo_panel)
 #define _nc_top_panel           ((ph)->top_panel)
 #define _nc_bottom_panel        ((ph)->bottom_panel)
 
-#else	/* !NCURSES_SP_FUNCS */
+#else   /* !NCURSES_SP_FUNCS */
 
 #define GetScreenHook(sp) /* nothing */
 #define GetPanelHook(pan) /* nothing */
@@ -108,7 +108,7 @@ struct screen;              /* forward declaration */
 #define _nc_top_panel           _nc_panelhook()->top_panel
 #define _nc_bottom_panel        _nc_panelhook()->bottom_panel
 
-#endif	/* NCURSES_SP_FUNCS */
+#endif  /* NCURSES_SP_FUNCS */
 
 #define EMPTY_STACK() (_nc_top_panel == _nc_bottom_panel)
 #define Is_Bottom(p)  (((p) != (PANEL*)0) && !EMPTY_STACK() && (_nc_bottom_panel->above == (p)))
@@ -116,7 +116,7 @@ struct screen;              /* forward declaration */
 #define Is_Pseudo(p)  (((p) != (PANEL*)0) && ((p) == _nc_bottom_panel))
 
 /*+-------------------------------------------------------------------------
-	IS_LINKED(pan) - check to see if panel is in the stack
+        IS_LINKED(pan) - check to see if panel is in the stack
 --------------------------------------------------------------------------*/
 /* This works! The only case where it would fail is, when the list has
    only one element. But this could only be the pseudo panel at the bottom */
@@ -128,7 +128,7 @@ struct screen;              /* forward declaration */
 #define PENDY(pan)   ((pan)->win->_begy + getmaxy((pan)->win) - 1)
 
 /*+-------------------------------------------------------------------------
-	PANELS_OVERLAPPED(pan1,pan2) - check panel overlapped
+        PANELS_OVERLAPPED(pan1,pan2) - check panel overlapped
 ---------------------------------------------------------------------------*/
 #define PANELS_OVERLAPPED(pan1,pan2) \
 (( !(pan1) || !(pan2) || \
@@ -138,7 +138,7 @@ struct screen;              /* forward declaration */
 
 
 /*+-------------------------------------------------------------------------
-	Compute the intersection rectangle of two overlapping rectangles
+        Compute the intersection rectangle of two overlapping rectangles
 ---------------------------------------------------------------------------*/
 #define COMPUTE_INTERSECTION(pan1,pan2,ix1,ix2,iy1,iy2)\
    ix1 = (PSTARTX(pan1) < PSTARTX(pan2)) ? PSTARTX(pan2) : PSTARTX(pan1);\
@@ -149,7 +149,7 @@ struct screen;              /* forward declaration */
 
 
 /*+-------------------------------------------------------------------------
-	Walk through the panel stack starting at the given location and
+        Walk through the panel stack starting at the given location and
         check for intersections; overlapping panels are "touched", so they
         are incrementally overwriting cells that should be hidden.
         If the "touch" flag is set, the panel gets touched before it is
@@ -161,19 +161,19 @@ struct screen;              /* forward declaration */
       if ((pan2 != pan) && PANELS_OVERLAPPED(pan,pan2)) {\
         int y, ix1, ix2, iy1, iy2;\
         COMPUTE_INTERSECTION(pan, pan2, ix1, ix2, iy1, iy2);\
-	for(y = iy1; y <= iy2; y++) {\
-	  if (is_linetouched(pan->win,y - PSTARTY(pan))) {\
+        for(y = iy1; y <= iy2; y++) {\
+          if (is_linetouched(pan->win,y - PSTARTY(pan))) {\
             struct ldat* line = &(pan2->win->_line[y - PSTARTY(pan2)]);\
             CHANGED_RANGE(line, ix1 - PSTARTX(pan2), ix2 - PSTARTX(pan2));\
           }\
-	}\
+        }\
       }\
       pan2 = pan2->above;\
    }\
 }
 
 /*+-------------------------------------------------------------------------
-	Remove panel from stack.
+        Remove panel from stack.
 ---------------------------------------------------------------------------*/
 #define PANEL_UNLINK(pan,err) \
 {  err = ERR;\

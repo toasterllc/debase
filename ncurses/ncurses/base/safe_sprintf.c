@@ -61,149 +61,149 @@ _nc_printf_length(const char *fmt, va_list ap)
     char fmt_arg[BUFSIZ];
 
     if (fmt == 0 || *fmt == '\0')
-	return 0;
+        return 0;
     fmt_len = strlen(fmt) + 1;
     if ((format = typeMalloc(char, fmt_len)) == 0)
-	  return -1;
+          return -1;
     if ((buffer = typeMalloc(char, length)) == 0) {
-	free(format);
-	return -1;
+        free(format);
+        return -1;
     }
 
     while (*fmt != '\0') {
-	if (*fmt == '%') {
-	    static char dummy[] = "";
-	    PRINTF state = Flags;
-	    char *pval = dummy;	/* avoid const-cast */
-	    double fval = 0.0;
-	    int done = FALSE;
-	    int ival = 0;
-	    int prec = -1;
-	    int type = 0;
-	    int used = 0;
-	    int width = -1;
-	    size_t f = 0;
+        if (*fmt == '%') {
+            static char dummy[] = "";
+            PRINTF state = Flags;
+            char *pval = dummy; /* avoid const-cast */
+            double fval = 0.0;
+            int done = FALSE;
+            int ival = 0;
+            int prec = -1;
+            int type = 0;
+            int used = 0;
+            int width = -1;
+            size_t f = 0;
 
-	    format[f++] = *fmt;
-	    while (*++fmt != '\0' && len >= 0 && !done) {
-		format[f++] = *fmt;
+            format[f++] = *fmt;
+            while (*++fmt != '\0' && len >= 0 && !done) {
+                format[f++] = *fmt;
 
-		if (isdigit(UChar(*fmt))) {
-		    int num = *fmt - '0';
-		    if (state == Flags && num != 0)
-			state = Width;
-		    if (state == Width) {
-			if (width < 0)
-			    width = 0;
-			width = (width * 10) + num;
-		    } else if (state == Prec) {
-			if (prec < 0)
-			    prec = 0;
-			prec = (prec * 10) + num;
-		    }
-		} else if (*fmt == '*') {
-		    VA_INTGR(int);
-		    if (state == Flags)
-			state = Width;
-		    if (state == Width) {
-			width = ival;
-		    } else if (state == Prec) {
-			prec = ival;
-		    }
-		    _nc_SPRINTF(fmt_arg,
-				_nc_SLIMIT(sizeof(fmt_arg))
-				"%d", ival);
-		    fmt_len += strlen(fmt_arg);
-		    if ((format = _nc_doalloc(format, fmt_len)) == 0) {
-			free(buffer);
-			return -1;
-		    }
-		    --f;
-		    _nc_STRCPY(&format[f], fmt_arg, fmt_len - f);
-		    f = strlen(format);
-		} else if (isalpha(UChar(*fmt))) {
-		    done = TRUE;
-		    switch (*fmt) {
-		    case 'Z':	/* FALLTHRU */
-		    case 'h':	/* FALLTHRU */
-		    case 'l':	/* FALLTHRU */
-			done = FALSE;
-			type = *fmt;
-			break;
-		    case 'i':	/* FALLTHRU */
-		    case 'd':	/* FALLTHRU */
-		    case 'u':	/* FALLTHRU */
-		    case 'x':	/* FALLTHRU */
-		    case 'X':	/* FALLTHRU */
-			if (type == 'l')
-			    VA_INTGR(long);
-			else if (type == 'Z')
-			    VA_INTGR(size_t);
-			else
-			    VA_INTGR(int);
-			used = 'i';
-			break;
-		    case 'f':	/* FALLTHRU */
-		    case 'e':	/* FALLTHRU */
-		    case 'E':	/* FALLTHRU */
-		    case 'g':	/* FALLTHRU */
-		    case 'G':	/* FALLTHRU */
-			VA_FLOAT(double);
-			used = 'f';
-			break;
-		    case 'c':
-			VA_INTGR(int);
-			used = 'i';
-			break;
-		    case 's':
-			VA_POINT(char *);
-			if (prec < 0)
-			    prec = (int) strlen(pval);
-			if (prec > (int) length) {
-			    length = length + (size_t) prec;
-			    buffer = typeRealloc(char, length, buffer);
-			    if (buffer == 0) {
-				free(format);
-				return -1;
-			    }
-			}
-			used = 'p';
-			break;
-		    case 'p':
-			VA_POINT(void *);
-			used = 'p';
-			break;
-		    case 'n':
-			VA_POINT(int *);
-			used = 0;
-			break;
-		    default:
-			break;
-		    }
-		} else if (*fmt == '.') {
-		    state = Prec;
-		} else if (*fmt == '%') {
-		    done = TRUE;
-		    used = 'p';
-		}
-	    }
-	    format[f] = '\0';
-	    switch (used) {
-	    case 'i':
-		_nc_SPRINTF(buffer, _nc_SLIMIT(length) format, ival);
-		break;
-	    case 'f':
-		_nc_SPRINTF(buffer, _nc_SLIMIT(length) format, fval);
-		break;
-	    default:
-		_nc_SPRINTF(buffer, _nc_SLIMIT(length) format, pval);
-		break;
-	    }
-	    len += (int) strlen(buffer);
-	} else {
-	    fmt++;
-	    len++;
-	}
+                if (isdigit(UChar(*fmt))) {
+                    int num = *fmt - '0';
+                    if (state == Flags && num != 0)
+                        state = Width;
+                    if (state == Width) {
+                        if (width < 0)
+                            width = 0;
+                        width = (width * 10) + num;
+                    } else if (state == Prec) {
+                        if (prec < 0)
+                            prec = 0;
+                        prec = (prec * 10) + num;
+                    }
+                } else if (*fmt == '*') {
+                    VA_INTGR(int);
+                    if (state == Flags)
+                        state = Width;
+                    if (state == Width) {
+                        width = ival;
+                    } else if (state == Prec) {
+                        prec = ival;
+                    }
+                    _nc_SPRINTF(fmt_arg,
+                                _nc_SLIMIT(sizeof(fmt_arg))
+                                "%d", ival);
+                    fmt_len += strlen(fmt_arg);
+                    if ((format = _nc_doalloc(format, fmt_len)) == 0) {
+                        free(buffer);
+                        return -1;
+                    }
+                    --f;
+                    _nc_STRCPY(&format[f], fmt_arg, fmt_len - f);
+                    f = strlen(format);
+                } else if (isalpha(UChar(*fmt))) {
+                    done = TRUE;
+                    switch (*fmt) {
+                    case 'Z':   /* FALLTHRU */
+                    case 'h':   /* FALLTHRU */
+                    case 'l':   /* FALLTHRU */
+                        done = FALSE;
+                        type = *fmt;
+                        break;
+                    case 'i':   /* FALLTHRU */
+                    case 'd':   /* FALLTHRU */
+                    case 'u':   /* FALLTHRU */
+                    case 'x':   /* FALLTHRU */
+                    case 'X':   /* FALLTHRU */
+                        if (type == 'l')
+                            VA_INTGR(long);
+                        else if (type == 'Z')
+                            VA_INTGR(size_t);
+                        else
+                            VA_INTGR(int);
+                        used = 'i';
+                        break;
+                    case 'f':   /* FALLTHRU */
+                    case 'e':   /* FALLTHRU */
+                    case 'E':   /* FALLTHRU */
+                    case 'g':   /* FALLTHRU */
+                    case 'G':   /* FALLTHRU */
+                        VA_FLOAT(double);
+                        used = 'f';
+                        break;
+                    case 'c':
+                        VA_INTGR(int);
+                        used = 'i';
+                        break;
+                    case 's':
+                        VA_POINT(char *);
+                        if (prec < 0)
+                            prec = (int) strlen(pval);
+                        if (prec > (int) length) {
+                            length = length + (size_t) prec;
+                            buffer = typeRealloc(char, length, buffer);
+                            if (buffer == 0) {
+                                free(format);
+                                return -1;
+                            }
+                        }
+                        used = 'p';
+                        break;
+                    case 'p':
+                        VA_POINT(void *);
+                        used = 'p';
+                        break;
+                    case 'n':
+                        VA_POINT(int *);
+                        used = 0;
+                        break;
+                    default:
+                        break;
+                    }
+                } else if (*fmt == '.') {
+                    state = Prec;
+                } else if (*fmt == '%') {
+                    done = TRUE;
+                    used = 'p';
+                }
+            }
+            format[f] = '\0';
+            switch (used) {
+            case 'i':
+                _nc_SPRINTF(buffer, _nc_SLIMIT(length) format, ival);
+                break;
+            case 'f':
+                _nc_SPRINTF(buffer, _nc_SLIMIT(length) format, fval);
+                break;
+            default:
+                _nc_SPRINTF(buffer, _nc_SLIMIT(length) format, pval);
+                break;
+            }
+            len += (int) strlen(buffer);
+        } else {
+            fmt++;
+            len++;
+        }
     }
 
     free(buffer);
@@ -220,66 +220,66 @@ _nc_printf_length(const char *fmt, va_list ap)
  */
 NCURSES_EXPORT(char *)
 NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_DCLx
-				    const char *fmt,
-				    va_list ap)
+                                    const char *fmt,
+                                    va_list ap)
 {
     char *result = NULL;
 
     if (SP_PARM != NULL && fmt != NULL) {
 #if USE_SAFE_SPRINTF
-	va_list ap2;
-	int len;
+        va_list ap2;
+        int len;
 
-	begin_va_copy(ap2, ap);
-	len = _nc_printf_length(fmt, ap2);
-	end_va_copy(ap2);
+        begin_va_copy(ap2, ap);
+        len = _nc_printf_length(fmt, ap2);
+        end_va_copy(ap2);
 
-	if ((int) my_length < len + 1) {
-	    my_length = (size_t) (2 * (len + 1));
-	    my_buffer = typeRealloc(char, my_length, my_buffer);
-	}
-	if (my_buffer != NULL) {
-	    *my_buffer = '\0';
-	    if (len >= 0) {
-		vsprintf(my_buffer, fmt, ap);
-	    }
-	    result = my_buffer;
-	}
+        if ((int) my_length < len + 1) {
+            my_length = (size_t) (2 * (len + 1));
+            my_buffer = typeRealloc(char, my_length, my_buffer);
+        }
+        if (my_buffer != NULL) {
+            *my_buffer = '\0';
+            if (len >= 0) {
+                vsprintf(my_buffer, fmt, ap);
+            }
+            result = my_buffer;
+        }
 #else
 #define MyCols _nc_globals.safeprint_cols
 #define MyRows _nc_globals.safeprint_rows
 
-	if (screen_lines(SP_PARM) > MyRows || screen_columns(SP_PARM) > MyCols) {
-	    if (screen_lines(SP_PARM) > MyRows)
-		MyRows = screen_lines(SP_PARM);
-	    if (screen_columns(SP_PARM) > MyCols)
-		MyCols = screen_columns(SP_PARM);
-	    my_length = (size_t) (MyRows * (MyCols + 1)) + 1;
-	    if (my_length < 80)
-		my_length = 80;
-	    my_buffer = typeRealloc(char, my_length, my_buffer);
-	}
+        if (screen_lines(SP_PARM) > MyRows || screen_columns(SP_PARM) > MyCols) {
+            if (screen_lines(SP_PARM) > MyRows)
+                MyRows = screen_lines(SP_PARM);
+            if (screen_columns(SP_PARM) > MyCols)
+                MyCols = screen_columns(SP_PARM);
+            my_length = (size_t) (MyRows * (MyCols + 1)) + 1;
+            if (my_length < 80)
+                my_length = 80;
+            my_buffer = typeRealloc(char, my_length, my_buffer);
+        }
 
-	if (my_buffer != NULL) {
+        if (my_buffer != NULL) {
 # if HAVE_VSNPRINTF
-	    /* SUSv2, 1997 */
-	    int used;
-	    while ((used = vsnprintf(my_buffer, my_length, fmt, ap))
-		   >= (int) my_length) {
-		my_length = (size_t) ((3 * used) / 2);
-		my_buffer = typeRealloc(char, my_length, my_buffer);
-	    }
+            /* SUSv2, 1997 */
+            int used;
+            while ((used = vsnprintf(my_buffer, my_length, fmt, ap))
+                   >= (int) my_length) {
+                my_length = (size_t) ((3 * used) / 2);
+                my_buffer = typeRealloc(char, my_length, my_buffer);
+            }
 # else
-	    /* ISO/ANSI C, 1989 */
-	    vsprintf(my_buffer, fmt, ap);
+            /* ISO/ANSI C, 1989 */
+            vsprintf(my_buffer, fmt, ap);
 # endif
-	    result = my_buffer;
-	}
+            result = my_buffer;
+        }
 #endif
-    } else if (my_buffer != NULL) {	/* see _nc_freeall() */
-	free(my_buffer);
-	my_buffer = NULL;
-	my_length = 0;
+    } else if (my_buffer != NULL) {     /* see _nc_freeall() */
+        free(my_buffer);
+        my_buffer = NULL;
+        my_length = 0;
     }
     return result;
 }

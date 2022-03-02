@@ -39,8 +39,8 @@ typedef int NUM_COLOR;
 typedef unsigned short NUM_COUNT;
 
 typedef struct {
-    char ch;			/* nominal character to display */
-    NUM_COLOR fg;		/* foreground color */
+    char ch;                    /* nominal character to display */
+    NUM_COLOR fg;               /* foreground color */
 } PICS_CELL;
 
 typedef struct {

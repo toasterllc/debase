@@ -38,28 +38,28 @@ MODULE_ID("$Id: frm_def.c,v 1.30 2021/03/27 23:49:58 tom Exp $")
 /* this can't be readonly */
 static FORM default_form =
 {
-  0,				/* status     */
-  0,				/* rows       */
-  0,				/* cols       */
-  0,				/* currow     */
-  0,				/* curcol     */
-  0,				/* toprow     */
-  0,				/* begincol   */
-  -1,				/* maxfield   */
-  -1,				/* maxpage    */
-  -1,				/* curpage    */
-  ALL_FORM_OPTS,		/* opts       */
-  (WINDOW *)0,			/* win        */
-  (WINDOW *)0,			/* sub        */
-  (WINDOW *)0,			/* w          */
-  (FIELD **)0,			/* field      */
-  (FIELD *)0,			/* current    */
-  (_PAGE *) 0,			/* page       */
-  (char *)0,			/* usrptr     */
-  NULL,				/* forminit   */
-  NULL,				/* formterm   */
-  NULL,				/* fieldinit  */
-  NULL				/* fieldterm  */
+  0,                            /* status     */
+  0,                            /* rows       */
+  0,                            /* cols       */
+  0,                            /* currow     */
+  0,                            /* curcol     */
+  0,                            /* toprow     */
+  0,                            /* begincol   */
+  -1,                           /* maxfield   */
+  -1,                           /* maxpage    */
+  -1,                           /* curpage    */
+  ALL_FORM_OPTS,                /* opts       */
+  (WINDOW *)0,                  /* win        */
+  (WINDOW *)0,                  /* sub        */
+  (WINDOW *)0,                  /* w          */
+  (FIELD **)0,                  /* field      */
+  (FIELD *)0,                   /* current    */
+  (_PAGE *) 0,                  /* page       */
+  (char *)0,                    /* usrptr     */
+  NULL,                         /* forminit   */
+  NULL,                         /* formterm   */
+  NULL,                         /* fieldinit  */
+  NULL                          /* fieldterm  */
 };
 
 FORM_EXPORT_VAR(FORM *) _nc_Default_Form = &default_form;
@@ -84,30 +84,30 @@ Insert_Field_By_Position(FIELD *newfield, FIELD *head)
   assert(newfield);
 
   if (!head)
-    {				/* empty list is trivial */
+    {                           /* empty list is trivial */
       newhead = newfield->snext = newfield->sprev = newfield;
     }
   else
     {
       newhead = current = head;
       while ((current->frow < newfield->frow) ||
-	     ((current->frow == newfield->frow) &&
-	      (current->fcol < newfield->fcol)))
-	{
-	  current = current->snext;
-	  if (current == head)
-	    {			/* We cycled through. Reset head to indicate that */
-	      head = (FIELD *)0;
-	      break;
-	    }
-	}
+             ((current->frow == newfield->frow) &&
+              (current->fcol < newfield->fcol)))
+        {
+          current = current->snext;
+          if (current == head)
+            {                   /* We cycled through. Reset head to indicate that */
+              head = (FIELD *)0;
+              break;
+            }
+        }
       /* we leave the loop with current pointing to the field after newfield */
       newfield->snext = current;
       newfield->sprev = current->sprev;
       newfield->snext->sprev = newfield;
       newfield->sprev->snext = newfield;
       if (current == head)
-	newhead = newfield;
+        newhead = newfield;
     }
   return (newhead);
 }
@@ -128,16 +128,16 @@ Disconnect_Fields(FORM *form)
       FIELD **fields;
 
       for (fields = form->field; *fields; fields++)
-	{
-	  if (form == (*fields)->form)
-	    (*fields)->form = (FORM *)0;
-	}
+        {
+          if (form == (*fields)->form)
+            (*fields)->form = (FORM *)0;
+        }
 
       form->rows = form->cols = 0;
       form->maxfield = form->maxpage = -1;
       form->field = (FIELD **)0;
       if (form->page)
-	free(form->page);
+        free(form->page);
       form->page = (_PAGE *) 0;
     }
 }
@@ -176,10 +176,10 @@ Connect_Fields(FORM *form, FIELD **fields)
   for (field_cnt = 0; fields[field_cnt]; field_cnt++)
     {
       if (fields[field_cnt]->form)
-	RETURN(E_CONNECTED);
+        RETURN(E_CONNECTED);
       if (field_cnt == 0 ||
-	  (fields[field_cnt]->status & _NEWPAGE))
-	page_nr++;
+          (fields[field_cnt]->status & _NEWPAGE))
+        page_nr++;
       fields[field_cnt]->form = form;
     }
   if (field_cnt == 0 || (short)field_cnt < 0)
@@ -202,24 +202,24 @@ Connect_Fields(FORM *form, FIELD **fields)
       int maximum_col_in_field;
 
       if (j == 0)
-	pg->pmin = (short)j;
+        pg->pmin = (short)j;
       else
-	{
-	  if (fields[j]->status & _NEWPAGE)
-	    {
-	      pg->pmax = (short)(j - 1);
-	      pg++;
-	      pg->pmin = (short)j;
-	    }
-	}
+        {
+          if (fields[j]->status & _NEWPAGE)
+            {
+              pg->pmax = (short)(j - 1);
+              pg++;
+              pg->pmin = (short)j;
+            }
+        }
 
       maximum_row_in_field = fields[j]->frow + fields[j]->rows;
       maximum_col_in_field = fields[j]->fcol + fields[j]->cols;
 
       if (form->rows < maximum_row_in_field)
-	form->rows = (short)maximum_row_in_field;
+        form->rows = (short)maximum_row_in_field;
       if (form->cols < maximum_col_in_field)
-	form->cols = (short)maximum_col_in_field;
+        form->cols = (short)maximum_col_in_field;
     }
 
   pg->pmax = (short)(field_cnt - 1);
@@ -232,21 +232,21 @@ Connect_Fields(FORM *form, FIELD **fields)
       FIELD *fld = (FIELD *)0;
 
       for (j = form->page[page_nr].pmin; j <= form->page[page_nr].pmax; j++)
-	{
-	  fields[j]->index = (short)j;
-	  fields[j]->page = (short)page_nr;
-	  fld = Insert_Field_By_Position(fields[j], fld);
-	}
+        {
+          fields[j]->index = (short)j;
+          fields[j]->page = (short)page_nr;
+          fld = Insert_Field_By_Position(fields[j], fld);
+        }
       if (fld)
-	{
-	  form->page[page_nr].smin = fld->index;
-	  form->page[page_nr].smax = fld->sprev->index;
-	}
+        {
+          form->page[page_nr].smin = fld->index;
+          form->page[page_nr].smax = fld->sprev->index;
+        }
       else
-	{
-	  form->page[page_nr].smin = 0;
-	  form->page[page_nr].smax = 0;
-	}
+        {
+          form->page[page_nr].smin = 0;
+          form->page[page_nr].smax = 0;
+        }
     }
   RETURN(E_OK);
 }
@@ -271,15 +271,15 @@ Associate_Fields(FORM *form, FIELD **fields)
   if (res == E_OK)
     {
       if (form->maxpage > 0)
-	{
-	  form->curpage = 0;
-	  form_driver(form, FIRST_ACTIVE_MAGIC);
-	}
+        {
+          form->curpage = 0;
+          form_driver(form, FIRST_ACTIVE_MAGIC);
+        }
       else
-	{
-	  form->curpage = -1;
-	  form->current = (FIELD *)0;
-	}
+        {
+          form->curpage = -1;
+          form->current = (FIELD *)0;
+        }
     }
   return (res);
 }
@@ -310,20 +310,20 @@ NCURSES_SP_NAME(new_form) (NCURSES_SP_DCLx FIELD **fields)
       form = typeMalloc(FORM, 1);
 
       if (form)
-	{
-	  T((T_CREATE("form %p"), (void *)form));
-	  *form = *_nc_Default_Form;
-	  /* This ensures win and sub are always non-null,
-	     so we can derive always the SCREEN that this form is
-	     running on. */
-	  form->win = StdScreen(SP_PARM);
-	  form->sub = StdScreen(SP_PARM);
-	  if ((err = Associate_Fields(form, fields)) != E_OK)
-	    {
-	      free_form(form);
-	      form = (FORM *)0;
-	    }
-	}
+        {
+          T((T_CREATE("form %p"), (void *)form));
+          *form = *_nc_Default_Form;
+          /* This ensures win and sub are always non-null,
+             so we can derive always the SCREEN that this form is
+             running on. */
+          form->win = StdScreen(SP_PARM);
+          form->sub = StdScreen(SP_PARM);
+          if ((err = Associate_Fields(form, fields)) != E_OK)
+            {
+              free_form(form);
+              form = (FORM *)0;
+            }
+        }
     }
 
   if (!form)

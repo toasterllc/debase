@@ -57,25 +57,25 @@ set_max_field(FIELD *field, int maxgrow)
       bool single_line_field = Single_Line_Field(field);
 
       if (maxgrow > 0)
-	{
-	  if (((single_line_field && (maxgrow < field->dcols)) ||
-	       (!single_line_field && (maxgrow < field->drows))) &&
-	      !Field_Has_Option(field, O_INPUT_LIMIT))
-	    RETURN(E_BAD_ARGUMENT);
-	}
+        {
+          if (((single_line_field && (maxgrow < field->dcols)) ||
+               (!single_line_field && (maxgrow < field->drows))) &&
+              !Field_Has_Option(field, O_INPUT_LIMIT))
+            RETURN(E_BAD_ARGUMENT);
+        }
       field->maxgrow = maxgrow;
       /* shrink */
       if (maxgrow > 0 && Field_Has_Option(field, O_INPUT_LIMIT) &&
-	  field->dcols > maxgrow)
-	field->dcols = maxgrow;
+          field->dcols > maxgrow)
+        field->dcols = maxgrow;
       ClrStatus(field, _MAY_GROW);
       if (!((unsigned)field->opts & O_STATIC))
-	{
-	  if ((maxgrow == 0) ||
-	      (single_line_field && (field->dcols < maxgrow)) ||
-	      (!single_line_field && (field->drows < maxgrow)))
-	    SetStatus(field, _MAY_GROW);
-	}
+        {
+          if ((maxgrow == 0) ||
+              (single_line_field && (field->dcols < maxgrow)) ||
+              (!single_line_field && (field->drows < maxgrow)))
+            SetStatus(field, _MAY_GROW);
+        }
     }
   RETURN(E_OK);
 }

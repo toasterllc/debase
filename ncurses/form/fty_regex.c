@@ -37,7 +37,7 @@
 
 MODULE_ID("$Id: fty_regex.c,v 1.33 2021/08/14 15:01:52 tom Exp $")
 
-#if HAVE_REGEX_H_FUNCS || HAVE_LIB_PCRE2	/* We prefer POSIX regex */
+#if HAVE_REGEX_H_FUNCS || HAVE_LIB_PCRE2        /* We prefer POSIX regex */
 
 #if HAVE_PCRE2POSIX_H
 #include <pcre2posix.h>
@@ -62,10 +62,10 @@ extern "C"
 #endif
   PCRE2POSIX_EXP_DECL int PCRE2regcomp(regex_t *, const char *, int);
   PCRE2POSIX_EXP_DECL int PCRE2regexec(const regex_t *, const char *, size_t,
-				       regmatch_t *, int);
+                                       regmatch_t *, int);
   PCRE2POSIX_EXP_DECL void PCRE2regfree(regex_t *);
 #ifdef __cplusplus
-}				/* extern "C" */
+}                               /* extern "C" */
 #endif
 #define regcomp(r,s,n)          PCRE2regcomp(r,s,n)
 #define regexec(r,s,n,m,x)      PCRE2regexec(r,s,n,m,x)
@@ -103,12 +103,12 @@ RegEx_Error(int code)
   return 0;
 }
 
-#define INIT 		register char *sp = RegEx_Init(instring);
-#define GETC()		(*sp++)
-#define PEEKC()		(*sp)
-#define UNGETC(c)	(--sp)
-#define RETURN(c)	return(c)
-#define ERROR(c)	return RegEx_Error(c)
+#define INIT            register char *sp = RegEx_Init(instring);
+#define GETC()          (*sp++)
+#define PEEKC()         (*sp)
+#define UNGETC(c)       (--sp)
+#define RETURN(c)       return(c)
+#define ERROR(c)        return RegEx_Error(c)
 
 #if HAVE_REGEXP_H_FUNCS
 #include <regexp.h>
@@ -155,24 +155,24 @@ Generic_RegularExpression_Type(void *arg MAYBE_UNUSED)
       preg = typeCalloc(RegExp_Arg, 1);
 
       if (preg)
-	{
-	  T((T_CREATE("RegExp_Arg %p"), (void *)preg));
-	  if (((preg->pRegExp = typeMalloc(regex_t, 1)) != 0)
-	      && !regcomp(preg->pRegExp, rx,
-			  (REG_EXTENDED | REG_NOSUB | REG_NEWLINE)))
-	    {
-	      T((T_CREATE("regex_t %p"), (void *)preg->pRegExp));
-	      if ((preg->refCount = typeMalloc(unsigned long, 1)) != 0)
-		 *(preg->refCount) = 1;
-	    }
-	  else
-	    {
-	      if (preg->pRegExp)
-		free(preg->pRegExp);
-	      free(preg);
-	      preg = (RegExp_Arg *)0;
-	    }
-	}
+        {
+          T((T_CREATE("RegExp_Arg %p"), (void *)preg));
+          if (((preg->pRegExp = typeMalloc(regex_t, 1)) != 0)
+              && !regcomp(preg->pRegExp, rx,
+                          (REG_EXTENDED | REG_NOSUB | REG_NEWLINE)))
+            {
+              T((T_CREATE("regex_t %p"), (void *)preg->pRegExp));
+              if ((preg->refCount = typeMalloc(unsigned long, 1)) != 0)
+                 *(preg->refCount) = 1;
+            }
+          else
+            {
+              if (preg->pRegExp)
+                free(preg->pRegExp);
+              free(preg);
+              preg = (RegExp_Arg *)0;
+            }
+        }
     }
   return ((void *)preg);
 #elif HAVE_REGEXP_H_FUNCS | HAVE_REGEXPR_H_FUNCS
@@ -184,52 +184,52 @@ Generic_RegularExpression_Type(void *arg MAYBE_UNUSED)
       pArg = typeMalloc(RegExp_Arg, 1);
 
       if (pArg)
-	{
-	  int blen = RX_INCREMENT;
+        {
+          int blen = RX_INCREMENT;
 
-	  T((T_CREATE("RegExp_Arg %p"), pArg));
-	  pArg->compiled_expression = NULL;
-	  if ((pArg->refCount = typeMalloc(unsigned long, 1)) != 0)
-	     *(pArg->refCount) = 1;
+          T((T_CREATE("RegExp_Arg %p"), pArg));
+          pArg->compiled_expression = NULL;
+          if ((pArg->refCount = typeMalloc(unsigned long, 1)) != 0)
+             *(pArg->refCount) = 1;
 
-	  do
-	    {
-	      char *buf = typeMalloc(char, blen);
+          do
+            {
+              char *buf = typeMalloc(char, blen);
 
-	      if (buf)
-		{
+              if (buf)
+                {
 #if HAVE_REGEXP_H_FUNCS
-		  char *last_pos = compile(rx, buf, &buf[blen], '\0');
+                  char *last_pos = compile(rx, buf, &buf[blen], '\0');
 
 #else /* HAVE_REGEXPR_H_FUNCS */
-		  char *last_pos = compile(rx, buf, &buf[blen]);
+                  char *last_pos = compile(rx, buf, &buf[blen]);
 #endif
-		  if (reg_errno)
-		    {
-		      free(buf);
-		      if (reg_errno == 50)
-			blen += RX_INCREMENT;
-		      else
-			{
-			  free(pArg);
-			  pArg = NULL;
-			  break;
-			}
-		    }
-		  else
-		    {
-		      pArg->compiled_expression = buf;
-		      break;
-		    }
-		}
-	    }
-	  while (blen <= MAX_RX_LEN);
-	}
+                  if (reg_errno)
+                    {
+                      free(buf);
+                      if (reg_errno == 50)
+                        blen += RX_INCREMENT;
+                      else
+                        {
+                          free(pArg);
+                          pArg = NULL;
+                          break;
+                        }
+                    }
+                  else
+                    {
+                      pArg->compiled_expression = buf;
+                      break;
+                    }
+                }
+            }
+          while (blen <= MAX_RX_LEN);
+        }
       if (pArg && !pArg->compiled_expression)
-	{
-	  free(pArg);
-	  pArg = NULL;
-	}
+        {
+          free(pArg);
+          pArg = NULL;
+        }
     }
   return (void *)pArg;
 #else
@@ -297,23 +297,23 @@ Free_RegularExpression_Type(void *argp MAYBE_UNUSED)
   if (ap)
     {
       if (--(*(ap->refCount)) == 0)
-	{
+        {
 #if HAVE_REGEX_H_FUNCS
-	  if (ap->pRegExp)
-	    {
-	      free(ap->refCount);
-	      regfree(ap->pRegExp);
-	      free(ap->pRegExp);
-	    }
+          if (ap->pRegExp)
+            {
+              free(ap->refCount);
+              regfree(ap->pRegExp);
+              free(ap->pRegExp);
+            }
 #elif HAVE_REGEXP_H_FUNCS | HAVE_REGEXPR_H_FUNCS
-	  if (ap->compiled_expression)
-	    {
-	      free(ap->refCount);
-	      free(ap->compiled_expression);
-	    }
+          if (ap->compiled_expression)
+            {
+              free(ap->refCount);
+              free(ap->compiled_expression);
+            }
 #endif
-	  free(ap);
-	}
+          free(ap);
+        }
     }
 #endif
 }
@@ -331,7 +331,7 @@ Free_RegularExpression_Type(void *argp MAYBE_UNUSED)
 +--------------------------------------------------------------------------*/
 static bool
 Check_RegularExpression_Field(FIELD *field MAYBE_UNUSED,
-			      const void *argp MAYBE_UNUSED)
+                              const void *argp MAYBE_UNUSED)
 {
   bool match = FALSE;
 
@@ -340,15 +340,15 @@ Check_RegularExpression_Field(FIELD *field MAYBE_UNUSED,
 
   if (ap && ap->pRegExp)
     match = (regexec(ap->pRegExp, field_buffer(field, 0), 0, NULL, 0)
-	     ? FALSE
-	     : TRUE);
+             ? FALSE
+             : TRUE);
 #elif HAVE_REGEXP_H_FUNCS | HAVE_REGEXPR_H_FUNCS
   RegExp_Arg *ap = (RegExp_Arg *)argp;
 
   if (ap && ap->compiled_expression)
     match = (step(field_buffer(field, 0), ap->compiled_expression)
-	     ? TRUE
-	     : FALSE);
+             ? TRUE
+             : FALSE);
 #endif
   return match;
 }
@@ -356,7 +356,7 @@ Check_RegularExpression_Field(FIELD *field MAYBE_UNUSED,
 static FIELDTYPE typeREGEXP =
 {
   _HAS_ARGS | _RESIDENT,
-  1,				/* this is mutable, so we can't be const */
+  1,                            /* this is mutable, so we can't be const */
   (FIELDTYPE *)0,
   (FIELDTYPE *)0,
   Make_RegularExpression_Type,

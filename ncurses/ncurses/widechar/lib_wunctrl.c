@@ -28,9 +28,9 @@
  ****************************************************************************/
 
 /*
-**	lib_wunctrl.c
+**      lib_wunctrl.c
 **
-**	The routine wunctrl().
+**      The routine wunctrl().
 **
 */
 
@@ -45,19 +45,19 @@ NCURSES_SP_NAME(wunctrl) (NCURSES_SP_DCLx cchar_t *wc)
     wchar_t *result;
 
     if (wc == 0) {
-	result = 0;
+        result = 0;
     } else if (SP_PARM != 0 && Charable(*wc)) {
-	const char *p =
-	NCURSES_SP_NAME(unctrl) (NCURSES_SP_ARGx
-				 (unsigned) _nc_to_char((wint_t)CharOf(*wc)));
+        const char *p =
+        NCURSES_SP_NAME(unctrl) (NCURSES_SP_ARGx
+                                 (unsigned) _nc_to_char((wint_t)CharOf(*wc)));
 
-	for (wsp = str; *p; ++p) {
-	    *wsp++ = (wchar_t) _nc_to_widechar(*p);
-	}
-	*wsp = 0;
-	result = str;
+        for (wsp = str; *p; ++p) {
+            *wsp++ = (wchar_t) _nc_to_widechar(*p);
+        }
+        *wsp = 0;
+        result = str;
     } else {
-	result = wc->chars;
+        result = wc->chars;
     }
     return result;
 }

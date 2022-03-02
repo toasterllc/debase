@@ -33,9 +33,9 @@
  ****************************************************************************/
 
 /*
-**	lib_clreol.c
+**      lib_clreol.c
 **
-**	The routine wclrtoeol().
+**      The routine wclrtoeol().
 **
 */
 
@@ -51,42 +51,42 @@ wclrtoeol(WINDOW *win)
     T((T_CALLED("wclrtoeol(%p)"), (void *) win));
 
     if (win) {
-	NCURSES_CH_T blank;
-	NCURSES_CH_T *ptr, *end;
-	struct ldat *line;
-	NCURSES_SIZE_T y = win->_cury;
-	NCURSES_SIZE_T x = win->_curx;
+        NCURSES_CH_T blank;
+        NCURSES_CH_T *ptr, *end;
+        struct ldat *line;
+        NCURSES_SIZE_T y = win->_cury;
+        NCURSES_SIZE_T x = win->_curx;
 
-	/*
-	 * If we have just wrapped the cursor, the clear applies to the
-	 * new line, unless we are at the lower right corner.
-	 */
-	if ((win->_flags & _WRAPPED) != 0
-	    && y < win->_maxy) {
-	    win->_flags &= ~_WRAPPED;
-	}
+        /*
+         * If we have just wrapped the cursor, the clear applies to the
+         * new line, unless we are at the lower right corner.
+         */
+        if ((win->_flags & _WRAPPED) != 0
+            && y < win->_maxy) {
+            win->_flags &= ~_WRAPPED;
+        }
 
-	/*
-	 * There's no point in clearing if we're not on a legal
-	 * position, either.
-	 */
-	if ((win->_flags & _WRAPPED) != 0
-	    || y > win->_maxy
-	    || x > win->_maxx)
-	    returnCode(ERR);
+        /*
+         * There's no point in clearing if we're not on a legal
+         * position, either.
+         */
+        if ((win->_flags & _WRAPPED) != 0
+            || y > win->_maxy
+            || x > win->_maxx)
+            returnCode(ERR);
 
-	blank = win->_nc_bkgd;
-	line = &win->_line[y];
-	CHANGED_TO_EOL(line, x, win->_maxx);
+        blank = win->_nc_bkgd;
+        line = &win->_line[y];
+        CHANGED_TO_EOL(line, x, win->_maxx);
 
-	ptr = &(line->text[x]);
-	end = &(line->text[win->_maxx]);
+        ptr = &(line->text[x]);
+        end = &(line->text[win->_maxx]);
 
-	while (ptr <= end)
-	    *ptr++ = blank;
+        while (ptr <= end)
+            *ptr++ = blank;
 
-	_nc_synchook(win);
-	code = OK;
+        _nc_synchook(win);
+        code = OK;
     }
     returnCode(code);
 }
