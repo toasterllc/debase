@@ -2064,6 +2064,7 @@
 		55D068EB27D09062006B35A5 /* ncurses */ = {
 			isa = PBXGroup;
 			children = (
+				55D0708927D09065006B35A5 /* ncurses.xcodeproj */,
 				55D068EC27D09062006B35A5 /* man */,
 				55D0698027D09062006B35A5 /* announce.html.in */,
 				55D0698127D09062006B35A5 /* misc */,
@@ -2106,7 +2107,6 @@
 				55D06EC227D09065006B35A5 /* Ada95 */,
 				55D06F8D27D09065006B35A5 /* doc */,
 				55D0708827D09065006B35A5 /* config.log */,
-				55D0708927D09065006B35A5 /* ncurses.xcodeproj */,
 				55D0708C27D09065006B35A5 /* Makefile.in */,
 				55D0708D27D09065006B35A5 /* aclocal.m4 */,
 				55D0708E27D09065006B35A5 /* TO-DO */,
