@@ -388,7 +388,10 @@ init_xterm_mouse(SCREEN *sp)
 {
     sp->_mouse_type = M_XTERM;
     sp->_mouse_format = MF_X10;
-    sp->_mouse_xtermcap = tigetstr("XM");
+    
+    // Allow "TERM_XM" environment variable to override "XM" capability from terminfo database
+    const char* xmenv = getenv("TERM_XM");
+    sp->_mouse_xtermcap = (xmenv ? xmenv : tigetstr("XM"));
     if (VALID_STRING(sp->_mouse_xtermcap)) {
         char *code = strstr(sp->_mouse_xtermcap, "[?");
         if (code != 0) {
@@ -743,7 +746,13 @@ initialize_mousetype(SCREEN *sp)
     CallDriver(sp, td_initmouse);
 #else
     /* we know how to recognize mouse events under "xterm" */
-    if (NonEmpty(key_mouse)) {
+    
+    // Allow "TERM_KMOUS" environment variable to override the "kmous" entry from the terminfo database
+    const char* kmousenv = getenv("TERM_KMOUS");
+    if (kmousenv) {
+        if (_nc_add_to_try(&(sp->_keytry), kmousenv, KEY_MOUSE) == OK)
+            init_xterm_mouse(sp);
+    } else if (NonEmpty(key_mouse)) {
         init_xterm_mouse(sp);
     } else if (strstr(SP_TERMTYPE term_names, "xterm") != 0) {
         if (_nc_add_to_try(&(sp->_keytry), xterm_kmous, KEY_MOUSE) == OK)
@@ -1313,7 +1322,9 @@ decode_xterm_SGR1006(SCREEN *sp, MEVENT * eventp)
 
         eventp->id = NORMAL_EVENT;
         if (data.final == 'M') {
-            (void) handle_wheel(sp, eventp, b, wheel);
+            if (!handle_wheel(sp, eventp, b, wheel)) {
+                eventp->bstate = REPORT_MOUSE_POSITION;
+            }
         } else if (b3 > MAX_BUTTONS) {
             eventp->bstate = REPORT_MOUSE_POSITION;
         } else {
