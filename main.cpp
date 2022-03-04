@@ -114,6 +114,14 @@ public:
         else ::hide_panel(*this);
     }
     
+    void orderFront() {
+        ::top_panel(*this);
+    }
+    
+    void orderBack() {
+        ::bottom_panel(*this);
+    }
+    
     operator PANEL*() const { return _state.panel; }
     
 private:
@@ -140,10 +148,7 @@ static std::string _StrFromGitTime(git_time_t t) {
 }
 
 static void _TrackSelection(Window& rootWindow, Panel& selectionRect, MEVENT mouseDownEvent) {
-    selectionRect.erase();
-    
     for (;;) {
-//        NCursesPanel::redraw();
         Window::Redraw();
         int key = rootWindow.getChar();
         if (key != KEY_MOUSE) continue;
@@ -162,38 +167,17 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRect, MEVENT mou
         selectionRect.erase();
         selectionRect.drawBox();
         
-//        if (!selectionRect.visible()) {
-//            selectionRect.setVisible(true);
-//        }
-        
-        if (mouse.bstate & BUTTON1_RELEASED) {
-            break;
+        // Make selectionRect visible _after_ drawing, otherwise we draw
+        // selectionRect's old state for a single frame
+        if (!selectionRect.visible()) {
+            selectionRect.setVisible(true);
+            selectionRect.orderBack();
         }
+        
+        if (mouse.bstate & BUTTON1_RELEASED) break;
     }
     
-    selectionRect.erase();
-    
-//    selectionRect.setVisible(false);
-    
-    
-//                for (;;) {
-//                    Window::Redraw();
-//                    int key = rootWindow.getChar();
-//                    if (key)
-//                    if (key == KEY_MOUSE) {
-//                        MEVENT mouse = {};
-//                        int ir = getmouse(&mouse);
-//                        if (ir != OK) continue;
-//                        if (mouse.bstate & BUTTON1_PRESSED) {
-//                            for (;;) {
-//                                
-//                            }
-//                            panels[0].setPosition(mouse.x, mouse.y);
-//                        }
-//                    } else if (key == KEY_RESIZE) {
-//                    }
-//                }
-//                panels[0].setPosition(mouse.x, mouse.y);
+    selectionRect.setVisible(false);
 }
 
 int main(int argc, const char* argv[]) {
