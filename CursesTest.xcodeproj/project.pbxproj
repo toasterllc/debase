@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		554427F827D17656006FBDF4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554427F727D17656006FBDF4 /* main.cpp */; };
+		554427FB27D1BDF8006FBDF4 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 554427FA27D1BDF8006FBDF4 /* Makefile */; };
 		55D070E327D090A0006B35A5 /* libncurses++_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D06EB727D09065006B35A5 /* libncurses++_g.a */; };
 		55D070E427D090A0006B35A5 /* libform_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D06EB927D09065006B35A5 /* libform_g.a */; };
 		55D070E527D090A0006B35A5 /* libncurses_g.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 55D06EBC27D09065006B35A5 /* libncurses_g.a */; };
@@ -40,6 +41,7 @@
 /* Begin PBXFileReference section */
 		554427F727D17656006FBDF4 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		554427F927D19F29006FBDF4 /* xterm-256color.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "xterm-256color.h"; sourceTree = "<group>"; };
+		554427FA27D1BDF8006FBDF4 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		5590696127CED4D600AE89BD /* CursesTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CursesTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		55D068ED27D09062006B35A5 /* curs_refresh.3x */ = {isa = PBXFileReference; lastKnownFileType = text; path = curs_refresh.3x; sourceTree = "<group>"; };
 		55D068EE27D09062006B35A5 /* term.5 */ = {isa = PBXFileReference; lastKnownFileType = text; path = term.5; sourceTree = "<group>"; };
@@ -2047,6 +2049,7 @@
 		5590695827CED4D600AE89BD = {
 			isa = PBXGroup;
 			children = (
+				554427FA27D1BDF8006FBDF4 /* Makefile */,
 				554427F927D19F29006FBDF4 /* xterm-256color.h */,
 				554427F727D17656006FBDF4 /* main.cpp */,
 				55D068EB27D09062006B35A5 /* ncurses */,
@@ -4525,6 +4528,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				554427FB27D1BDF8006FBDF4 /* Makefile in Sources */,
 				554427F827D17656006FBDF4 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -349,48 +349,9 @@ using std::endl;
 #endif
 
 inline void THROW(const NCursesException *e) {
-#if defined(__GNUG__) && defined(__EXCEPTIONS)
-#  if ((__GNUG__ <= 2) && (__GNUC_MINOR__ < 8))
-      (*lib_error_handler)(e ? e->classname() : "", e ? e->message : "");
-#  elif (__GNUG__ >= 7)
-     // g++ 7.0 warns about deprecation, but lacks the predefined symbols
-      ::endwin();
-      std::cerr << "Found a problem - goodbye" << std::endl;
-      exit(EXIT_FAILURE);
-#  else
-#    define CPP_HAS_TRY_CATCH 1
-#  endif
-#elif defined(__SUNPRO_CC)
-#  if !defined(__SUNPRO_CC_COMPAT) || (__SUNPRO_CC_COMPAT < 5)
-  genericerror(1, ((e != 0) ? (char *)(e->message) : ""));
-#  else
-#    define CPP_HAS_TRY_CATCH 1
-#  endif
-#else
-  if (e)
-    cerr << e->message << endl;
-  exit(0);
-#endif
-
-#ifndef CPP_HAS_TRY_CATCH
-#define CPP_HAS_TRY_CATCH 0
-#define NCURSES_CPP_TRY		/* nothing */
-#define NCURSES_CPP_CATCH(e)	if (false)
-#define THROWS(s)		/* nothing */
-#define THROW2(s,t)		/* nothing */
-#elif CPP_HAS_TRY_CATCH
   throw *e;
-#define NCURSES_CPP_TRY		try
-#define NCURSES_CPP_CATCH(e)	catch(e)
-#if defined(__cpp_noexcept_function_type) && (__cpp_noexcept_function_type >= 201510)
-// C++17 deprecates the usage of throw().
 #define THROWS(s)		/* nothing */
 #define THROW2(s,t)		/* nothing */
-#else
-#define THROWS(s)		throw(s)
-#define THROW2(s,t)		throw(s,t)
-#endif
-#endif
 }
 
 #endif /* NCURSES_ETIP_H_incl */
