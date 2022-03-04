@@ -1440,6 +1440,9 @@ NCURSES_EXPORT(int) vsscanf(const char *, const char *, va_list);
 
 #endif /* NCURSES_NOMACROS */
 
+extern NCURSES_EXPORT(void) nc_get_default_terminfo(const void** data, size_t* len);
+extern NCURSES_EXPORT(void) nc_set_default_terminfo(const void* data, size_t len);
+
 /*
  * Public variables.
  *

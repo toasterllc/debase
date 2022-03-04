@@ -171,7 +171,7 @@ convert_strings(char *buf, char **Strings, int count, int size, char *table)
 }
 
 static int
-fake_read(char *src, int *offset, int limit, char *dst, unsigned want)
+fake_read(const char *src, int *offset, int limit, char *dst, unsigned want)
 {
     int have = (limit - *offset);
 
@@ -249,7 +249,7 @@ valid_shorts(char *buffer, int limit)
  * Return TGETENT_YES if read, TGETENT_NO if not found or garbled.
  */
 NCURSES_EXPORT(int)
-_nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
+_nc_read_termtype(TERMTYPE2 *ptr, const char *buffer, int limit)
 {
     int offset = 0;
     int name_size, bool_count, num_count, str_count, str_size;
@@ -826,6 +826,19 @@ _nc_read_tic_entry(char *filename,
                     "%.*s", PATH_MAX - 1, _nc_get_source());
     }
 #endif
+    
+    if (code != TGETENT_YES) {
+        const void* terminfoData = NULL;
+        size_t terminfoDataLen = 0;
+        nc_get_default_terminfo(&terminfoData, &terminfoDataLen);
+        
+        if (terminfoData) {
+            if ((code = _nc_read_termtype(tp, (char*)terminfoData, terminfoDataLen)) == TGETENT_NO) {
+                _nc_free_termtype2(tp);
+            }
+        }
+    }
+    
     returnDB(code);
 }
 #endif /* NCURSES_USE_DATABASE */

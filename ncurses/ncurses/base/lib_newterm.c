@@ -370,3 +370,21 @@ newterm(const char *name, FILE *ofp, FILE *ifp)
     return rc;
 }
 #endif
+
+
+static const void* _default_terminfo_data = NULL;
+static size_t _default_terminfo_len = 0;
+
+NCURSES_EXPORT(void)
+nc_get_default_terminfo(const void** data, size_t* len)
+{
+    *data = _default_terminfo_data;
+    *len = _default_terminfo_len;
+}
+
+NCURSES_EXPORT(void)
+nc_set_default_terminfo(const void* data, size_t len)
+{
+    _default_terminfo_data = data;
+    _default_terminfo_len = len;
+}
