@@ -321,7 +321,7 @@ END {
 	print  "extern NCURSES_EXPORT(int) _nc_set_tty_mode (TTY *buf);"
 	print  "extern NCURSES_EXPORT(int) _nc_read_entry2 (const char * const, char * const, TERMTYPE2 *const);"
 	print  "extern NCURSES_EXPORT(int) _nc_read_file_entry (const char *const, TERMTYPE2 *);"
-	print  "extern NCURSES_EXPORT(int) _nc_read_termtype (TERMTYPE2 *, char *, int);"
+	print  "extern NCURSES_EXPORT(int) _nc_read_termtype (TERMTYPE2 *, const char *, int);"
 	print  "extern NCURSES_EXPORT(char *) _nc_first_name (const char *const);"
 	print  "extern NCURSES_EXPORT(int) _nc_name_match (const char *const, const char *const, const char *const);"
 	print  "extern NCURSES_EXPORT(char *) _nc_tiparm(int, const char *, ...);"
