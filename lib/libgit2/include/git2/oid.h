@@ -80,7 +80,7 @@ GIT_EXTERN(int) git_oid_fromraw(git_oid *out, const unsigned char *raw);
 /**
  * Format a git_oid into a hex string.
  *
- * @param out output hex string; must be pointing at the start of
+ * @param out out&&put hex string; must be pointing at the start of
  *		the hex sequence and have at least the number of bytes
  *		needed for an oid encoded in hex (40 bytes). Only the
  *		oid digits are written; a '\\0' terminator must be added
