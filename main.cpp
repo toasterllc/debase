@@ -12,6 +12,39 @@
 #include "xterm-256color.h"
 #include "lib/Toastbox/RuntimeError.h"
 
+struct Vector {
+    int x = 0;
+    int y = 0;    
+};
+
+using Point = Vector;
+using Size = Vector;
+
+struct Rect {
+    Point point;
+    Size size;
+};
+
+static Rect _Intersection(const Rect& a, const Rect& b) {
+    const int minX = std::max(a.point.x, b.point.x);
+    const int maxX = std::min(a.point.x+a.size.x, b.point.x+b.size.x);
+    const int w = maxX-minX;
+    
+    const int minY = std::max(a.point.y, b.point.y);
+    const int maxY = std::min(a.point.y+a.size.y, b.point.y+b.size.y);
+    const int h = maxY-minY;
+    
+    if (w<=0 || h<=0) return {};
+    return {
+        .point = {minX, minY},
+        .size = {w, h},
+    };
+}
+
+static bool _Empty(const Rect& r) {
+    return r.size.x==0 || r.size.y==0;
+}
+
 class Window {
 public:
     static void Redraw() {
@@ -39,38 +72,59 @@ public:
         x._state = {};    
     }
     
-    void setSize(int w, int h) {
-        ::wresize(*this, h, w);
+//    void setRect(const Rect& rect) {
+//        erase();
+//        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
+//        ::mvwin(*this, p.y, p.x);
+//    }
+    
+    void setSize(const Size& s) {
+//        erase();
+        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
     }
     
-    void setPosition(int x, int y) {
-        ::mvwin(*this, y, x);
+    void setPosition(const Point& p) {
+        ::mvwin(*this, p.y, p.x);
     }
     
     void drawBox() {
         ::box(*this, 0, 0);
     }
     
-    void drawText(int x, int y, const char* fmt, ...)
-    {
+    void drawText(const Point& p, const char* fmt, ...) {
         va_list args;
         va_start(args, fmt);
-        int result = ::wmove(*this, y, x);
-        result = ::vw_printw(*this, fmt, args);
+        drawText(p, fmt, args);
         va_end(args);
     }
 
-    void drawText(int x, int y, const char* fmt, va_list args)
-    {
-        int result = ::wmove(*this, y, x);
-        result = ::vw_printw(*this, fmt, args);
+    void drawText(const Point& p, const char* fmt, va_list args) {
+        ::wmove(*this, p.y, p.x);
+        ::vw_printw(*this, fmt, args);
     }
     
     void erase() {
         ::werase(*this);
     }
     
-    int getChar() const { return ::wgetch(*this); }
+    Rect rect() const {
+        return Rect{
+            .point = { getbegx(_state.window), getbegy(_state.window) },
+            .size  = { getmaxx(_state.window), getmaxy(_state.window) },
+        };
+    }
+    
+//    bool hitTest(const Point& p) const {
+//        return x >= getbegx(_state.window) &&
+//               y >= getbegy(_state.window) &&
+//               x  < getmaxx(_state.window) &&
+//               y  < getmaxy(_state.window) ;
+//    }
+    
+    int getChar() const {
+        return ::wgetch(*this);
+    }
+    
     operator WINDOW*() const { return _state.window; }
     
 private:
@@ -97,8 +151,8 @@ public:
         ::del_panel(*this);
     }
     
-    void setPosition(int x, int y) {
-        ::move_panel(*this, y, x);
+    void setPosition(const Point& p) {
+        ::move_panel(*this, p.y, p.x);
     }
     
     bool visible() const {
@@ -151,14 +205,15 @@ static std::string _StrFromGitTime(git_time_t t) {
     localtime_r(&tmp, &tm);
     
     std::stringstream ss;
-    ss << std::put_time(&tm, "%c");
+//    ss << std::put_time(&tm, "%c");
+    ss << std::put_time(&tm, "%a %b ") << std::to_string(tm.tm_mday) << std::put_time(&tm, " %R");
     return ss.str();
 }
 
 class CommitPanel : public Panel {
 public:
     CommitPanel(Commit commit) : _commit(commit) {
-        setSize(40, 5);
+        setSize({40, 5});
         _drawNeeded = true;
     }
     
@@ -175,10 +230,14 @@ public:
         const git_time_t time       = git_commit_time(*_commit);
         
         erase();
-        drawText(2, 3, "%s", message);
+        drawText({2, 3}, "%s", message);
+        
+        if (_selected) wattron(*this, COLOR_PAIR(1));
         drawBox();
-        drawText(2, 0, " %s @ %s ", _StrFromGitOid(*oid).c_str(), _StrFromGitTime(time).c_str());
-        drawText(2, 1, "%s", author->name, _StrFromGitTime(time).c_str());
+        drawText({2, 0}, " %s ", _StrFromGitOid(*oid).c_str());
+        if (_selected) wattroff(*this, COLOR_PAIR(1));
+        drawText({21, 0}, " %s ", _StrFromGitTime(time).c_str());
+        drawText({2, 1}, "%s", author->name, _StrFromGitTime(time).c_str());
         
         _drawNeeded = false;
     }
@@ -216,111 +275,142 @@ static Commit _CommitLookup(Repo repo, const git_oid& oid) {
     return c;
 }
 
-static void _TrackSelection(Window& rootWindow, Panel& selectionRect, MEVENT mouseDownEvent) {
+static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::vector<CommitPanel>& commitPanels, MEVENT mouseDownEvent) {
+    // Deselect everything to start
+    for (CommitPanel& commitPanel : commitPanels) commitPanel.setSelected(false);
+    
+    selectionRectPanel.setVisible(true);
+    selectionRectPanel.orderBack();
+    
+    MEVENT mouse = mouseDownEvent;
     for (;;) {
-        Window::Redraw();
-        int key = rootWindow.getChar();
-        if (key != KEY_MOUSE) continue;
-        
-        MEVENT mouse = {};
-        int ir = getmouse(&mouse);
-        if (ir != OK) continue;
-        
         int x = std::min(mouseDownEvent.x, mouse.x);
         int y = std::min(mouseDownEvent.y, mouse.y);
         int w = std::abs(mouseDownEvent.x - mouse.x);
         int h = std::abs(mouseDownEvent.y - mouse.y);
         
-        selectionRect.setPosition(x, y);
-        selectionRect.setSize(w, h);
-        selectionRect.erase();
-        selectionRect.drawBox();
+        rootWindow.erase();
+        selectionRectPanel.erase();
+        selectionRectPanel.setSize({std::max(2,w), std::max(2,h)});
+        selectionRectPanel.setPosition({x, y});
+        selectionRectPanel.drawBox();
         
-        // Make selectionRect visible _after_ drawing, otherwise we draw
-        // selectionRect's old state for a single frame
-        if (!selectionRect.visible()) {
-            selectionRect.setVisible(true);
-            selectionRect.orderBack();
+//        // Make selectionRectPanel visible _after_ drawing, otherwise we draw
+//        // selectionRectPanel's old state for a single frame
+//        if (!selectionRectPanel.visible()) {
+//            selectionRectPanel.setVisible(true);
+//            selectionRectPanel.orderBack();
+//        }
+        
+        const Rect selectionRect = selectionRectPanel.rect();
+        for (CommitPanel& commitPanel : commitPanels) {
+            const Rect intersection = _Intersection(selectionRect, commitPanel.rect());
+            commitPanel.setSelected(!_Empty(intersection));
         }
         
         if (mouse.bstate & BUTTON1_RELEASED) break;
-    }
-    
-    selectionRect.setVisible(false);
-}
-
-int main(int argc, const char* argv[]) {
-    // Init ncurses
-    {
-        // Default linux installs may not contain the /usr/share/terminfo database,
-        // so provide a fallback terminfo that usually works.
-        nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
         
-        // Override the terminfo 'kmous' and 'XM' properties
-        //   kmous = the prefix used to detect/parse mouse events
-        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-        //           event mode; 1003=report mouse-moved events in addition to clicks)
-        setenv("TERM_KMOUS", "\x1b[<", true);
-        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
-        
-        ::initscr();
-        ::noecho();
-        ::cbreak();
-        
-        // Hide cursor
-        curs_set(0);
-    }
-    
-    // Init libgit2
-    {
-        git_libgit2_init();
-    }
-    
-    Window rootWindow(::stdscr);
-    Panel selectionRect;
-    std::vector<CommitPanel> commitPanels;
-    
-    selectionRect.setVisible(false);
-    
-    // Create panels for each commit
-    {
-        Repo repo = _RepoOpen();
-        RevWalk walk = _RevWalkCreate(repo);
-        
-        int ir = git_revwalk_push_range(*walk, "HEAD~5..HEAD");
-        if (ir) throw Toastbox::RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
-        
-        int count = 0;
-        git_oid oid;
-        while (!git_revwalk_next(&oid, *walk)) {
-            Commit commit = _CommitLookup(repo, oid);
-            CommitPanel& commitPanel = commitPanels.emplace_back(commit);
-            commitPanel.setPosition(4, 6*count);
-            count++;
-        }
-    }
-    
-    mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-    mouseinterval(0);
-    for (int i=0;; i++) {
         // Redraw panels that need it
         for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
         Window::Redraw();
         
-//        NCursesPanel::redraw();
         int key = rootWindow.getChar();
-        if (key == KEY_MOUSE) {
-            MEVENT mouse = {};
-            int ir = getmouse(&mouse);
-            if (ir != OK) continue;
-            if (mouse.bstate & BUTTON1_PRESSED) {
-                for (CommitPanel& commitPanel : commitPanels) {
-                    commitPanel.setSelected(true);
-                }
-                _TrackSelection(rootWindow, selectionRect, mouse);
-            }
-        } else if (key == KEY_RESIZE) {
-        }
+        if (key != KEY_MOUSE) continue;
+        
+        int ir = getmouse(&mouse);
+        if (ir != OK) continue;
     }
+    
+    selectionRectPanel.setVisible(false);
+}
+
+int main(int argc, const char* argv[]) {
+    try {
+        // Init ncurses
+        {
+            // Default linux installs may not contain the /usr/share/terminfo database,
+            // so provide a fallback terminfo that usually works.
+            nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
+            
+            // Override the terminfo 'kmous' and 'XM' properties
+            //   kmous = the prefix used to detect/parse mouse events
+            //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+            //           event mode; 1003=report mouse-moved events in addition to clicks)
+            setenv("TERM_KMOUS", "\x1b[<", true);
+            setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+            
+            ::initscr();
+            ::noecho();
+            ::cbreak();
+            
+            ::use_default_colors();
+            ::start_color();
+            
+            ::init_pair(1, COLOR_RED, -1);
+            
+            // Hide cursor
+            ::curs_set(0);
+        }
+        
+        // Init libgit2
+        {
+            git_libgit2_init();
+        }
+        
+//        volatile bool a = false;
+//        while (!a);
+        
+        Window rootWindow(::stdscr);
+        Panel selectionRectPanel;
+        std::vector<CommitPanel> commitPanels;
+        
+        selectionRectPanel.setVisible(false);
+        
+        // Create panels for each commit
+        {
+            Repo repo = _RepoOpen();
+            RevWalk walk = _RevWalkCreate(repo);
+            
+            int ir = git_revwalk_push_range(*walk, "HEAD~5..HEAD");
+            if (ir) throw Toastbox::RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
+            
+            int count = 0;
+            git_oid oid;
+            while (!git_revwalk_next(&oid, *walk)) {
+                Commit commit = _CommitLookup(repo, oid);
+                CommitPanel& commitPanel = commitPanels.emplace_back(commit);
+                commitPanel.setPosition({4, 6*count});
+                count++;
+            }
+        }
+        
+        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        mouseinterval(0);
+        for (int i=0;; i++) {
+            // Redraw panels that need it
+            for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
+            Window::Redraw();
+            
+    //        NCursesPanel::redraw();
+            int key = rootWindow.getChar();
+            if (key == KEY_MOUSE) {
+                MEVENT mouse = {};
+                int ir = getmouse(&mouse);
+                if (ir != OK) continue;
+                if (mouse.bstate & BUTTON1_PRESSED) {
+//                    for (CommitPanel& commitPanel : commitPanels) {
+//                        commitPanel.setSelected(true);
+//                    }
+                    _TrackSelection(rootWindow, selectionRectPanel, commitPanels, mouse);
+                }
+            } else if (key == KEY_RESIZE) {
+            }
+        }
+    
+    } catch (const std::exception& e) {
+        ::endwin();
+        fprintf(stderr, "Error: %s\n", e.what());
+    }
+    
     return 0;
 }
