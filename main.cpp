@@ -5,7 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include "lib/ncurses/c++/cursesp.h"
+#include <memory>
+//#include "lib/ncurses/c++/cursesp.h"
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 #include "lib/libgit2/include/git2.h"
@@ -87,8 +88,23 @@ public:
         ::mvwin(*this, p.y, p.x);
     }
     
-    void drawBox() {
+    void drawBorder() {
         ::box(*this, 0, 0);
+    }
+    
+    void drawRect(const Rect& rect) {
+        const int x1 = rect.point.x;
+        const int y1 = rect.point.y;
+        const int x2 = rect.point.x+rect.size.x;
+        const int y2 = rect.point.y+rect.size.y;
+        mvwhline(*this, y1, x1, 0, rect.size.x);
+        mvwhline(*this, y2, x1, 0, rect.size.x);
+        mvwvline(*this, y1, x1, 0, rect.size.y);
+        mvwvline(*this, y1, x2, 0, rect.size.y);
+        mvwaddch(*this, y1, x1, ACS_ULCORNER);
+        mvwaddch(*this, y2, x1, ACS_LLCORNER);
+        mvwaddch(*this, y1, x2, ACS_URCORNER);
+        mvwaddch(*this, y2, x2, ACS_LRCORNER);
     }
     
     void drawText(const Point& p, const char* fmt, ...) {
@@ -233,7 +249,7 @@ public:
         drawText({2, 3}, "%s", message);
         
         if (_selected) wattron(*this, COLOR_PAIR(1));
-        drawBox();
+        drawBorder();
         drawText({2, 0}, " %s ", _StrFromGitOid(*oid).c_str());
         if (_selected) wattroff(*this, COLOR_PAIR(1));
         drawText({21, 0}, " %s ", _StrFromGitTime(time).c_str());
@@ -279,9 +295,10 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
     // Deselect everything to start
     for (CommitPanel& commitPanel : commitPanels) commitPanel.setSelected(false);
     
-    selectionRectPanel.setVisible(true);
-    selectionRectPanel.orderBack();
+//    selectionRectPanel.setVisible(true);
+//    selectionRectPanel.orderBack();
     
+    bool dragged = false;
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         int x = std::min(mouseDownEvent.x, mouse.x);
@@ -289,11 +306,17 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
         int w = std::abs(mouseDownEvent.x - mouse.x);
         int h = std::abs(mouseDownEvent.y - mouse.y);
         
-        rootWindow.erase();
-        selectionRectPanel.erase();
-        selectionRectPanel.setSize({std::max(2,w), std::max(2,h)});
-        selectionRectPanel.setPosition({x, y});
-        selectionRectPanel.drawBox();
+        const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
+        dragged = dragged || selectionRect.size.x>1 || selectionRect.size.y>1;
+        if (dragged) {
+            rootWindow.erase();
+            rootWindow.drawRect(selectionRect);
+        }
+        
+//        selectionRectPanel.erase();
+//        selectionRectPanel.setSize({std::max(2,w), std::max(2,h)});
+//        selectionRectPanel.setPosition({x, y});
+//        selectionRectPanel.drawBorder();
         
 //        // Make selectionRectPanel visible _after_ drawing, otherwise we draw
 //        // selectionRectPanel's old state for a single frame
@@ -302,17 +325,18 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
 //            selectionRectPanel.orderBack();
 //        }
         
-        const Rect selectionRect = selectionRectPanel.rect();
+//        const Rect selectionRect = selectionRectPanel.rect();
         for (CommitPanel& commitPanel : commitPanels) {
             const Rect intersection = _Intersection(selectionRect, commitPanel.rect());
             commitPanel.setSelected(!_Empty(intersection));
         }
         
-        if (mouse.bstate & BUTTON1_RELEASED) break;
-        
         // Redraw panels that need it
         for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
         Window::Redraw();
+        
+        if (mouse.bstate & BUTTON1_RELEASED) break;
+        
         
         int key = rootWindow.getChar();
         if (key != KEY_MOUSE) continue;
@@ -321,7 +345,9 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
         if (ir != OK) continue;
     }
     
-    selectionRectPanel.setVisible(false);
+    rootWindow.erase();
+    
+//    selectionRectPanel.setVisible(false);
 }
 
 int main(int argc, const char* argv[]) {
