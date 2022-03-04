@@ -6,10 +6,11 @@
 #include <sstream>
 #include <iomanip>
 #include "lib/ncurses/c++/cursesp.h"
-//#include "lib/ncurses/include/curses.h"
+#include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 #include "lib/libgit2/include/git2.h"
 #include "xterm-256color.h"
+#include "lib/Toastbox/RuntimeError.h"
 
 class Window {
 public:
@@ -55,19 +56,14 @@ public:
         va_list args;
         va_start(args, fmt);
         int result = ::wmove(*this, y, x);
-//        assert(!result);
         result = ::vw_printw(*this, fmt, args);
-//        assert(!result);
         va_end(args);
-//        assert(!result);
     }
 
     void drawText(int x, int y, const char* fmt, va_list args)
     {
         int result = ::wmove(*this, y, x);
-//        assert(!result);
         result = ::vw_printw(*this, fmt, args);
-//        assert(!result);
     }
     
     void erase() {
@@ -130,6 +126,18 @@ private:
     } _state = {};
 };
 
+template <typename T, auto& T_Deleter>
+struct RefCounted : public std::shared_ptr<T> {
+    RefCounted() : std::shared_ptr<T>() {}
+    RefCounted(const T& a) : std::shared_ptr<T>(new T(a), _Deleter) {}
+private:
+    static void _Deleter(T* t) { T_Deleter(*t); }
+};
+
+using Repo = RefCounted<git_repository*, git_repository_free>;
+using RevWalk = RefCounted<git_revwalk*, git_revwalk_free>;
+using Commit = RefCounted<git_commit*, git_commit_free>;
+
 static std::string _StrFromGitOid(const git_oid& oid) {
     char str[16];
     sprintf(str, "%02x%02x%02x%02x", oid.id[0], oid.id[1], oid.id[2], oid.id[3]);
@@ -145,6 +153,67 @@ static std::string _StrFromGitTime(git_time_t t) {
     std::stringstream ss;
     ss << std::put_time(&tm, "%c");
     return ss.str();
+}
+
+class CommitPanel : public Panel {
+public:
+    CommitPanel(Commit commit) : _commit(commit) {
+        setSize(40, 5);
+        _drawNeeded = true;
+    }
+    
+    void setSelected(bool x) {
+        if (_selected == x) return;
+        _selected = x;
+        _drawNeeded = true;
+    }
+    
+    void draw() {
+        const git_oid* oid          = git_commit_id(*_commit);
+        const git_signature* author = git_commit_author(*_commit);
+        const char* message         = git_commit_message(*_commit);
+        const git_time_t time       = git_commit_time(*_commit);
+        
+        erase();
+        drawText(2, 3, "%s", message);
+        drawBox();
+        drawText(2, 0, " %s @ %s ", _StrFromGitOid(*oid).c_str(), _StrFromGitTime(time).c_str());
+        drawText(2, 1, "%s", author->name, _StrFromGitTime(time).c_str());
+        
+        _drawNeeded = false;
+    }
+    
+    void drawIfNeeded() {
+        if (_drawNeeded) {
+            draw();
+        }
+    }
+    
+private:
+    Commit _commit;
+    bool _selected = false;
+    bool _drawNeeded = false;
+};
+
+static Repo _RepoOpen() {
+    git_repository* r = nullptr;
+    int ir = git_repository_open(&r, ".");
+    if (ir) throw Toastbox::RuntimeError("git_repository_open failed: %s", git_error_last()->message);
+    return r;
+}
+
+static RevWalk _RevWalkCreate(Repo repo) {
+    git_revwalk* w = nullptr;
+    int ir = git_revwalk_new(&w, *repo);
+    if (ir) throw Toastbox::RuntimeError("git_revwalk_new failed: %s", git_error_last()->message);
+    return w;
+}
+
+static Commit _CommitLookup(Repo repo, const git_oid& oid) {
+    git_commit* c = nullptr;
+    int ir = git_commit_lookup(&c, *repo, &oid);
+    if (ir) throw Toastbox::RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
+    return c;
 }
 
 static void _TrackSelection(Window& rootWindow, Panel& selectionRect, MEVENT mouseDownEvent) {
@@ -181,7 +250,7 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRect, MEVENT mou
 }
 
 int main(int argc, const char* argv[]) {
-    // Initialize ncurses
+    // Init ncurses
     {
         // Default linux installs may not contain the /usr/share/terminfo database,
         // so provide a fallback terminfo that usually works.
@@ -202,90 +271,52 @@ int main(int argc, const char* argv[]) {
         curs_set(0);
     }
     
+    // Init libgit2
+    {
+        git_libgit2_init();
+    }
+    
     Window rootWindow(::stdscr);
     Panel selectionRect;
-//    selectionRect.setVisible(false);
+    std::vector<CommitPanel> commitPanels;
     
-    std::vector<Panel> panels;
-    
-    
+    selectionRect.setVisible(false);
     
     // Create panels for each commit
     {
-        git_libgit2_init();
-        git_repository* repo = nullptr;
-        int error = git_repository_open(&repo, ".");
-        assert(!error);
+        Repo repo = _RepoOpen();
+        RevWalk walk = _RevWalkCreate(repo);
         
-        git_revwalk* walker = nullptr;
-        error = git_revwalk_new(&walker, repo);
-        assert(!error);
-        error = git_revwalk_push_range(walker, "HEAD~4..HEAD");
-        assert(!error);
+        int ir = git_revwalk_push_range(*walk, "HEAD~5..HEAD");
+        if (ir) throw Toastbox::RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
         
         int count = 0;
         git_oid oid;
-        while (!git_revwalk_next(&oid, walker)) {
-            git_commit* commit = nullptr;
-            error = git_commit_lookup(&commit, repo, &oid);
-            assert(!error);
-            
-            const git_signature* author = git_commit_author(commit);
-            const char* message         = git_commit_message(commit);
-            const git_time_t time       = git_commit_time(commit);
-            
-//            printf("%s\n", _StrFromGitOid(oid).c_str());
-//            printf("%s <%s>\n", author->name, author->email);
-//            
-//    //        git_date_parse();
-//    //        git_date_rfc2822_fmt();
-//            
-//            printf("%s\n", _StrFromGitTime(time).c_str());
-//            printf("%s\n", message);
-//            printf("\n");
-            
-            Panel& panel = panels.emplace_back();
-            panel.setSize(40, 5);
-            panel.setPosition(4, 6*count);
-            
-            panel.drawText(2, 3, "%s", message);
-            panel.drawBox();
-            panel.drawText(2, 0, " %s @ %s ", _StrFromGitOid(oid).c_str(), _StrFromGitTime(time).c_str());
-//            panel.drawText(2, 0, " %s ", _StrFromGitOid(oid).c_str());
-            panel.drawText(2, 1, "%s", author->name, _StrFromGitTime(time).c_str());
-            
+        while (!git_revwalk_next(&oid, *walk)) {
+            Commit commit = _CommitLookup(repo, oid);
+            CommitPanel& commitPanel = commitPanels.emplace_back(commit);
+            commitPanel.setPosition(4, 6*count);
             count++;
-            
-//            panel.drawBox();
-//            panel.drawText(2, 1, "<%s>", author->email);
-//            panel.drawText(2, 1, "%s <%s>", author->name, author->email);
         }
     }
-    
-    
-    
-    
-    
-    
-    
-    
-//    for (int i=0; i<5; i++) {
-//        Panel& panel = panels.emplace_back();
-//        panel.setSize(5, 5);
-//        panel.setPosition(3+i, 3+i);
-//        panel.drawBox();
-//    }
     
     mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
     mouseinterval(0);
     for (int i=0;; i++) {
+        // Redraw panels that need it
+        for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
         Window::Redraw();
+        
+//        NCursesPanel::redraw();
         int key = rootWindow.getChar();
         if (key == KEY_MOUSE) {
             MEVENT mouse = {};
             int ir = getmouse(&mouse);
             if (ir != OK) continue;
             if (mouse.bstate & BUTTON1_PRESSED) {
+                for (CommitPanel& commitPanel : commitPanels) {
+                    commitPanel.setSelected(true);
+                }
                 _TrackSelection(rootWindow, selectionRect, mouse);
             }
         } else if (key == KEY_RESIZE) {
