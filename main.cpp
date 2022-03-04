@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unistd.h>
-#include "ncurses/c++/cursesp.h"
+#include "lib/ncurses/c++/cursesp.h"
 #include "xterm-256color.h"
 
 int main(int argc, const char* argv[]) {
