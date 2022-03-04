@@ -792,7 +792,17 @@ TINFO_SETUP_TERM(TERMINAL **tp,
                 status = TGETENT_YES;
             }
         }
-
+        
+        if (status != TGETENT_YES) {
+            const void* terminfoData = NULL;
+            size_t terminfoDataLen = 0;
+            nc_get_default_terminfo(&terminfoData, &terminfoDataLen);
+            
+            if (terminfoData) {
+                status = _nc_read_termtype(&TerminalType(termp), terminfoData, terminfoDataLen);
+            }
+        }
+        
         if (status != TGETENT_YES) {
             del_curterm(termp);
             if (status == TGETENT_ERR) {

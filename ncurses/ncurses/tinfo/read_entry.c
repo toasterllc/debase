@@ -826,19 +826,6 @@ _nc_read_tic_entry(char *filename,
                     "%.*s", PATH_MAX - 1, _nc_get_source());
     }
 #endif
-    
-    if (code != TGETENT_YES) {
-        const void* terminfoData = NULL;
-        size_t terminfoDataLen = 0;
-        nc_get_default_terminfo(&terminfoData, &terminfoDataLen);
-        
-        if (terminfoData) {
-            if ((code = _nc_read_termtype(tp, (char*)terminfoData, terminfoDataLen)) == TGETENT_NO) {
-                _nc_free_termtype2(tp);
-            }
-        }
-    }
-    
     returnDB(code);
 }
 #endif /* NCURSES_USE_DATABASE */
