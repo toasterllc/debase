@@ -222,7 +222,7 @@ static std::string _StrFromGitTime(git_time_t t) {
     
     std::stringstream ss;
 //    ss << std::put_time(&tm, "%c");
-    ss << std::put_time(&tm, "%a %b ") << std::to_string(tm.tm_mday) << std::put_time(&tm, " %R");
+    ss << std::put_time(&tm, "%a %b %d %R");
     return ss.str();
 }
 
@@ -252,7 +252,7 @@ public:
         drawBorder();
         drawText({2, 0}, " %s ", _StrFromGitOid(*oid).c_str());
         if (_selected) wattroff(*this, COLOR_PAIR(1));
-        drawText({21, 0}, " %s ", _StrFromGitTime(time).c_str());
+        drawText({20, 0}, " %s ", _StrFromGitTime(time).c_str());
         drawText({2, 1}, "%s", author->name, _StrFromGitTime(time).c_str());
         
         _drawNeeded = false;
@@ -291,12 +291,9 @@ static Commit _CommitLookup(Repo repo, const git_oid& oid) {
     return c;
 }
 
-static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::vector<CommitPanel>& commitPanels, MEVENT mouseDownEvent) {
+static void _TrackSelection(Window& rootWindow, std::vector<CommitPanel>& commitPanels, MEVENT mouseDownEvent) {
     // Deselect everything to start
     for (CommitPanel& commitPanel : commitPanels) commitPanel.setSelected(false);
-    
-//    selectionRectPanel.setVisible(true);
-//    selectionRectPanel.orderBack();
     
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
@@ -313,19 +310,6 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
             rootWindow.drawRect(selectionRect);
         }
         
-//        selectionRectPanel.erase();
-//        selectionRectPanel.setSize({std::max(2,w), std::max(2,h)});
-//        selectionRectPanel.setPosition({x, y});
-//        selectionRectPanel.drawBorder();
-        
-//        // Make selectionRectPanel visible _after_ drawing, otherwise we draw
-//        // selectionRectPanel's old state for a single frame
-//        if (!selectionRectPanel.visible()) {
-//            selectionRectPanel.setVisible(true);
-//            selectionRectPanel.orderBack();
-//        }
-        
-//        const Rect selectionRect = selectionRectPanel.rect();
         for (CommitPanel& commitPanel : commitPanels) {
             const Rect intersection = _Intersection(selectionRect, commitPanel.rect());
             commitPanel.setSelected(!_Empty(intersection));
@@ -346,8 +330,6 @@ static void _TrackSelection(Window& rootWindow, Panel& selectionRectPanel, std::
     }
     
     rootWindow.erase();
-    
-//    selectionRectPanel.setVisible(false);
 }
 
 int main(int argc, const char* argv[]) {
@@ -387,10 +369,7 @@ int main(int argc, const char* argv[]) {
 //        while (!a);
         
         Window rootWindow(::stdscr);
-        Panel selectionRectPanel;
         std::vector<CommitPanel> commitPanels;
-        
-        selectionRectPanel.setVisible(false);
         
         // Create panels for each commit
         {
@@ -424,10 +403,7 @@ int main(int argc, const char* argv[]) {
                 int ir = getmouse(&mouse);
                 if (ir != OK) continue;
                 if (mouse.bstate & BUTTON1_PRESSED) {
-//                    for (CommitPanel& commitPanel : commitPanels) {
-//                        commitPanel.setSelected(true);
-//                    }
-                    _TrackSelection(rootWindow, selectionRectPanel, commitPanels, mouse);
+                    _TrackSelection(rootWindow, commitPanels, mouse);
                 }
             } else if (key == KEY_RESIZE) {
             }
