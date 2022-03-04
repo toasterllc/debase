@@ -3,9 +3,9 @@ OBJECTS=main.o
 
 CXX      = g++
 CXXFLAGS = -std=c++17 -O0 -g3 -Wall -Weffc++ $(IDIRS)
-LFLAGS   = -L./ncurses/lib -lncurses++ -lform -lmenu -lpanel -lncurses
-IDIRS    = -isystem ./ncurses/include   \
-           -isystem ./ncurses/c++
+LFLAGS   = -L./lib/ncurses/lib -lform -lmenu -lpanel -lncurses
+IDIRS    = -isystem ./lib/ncurses/include \
+           -isystem ./lib/libgit2/include
 
 all: ${OBJECTS}
 	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LFLAGS)

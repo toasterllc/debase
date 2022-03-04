@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <vector>
-#include "lib/ncurses/c++/cursesp.h"
+#include <cassert>
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 #include "lib/libgit2/include/git2.h"
@@ -61,7 +61,7 @@ private:
     struct {
         const Window* parent = nullptr;
         WINDOW* window = nullptr;
-    } _state;
+    } _state = {};
 };
 
 class Panel : public Window {
@@ -94,7 +94,7 @@ public:
 private:
     struct {
         PANEL* panel = nullptr;
-    } _state;
+    } _state = {};
 };
 
 int main(int argc, const char* argv[]) {
