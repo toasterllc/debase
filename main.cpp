@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <memory>
 #include <deque>
+#include <set>
 //#include "lib/ncurses/c++/cursesp.h"
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
@@ -135,8 +136,7 @@ public:
     }
     
     bool hitTest(const Point& p) const {
-        const Rect r = _Intersection(rect(), Rect{.point=p, .size={1,1}});
-        return r.size.x || r.size.y;
+        return !_Empty(_Intersection(rect(), Rect{.point=p, .size={1,1}}));
     }
     
     int getChar() const {
@@ -293,6 +293,8 @@ public:
         _drawNeeded = true;
     }
     
+    bool selected() const { return _selected; }
+    
     void setSelected(bool x) {
         if (_selected == x) return;
         _selected = x;
@@ -382,13 +384,23 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         }
     }
     
-    // Deselect all panels
-    for (CommitPanel& p : _CommitPanels) p.setSelected(false);
-    
-    // Select appropriate panels
-    if (mouseDownCommitPanel) {
-        mouseDownCommitPanel->setSelected(true);
+    std::set<CommitPanel*> selectionOld;
+    for (CommitPanel& p : _CommitPanels) {
+        if (p.selected()) selectionOld.insert(&p);
     }
+    
+    const bool xorSelection = (mouseDownEvent.bstate & BUTTON_SHIFT);
+//    
+//    if (mouseDownEvent.bstate & BUTTON_SHIFT) {
+//        // Select `mouseDownCommitPanel` if it's not selected
+//        if (mouseDownCommitPanel && !mouseDownCommitPanel->selected()) {
+//            mouseDownCommitPanel->setSelected(true);
+//        }
+//    
+//    } else {
+//        // Deselect all panels
+//        for (CommitPanel& p : _CommitPanels) p.setSelected(false);
+//    }
     
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
@@ -401,6 +413,24 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         
         const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
         dragged = dragged || selectionRect.size.x>1 || selectionRect.size.y>1;
+        
+        std::set<CommitPanel*> selectionNew;
+        for (CommitPanel& p : _CommitPanels) {
+            if (!_Empty(_Intersection(selectionRect, p.rect()))) selectionNew.insert(&p);
+        }
+        
+        std::set<CommitPanel*> selection;
+        if (xorSelection) {
+            for (CommitPanel* p : selectionOld) {
+                if (selectionNew.find(p) == selectionNew.end()) selection.insert(p);
+            }
+            for (CommitPanel* p : selectionNew) {
+                if (selectionOld.find(p) == selectionOld.end()) selection.insert(p);
+            }
+        
+        } else {
+            selection = selectionNew;
+        }
         
         if (mouseDownCommitPanel) {
             if (dragged) {
@@ -417,12 +447,11 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 _RootWindow.erase();
                 _RootWindow.drawRect(selectionRect);
             }
-            
-            // Update selection states of CommitPanels
-            for (CommitPanel& p : _CommitPanels) {
-                const Rect intersection = _Intersection(selectionRect, p.rect());
-                p.setSelected(!_Empty(intersection));
-            }
+        }
+        
+        // Update selection states of CommitPanels
+        for (CommitPanel& p : _CommitPanels) {
+            p.setSelected(selection.find(&p) != selection.end());
         }
         
         _Redraw();
