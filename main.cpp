@@ -134,12 +134,10 @@ public:
         };
     }
     
-//    bool hitTest(const Point& p) const {
-//        return x >= getbegx(_state.window) &&
-//               y >= getbegy(_state.window) &&
-//               x  < getmaxx(_state.window) &&
-//               y  < getmaxy(_state.window) ;
-//    }
+    bool hitTest(const Point& p) const {
+        const Rect r = _Intersection(rect(), Rect{.point=p, .size={1,1}});
+        return r.size.x || r.size.y;
+    }
     
     int getChar() const {
         return ::wgetch(*this);
@@ -368,12 +366,33 @@ static void _Redraw() {
     Window::Redraw();
 }
 
-static void _TrackSelection(MEVENT mouseDownEvent) {
-    // Deselect everything to start
+static void _TrackMouse(MEVENT mouseDownEvent) {
+    CommitPanel* mouseDownCommitPanel = nullptr;
+    Size mouseDownCommitPanelDelta;
+    for (CommitPanel& panel : _CommitPanels) {
+        if (panel.hitTest({mouseDownEvent.x, mouseDownEvent.y})) {
+            mouseDownCommitPanel = &panel;
+            
+            const Rect panelRect = panel.rect();
+            mouseDownCommitPanelDelta = {
+                panelRect.point.x-mouseDownEvent.x,
+                panelRect.point.y-mouseDownEvent.y,
+            };
+            break;
+        }
+    }
+    
+    // Deselect all panels
     for (CommitPanel& p : _CommitPanels) p.setSelected(false);
+    
+    // Select appropriate panels
+    if (mouseDownCommitPanel) {
+        mouseDownCommitPanel->setSelected(true);
+    }
     
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
+    
     for (;;) {
         int x = std::min(mouseDownEvent.x, mouse.x);
         int y = std::min(mouseDownEvent.y, mouse.y);
@@ -382,27 +401,45 @@ static void _TrackSelection(MEVENT mouseDownEvent) {
         
         const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
         dragged = dragged || selectionRect.size.x>1 || selectionRect.size.y>1;
-        if (dragged) {
-            _RootWindow.erase();
-            _RootWindow.drawRect(selectionRect);
-        }
         
-        for (CommitPanel& commitPanel : _CommitPanels) {
-            const Rect intersection = _Intersection(selectionRect, commitPanel.rect());
-            commitPanel.setSelected(!_Empty(intersection));
+        if (mouseDownCommitPanel) {
+            if (dragged) {
+                const Point pos = {
+                    mouse.x+mouseDownCommitPanelDelta.x,
+                    mouse.y+mouseDownCommitPanelDelta.y,
+                };
+                mouseDownCommitPanel->setPosition(pos);
+            }
+        
+        } else {
+            // Redraw selection rect
+            if (dragged) {
+                _RootWindow.erase();
+                _RootWindow.drawRect(selectionRect);
+            }
+            
+            // Update selection states of CommitPanels
+            for (CommitPanel& p : _CommitPanels) {
+                const Rect intersection = _Intersection(selectionRect, p.rect());
+                p.setSelected(!_Empty(intersection));
+            }
         }
         
         _Redraw();
         
         if (mouse.bstate & BUTTON1_RELEASED) break;
         
-        int key = _RootWindow.getChar();
-        if (key != KEY_MOUSE) continue;
-        
-        int ir = ::getmouse(&mouse);
-        if (ir != OK) continue;
+        // Wait for another mouse event
+        for (;;) {
+            int key = _RootWindow.getChar();
+            if (key != KEY_MOUSE) continue;
+            int ir = ::getmouse(&mouse);
+            if (ir != OK) continue;
+            break;
+        }
     }
     
+    // Clear selection rect when returning
     _RootWindow.erase();
 }
 
@@ -464,9 +501,9 @@ int main(int argc, const char* argv[]) {
             git_oid oid;
             while (!git_revwalk_next(&oid, *walk)) {
                 Commit commit = _CommitLookup(repo, oid);
-                CommitPanel& commitPanel = _CommitPanels.emplace_back(commit, 32);
-                commitPanel.setPosition({4, off});
-                off += commitPanel.rect().size.y + 1;
+                CommitPanel& p = _CommitPanels.emplace_back(commit, 32);
+                p.setPosition({4, off});
+                off += p.rect().size.y + 1;
             }
         }
         
@@ -481,7 +518,7 @@ int main(int argc, const char* argv[]) {
                 int ir = ::getmouse(&mouse);
                 if (ir != OK) continue;
                 if (mouse.bstate & BUTTON1_PRESSED) {
-                    _TrackSelection(mouse);
+                    _TrackMouse(mouse);
                 }
             
             } else if (key == KEY_RESIZE) {
