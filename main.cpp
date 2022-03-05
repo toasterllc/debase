@@ -277,15 +277,16 @@ public:
             // So since the word isn't included, the length of the line (with the word included) must be larger
             // than `MaxLineLen`. So verify that assumption.
             assert(line.size() > MaxLineLen);
-            line.erase(MaxLineLen);
             
-            const char*const ellipses = "...";
-            // Find the first non-space character, at least strlen(ellipses) characters before the end
-            auto it = line.end()-strlen(ellipses);
-            for (; it!=line.begin() && std::isspace(*it); it--);
-            
-            // Replace the last 4 characters with an ellipses
-            line.replace(it, it+strlen(ellipses), ellipses);
+//            const char*const ellipses = "...";
+//            // Find the first non-space character, at least strlen(ellipses) characters before the end
+//            auto it =line.begin()+MaxLineLen-strlen(ellipses);
+//            for (; it!=line.begin() && std::isspace(*it); it--);
+//            
+//            line.erase(it, line.end());
+//            
+//            // Replace the last 4 characters with an ellipses
+//            line.replace(it, it+strlen(ellipses), ellipses);
         }
         
         setSize({width, 3 + (int)_message.size()});
