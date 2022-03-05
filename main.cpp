@@ -429,13 +429,22 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         dragged = dragged || w>1 || h>1;
         
         if (mouseDownCommitPanel) {
-            if (mouseUp && !dragged) {
-                if (shift) {
-                    if (mouseDownCommitPanelWasSelected) {
-                        selection.erase(mouseDownCommitPanel);
+            if (dragged) {
+                const Point pos = {
+                    mouse.x+mouseDownCommitPanelDelta.x,
+                    mouse.y+mouseDownCommitPanelDelta.y,
+                };
+                mouseDownCommitPanel->setPosition(pos);
+            
+            } else {
+                if (mouseUp) {
+                    if (shift) {
+                        if (mouseDownCommitPanelWasSelected) {
+                            selection.erase(mouseDownCommitPanel);
+                        }
+                    } else {
+                        selection = {mouseDownCommitPanel};
                     }
-                } else {
-                    selection = {mouseDownCommitPanel};
                 }
             }
         
