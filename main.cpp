@@ -54,7 +54,13 @@ public:
         ::doupdate();
     }
     
-    Window() {
+    // Invalid
+    Window() {}
+    
+    struct NewType {};
+    static constexpr NewType New;
+    
+    Window(NewType) {
         _state.window = ::newwin(0, 0, 0, 0);
         assert(_state.window);
         
@@ -69,19 +75,16 @@ public:
     }
     
     // Move constructor: use move assignment operator
-    Window(Window&& x) {
+    Window(Window&& x) { *this = std::move(x); }
+    
+    // Move assignment operator
+    Window& operator=(Window&& x) {
         _state = std::move(x._state);
-        x._state = {};    
+        x._state = {};
+        return *this;
     }
     
-//    void setRect(const Rect& rect) {
-//        erase();
-//        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
-//        ::mvwin(*this, p.y, p.x);
-//    }
-    
     void setSize(const Size& s) {
-//        erase();
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
     }
     
@@ -153,15 +156,21 @@ private:
 
 class Panel : public Window {
 public:
-    Panel() {
+    Panel() : Window(Window::New) {
         _state.panel = ::new_panel(*this);
         assert(_state.panel);
     }
     
     // Move constructor: use move assignment operator
-    Panel(Panel&& x) : Window(std::move(x)) {
+    Panel(Panel&& x) { *this = std::move(x); }
+    
+    // Move assignment operator
+    Panel& operator=(Panel&& x) {
+        printf("MOVE PANEL\n");
+        Window::operator=(std::move(x));
         _state = std::move(x._state);
-        x._state = {};    
+        x._state = {};
+        return *this;
     }
     
     ~Panel() {
@@ -351,9 +360,17 @@ static Commit _CommitLookup(Repo repo, const git_oid& oid) {
     return c;
 }
 
-static void _TrackSelection(Window& rootWindow, std::vector<CommitPanel>& commitPanels, MEVENT mouseDownEvent) {
+static Window _RootWindow;
+static std::vector<CommitPanel> _CommitPanels;
+
+static void _Redraw() {
+    for (CommitPanel& p : _CommitPanels) p.drawIfNeeded();
+    Window::Redraw();
+}
+
+static void _TrackSelection(MEVENT mouseDownEvent) {
     // Deselect everything to start
-    for (CommitPanel& commitPanel : commitPanels) commitPanel.setSelected(false);
+    for (CommitPanel& p : _CommitPanels) p.setSelected(false);
     
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
@@ -366,29 +383,27 @@ static void _TrackSelection(Window& rootWindow, std::vector<CommitPanel>& commit
         const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
         dragged = dragged || selectionRect.size.x>1 || selectionRect.size.y>1;
         if (dragged) {
-            rootWindow.erase();
-            rootWindow.drawRect(selectionRect);
+            _RootWindow.erase();
+            _RootWindow.drawRect(selectionRect);
         }
         
-        for (CommitPanel& commitPanel : commitPanels) {
+        for (CommitPanel& commitPanel : _CommitPanels) {
             const Rect intersection = _Intersection(selectionRect, commitPanel.rect());
             commitPanel.setSelected(!_Empty(intersection));
         }
         
-        // Redraw panels that need it
-        for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
-        Window::Redraw();
+        _Redraw();
         
         if (mouse.bstate & BUTTON1_RELEASED) break;
         
-        int key = rootWindow.getChar();
+        int key = _RootWindow.getChar();
         if (key != KEY_MOUSE) continue;
         
-        int ir = getmouse(&mouse);
+        int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
     }
     
-    rootWindow.erase();
+    _RootWindow.erase();
 }
 
 int main(int argc, const char* argv[]) {
@@ -417,6 +432,7 @@ int main(int argc, const char* argv[]) {
             ::start_color();
             
             #warning TODO: cleanup color logic
+            #warning TODO: fix colors aren't restored when exiting
             ::init_pair(1, COLOR_RED, -1);
             
             ::init_color(COLOR_GREEN, 300, 300, 300);
@@ -434,8 +450,7 @@ int main(int argc, const char* argv[]) {
 //        volatile bool a = false;
 //        while (!a);
         
-        Window rootWindow(::stdscr);
-        std::vector<CommitPanel> commitPanels;
+        _RootWindow = Window(::stdscr);
         
         // Create panels for each commit
         {
@@ -449,7 +464,7 @@ int main(int argc, const char* argv[]) {
             git_oid oid;
             while (!git_revwalk_next(&oid, *walk)) {
                 Commit commit = _CommitLookup(repo, oid);
-                CommitPanel& commitPanel = commitPanels.emplace_back(commit, 32);
+                CommitPanel& commitPanel = _CommitPanels.emplace_back(commit, 32);
                 commitPanel.setPosition({4, off});
                 off += commitPanel.rect().size.y + 1;
             }
@@ -458,20 +473,19 @@ int main(int argc, const char* argv[]) {
         mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         mouseinterval(0);
         for (int i=0;; i++) {
-            // Redraw panels that need it
-            for (CommitPanel& commitPanel : commitPanels) commitPanel.drawIfNeeded();
-            Window::Redraw();
-            
+            _Redraw();
     //        NCursesPanel::redraw();
-            int key = rootWindow.getChar();
+            int key = _RootWindow.getChar();
             if (key == KEY_MOUSE) {
                 MEVENT mouse = {};
-                int ir = getmouse(&mouse);
+                int ir = ::getmouse(&mouse);
                 if (ir != OK) continue;
                 if (mouse.bstate & BUTTON1_PRESSED) {
-                    _TrackSelection(rootWindow, commitPanels, mouse);
+                    _TrackSelection(mouse);
                 }
+            
             } else if (key == KEY_RESIZE) {
+                throw std::runtime_error("hello");
             }
         }
     
