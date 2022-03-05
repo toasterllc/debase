@@ -368,28 +368,32 @@ static void _Redraw() {
     Window::Redraw();
 }
 
-static void _TrackMouse(MEVENT mouseDownEvent) {
-    CommitPanel* mouseDownCommitPanel = nullptr;
-    Size mouseDownCommitPanelDelta;
+static CommitPanel* _HitTest(const Point& p) {
     for (CommitPanel& panel : _CommitPanels) {
-        if (panel.hitTest({mouseDownEvent.x, mouseDownEvent.y})) {
-            mouseDownCommitPanel = &panel;
-            
-            const Rect panelRect = panel.rect();
-            mouseDownCommitPanelDelta = {
-                panelRect.point.x-mouseDownEvent.x,
-                panelRect.point.y-mouseDownEvent.y,
-            };
-            break;
-        }
+        if (panel.hitTest(p)) return &panel;
+    }
+    return nullptr;
+}
+
+static void _TrackMouse(MEVENT mouseDownEvent) {
+    CommitPanel* mouseDownCommitPanel = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
+    Size mouseDownCommitPanelDelta;
+    bool mouseDownCommitPanelWasSelected = (mouseDownCommitPanel ? mouseDownCommitPanel->selected() : false);
+    if (mouseDownCommitPanel) {
+        const Rect panelRect = mouseDownCommitPanel->rect();
+        mouseDownCommitPanelDelta = {
+            panelRect.point.x-mouseDownEvent.x,
+            panelRect.point.y-mouseDownEvent.y,
+        };
     }
     
     std::set<CommitPanel*> selectionOld;
+//    if (mouseDownCommitPanel) selectionOld.insert(mouseDownCommitPanel);
     for (CommitPanel& p : _CommitPanels) {
         if (p.selected()) selectionOld.insert(&p);
     }
     
-    const bool xorSelection = (mouseDownEvent.bstate & BUTTON_SHIFT);
+    const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
 //    
 //    if (mouseDownEvent.bstate & BUTTON_SHIFT) {
 //        // Select `mouseDownCommitPanel` if it's not selected
@@ -404,33 +408,18 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
     
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
-    
     for (;;) {
-        int x = std::min(mouseDownEvent.x, mouse.x);
-        int y = std::min(mouseDownEvent.y, mouse.y);
-        int w = std::abs(mouseDownEvent.x - mouse.x);
-        int h = std::abs(mouseDownEvent.y - mouse.y);
+        const bool mouseDown = mouse.bstate & BUTTON1_PRESSED;
+        const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
         
-        const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
-        dragged = dragged || selectionRect.size.x>1 || selectionRect.size.y>1;
-        
-        std::set<CommitPanel*> selectionNew;
-        for (CommitPanel& p : _CommitPanels) {
-            if (!_Empty(_Intersection(selectionRect, p.rect()))) selectionNew.insert(&p);
-        }
+        const int x = std::min(mouseDownEvent.x, mouse.x);
+        const int y = std::min(mouseDownEvent.y, mouse.y);
+        const int w = std::abs(mouseDownEvent.x - mouse.x);
+        const int h = std::abs(mouseDownEvent.y - mouse.y);
         
         std::set<CommitPanel*> selection;
-        if (xorSelection) {
-            for (CommitPanel* p : selectionOld) {
-                if (selectionNew.find(p) == selectionNew.end()) selection.insert(p);
-            }
-            for (CommitPanel* p : selectionNew) {
-                if (selectionOld.find(p) == selectionOld.end()) selection.insert(p);
-            }
         
-        } else {
-            selection = selectionNew;
-        }
+        dragged = dragged || w>1 || h>1;
         
         if (mouseDownCommitPanel) {
             if (dragged) {
@@ -440,8 +429,87 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 };
                 mouseDownCommitPanel->setPosition(pos);
             }
+            
+            if (mouseDown && mouseDownCommitPanelWasSelected) {
+                selection = selectionOld;
+            
+            } else {
+                if (shift) {
+                    selection = selectionOld;
+                    
+                    if (!mouseDownCommitPanelWasSelected) {
+                        selection.insert(mouseDownCommitPanel);
+                    }
+                
+                } else {
+                    selection.insert(mouseDownCommitPanel);
+                }
+                
+                if (mouseUp && shift && !dragged && selectionOld.find(mouseDownCommitPanel)!=selectionOld.end()) {
+                    selection.erase(mouseDownCommitPanel);
+                }
+            }
+            
+//            if (mouseDown) {
+//                if (shift) {
+//                    selection = selectionOld;
+//                }
+//                
+//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
+//                    selection.insert(mouseDownCommitPanel);
+//                }
+//                
+////                selection.insert(mouseDownCommitPanel);
+////                
+////                if (shift) {
+////                    selection = selectionOld;
+////                    selection.insert(mouseDownCommitPanel);
+////                } else {
+////                    selection = selectionOld;
+////                }
+//            } else if (mouseUp) {
+//                if (shift) {
+//                    selection = selectionOld;
+//                }
+//                
+//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
+//                    selection.insert(mouseDownCommitPanel);
+//                }
+//                
+//                if (shift && !dragged && selectionOld.find(mouseDownCommitPanel)!=selectionOld.end()) {
+//                    selection.erase(mouseDownCommitPanel);
+//                }
+//            }
+            
+//            if (shift && mouseUp && !dragged) {
+//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
+//                    
+//                } else {
+//                    
+//                }
+//                selection.erase(mouseDownCommitPanel);
+//            }
         
         } else {
+            const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
+            
+            std::set<CommitPanel*> selectionNew;
+            for (CommitPanel& p : _CommitPanels) {
+                if (!_Empty(_Intersection(selectionRect, p.rect()))) selectionNew.insert(&p);
+            }
+            
+            if (shift) {
+                // selection = selectionOld XOR selectionNew
+                std::set_symmetric_difference(
+                    selectionOld.begin(), selectionOld.end(),
+                    selectionNew.begin(), selectionNew.end(),
+                    std::inserter(selection, selection.begin())
+                );
+            
+            } else {
+                selection = selectionNew;
+            }
+            
             // Redraw selection rect
             if (dragged) {
                 _RootWindow.erase();
@@ -456,7 +524,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         
         _Redraw();
         
-        if (mouse.bstate & BUTTON1_RELEASED) break;
+        if (mouseUp) break;
         
         // Wait for another mouse event
         for (;;) {
