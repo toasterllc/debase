@@ -434,61 +434,16 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 selection = selectionOld;
             
             } else {
-                if (shift) {
-                    selection = selectionOld;
-                    
-                    if (!mouseDownCommitPanelWasSelected) {
-                        selection.insert(mouseDownCommitPanel);
-                    }
+                if (shift) selection = selectionOld;
                 
-                } else {
+                if (!shift || !mouseDownCommitPanelWasSelected) {
                     selection.insert(mouseDownCommitPanel);
                 }
                 
-                if (mouseUp && shift && !dragged && selectionOld.find(mouseDownCommitPanel)!=selectionOld.end()) {
+                if (mouseUp && shift && !dragged && mouseDownCommitPanelWasSelected) {
                     selection.erase(mouseDownCommitPanel);
                 }
             }
-            
-//            if (mouseDown) {
-//                if (shift) {
-//                    selection = selectionOld;
-//                }
-//                
-//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
-//                    selection.insert(mouseDownCommitPanel);
-//                }
-//                
-////                selection.insert(mouseDownCommitPanel);
-////                
-////                if (shift) {
-////                    selection = selectionOld;
-////                    selection.insert(mouseDownCommitPanel);
-////                } else {
-////                    selection = selectionOld;
-////                }
-//            } else if (mouseUp) {
-//                if (shift) {
-//                    selection = selectionOld;
-//                }
-//                
-//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
-//                    selection.insert(mouseDownCommitPanel);
-//                }
-//                
-//                if (shift && !dragged && selectionOld.find(mouseDownCommitPanel)!=selectionOld.end()) {
-//                    selection.erase(mouseDownCommitPanel);
-//                }
-//            }
-            
-//            if (shift && mouseUp && !dragged) {
-//                if (selectionOld.find(mouseDownCommitPanel) == selectionOld.end()) {
-//                    
-//                } else {
-//                    
-//                }
-//                selection.erase(mouseDownCommitPanel);
-//            }
         
         } else {
             const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
