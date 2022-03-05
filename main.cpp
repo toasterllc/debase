@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
+#include <deque>
 //#include "lib/ncurses/c++/cursesp.h"
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
@@ -228,8 +229,63 @@ static std::string _StrFromGitTime(git_time_t t) {
 
 class CommitPanel : public Panel {
 public:
-    CommitPanel(Commit commit) : _commit(commit) {
-        setSize({40, 5});
+    CommitPanel(Commit commit, int width) : _commit(commit) {
+        _oid = _StrFromGitOid(*git_commit_id(*_commit));
+        _time = _StrFromGitTime(git_commit_time(*_commit));
+        _author = git_commit_author(*_commit)->name;
+        
+        const std::string message = git_commit_message(*_commit);
+        std::deque<std::string> words;
+        
+        {
+            std::istringstream stream(message);
+            std::string word;
+            while (stream >> word) words.push_back(word);
+        }
+        
+        #warning TODO: if we clip the number of lines, add an ellipses to the last line
+        #warning TODO: if we clip the last line, add an ellipses
+        #warning TODO: it's possible that a word won't fit on a line. if that happens, end the message and print as much of the word as possible, with an ellipses
+        const int MaxLineCount = 2;
+        const int MaxLineLen = width-4;
+        for (;;) {
+            std::string& line = _message.emplace_back();
+            for (;;) {
+                if (words.empty()) break;
+                const std::string& word = words.front();
+                const std::string add = (line.empty() ? "" : " ") + word;
+                if (line.size()+add.size() > MaxLineLen) break; // Line filled, next line
+                line += add;
+                words.pop_front();
+            }
+            
+            if (words.empty()) break; // No more words -> done
+            if (_message.size() >= MaxLineCount) break; // Hit max number of lines -> done
+            if (words.front().size() > MaxLineLen) break; // Current word is too large for line -> done
+        }
+        
+        // Add as many letters from the remaining word as will fit on the last line
+        if (!words.empty()) {
+            const std::string& word = words.front();
+            std::string& line = _message.back();
+            line += (line.empty() ? "" : " ") + word;
+            // Our logic guarantees that if the word would have fit, it would've been included in the last line.
+            // So since the word isn't included, the length of the line (with the word included) must be larger
+            // than `MaxLineLen`. So verify that assumption.
+            assert(line.size() > MaxLineLen);
+            line.erase(MaxLineLen);
+            
+            const char*const ellipses = "...";
+            // Find the first non-space character, at least strlen(ellipses) characters before the end
+            auto it = line.end()-strlen(ellipses);
+            for (; it!=line.begin() && std::isspace(*it); it--);
+            
+            // Replace the last 4 characters with an ellipses
+            line.replace(it, it+strlen(ellipses), ellipses);
+        }
+        
+        setSize({width, 3 + (int)_message.size()});
+//        setSize({width, 5 + (int)_message.size()});
         _drawNeeded = true;
     }
     
@@ -240,20 +296,23 @@ public:
     }
     
     void draw() {
-        const git_oid* oid          = git_commit_id(*_commit);
-        const git_signature* author = git_commit_author(*_commit);
-        const char* message         = git_commit_message(*_commit);
-        const git_time_t time       = git_commit_time(*_commit);
-        
         erase();
-        drawText({2, 3}, "%s", message);
+        
+        int i = 0;
+        for (const std::string& line : _message) {
+            drawText({2, 2+i}, "%s", line.c_str());
+            i++;
+        }
         
         if (_selected) wattron(*this, COLOR_PAIR(1));
         drawBorder();
-        drawText({2, 0}, " %s ", _StrFromGitOid(*oid).c_str());
+        drawText({2, 0}, " %s ", _oid.c_str());
         if (_selected) wattroff(*this, COLOR_PAIR(1));
-        drawText({20, 0}, " %s ", _StrFromGitTime(time).c_str());
-        drawText({2, 1}, "%s", author->name, _StrFromGitTime(time).c_str());
+        drawText({12, 0}, " %s ", _time.c_str());
+        
+        wattron(*this, COLOR_PAIR(2));
+        drawText({2, 1}, "%s", _author.c_str());
+        wattroff(*this, COLOR_PAIR(2));
         
         _drawNeeded = false;
     }
@@ -266,6 +325,10 @@ public:
     
 private:
     Commit _commit;
+    std::string _oid;
+    std::string _time;
+    std::string _author;
+    std::vector<std::string> _message;
     bool _selected = false;
     bool _drawNeeded = false;
 };
@@ -321,7 +384,6 @@ static void _TrackSelection(Window& rootWindow, std::vector<CommitPanel>& commit
         
         if (mouse.bstate & BUTTON1_RELEASED) break;
         
-        
         int key = rootWindow.getChar();
         if (key != KEY_MOUSE) continue;
         
@@ -333,6 +395,9 @@ static void _TrackSelection(Window& rootWindow, std::vector<CommitPanel>& commit
 }
 
 int main(int argc, const char* argv[]) {
+//    volatile bool a = false;
+//    while (!a);
+    
     try {
         // Init ncurses
         {
@@ -356,6 +421,9 @@ int main(int argc, const char* argv[]) {
             
             ::init_pair(1, COLOR_RED, -1);
             
+            ::init_color(COLOR_GREEN, 300, 300, 300);
+            ::init_pair(2, COLOR_GREEN, -1);
+            
             // Hide cursor
             ::curs_set(0);
         }
@@ -376,16 +444,16 @@ int main(int argc, const char* argv[]) {
             Repo repo = _RepoOpen();
             RevWalk walk = _RevWalkCreate(repo);
             
-            int ir = git_revwalk_push_range(*walk, "HEAD~5..HEAD");
+            int ir = git_revwalk_push_range(*walk, "HEAD~20..HEAD");
             if (ir) throw Toastbox::RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
             
-            int count = 0;
+            int off = 0;
             git_oid oid;
             while (!git_revwalk_next(&oid, *walk)) {
                 Commit commit = _CommitLookup(repo, oid);
-                CommitPanel& commitPanel = commitPanels.emplace_back(commit);
-                commitPanel.setPosition({4, 6*count});
-                count++;
+                CommitPanel& commitPanel = commitPanels.emplace_back(commit, 32);
+                commitPanel.setPosition({4, off});
+                off += commitPanel.rect().size.y + 1;
             }
         }
         
