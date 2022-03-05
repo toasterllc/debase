@@ -243,9 +243,6 @@ public:
             while (stream >> word) words.push_back(word);
         }
         
-        #warning TODO: if we clip the number of lines, add an ellipses to the last line
-        #warning TODO: if we clip the last line, add an ellipses
-        #warning TODO: it's possible that a word won't fit on a line. if that happens, end the message and print as much of the word as possible, with an ellipses
         const int MaxLineCount = 2;
         const int MaxLineLen = width-4;
         for (;;) {
@@ -419,6 +416,7 @@ int main(int argc, const char* argv[]) {
             ::use_default_colors();
             ::start_color();
             
+            #warning TODO: cleanup color logic
             ::init_pair(1, COLOR_RED, -1);
             
             ::init_color(COLOR_GREEN, 300, 300, 300);
