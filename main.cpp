@@ -214,7 +214,13 @@ private:
 
 using Repo = RefCounted<git_repository*, git_repository_free>;
 using RevWalk = RefCounted<git_revwalk*, git_revwalk_free>;
-using Commit = RefCounted<git_commit*, git_commit_free>;
+
+struct Commit {
+    Commit(git_commit* c, size_t idx) : commit(c), idx(idx) {}
+    operator git_commit* () const { return *commit; }
+    RefCounted<git_commit*, git_commit_free> commit;
+    size_t idx = 0;
+};
 
 static std::string _StrFromGitOid(const git_oid& oid) {
     char str[16];
@@ -237,11 +243,11 @@ static std::string _StrFromGitTime(git_time_t t) {
 class CommitPanel : public Panel {
 public:
     CommitPanel(Commit commit, int width) : _commit(commit) {
-        _oid = _StrFromGitOid(*git_commit_id(*_commit));
-        _time = _StrFromGitTime(git_commit_time(*_commit));
-        _author = git_commit_author(*_commit)->name;
+        _oid = _StrFromGitOid(*git_commit_id(_commit));
+        _time = _StrFromGitTime(git_commit_time(_commit));
+        _author = git_commit_author(_commit)->name;
         
-        const std::string message = git_commit_message(*_commit);
+        const std::string message = git_commit_message(_commit);
         std::deque<std::string> words;
         
         {
@@ -330,6 +336,8 @@ public:
         }
     }
     
+    const Commit& commit() const { return _commit; }
+    
 private:
     Commit _commit;
     std::string _oid;
@@ -354,11 +362,11 @@ static RevWalk _RevWalkCreate(Repo repo) {
     return w;
 }
 
-static Commit _CommitLookup(Repo repo, const git_oid& oid) {
+static Commit _CommitCreate(Repo repo, const git_oid& oid, size_t idx) {
     git_commit* c = nullptr;
     int ir = git_commit_lookup(&c, *repo, &oid);
     if (ir) throw Toastbox::RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
-    return c;
+    return Commit(c, idx);
 }
 
 static Window _RootWindow;
@@ -376,6 +384,14 @@ static CommitPanel* _HitTest(const Point& p) {
     return nullptr;
 }
 
+struct _CommitPanelCompare {
+    bool operator() (CommitPanel* a, CommitPanel* b) const {
+        return a->commit().idx < b->commit().idx;
+    }
+};
+
+using _CommitPanelSet = std::set<CommitPanel*, _CommitPanelCompare>;
+
 static void _TrackMouse(MEVENT mouseDownEvent) {
     CommitPanel* mouseDownCommitPanel = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
     Size mouseDownCommitPanelDelta;
@@ -388,7 +404,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         };
     }
     
-    std::set<CommitPanel*> selectionOld;
+    _CommitPanelSet selectionOld;
 //    if (mouseDownCommitPanel) selectionOld.insert(mouseDownCommitPanel);
     for (CommitPanel& p : _CommitPanels) {
         if (p.selected()) selectionOld.insert(&p);
@@ -396,7 +412,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
     
     const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
     
-    std::set<CommitPanel*> selection;
+    _CommitPanelSet selection;
     if (mouseDownCommitPanel) {
         if (shift || mouseDownCommitPanelWasSelected) {
             selection = selectionOld;
@@ -416,6 +432,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
 //        for (CommitPanel& p : _CommitPanels) p.setSelected(false);
 //    }
     
+    std::vector<Panel> dummyPanels;
     bool dragged = false;
     MEVENT mouse = mouseDownEvent;
     for (;;) {
@@ -426,15 +443,46 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
         
+        const bool draggedPrev = dragged;
         dragged = dragged || w>1 || h>1;
         
         if (mouseDownCommitPanel) {
             if (dragged) {
-                const Point pos = {
+                assert(!selection.empty());
+                
+                const Point pos0 = {
                     mouse.x+mouseDownCommitPanelDelta.x,
                     mouse.y+mouseDownCommitPanelDelta.y,
                 };
-                mouseDownCommitPanel->setPosition(pos);
+                
+                if (!draggedPrev) {
+                    dummyPanels.clear();
+                    for (size_t i=0; i<selection.size()-1; i++) {
+                        Panel& dummy = dummyPanels.emplace_back();
+                        dummy.setSize((*selection.begin())->rect().size);
+                        dummy.drawBorder();
+                    }
+                    
+                    // Hide all real CommitPanels, since we're showing the dummy panels instead
+                    for (auto it=std::next(selection.begin()); it!=selection.end(); it++) {
+                        (*it)->setVisible(false);
+                    }
+                }
+                
+                CommitPanel* first = *selection.begin();
+                first->setPosition(pos0);
+                
+                int off = 1;
+                for (Panel& p : dummyPanels) {
+                    const Point pos = {pos0.x+off, pos0.y+off};
+                    p.setPosition(pos);
+                    off++;
+                }
+                
+                for (auto it=dummyPanels.rbegin(); it!=dummyPanels.rend(); it++) {
+                    it->orderFront();
+                }
+                first->orderFront();
             
             } else {
                 if (mouseUp) {
@@ -453,7 +501,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             
             // Update selection
             {
-                std::set<CommitPanel*> selectionNew;
+                _CommitPanelSet selectionNew;
                 for (CommitPanel& p : _CommitPanels) {
                     if (!_Empty(_Intersection(selectionRect, p.rect()))) selectionNew.insert(&p);
                 }
@@ -497,6 +545,10 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             if (ir != OK) continue;
             break;
         }
+    }
+    
+    for (CommitPanel* p : selection) {
+        p->setVisible(true);
     }
     
     // Clear selection rect when returning
@@ -557,13 +609,15 @@ int main(int argc, const char* argv[]) {
             int ir = git_revwalk_push_range(*walk, "HEAD~20..HEAD");
             if (ir) throw Toastbox::RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
             
+            size_t idx = 0;
             int off = 0;
             git_oid oid;
             while (!git_revwalk_next(&oid, *walk)) {
-                Commit commit = _CommitLookup(repo, oid);
+                Commit commit = _CommitCreate(repo, oid, idx);
                 CommitPanel& p = _CommitPanels.emplace_back(commit, 32);
                 p.setPosition({4, off});
                 off += p.rect().size.y + 1;
+                idx++;
             }
         }
         
