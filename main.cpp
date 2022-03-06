@@ -132,7 +132,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 // Prepare drag state
                 if (!drag.titlePanel) {
                     const CommitPanel& titlePanel = *(*_Selection.panels.begin());
-                    Commit titleCommit = titlePanel.commit();
+                    Git::Commit titleCommit = titlePanel.commit();
                     drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
                     drag.titlePanel->setSelected(true);
                     drag.titlePanel->draw();
@@ -354,12 +354,19 @@ int main(int argc, const char* argv[]) {
             constexpr int InsetX = 3;
             constexpr int ColumnWidth = 32;
             constexpr int ColumnSpacing = 6;
-            Repo repo = RepoOpen();
+            Git::Repo repo = Git::RepoOpen(".");
             
             int OffsetX = InsetX;
             branches.insert(branches.begin(), "HEAD");
             for (const std::string& branch : branches) {
-                _BranchColumns.emplace_back(_RootWindow, repo, branch, OffsetX, ColumnWidth);
+                std::string displayName = branch;
+                if (branch == "HEAD") {
+                    std::string currentBranchName = Git::CurrentBranchName(repo);
+                    if (!currentBranchName.empty()) {
+                        displayName = currentBranchName + " (HEAD)";
+                    }
+                }
+                _BranchColumns.emplace_back(_RootWindow, repo, branch, displayName, OffsetX, ColumnWidth);
                 OffsetX += ColumnWidth+ColumnSpacing;
             }
         }

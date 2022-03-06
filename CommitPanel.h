@@ -7,11 +7,11 @@
 // its containing branch, where the top/first CommitPanel is index 0
 class CommitPanel : public Panel {
 public:
-    CommitPanel(Commit commit, size_t idx, int width) {
+    CommitPanel(Git::Commit commit, size_t idx, int width) {
         _commit = commit;
         _idx = idx;
-        _oid = StrFromGitOid(*git_commit_id(*_commit));
-        _time = StrFromGitTime(git_commit_time(*_commit));
+        _oid = Git::Str(*git_commit_id(*_commit));
+        _time = Git::Str(git_commit_time(*_commit));
         _author = git_commit_author(*_commit)->name;
         
         const std::string message = git_commit_message(*_commit);
@@ -105,11 +105,11 @@ public:
         }
     }
     
-    const Commit& commit() const { return _commit; }
+    const Git::Commit& commit() const { return _commit; }
     const size_t idx() const { return _idx; }
     
 private:
-    Commit _commit;
+    Git::Commit _commit;
     size_t _idx = 0;
     std::string _oid;
     std::string _time;

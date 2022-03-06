@@ -3,13 +3,14 @@
 #include "Panel.h"
 #include "CommitPanel.h"
 
-// BranchColumn: a column in the UI containing commits (of type CommitPanel) for a particular git branch
+// BranchColumn: a column in the UI containing commits (of type CommitPanel)
+// for a particular git branch
 class BranchColumn {
 public:
-    BranchColumn(Window& win, Repo repo, std::string_view name, int offsetX, int width) :
-    _win(win), _name(name), _offsetX(offsetX), _width(width) {
+    BranchColumn(Window& win, Git::Repo repo, std::string_view name, std::string_view displayName, int offsetX, int width) :
+    _win(win), _name(name), _displayName(displayName), _offsetX(offsetX), _width(width) {
         // Create panels for each commit
-        RevWalk walk = RevWalkCreate(repo);
+        Git::RevWalk walk = Git::RevWalkCreate(repo);
         
         std::string revrangeStr = (_name+"~10.."+_name);
         
@@ -21,7 +22,7 @@ public:
         int offY = InsetY;
         git_oid oid;
         while (!git_revwalk_next(&oid, *walk)) {
-            Commit commit = CommitCreate(repo, oid);
+            Git::Commit commit = Git::CommitCreate(repo, oid);
             CommitPanel& p = _panels.emplace_back(commit, idx, width);
             p.setPosition({_offsetX, offY});
             offY += p.rect().size.y + 1;
@@ -33,8 +34,8 @@ public:
         // Draw branch name
         {
             Window::Attr attr = _win.setAttr(A_UNDERLINE);
-            const int offX = _offsetX + std::max(0, (_width-(int)_name.size())/2);
-            _win.drawText({offX, 0}, _name.c_str());
+            const int offX = _offsetX + std::max(0, (_width-(int)_displayName.size())/2);
+            _win.drawText({offX, 0}, _displayName.c_str());
         }
         
         for (CommitPanel& p : _panels) {
@@ -62,6 +63,7 @@ public:
 private:
     Window& _win;
     std::string _name;
+    std::string _displayName;
     int _offsetX = 0;
     int _width = 0;
     CommitPanelVector _panels;
