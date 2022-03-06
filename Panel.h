@@ -14,7 +14,6 @@ public:
     
     // Move assignment operator
     Panel& operator=(Panel&& x) {
-        printf("MOVE PANEL\n");
         Window::operator=(std::move(x));
         _s = std::move(x._s);
         x._s = {};

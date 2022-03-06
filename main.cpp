@@ -40,15 +40,6 @@ static std::tuple<BranchColumn*,CommitPanel*> _HitTest(const Point& p) {
     return {};
 }
 
-//static CommitPanelSet _Selection() {
-//    CommitPanelSet s;
-//    for (BranchColumn& col : _BranchColumns) {
-//        CommitPanelSet x = col.selection();
-//        s.insert(x.begin(), x.end());
-//    }
-//    return s;
-//}
-
 static void _TrackMouse(MEVENT mouseDownEvent) {
     struct {
         BranchColumn* column = nullptr;
@@ -71,15 +62,6 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
     const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
     Selection selectionOld = _Selection;
     
-//    for (BranchColumn& col : _BranchColumns) {
-//        CommitPanelSet panels = col.selection();
-//        if (!panels.empty()) {
-//            selectionOld.column = &col;
-//            selectionOld.panels = panels;
-//            break;
-//        }
-//    }
-    
     if (mouseDownCommit.panel) {
         // Clear the selection if the mouse-down is in a different column than the current selection,
         // or an unselected commit was clicked without holding shift
@@ -94,12 +76,6 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             _Selection.column = mouseDownCommit.column;
             _Selection.panels.insert(mouseDownCommit.panel);
         }
-        
-//        // Maintain current selection if the mouse-down is in the same column as the current selection, 
-//        if (mouseDownCommit.column==selectionOld.column && (shift || mouseDownCommit.wasSelected)) {
-//            selection = selectionOld;
-//        }
-//        selection.insert(mouseDownCommit.panel);
     }
     
     struct {
@@ -108,7 +84,6 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         bool underway = false;
     } drag;
     
-    #warning TODO: as an affordance, when holding shift, don't allow commits to be dragged
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
@@ -375,7 +350,6 @@ int main(int argc, const char* argv[]) {
         mouseinterval(0);
         for (int i=0;; i++) {
             _Draw();
-    //        NCursesPanel::redraw();
             int key = _RootWindow.getChar();
             if (key == KEY_MOUSE) {
                 MEVENT mouse = {};
