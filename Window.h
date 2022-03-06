@@ -112,19 +112,19 @@ public:
         ::mvwin(*this, p.y, p.x);
     }
     
-    void drawBorder() {
+    void drawBorder() const {
         ::box(*this, 0, 0);
     }
     
-    void drawLineHoriz(const Point& p, int len) {
+    void drawLineHoriz(const Point& p, int len) const {
         mvwhline(*this, p.y, p.x, 0, len);
     }
     
-    void drawLineVert(const Point& p, int len) {
+    void drawLineVert(const Point& p, int len) const {
         mvwvline(*this, p.y, p.x, 0, len);
     }
     
-    void drawRect(const Rect& rect) {
+    void drawRect(const Rect& rect) const {
         const int x1 = rect.point.x;
         const int y1 = rect.point.y;
         const int x2 = rect.point.x+rect.size.x;
@@ -139,19 +139,19 @@ public:
         mvwaddch(*this, y2, x2, ACS_LRCORNER);
     }
     
-    void drawText(const Point& p, const char* fmt, ...) {
+    void drawText(const Point& p, const char* fmt, ...) const {
         va_list args;
         va_start(args, fmt);
         drawText(p, fmt, args);
         va_end(args);
     }
 
-    void drawText(const Point& p, const char* fmt, va_list args) {
+    void drawText(const Point& p, const char* fmt, va_list args) const {
         ::wmove(*this, p.y, p.x);
         ::vw_printw(*this, fmt, args);
     }
     
-    void erase() {
+    void erase() const {
         ::werase(*this);
     }
     
@@ -172,7 +172,7 @@ public:
     
     operator WINDOW*() const { return _s.win; }
     
-    Attr setAttr(int attr) {
+    Attr setAttr(int attr) const {
         return Attr(*this, attr);
     }
     

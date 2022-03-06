@@ -1,6 +1,10 @@
 #pragma once
 #include "Git.h"
+#include "Panel.h"
 
+// CommitPanel: a Panel representing a particular git commit
+// CommitPanel contains an index indicating the index of the panel in the UI,
+// where the top is index 0
 class CommitPanel : public Panel {
 public:
     CommitPanel(Commit commit, size_t idx, int width) {
@@ -54,12 +58,11 @@ public:
 //            
 //            line.erase(it, line.end());
 //            
-//            // Replace the last 4 characters with an ellipses
+//            // Replace the line's final characters with an ellipses
 //            line.replace(it, it+strlen(ellipses), ellipses);
         }
         
         setSize({width, 3 + (int)_message.size()});
-//        setSize({width, 5 + (int)_message.size()});
         _drawNeeded = true;
     }
     
@@ -96,12 +99,6 @@ public:
         _drawNeeded = false;
     }
     
-//    CommitPanel copy() {
-//        CommitPanel p;
-//        p._s = _s;
-//        return p;
-//    }
-    
     void drawIfNeeded() {
         if (_drawNeeded) {
             draw();
@@ -112,8 +109,6 @@ public:
     const size_t idx() const { return _idx; }
     
 private:
-//    CommitPanel() {}
-    
     Commit _commit;
     size_t _idx = 0;
     std::string _oid;
@@ -123,3 +118,16 @@ private:
     bool _selected = false;
     bool _drawNeeded = false;
 };
+
+struct _CommitPanelCompare {
+    bool operator() (CommitPanel* a, CommitPanel* b) const {
+        return a->idx() < b->idx();
+    }
+};
+
+using CommitPanelSet = std::set<CommitPanel*, _CommitPanelCompare>;
+static bool Contains(const CommitPanelSet& s, CommitPanel* p) {
+    return s.find(p) != s.end();
+}
+
+using CommitPanelVector = std::vector<CommitPanel>;

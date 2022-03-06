@@ -15,77 +15,63 @@
 #include "xterm-256color.h"
 #include "RuntimeError.h"
 #include "CommitPanel.h"
-
-class BranchColumn {
-public:
-    BranchColumn(int offsetX, int width) : _width(width) {
-        
-    }
-    
-private:
-    int _offsetX = 0;
-    int _width = 0;
-    std::vector<CommitPanel> _panels;
-};
+#include "BranchColumn.h"
 
 static Window _RootWindow;
-static std::vector<CommitPanel> _CommitPanels;
+static std::vector<BranchColumn> _BranchColumns;
 
-static void _Redraw() {
-    for (CommitPanel& p : _CommitPanels) p.drawIfNeeded();
+static void _Draw() {
+    for (BranchColumn& col : _BranchColumns) col.draw();
     Window::Redraw();
 }
 
-static CommitPanel* _HitTest(const Point& p) {
-    for (CommitPanel& panel : _CommitPanels) {
-        if (panel.hitTest(p)) return &panel;
+static std::tuple<BranchColumn*,CommitPanel*> _HitTest(const Point& p) {
+    for (BranchColumn& col : _BranchColumns) {
+        if (CommitPanel* panel = col.hitTest(p)) {
+            return std::make_tuple(&col, panel);
+        }
     }
-    return nullptr;
+    return {};
 }
 
-struct _CommitPanelCompare {
-    bool operator() (CommitPanel* a, CommitPanel* b) const {
-        return a->idx() < b->idx();
+static CommitPanelSet _Selection() {
+    CommitPanelSet s;
+    for (BranchColumn& col : _BranchColumns) {
+        CommitPanelSet x = col.selection();
+        s.insert(x.begin(), x.end());
     }
-};
-
-using _CommitPanelSet = std::set<CommitPanel*, _CommitPanelCompare>;
-static bool _Contains(const _CommitPanelSet& s, CommitPanel* p) {
-    return s.find(p) != s.end();
+    return s;
 }
-
-//struct _CommitPanelSet : public std::set<CommitPanel*, _CommitPanelCompare> {
-//    bool contains(CommitPanel* p) const {
-//        return find(p) != end();
-//    }
-//};
 
 static void _TrackMouse(MEVENT mouseDownEvent) {
-    CommitPanel* mouseDownCommitPanel = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
-    Size mouseDownCommitPanelDelta;
-    bool mouseDownCommitPanelWasSelected = (mouseDownCommitPanel ? mouseDownCommitPanel->selected() : false);
-    if (mouseDownCommitPanel) {
-        const Rect panelRect = mouseDownCommitPanel->rect();
-        mouseDownCommitPanelDelta = {
+    struct {
+        BranchColumn* col = nullptr;
+        CommitPanel* panel = nullptr;
+        Size delta;
+        bool wasSelected = false;
+    } mouseDownCommit;
+    
+    std::tie(mouseDownCommit.col, mouseDownCommit.panel) = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
+    
+    if (mouseDownCommit.panel) {
+        const Rect panelRect = mouseDownCommit.panel->rect();
+        mouseDownCommit.delta = {
             panelRect.point.x-mouseDownEvent.x,
             panelRect.point.y-mouseDownEvent.y,
         };
+        mouseDownCommit.wasSelected = mouseDownCommit.panel->selected();
     }
     
-    _CommitPanelSet selectionOld;
-//    if (mouseDownCommitPanel) selectionOld.insert(mouseDownCommitPanel);
-    for (CommitPanel& p : _CommitPanels) {
-        if (p.selected()) selectionOld.insert(&p);
-    }
     
     const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
+    CommitPanelSet selectionOld = _Selection();
+    CommitPanelSet selection;
     
-    _CommitPanelSet selection;
-    if (mouseDownCommitPanel) {
-        if (shift || mouseDownCommitPanelWasSelected) {
+    if (mouseDownCommit.panel) {
+        if (shift || mouseDownCommit.wasSelected) {
             selection = selectionOld;
         }
-        selection.insert(mouseDownCommitPanel);
+        selection.insert(mouseDownCommit.panel);
     }
     
     struct {
@@ -105,13 +91,13 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         
         drag.underway = drag.underway || w>1 || h>1;
         
-        if (mouseDownCommitPanel) {
+        if (mouseDownCommit.panel) {
             if (drag.underway) {
                 assert(!selection.empty());
                 
                 const Point pos0 = {
-                    mouse.x+mouseDownCommitPanelDelta.x,
-                    mouse.y+mouseDownCommitPanelDelta.y,
+                    mouse.x+mouseDownCommit.delta.x,
+                    mouse.y+mouseDownCommit.delta.y,
                 };
                 
                 // Prepare drag state
@@ -154,39 +140,43 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 
                 {
                     // Find insertion position
-                    decltype(_CommitPanels)::iterator insertion = _CommitPanels.begin();
+                    CommitPanelVector& panels = mouseDownCommit.col->panels();
+                    CommitPanelVector::iterator insertion = panels.begin();
                     std::optional<int> leastDistance;
-                    for (auto it=_CommitPanels.begin(); it!=_CommitPanels.end(); it++) {
-                        const int midY = it->rect().point.y;
-                        int dist = std::abs(mouse.y-midY);
+                    const Rect lastRect = panels.back().rect();
+                    const int endY = lastRect.point.y + lastRect.size.y;
+                    for (auto it=panels.begin();; it++) {
+                        const int y = (it!=panels.end() ? it->rect().point.y : endY);
+                        int dist = std::abs(mouse.y-y);
                         if (!leastDistance || dist<leastDistance) {
                             insertion = it;
                             leastDistance = dist;
                         }
+                        if (it==panels.end()) break;
                     }
                     
                     // Adjust the insertion point so that it doesn't occur within a selection
-                    while (insertion!=_CommitPanels.begin() && _Contains(selection, &*std::prev(insertion))) {
+                    while (insertion!=panels.begin() && Contains(selection, &*std::prev(insertion))) {
                         insertion--;
                     }
                     
                     // Draw insertion point
                     {
-                        const Rect panelRect = insertion->rect();
+                        const int insertionY = (insertion!=panels.end() ? insertion->rect().point.y : endY+1);
                         Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
                         _RootWindow.erase();
-                        _RootWindow.drawLineHoriz({panelRect.point.x-3,panelRect.point.y-1}, panelRect.point.x+panelRect.size.x+6);
+                        _RootWindow.drawLineHoriz({lastRect.point.x-3,insertionY-1}, lastRect.point.x+lastRect.size.x+3);
                     }
                 }
             
             } else {
                 if (mouseUp) {
                     if (shift) {
-                        if (mouseDownCommitPanelWasSelected) {
-                            selection.erase(mouseDownCommitPanel);
+                        if (mouseDownCommit.wasSelected) {
+                            selection.erase(mouseDownCommit.panel);
                         }
                     } else {
-                        selection = {mouseDownCommitPanel};
+                        selection = {mouseDownCommit.panel};
                     }
                 }
             }
@@ -196,9 +186,11 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             
             // Update selection
             {
-                _CommitPanelSet selectionNew;
-                for (CommitPanel& p : _CommitPanels) {
-                    if (!Empty(Intersection(selectionRect, p.rect()))) selectionNew.insert(&p);
+                CommitPanelSet selectionNew;
+                for (BranchColumn& col : _BranchColumns) {
+                    for (CommitPanel& panel : col.panels()) {
+                        if (!Empty(Intersection(selectionRect, panel.rect()))) selectionNew.insert(&panel);
+                    }
                 }
                 
                 if (shift) {
@@ -224,11 +216,13 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         }
         
         // Update selection states of CommitPanels
-        for (CommitPanel& p : _CommitPanels) {
-            p.setSelected(selection.find(&p) != selection.end());
+        for (BranchColumn& col : _BranchColumns) {
+            for (CommitPanel& panel : col.panels()) {
+                panel.setSelected(Contains(selection, &panel));
+            }
         }
         
-        _Redraw();
+        _Draw();
         
         if (mouseUp) break;
         
@@ -298,29 +292,22 @@ int main(int argc, const char* argv[]) {
         
         // Create panels for each commit
         {
+            constexpr int InsetX = 3;
+            constexpr int ColumnWidth = 32;
+            constexpr int ColumnSpacing = 6;
             Repo repo = RepoOpen();
-            RevWalk walk = RevWalkCreate(repo);
             
-            int ir = git_revwalk_push_range(*walk, "HEAD~5..HEAD");
-            if (ir) throw RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
-            
-            constexpr int PanelWidth = 32;
-            size_t idx = 0;
-            int off = 0;
-            git_oid oid;
-            while (!git_revwalk_next(&oid, *walk)) {
-                Commit commit = CommitCreate(repo, oid);
-                CommitPanel& p = _CommitPanels.emplace_back(commit, idx, PanelWidth);
-                p.setPosition({4, off});
-                off += p.rect().size.y + 1;
-                idx++;
+            int OffsetX = InsetX;
+            for (auto name : {"HEAD", "PerfComparison"}) {
+                _BranchColumns.emplace_back(_RootWindow, repo, name, OffsetX, ColumnWidth);
+                OffsetX += ColumnWidth+ColumnSpacing;
             }
         }
         
         mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         mouseinterval(0);
         for (int i=0;; i++) {
-            _Redraw();
+            _Draw();
     //        NCursesPanel::redraw();
             int key = _RootWindow.getChar();
             if (key == KEY_MOUSE) {
