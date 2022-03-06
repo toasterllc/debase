@@ -20,7 +20,6 @@ inline std::string StrFromGitTime(git_time_t t) {
     localtime_r(&tmp, &tm);
     
     std::stringstream ss;
-//    ss << std::put_time(&tm, "%c");
     ss << std::put_time(&tm, "%a %b %d %R");
     return ss.str();
 }

@@ -3,8 +3,8 @@
 #include "Panel.h"
 
 // CommitPanel: a Panel representing a particular git commit
-// CommitPanel contains an index indicating the index of the panel in the UI,
-// where the top is index 0
+// CommitPanel contains an index indicating the index of the panel/commit within
+// its containing branch, where the top/first CommitPanel is index 0
 class CommitPanel : public Panel {
 public:
     CommitPanel(Commit commit, size_t idx, int width) {

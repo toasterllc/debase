@@ -291,7 +291,7 @@ int main(int argc, const char* argv[]) {
         
         _RootWindow = Window(::stdscr);
         
-        // Create panels for each commit
+        // Create a BranchColumn for each specified branch
         {
             constexpr int InsetX = 3;
             constexpr int ColumnWidth = 32;
