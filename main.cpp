@@ -95,6 +95,8 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         
         drag.underway = drag.underway || w>1 || h>1;
         
+        // Mouse-down within a commit without `shift` key:
+        // Handle commit selection and selection dragging
         if (!shift && mouseDownCommit.panel) {
             if (drag.underway) {
                 assert(!_Selection.panels.empty());
@@ -186,6 +188,8 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 }
             }
         
+        // Mouse-down outside of a commit:
+        // Handle selection rect drawing / selecting commits
         } else {
             const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
             
