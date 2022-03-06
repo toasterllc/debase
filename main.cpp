@@ -447,6 +447,15 @@ struct _CommitPanelCompare {
 };
 
 using _CommitPanelSet = std::set<CommitPanel*, _CommitPanelCompare>;
+static bool _Contains(const _CommitPanelSet& s, CommitPanel* p) {
+    return s.find(p) != s.end();
+}
+
+//struct _CommitPanelSet : public std::set<CommitPanel*, _CommitPanelCompare> {
+//    bool contains(CommitPanel* p) const {
+//        return find(p) != end();
+//    }
+//};
 
 static void _TrackMouse(MEVENT mouseDownEvent) {
     CommitPanel* mouseDownCommitPanel = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
@@ -552,10 +561,31 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 }
                 drag.titlePanel->orderFront();
                 
-                // Draw insertion point
                 {
-                    Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
-                    _RootWindow.drawLineHoriz({10,20}, 50);
+                    // Find insertion position
+                    decltype(_CommitPanels)::iterator insertion = _CommitPanels.begin();
+                    std::optional<int> leastDistance;
+                    for (auto it=_CommitPanels.begin(); it!=_CommitPanels.end(); it++) {
+                        const int midY = it->rect().point.y;
+                        int dist = std::abs(mouse.y-midY);
+                        if (!leastDistance || dist<leastDistance) {
+                            insertion = it;
+                            leastDistance = dist;
+                        }
+                    }
+                    
+                    // Adjust the insertion point so that it doesn't occur within a selection
+                    while (insertion!=_CommitPanels.begin() && _Contains(selection, &*std::prev(insertion))) {
+                        insertion--;
+                    }
+                    
+                    // Draw insertion point
+                    {
+                        const Rect panelRect = insertion->rect();
+                        Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
+                        _RootWindow.erase();
+                        _RootWindow.drawLineHoriz({panelRect.point.x-3,panelRect.point.y-1}, panelRect.point.x+panelRect.size.x+6);
+                    }
                 }
             
             } else {
