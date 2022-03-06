@@ -162,10 +162,11 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                     
                     // Draw insertion point
                     {
+                        constexpr int InsertionExtraWidth = 6;
                         const int insertionY = (insertion!=panels.end() ? insertion->rect().point.y : endY+1);
                         Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
                         _RootWindow.erase();
-                        _RootWindow.drawLineHoriz({lastRect.point.x-3,insertionY-1}, lastRect.point.x+lastRect.size.x+3);
+                        _RootWindow.drawLineHoriz({lastRect.point.x-InsertionExtraWidth/2,insertionY-1}, lastRect.size.x+InsertionExtraWidth);
                     }
                 }
             

@@ -121,7 +121,9 @@ private:
 
 struct _CommitPanelCompare {
     bool operator() (CommitPanel* a, CommitPanel* b) const {
-        return a->idx() < b->idx();
+        if (a->idx() != b->idx()) return a->idx() < b->idx();
+        // Indices are equal; perform pointer comparison
+        return a < b;
     }
 };
 
