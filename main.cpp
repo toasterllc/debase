@@ -55,6 +55,38 @@ public:
         ::doupdate();
     }
     
+    class Attr {
+    public:
+        Attr() {}
+        Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
+            wattron(*_s.win, _s.attr);
+        }
+        
+        Attr(const Attr& x) = delete;
+        
+        // Move constructor: use move assignment operator
+        Attr(Attr&& x) { *this = std::move(x); }
+        
+        // Move assignment operator
+        Attr& operator=(Attr&& x) {
+            _s = std::move(x._s);
+            x._s = {};
+            return *this;
+        }
+        
+        ~Attr() {
+            if (_s.win) {
+                wattroff(*_s.win, _s.attr);
+            }
+        }
+    
+    private:
+        struct {
+            const Window* win = nullptr;
+            int attr = 0;
+        } _s;
+    };
+    
     // Invalid
     Window() {}
     
@@ -62,17 +94,17 @@ public:
     static constexpr NewType New;
     
     Window(NewType) {
-        _state.window = ::newwin(0, 0, 0, 0);
-        assert(_state.window);
+        _s.win = ::newwin(0, 0, 0, 0);
+        assert(_s.win);
         
-        ::keypad(_state.window, true);
-        ::meta(_state.window, true);
+        ::keypad(_s.win, true);
+        ::meta(_s.win, true);
     }
     
     Window(WINDOW* window) {
-        _state.window = window;
-        ::keypad(_state.window, true);
-        ::meta(_state.window, true);
+        _s.win = window;
+        ::keypad(_s.win, true);
+        ::meta(_s.win, true);
     }
     
     // Move constructor: use move assignment operator
@@ -80,8 +112,8 @@ public:
     
     // Move assignment operator
     Window& operator=(Window&& x) {
-        _state = std::move(x._state);
-        x._state = {};
+        _s = std::move(x._s);
+        x._s = {};
         return *this;
     }
     
@@ -95,6 +127,14 @@ public:
     
     void drawBorder() {
         ::box(*this, 0, 0);
+    }
+    
+    void drawLineHoriz(const Point& p, int len) {
+        mvwhline(*this, p.y, p.x, 0, len);
+    }
+    
+    void drawLineVert(const Point& p, int len) {
+        mvwvline(*this, p.y, p.x, 0, len);
     }
     
     void drawRect(const Rect& rect) {
@@ -130,8 +170,8 @@ public:
     
     Rect rect() const {
         return Rect{
-            .point = { getbegx(_state.window), getbegy(_state.window) },
-            .size  = { getmaxx(_state.window), getmaxy(_state.window) },
+            .point = { getbegx(_s.win), getbegy(_s.win) },
+            .size  = { getmaxx(_s.win), getmaxy(_s.win) },
         };
     }
     
@@ -143,20 +183,23 @@ public:
         return ::wgetch(*this);
     }
     
-    operator WINDOW*() const { return _state.window; }
+    operator WINDOW*() const { return _s.win; }
+    
+    Attr setAttr(int attr) {
+        return Attr(*this, attr);
+    }
     
 private:
     struct {
-        const Window* parent = nullptr;
-        WINDOW* window = nullptr;
-    } _state = {};
+        WINDOW* win = nullptr;
+    } _s = {};
 };
 
 class Panel : public Window {
 public:
     Panel() : Window(Window::New) {
-        _state.panel = ::new_panel(*this);
-        assert(_state.panel);
+        _s.panel = ::new_panel(*this);
+        assert(_s.panel);
     }
     
     // Move constructor: use move assignment operator
@@ -166,8 +209,8 @@ public:
     Panel& operator=(Panel&& x) {
         printf("MOVE PANEL\n");
         Window::operator=(std::move(x));
-        _state = std::move(x._state);
-        x._state = {};
+        _s = std::move(x._s);
+        x._s = {};
         return *this;
     }
     
@@ -196,12 +239,12 @@ public:
         ::bottom_panel(*this);
     }
     
-    operator PANEL*() const { return _state.panel; }
+    operator PANEL*() const { return _s.panel; }
     
 private:
     struct {
         PANEL* panel = nullptr;
-    } _state = {};
+    } _s = {};
 };
 
 template <typename T, auto& T_Deleter>
@@ -216,6 +259,7 @@ using Repo = RefCounted<git_repository*, git_repository_free>;
 using RevWalk = RefCounted<git_revwalk*, git_revwalk_free>;
 
 struct Commit {
+    Commit() {}
     Commit(git_commit* c, size_t idx) : commit(c), idx(idx) {}
     operator git_commit* () const { return *commit; }
     RefCounted<git_commit*, git_commit_free> commit;
@@ -242,7 +286,8 @@ static std::string _StrFromGitTime(git_time_t t) {
 
 class CommitPanel : public Panel {
 public:
-    CommitPanel(Commit commit, int width) : _commit(commit) {
+    CommitPanel(Commit commit, int width) {
+        _commit = commit;
         _oid = _StrFromGitOid(*git_commit_id(_commit));
         _time = _StrFromGitTime(git_commit_time(_commit));
         _author = git_commit_author(_commit)->name;
@@ -317,18 +362,27 @@ public:
             i++;
         }
         
-        if (_selected) wattron(*this, COLOR_PAIR(1));
-        drawBorder();
-        drawText({2, 0}, " %s ", _oid.c_str());
-        if (_selected) wattroff(*this, COLOR_PAIR(1));
+        {
+            Window::Attr attr;
+            if (_selected) attr = setAttr(COLOR_PAIR(1));
+            drawBorder();
+            drawText({2, 0}, " %s ", _oid.c_str());
+        }
         drawText({12, 0}, " %s ", _time.c_str());
         
-        wattron(*this, COLOR_PAIR(2));
-        drawText({2, 1}, "%s", _author.c_str());
-        wattroff(*this, COLOR_PAIR(2));
+        {
+            auto attr = setAttr(COLOR_PAIR(2));
+            drawText({2, 1}, "%s", _author.c_str());
+        }
         
         _drawNeeded = false;
     }
+    
+//    CommitPanel copy() {
+//        CommitPanel p;
+//        p._s = _s;
+//        return p;
+//    }
     
     void drawIfNeeded() {
         if (_drawNeeded) {
@@ -339,6 +393,8 @@ public:
     const Commit& commit() const { return _commit; }
     
 private:
+//    CommitPanel() {}
+    
     Commit _commit;
     std::string _oid;
     std::string _time;
@@ -432,8 +488,12 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
 //        for (CommitPanel& p : _CommitPanels) p.setSelected(false);
 //    }
     
-    std::vector<Panel> dummyPanels;
-    bool dragged = false;
+    struct {
+        std::optional<CommitPanel> titlePanel;
+        std::vector<Panel> shadowPanels;
+        bool underway = false;
+    } drag;
+    
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
@@ -443,11 +503,10 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
         
-        const bool draggedPrev = dragged;
-        dragged = dragged || w>1 || h>1;
+        drag.underway = drag.underway || w>1 || h>1;
         
         if (mouseDownCommitPanel) {
-            if (dragged) {
+            if (drag.underway) {
                 assert(!selection.empty());
                 
                 const Point pos0 = {
@@ -455,34 +514,49 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                     mouse.y+mouseDownCommitPanelDelta.y,
                 };
                 
-                if (!draggedPrev) {
-                    dummyPanels.clear();
+                // Prepare drag state
+                if (!drag.titlePanel) {
+                    const CommitPanel& titlePanel = *(*selection.begin());
+                    Commit titleCommit = titlePanel.commit();
+                    drag.titlePanel.emplace(titlePanel.commit(), titlePanel.rect().size.x);
+                    drag.titlePanel->setSelected(true);
+                    drag.titlePanel->draw();
+                    
                     for (size_t i=0; i<selection.size()-1; i++) {
-                        Panel& dummy = dummyPanels.emplace_back();
-                        dummy.setSize((*selection.begin())->rect().size);
-                        dummy.drawBorder();
+                        Panel& shadow = drag.shadowPanels.emplace_back();
+                        shadow.setSize((*selection.begin())->rect().size);
+                        Window::Attr attr = shadow.setAttr(COLOR_PAIR(1));
+                        shadow.drawBorder();
                     }
                     
-                    // Hide all real CommitPanels, since we're showing the dummy panels instead
-                    for (auto it=std::next(selection.begin()); it!=selection.end(); it++) {
+                    // Hide the original CommitPanels while we're dragging
+                    for (auto it=selection.begin(); it!=selection.end(); it++) {
                         (*it)->setVisible(false);
                     }
                 }
                 
-                CommitPanel* first = *selection.begin();
-                first->setPosition(pos0);
+                // Position real panel
+                drag.titlePanel->setPosition(pos0);
                 
+                // Position shadowPanels
                 int off = 1;
-                for (Panel& p : dummyPanels) {
+                for (Panel& p : drag.shadowPanels) {
                     const Point pos = {pos0.x+off, pos0.y+off};
                     p.setPosition(pos);
                     off++;
                 }
                 
-                for (auto it=dummyPanels.rbegin(); it!=dummyPanels.rend(); it++) {
+                // Order all the dragged panels
+                for (auto it=drag.shadowPanels.rbegin(); it!=drag.shadowPanels.rend(); it++) {
                     it->orderFront();
                 }
-                first->orderFront();
+                drag.titlePanel->orderFront();
+                
+                // Draw insertion point
+                {
+                    Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
+                    _RootWindow.drawLineHoriz({10,20}, 50);
+                }
             
             } else {
                 if (mouseUp) {
@@ -522,7 +596,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             }
             
             // Redraw selection rect
-            if (dragged) {
+            if (drag.underway) {
                 _RootWindow.erase();
                 _RootWindow.drawRect(selectionRect);
             }
