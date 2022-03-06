@@ -17,8 +17,14 @@
 #include "CommitPanel.h"
 #include "BranchColumn.h"
 
+struct Selection {
+    BranchColumn* column = nullptr;
+    CommitPanelSet panels;
+};
+
 static Window _RootWindow;
 static std::vector<BranchColumn> _BranchColumns;
+static Selection _Selection;
 
 static void _Draw() {
     for (BranchColumn& col : _BranchColumns) col.draw();
@@ -34,24 +40,24 @@ static std::tuple<BranchColumn*,CommitPanel*> _HitTest(const Point& p) {
     return {};
 }
 
-static CommitPanelSet _Selection() {
-    CommitPanelSet s;
-    for (BranchColumn& col : _BranchColumns) {
-        CommitPanelSet x = col.selection();
-        s.insert(x.begin(), x.end());
-    }
-    return s;
-}
+//static CommitPanelSet _Selection() {
+//    CommitPanelSet s;
+//    for (BranchColumn& col : _BranchColumns) {
+//        CommitPanelSet x = col.selection();
+//        s.insert(x.begin(), x.end());
+//    }
+//    return s;
+//}
 
 static void _TrackMouse(MEVENT mouseDownEvent) {
     struct {
-        BranchColumn* col = nullptr;
+        BranchColumn* column = nullptr;
         CommitPanel* panel = nullptr;
         Size delta;
         bool wasSelected = false;
     } mouseDownCommit;
     
-    std::tie(mouseDownCommit.col, mouseDownCommit.panel) = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
+    std::tie(mouseDownCommit.column, mouseDownCommit.panel) = _HitTest({mouseDownEvent.x, mouseDownEvent.y});
     
     if (mouseDownCommit.panel) {
         const Rect panelRect = mouseDownCommit.panel->rect();
@@ -59,19 +65,41 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             panelRect.point.x-mouseDownEvent.x,
             panelRect.point.y-mouseDownEvent.y,
         };
-        mouseDownCommit.wasSelected = mouseDownCommit.panel->selected();
+        mouseDownCommit.wasSelected = Contains(_Selection.panels, mouseDownCommit.panel);
     }
     
-    
     const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
-    CommitPanelSet selectionOld = _Selection();
-    CommitPanelSet selection;
+    Selection selectionOld = _Selection;
+    
+//    for (BranchColumn& col : _BranchColumns) {
+//        CommitPanelSet panels = col.selection();
+//        if (!panels.empty()) {
+//            selectionOld.column = &col;
+//            selectionOld.panels = panels;
+//            break;
+//        }
+//    }
     
     if (mouseDownCommit.panel) {
-        if (shift || mouseDownCommit.wasSelected) {
-            selection = selectionOld;
+        // Clear the selection if the mouse-down is in a different column than the current selection,
+        // or an unselected commit was clicked without holding shift
+        if ((!_Selection.panels.empty() && mouseDownCommit.column!=_Selection.column) || (!mouseDownCommit.wasSelected && !shift)) {
+            _Selection = {
+                .column = mouseDownCommit.column,
+                .panels = {mouseDownCommit.panel},
+            };
+        
+        } else {
+            assert(_Selection.column == mouseDownCommit.column);
+//            _Selection.column = mouseDownCommit.column;
+            _Selection.panels.insert(mouseDownCommit.panel);
         }
-        selection.insert(mouseDownCommit.panel);
+        
+//        // Maintain current selection if the mouse-down is in the same column as the current selection, 
+//        if (mouseDownCommit.column==selectionOld.column && (shift || mouseDownCommit.wasSelected)) {
+//            selection = selectionOld;
+//        }
+//        selection.insert(mouseDownCommit.panel);
     }
     
     struct {
@@ -80,6 +108,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         bool underway = false;
     } drag;
     
+    #warning TODO: as an affordance, when holding shift, don't allow commits to be dragged
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
@@ -91,9 +120,9 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         
         drag.underway = drag.underway || w>1 || h>1;
         
-        if (mouseDownCommit.panel) {
+        if (!shift && mouseDownCommit.panel) {
             if (drag.underway) {
-                assert(!selection.empty());
+                assert(!_Selection.panels.empty());
                 
                 const Point pos0 = {
                     mouse.x+mouseDownCommit.delta.x,
@@ -102,21 +131,21 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 
                 // Prepare drag state
                 if (!drag.titlePanel) {
-                    const CommitPanel& titlePanel = *(*selection.begin());
+                    const CommitPanel& titlePanel = *(*_Selection.panels.begin());
                     Commit titleCommit = titlePanel.commit();
                     drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
                     drag.titlePanel->setSelected(true);
                     drag.titlePanel->draw();
                     
-                    for (size_t i=0; i<selection.size()-1; i++) {
+                    for (size_t i=0; i<_Selection.panels.size()-1; i++) {
                         Panel& shadow = drag.shadowPanels.emplace_back();
-                        shadow.setSize((*selection.begin())->rect().size);
+                        shadow.setSize((*_Selection.panels.begin())->rect().size);
                         Window::Attr attr = shadow.setAttr(COLOR_PAIR(1));
                         shadow.drawBorder();
                     }
                     
                     // Hide the original CommitPanels while we're dragging
-                    for (auto it=selection.begin(); it!=selection.end(); it++) {
+                    for (auto it=_Selection.panels.begin(); it!=_Selection.panels.end(); it++) {
                         (*it)->setVisible(false);
                     }
                 }
@@ -140,7 +169,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 
                 {
                     // Find insertion position
-                    CommitPanelVector& panels = mouseDownCommit.col->panels();
+                    CommitPanelVector& panels = mouseDownCommit.column->panels();
                     CommitPanelVector::iterator insertion = panels.begin();
                     std::optional<int> leastDistance;
                     const Rect lastRect = panels.back().rect();
@@ -156,7 +185,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                     }
                     
                     // Adjust the insertion point so that it doesn't occur within a selection
-                    while (insertion!=panels.begin() && Contains(selection, &*std::prev(insertion))) {
+                    while (insertion!=panels.begin() && Contains(_Selection.panels, &*std::prev(insertion))) {
                         insertion--;
                     }
                     
@@ -174,10 +203,10 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 if (mouseUp) {
                     if (shift) {
                         if (mouseDownCommit.wasSelected) {
-                            selection.erase(mouseDownCommit.panel);
+                            _Selection.panels.erase(mouseDownCommit.panel);
                         }
                     } else {
-                        selection = {mouseDownCommit.panel};
+                        _Selection.panels = {mouseDownCommit.panel};
                     }
                 }
             }
@@ -187,25 +216,46 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             
             // Update selection
             {
-                CommitPanelSet selectionNew;
-                for (BranchColumn& col : _BranchColumns) {
-                    for (CommitPanel& panel : col.panels()) {
-                        if (!Empty(Intersection(selectionRect, panel.rect()))) selectionNew.insert(&panel);
+                Selection selectionNew;
+                BranchColumn* preferredColumn = (!selectionOld.panels.empty() ? selectionOld.column : nullptr);
+                
+                if (preferredColumn) {
+                    for (CommitPanel& panel : preferredColumn->panels()) {
+                        if (!Empty(Intersection(selectionRect, panel.rect()))) {
+                            selectionNew.column = preferredColumn;
+                            selectionNew.panels.insert(&panel);
+                        }
                     }
                 }
                 
-                if (shift) {
-                    selection = {};
+                if (selectionNew.panels.empty()) {
+                    for (BranchColumn& col : _BranchColumns) {
+                        for (CommitPanel& panel : col.panels()) {
+                            if (!Empty(Intersection(selectionRect, panel.rect()))) {
+                                selectionNew.column = &col;
+                                selectionNew.panels.insert(&panel);
+                            }
+                        }
+                        if (!selectionNew.panels.empty()) break;
+                    }
+                }
+                
+                if (shift && (selectionNew.panels.empty() || selectionOld.column==selectionNew.column)) {
+                    Selection selection = {
+                        .column = selectionOld.column,
+                    };
                     
-                    // selection = selectionOld XOR selectionNew
+                    // selection = _Selection XOR selectionNew
                     std::set_symmetric_difference(
-                        selectionOld.begin(), selectionOld.end(),
-                        selectionNew.begin(), selectionNew.end(),
-                        std::inserter(selection, selection.begin())
+                        selectionOld.panels.begin(), selectionOld.panels.end(),
+                        selectionNew.panels.begin(), selectionNew.panels.end(),
+                        std::inserter(selection.panels, selection.panels.begin())
                     );
+                    
+                    _Selection = selection;
                 
                 } else {
-                    selection = selectionNew;
+                    _Selection = selectionNew;
                 }
             }
             
@@ -219,7 +269,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         // Update selection states of CommitPanels
         for (BranchColumn& col : _BranchColumns) {
             for (CommitPanel& panel : col.panels()) {
-                panel.setSelected(Contains(selection, &panel));
+                panel.setSelected(Contains(_Selection.panels, &panel));
             }
         }
         
@@ -237,7 +287,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         }
     }
     
-    for (CommitPanel* p : selection) {
+    for (CommitPanel* p : _Selection.panels) {
         p->setVisible(true);
     }
     
