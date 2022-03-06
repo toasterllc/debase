@@ -146,33 +146,46 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 
                 {
                     // Find insertion position
-                    CommitPanelVector& panels = mouseDownCommit.column->panels();
-                    CommitPanelVector::iterator insertion = panels.begin();
-                    std::optional<int> leastDistance;
-                    const Rect lastRect = panels.back().rect();
-                    const int endY = lastRect.point.y + lastRect.size.y;
-                    for (auto it=panels.begin();; it++) {
-                        const int y = (it!=panels.end() ? it->rect().point.y : endY);
-                        int dist = std::abs(mouse.y-y);
-                        if (!leastDistance || dist<leastDistance) {
-                            insertion = it;
-                            leastDistance = dist;
+                    BranchColumn* insertCol = nullptr;
+                    CommitPanelVector::iterator insertIter;
+                    std::optional<int> insertLeastDistance;
+                    
+                    for (BranchColumn& col : _BranchColumns) {
+                        CommitPanelVector& panels = col.panels();
+                        const Rect lastRect = panels.back().rect();
+                        const int midX = lastRect.point.x + lastRect.size.x/2;
+                        const int endY = lastRect.point.y + lastRect.size.y;
+                        
+                        for (auto it=panels.begin();; it++) {
+                            const int x = (it!=panels.end() ? it->rect().point.x+it->rect().size.x/2 : midX);
+                            const int y = (it!=panels.end() ? it->rect().point.y : endY);
+                            int dist = (mouse.x-x)*(mouse.x-x)+(mouse.y-y)*(mouse.y-y);
+                            
+                            if (!insertLeastDistance || dist<insertLeastDistance) {
+                                insertCol = &col;
+                                insertIter = it;
+                                insertLeastDistance = dist;
+                            }
+                            if (it==panels.end()) break;
                         }
-                        if (it==panels.end()) break;
                     }
                     
-                    // Adjust the insertion point so that it doesn't occur within a selection
-                    while (insertion!=panels.begin() && Contains(_Selection.panels, &*std::prev(insertion))) {
-                        insertion--;
+                    // Adjust the insert point so that it doesn't occur within a selection
+                    assert(insertCol);
+                    CommitPanelVector& insertColPanels = insertCol->panels();
+                    while (insertIter!=insertColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertIter))) {
+                        insertIter--;
                     }
                     
                     // Draw insertion point
                     {
                         constexpr int InsertionExtraWidth = 6;
-                        const int insertionY = (insertion!=panels.end() ? insertion->rect().point.y : endY+1);
+                        const Rect lastRect = insertColPanels.back().rect();
+                        const int endY = lastRect.point.y + lastRect.size.y;
+                        const int insertY = (insertIter!=insertColPanels.end() ? insertIter->rect().point.y : endY+1);
                         Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
                         _RootWindow.erase();
-                        _RootWindow.drawLineHoriz({lastRect.point.x-InsertionExtraWidth/2,insertionY-1}, lastRect.size.x+InsertionExtraWidth);
+                        _RootWindow.drawLineHoriz({lastRect.point.x-InsertionExtraWidth/2,insertY-1}, lastRect.size.x+InsertionExtraWidth);
                     }
                 }
             
@@ -191,7 +204,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
         // Mouse-down outside of a commit:
         // Handle selection rect drawing / selecting commits
         } else {
-            const Rect selectionRect = {{x,y},{std::max(1,w),std::max(1,h)}};
+            const Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
             
             // Update selection
             {
