@@ -90,8 +90,8 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
             };
         
         } else {
-            assert(_Selection.column == mouseDownCommit.column);
-//            _Selection.column = mouseDownCommit.column;
+            assert(_Selection.panels.empty() || (_Selection.column==mouseDownCommit.column));
+            _Selection.column = mouseDownCommit.column;
             _Selection.panels.insert(mouseDownCommit.panel);
         }
         
@@ -300,6 +300,14 @@ int main(int argc, const char* argv[]) {
 //    while (!a);
     
     try {
+        // Handle args
+        std::vector<std::string> branches;
+        {
+            for (int i=1; i<argc; i++) {
+                branches.push_back(argv[i]);
+            }
+        }
+        
         // Init ncurses
         {
             // Default linux installs may not contain the /usr/share/terminfo database,
@@ -349,8 +357,9 @@ int main(int argc, const char* argv[]) {
             Repo repo = RepoOpen();
             
             int OffsetX = InsetX;
-            for (auto name : {"HEAD", "PerfComparison"}) {
-                _BranchColumns.emplace_back(_RootWindow, repo, name, OffsetX, ColumnWidth);
+            branches.insert(branches.begin(), "HEAD");
+            for (const std::string& branch : branches) {
+                _BranchColumns.emplace_back(_RootWindow, repo, branch, OffsetX, ColumnWidth);
                 OffsetX += ColumnWidth+ColumnSpacing;
             }
         }
