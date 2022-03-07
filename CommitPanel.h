@@ -1,6 +1,7 @@
 #pragma once
 #include "Git.h"
 #include "Panel.h"
+#include "Color.h"
 
 // CommitPanel: a Panel representing a particular git commit
 // CommitPanel contains an index indicating the index of the panel/commit within
@@ -85,14 +86,14 @@ public:
         
         {
             Window::Attr attr;
-            if (_selected) attr = setAttr(COLOR_PAIR(1));
+            if (_selected) attr = setAttr(COLOR_PAIR(Color::Selection));
             drawBorder();
             drawText({2, 0}, " %s ", _oid.c_str());
         }
         drawText({12, 0}, " %s ", _time.c_str());
         
         {
-            auto attr = setAttr(COLOR_PAIR(2));
+            auto attr = setAttr(COLOR_PAIR(Color::SubtitleText));
             drawText({2, 1}, "%s", _author.c_str());
         }
         

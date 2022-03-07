@@ -109,15 +109,17 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 // Prepare drag state
                 if (!drag.titlePanel) {
                     const CommitPanel& titlePanel = *(*_Selection.panels.begin());
+                    // Draw title panel
                     Git::Commit titleCommit = titlePanel.commit();
                     drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
                     drag.titlePanel->setSelected(true);
                     drag.titlePanel->draw();
                     
+                    // Draw shadow panels
                     for (size_t i=0; i<_Selection.panels.size()-1; i++) {
                         Panel& shadow = drag.shadowPanels.emplace_back();
                         shadow.setSize((*_Selection.panels.begin())->rect().size);
-                        Window::Attr attr = shadow.setAttr(COLOR_PAIR(1));
+                        Window::Attr attr = shadow.setAttr(COLOR_PAIR(Color::Selection));
                         shadow.drawBorder();
                     }
                     
@@ -183,7 +185,7 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                         const Rect lastRect = insertColPanels.back().rect();
                         const int endY = lastRect.point.y + lastRect.size.y;
                         const int insertY = (insertIter!=insertColPanels.end() ? insertIter->rect().point.y : endY+1);
-                        Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(1));
+                        Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(Color::Selection));
                         _RootWindow.erase();
                         _RootWindow.drawLineHoriz({lastRect.point.x-InsertionExtraWidth/2,insertY-1}, lastRect.size.x+InsertionExtraWidth);
                     }
@@ -321,11 +323,12 @@ int main(int argc, const char* argv[]) {
             ::start_color();
             
             #warning TODO: cleanup color logic
-            #warning TODO: fix colors aren't restored when exiting
-            ::init_pair(1, COLOR_RED, -1);
+            #warning TODO: fix: colors aren't restored when exiting
+            // Redefine colors
+            ::init_pair(Color::Selection, COLOR_RED, -1);
             
             ::init_color(COLOR_GREEN, 300, 300, 300);
-            ::init_pair(2, COLOR_GREEN, -1);
+            ::init_pair(Color::SubtitleText, COLOR_GREEN, -1);
             
             // Hide cursor
             ::curs_set(0);
