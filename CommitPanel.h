@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "Git.h"
 #include "Panel.h"
 #include "Color.h"
@@ -67,11 +68,9 @@ public:
         _drawNeeded = true;
     }
     
-    bool selected() const { return _selected; }
-    
-    void setSelected(bool x) {
-        if (_selected == x) return;
-        _selected = x;
+    void setOutlineColor(std::optional<Color> x) {
+        if (_outlineColor == x) return;
+        _outlineColor = x;
         _drawNeeded = true;
     }
     
@@ -86,14 +85,14 @@ public:
         
         {
             Window::Attr attr;
-            if (_selected) attr = setAttr(COLOR_PAIR(Color::Selection));
+            if (_outlineColor) attr = setAttr(COLOR_PAIR(*_outlineColor));
             drawBorder();
             drawText({2, 0}, " %s ", _oid.c_str());
         }
         drawText({12, 0}, " %s ", _time.c_str());
         
         {
-            auto attr = setAttr(COLOR_PAIR(Color::SubtitleText));
+            auto attr = setAttr(COLOR_PAIR(Colors::SubtitleText));
             drawText({2, 1}, "%s", _author.c_str());
         }
         
@@ -116,7 +115,7 @@ private:
     std::string _time;
     std::string _author;
     std::vector<std::string> _message;
-    bool _selected = false;
+    std::optional<Color> _outlineColor;
     bool _drawNeeded = false;
 };
 
@@ -133,4 +132,5 @@ static bool Contains(const CommitPanelSet& s, CommitPanel* p) {
     return s.find(p) != s.end();
 }
 
-using CommitPanelVector = std::vector<CommitPanel>;
+using CommitPanelVec = std::vector<CommitPanel>;
+using CommitPanelVecIter = CommitPanelVec::iterator;

@@ -15,6 +15,7 @@
 #include "xterm-256color.h"
 #include "RuntimeError.h"
 #include "CommitPanel.h"
+#include "ShadowPanel.h"
 #include "BranchColumn.h"
 
 struct Selection {
@@ -38,6 +39,40 @@ static std::tuple<BranchColumn*,CommitPanel*> _HitTest(const Point& p) {
         }
     }
     return {};
+}
+
+static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertPoint(const Point& p) {
+    BranchColumn* insertCol = nullptr;
+    CommitPanelVec::iterator insertIter;
+    std::optional<int> insertLeastDistance;
+    for (BranchColumn& col : _BranchColumns) {
+        CommitPanelVec& panels = col.panels();
+        const Rect lastRect = panels.back().rect();
+        const int midX = lastRect.point.x + lastRect.size.x/2;
+        const int endY = lastRect.point.y + lastRect.size.y;
+        
+        for (auto it=panels.begin();; it++) {
+            const int x = (it!=panels.end() ? it->rect().point.x+it->rect().size.x/2 : midX);
+            const int y = (it!=panels.end() ? it->rect().point.y : endY);
+            int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
+            
+            if (!insertLeastDistance || dist<insertLeastDistance) {
+                insertCol = &col;
+                insertIter = it;
+                insertLeastDistance = dist;
+            }
+            if (it==panels.end()) break;
+        }
+    }
+    
+    // Adjust the insert point so that it doesn't occur within a selection
+    assert(insertCol);
+    CommitPanelVec& insertColPanels = insertCol->panels();
+    while (insertIter!=insertColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertIter))) {
+        insertIter--;
+    }
+    
+    return std::make_tuple(insertCol, insertIter);
 }
 
 static void _TrackMouse(MEVENT mouseDownEvent) {
@@ -80,56 +115,58 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
     
     struct {
         std::optional<CommitPanel> titlePanel;
-        std::vector<Panel> shadowPanels;
-        bool underway = false;
+        std::vector<ShadowPanel> shadowPanels;
     } drag;
     
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
+        const bool option = mouse.bstate & BUTTON_ALT;
         
         const int x = std::min(mouseDownEvent.x, mouse.x);
         const int y = std::min(mouseDownEvent.y, mouse.y);
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
         
-        drag.underway = drag.underway || w>1 || h>1;
-        
         // Mouse-down within a commit without `shift` key:
         // Handle commit selection and selection dragging
         if (!shift && mouseDownCommit.panel) {
-            if (drag.underway) {
-                assert(!_Selection.panels.empty());
+            assert(!_Selection.panels.empty());
+            const bool startDrag = w>1 || h>1;
+            
+            if (!drag.titlePanel && startDrag) {
+                const CommitPanel& titlePanel = *(*_Selection.panels.begin());
+                // Draw title panel
+                Git::Commit titleCommit = titlePanel.commit();
+                drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
+                drag.titlePanel->setOutlineColor(Colors::SelectionMove);
+                drag.titlePanel->draw();
                 
+                // Create shadow panels
+                Size shadowSize = (*_Selection.panels.begin())->rect().size;
+                for (size_t i=0; i<_Selection.panels.size()-1; i++) {
+                    drag.shadowPanels.emplace_back(shadowSize);
+                }
+                
+                // Hide the original CommitPanels while we're dragging
+                for (auto it=_Selection.panels.begin(); it!=_Selection.panels.end(); it++) {
+                    (*it)->setVisible(false);
+                }
+                
+                // Order all the title panel and shadow panels
+                for (auto it=drag.shadowPanels.rbegin(); it!=drag.shadowPanels.rend(); it++) {
+                    it->orderFront();
+                }
+                drag.titlePanel->orderFront();
+            }
+            
+            if (drag.titlePanel) {
                 const Point pos0 = {
                     mouse.x+mouseDownCommit.delta.x,
                     mouse.y+mouseDownCommit.delta.y,
                 };
                 
-                // Prepare drag state
-                if (!drag.titlePanel) {
-                    const CommitPanel& titlePanel = *(*_Selection.panels.begin());
-                    // Draw title panel
-                    Git::Commit titleCommit = titlePanel.commit();
-                    drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
-                    drag.titlePanel->setSelected(true);
-                    drag.titlePanel->draw();
-                    
-                    // Draw shadow panels
-                    for (size_t i=0; i<_Selection.panels.size()-1; i++) {
-                        Panel& shadow = drag.shadowPanels.emplace_back();
-                        shadow.setSize((*_Selection.panels.begin())->rect().size);
-                        Window::Attr attr = shadow.setAttr(COLOR_PAIR(Color::Selection));
-                        shadow.drawBorder();
-                    }
-                    
-                    // Hide the original CommitPanels while we're dragging
-                    for (auto it=_Selection.panels.begin(); it!=_Selection.panels.end(); it++) {
-                        (*it)->setVisible(false);
-                    }
-                }
-                
-                // Position real panel
+                // Position title panel
                 drag.titlePanel->setPosition(pos0);
                 
                 // Position shadowPanels
@@ -140,55 +177,19 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                     off++;
                 }
                 
-                // Order all the dragged panels
-                for (auto it=drag.shadowPanels.rbegin(); it!=drag.shadowPanels.rend(); it++) {
-                    it->orderFront();
-                }
-                drag.titlePanel->orderFront();
+                // Find insertion position
+                auto [insertCol, insertIter] = _FindInsertPoint({mouse.x, mouse.y});
                 
+                // Draw insertion marker
                 {
-                    // Find insertion position
-                    BranchColumn* insertCol = nullptr;
-                    CommitPanelVector::iterator insertIter;
-                    std::optional<int> insertLeastDistance;
-                    
-                    for (BranchColumn& col : _BranchColumns) {
-                        CommitPanelVector& panels = col.panels();
-                        const Rect lastRect = panels.back().rect();
-                        const int midX = lastRect.point.x + lastRect.size.x/2;
-                        const int endY = lastRect.point.y + lastRect.size.y;
-                        
-                        for (auto it=panels.begin();; it++) {
-                            const int x = (it!=panels.end() ? it->rect().point.x+it->rect().size.x/2 : midX);
-                            const int y = (it!=panels.end() ? it->rect().point.y : endY);
-                            int dist = (mouse.x-x)*(mouse.x-x)+(mouse.y-y)*(mouse.y-y);
-                            
-                            if (!insertLeastDistance || dist<insertLeastDistance) {
-                                insertCol = &col;
-                                insertIter = it;
-                                insertLeastDistance = dist;
-                            }
-                            if (it==panels.end()) break;
-                        }
-                    }
-                    
-                    // Adjust the insert point so that it doesn't occur within a selection
-                    assert(insertCol);
-                    CommitPanelVector& insertColPanels = insertCol->panels();
-                    while (insertIter!=insertColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertIter))) {
-                        insertIter--;
-                    }
-                    
-                    // Draw insertion point
-                    {
-                        constexpr int InsertionExtraWidth = 6;
-                        const Rect lastRect = insertColPanels.back().rect();
-                        const int endY = lastRect.point.y + lastRect.size.y;
-                        const int insertY = (insertIter!=insertColPanels.end() ? insertIter->rect().point.y : endY+1);
-                        Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(Color::Selection));
-                        _RootWindow.erase();
-                        _RootWindow.drawLineHoriz({lastRect.point.x-InsertionExtraWidth/2,insertY-1}, lastRect.size.x+InsertionExtraWidth);
-                    }
+                    constexpr int InsertExtraWidth = 6;
+                    CommitPanelVec& insertColPanels = insertCol->panels();
+                    const Rect lastRect = insertColPanels.back().rect();
+                    const int endY = lastRect.point.y + lastRect.size.y;
+                    const int insertY = (insertIter!=insertColPanels.end() ? insertIter->rect().point.y : endY+1);
+                    Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(Colors::SelectionMove));
+                    _RootWindow.erase();
+                    _RootWindow.drawLineHoriz({lastRect.point.x-InsertExtraWidth/2,insertY-1}, lastRect.size.x+InsertExtraWidth);
                 }
             
             } else {
@@ -199,6 +200,27 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                         }
                     } else {
                         _Selection.panels = {mouseDownCommit.panel};
+                    }
+                }
+            }
+            
+            if (drag.titlePanel) {
+                drag.titlePanel->setOutlineColor(option ? Colors::SelectionCopy : Colors::SelectionMove);
+                
+                for (ShadowPanel& panel : drag.shadowPanels) {
+                    panel.setOutlineColor(option ? Colors::SelectionCopy : Colors::SelectionMove);
+                }
+            }
+            
+            // Update selection states of CommitPanels
+            for (BranchColumn& col : _BranchColumns) {
+                for (CommitPanel& panel : col.panels()) {
+                    bool selected = Contains(_Selection.panels, &panel);
+                    if (selected) {
+                        if (option) panel.setOutlineColor(Colors::SelectionCopy);
+                        else        panel.setOutlineColor(Colors::SelectionMove);
+                    } else {
+                        panel.setOutlineColor(std::nullopt);
                     }
                 }
             }
@@ -258,12 +280,20 @@ static void _TrackMouse(MEVENT mouseDownEvent) {
                 _RootWindow.erase();
                 _RootWindow.drawRect(selectionRect);
             }
-        }
-        
-        // Update selection states of CommitPanels
-        for (BranchColumn& col : _BranchColumns) {
-            for (CommitPanel& panel : col.panels()) {
-                panel.setSelected(Contains(_Selection.panels, &panel));
+            
+//            for (ShadowPanel& panel : drag.shadowPanels) {
+////                bool selected = Contains(_Selection.panels, &panel);
+////                if (selected) panel.setOutlineColor(Colors::SelectionMove);
+////                else          panel.setOutlineColor(std::nullopt);
+//            }
+            
+            // Update selection states of CommitPanels
+            for (BranchColumn& col : _BranchColumns) {
+                for (CommitPanel& panel : col.panels()) {
+                    bool selected = Contains(_Selection.panels, &panel);
+                    if (selected) panel.setOutlineColor(Colors::SelectionMove);
+                    else          panel.setOutlineColor(std::nullopt);
+                }
             }
         }
         
@@ -324,11 +354,22 @@ int main(int argc, const char* argv[]) {
             
             #warning TODO: cleanup color logic
             #warning TODO: fix: colors aren't restored when exiting
-            // Redefine colors
-            ::init_pair(Color::Selection, COLOR_RED, -1);
-            
-            ::init_color(COLOR_GREEN, 300, 300, 300);
-            ::init_pair(Color::SubtitleText, COLOR_GREEN, -1);
+            // Redefine colors to our custom palette
+            {
+                int c = 1;
+                
+                ::init_color(c, 0, 0, 1000);
+                ::init_pair(Colors::SelectionMove, c, -1);
+                c++;
+                
+                ::init_color(c, 0, 1000, 0);
+                ::init_pair(Colors::SelectionCopy, c, -1);
+                c++;
+                
+                ::init_color(c, 300, 300, 300);
+                ::init_pair(Colors::SubtitleText, c, -1);
+                c++;
+            }
             
             // Hide cursor
             ::curs_set(0);

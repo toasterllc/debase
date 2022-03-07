@@ -50,15 +50,7 @@ public:
         return nullptr;
     }
     
-    CommitPanelSet selection() {
-        CommitPanelSet s;
-        for (CommitPanel& p : _panels) {
-            if (p.selected()) s.insert(&p);
-        }
-        return s;
-    }
-    
-    CommitPanelVector& panels() { return _panels; }
+    CommitPanelVec& panels() { return _panels; }
     
 private:
     Window& _win;
@@ -66,5 +58,5 @@ private:
     std::string _displayName;
     int _offsetX = 0;
     int _width = 0;
-    CommitPanelVector _panels;
+    CommitPanelVec _panels;
 };
