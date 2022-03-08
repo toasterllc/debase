@@ -34,9 +34,7 @@ static struct {
 } _Drag;
 
 static Selection _Selection;
-
-static std::optional<BorderedPanel> _SelectionRect;
-
+static std::optional<Rect> _SelectionRect;
 static std::optional<Rect> _InsertionMarker;
 
 static void _Draw() {
@@ -50,10 +48,6 @@ static void _Draw() {
             for (BorderedPanel& panel : _Drag.shadowPanels) {
                 panel.setBorderColor(selectionColor);
             }
-        }
-        
-        if (_SelectionRect) {
-            _SelectionRect->setBorderColor(selectionColor);
         }
         
         for (BranchColumn& col : _BranchColumns) {
@@ -85,7 +79,8 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            _SelectionRect->drawIfNeeded();
+            Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(selectionColor));
+            _RootWindow.drawRect(*_SelectionRect);
         }
         
         if (_InsertionMarker) {
@@ -310,9 +305,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         const Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
         
         if (_SelectionRect || dragStart) {
-            _SelectionRect.emplace(selectionRect.size);
-            _SelectionRect->setPosition(selectionRect.point);
-            _SelectionRect->orderFront();
+            _SelectionRect = selectionRect;
         }
         
         // Update selection
@@ -354,7 +347,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     
     // Reset state
     {
-        _SelectionRect = {};
+        _SelectionRect = std::nullopt;
     }
 }
 
