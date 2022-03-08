@@ -113,9 +113,9 @@ static std::optional<_HitTestResult> _HitTest(const Point& p) {
     return std::nullopt;
 }
 
-static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertPoint(const Point& p) {
-    BranchColumn* insertCol = nullptr;
-    CommitPanelVec::iterator insertIter;
+static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
+    BranchColumn* insertionCol = nullptr;
+    CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
     for (BranchColumn& col : _BranchColumns) {
         CommitPanelVec& panels = col.panels();
@@ -129,8 +129,8 @@ static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertPoint(const Point
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
             
             if (!insertLeastDistance || dist<insertLeastDistance) {
-                insertCol = &col;
-                insertIter = it;
+                insertionCol = &col;
+                insertionIter = it;
                 insertLeastDistance = dist;
             }
             if (it==panels.end()) break;
@@ -138,13 +138,13 @@ static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertPoint(const Point
     }
     
     // Adjust the insert point so that it doesn't occur within a selection
-    assert(insertCol);
-    CommitPanelVec& insertColPanels = insertCol->panels();
-    while (insertIter!=insertColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertIter))) {
-        insertIter--;
+    assert(insertionCol);
+    CommitPanelVec& insertionColPanels = insertionCol->panels();
+    while (insertionIter!=insertionColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertionIter))) {
+        insertionIter--;
     }
     
-    return std::make_tuple(insertCol, insertIter);
+    return std::make_tuple(insertionCol, insertionIter);
 }
 
 static bool _WaitForMouseEvent(MEVENT& mouse) {
@@ -251,19 +251,19 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
             }
             
             // Find insertion position
-            auto [insertCol, insertIter] = _FindInsertPoint({mouse.x, mouse.y});
+            auto [insertionCol, insertionIter] = _FindInsertionPoint({mouse.x, mouse.y});
             
             // Update insertion marker
             {
-                constexpr int InsertExtraWidth = 6;
-                CommitPanelVec& insertColPanels = insertCol->panels();
-                const Rect lastRect = insertColPanels.back().rect();
+                constexpr int InsertionExtraWidth = 6;
+                CommitPanelVec& insertionColPanels = insertionCol->panels();
+                const Rect lastRect = insertionColPanels.back().rect();
                 const int endY = lastRect.point.y + lastRect.size.y;
-                const int insertY = (insertIter!=insertColPanels.end() ? insertIter->rect().point.y : endY+1);
+                const int insertY = (insertionIter!=insertionColPanels.end() ? insertionIter->rect().point.y : endY+1);
                 
                 _InsertionMarker = {
-                    .point = {lastRect.point.x-InsertExtraWidth/2, insertY-1},
-                    .size = {lastRect.size.x+InsertExtraWidth, 0},
+                    .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
+                    .size = {lastRect.size.x+InsertionExtraWidth, 0},
                 };
             }
         }
