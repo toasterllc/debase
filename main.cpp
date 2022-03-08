@@ -351,124 +351,249 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
+
+
 int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
 //    while (!a);
     
-    try {
-        // Handle args
-        std::vector<std::string> branches;
-        {
-            for (int i=1; i<argc; i++) {
-                branches.push_back(argv[i]);
-            }
-        }
-        
-        // Init ncurses
-        {
-            // Default linux installs may not contain the /usr/share/terminfo database,
-            // so provide a fallback terminfo that usually works.
-            nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
-            
-            // Override the terminfo 'kmous' and 'XM' properties
-            //   kmous = the prefix used to detect/parse mouse events
-            //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-            //           event mode; 1003=report mouse-moved events in addition to clicks)
-            setenv("TERM_KMOUS", "\x1b[<", true);
-            setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
-            
-            ::initscr();
-            ::noecho();
-            ::cbreak();
-            
-            ::use_default_colors();
-            ::start_color();
-            
-            #warning TODO: cleanup color logic
-            #warning TODO: fix: colors aren't restored when exiting
-            // Redefine colors to our custom palette
-            {
-                int c = 1;
-                
-                ::init_color(c, 0, 0, 1000);
-                ::init_pair(Colors::SelectionMove, c, -1);
-                c++;
-                
-                ::init_color(c, 0, 1000, 0);
-                ::init_pair(Colors::SelectionCopy, c, -1);
-                c++;
-                
-                ::init_color(c, 300, 300, 300);
-                ::init_pair(Colors::SubtitleText, c, -1);
-                c++;
-            }
-            
-            // Hide cursor
-            ::curs_set(0);
-        }
-        
-        // Init libgit2
-        {
-            git_libgit2_init();
-        }
-        
-//        volatile bool a = false;
-//        while (!a);
-        
-        _RootWindow = Window(::stdscr);
-        
-        // Create a BranchColumn for each specified branch
-        {
-            constexpr int InsetX = 3;
-            constexpr int ColumnWidth = 32;
-            constexpr int ColumnSpacing = 6;
-            Git::Repo repo = Git::RepoOpen(".");
-            
-            int OffsetX = InsetX;
-            branches.insert(branches.begin(), "HEAD");
-            for (const std::string& branch : branches) {
-                std::string displayName = branch;
-                if (branch == "HEAD") {
-                    std::string currentBranchName = Git::CurrentBranchName(repo);
-                    if (!currentBranchName.empty()) {
-                        displayName = currentBranchName + " (HEAD)";
-                    }
-                }
-                _BranchColumns.emplace_back(_RootWindow, repo, branch, displayName, OffsetX, ColumnWidth);
-                OffsetX += ColumnWidth+ColumnSpacing;
-            }
-        }
-        
-        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-        mouseinterval(0);
-        for (int i=0;; i++) {
-            _Draw();
-            int key = _RootWindow.getChar();
-            if (key == KEY_MOUSE) {
-                MEVENT mouse = {};
-                int ir = ::getmouse(&mouse);
-                if (ir != OK) continue;
-                if (mouse.bstate & BUTTON1_PRESSED) {
-                    const bool shift = (mouse.bstate & BUTTON_SHIFT);
-                    const auto hitTest = _HitTest({mouse.x, mouse.y});
-                    if (hitTest && !shift) {
-                        // Mouse down inside of a CommitPanel, without shift key
-                        _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
-                    } else {
-                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _TrackMouseOutsideCommitPanel(mouse);
-                    }
-                }
-            
-            } else if (key == KEY_RESIZE) {
-                throw std::runtime_error("hello");
-            }
-        }
+    int ir = 0;
+    git_libgit2_init();
     
-    } catch (const std::exception& e) {
-        ::endwin();
-        fprintf(stderr, "Error: %s\n", e.what());
-    }
+    Git::Repo repo = Git::RepoOpen("/Users/dave/Desktop/CursesTest");
     
+    git_object* cherryObj = nullptr;
+    ir = git_revparse_single(&cherryObj, *repo, "36cc93379d04bbee75b8236fa62c47e4320e2b73");
+    assert(!ir);
+    git_commit* cherry = nullptr;
+    ir = git_object_peel((git_object**)&cherry, cherryObj, GIT_OBJECT_COMMIT);
+    assert(!ir);
+    git_tree* cherryTree = nullptr;
+    ir = git_commit_tree(&cherryTree, cherry);
+    assert(!ir);
+    
+    git_reference* basket = nullptr;
+    ir = git_branch_lookup(&basket, *repo, "basket", GIT_BRANCH_LOCAL);
+    assert(!ir);
+    git_tree* basketTree = nullptr;
+    ir = git_reference_peel((git_object**)&basketTree, basket, GIT_OBJECT_TREE);
+    assert(!ir);
+    
+    const git_oid* cherryId = git_object_id(cherryObj);
+    const git_oid* basketTargetId = git_reference_target(basket);
+    assert(basketTargetId);
+    git_oid baseId;
+    ir = git_merge_base(&baseId, *repo, cherryId, basketTargetId);
+    assert(!ir);
+    git_commit* basketTargetCommit = nullptr;
+    ir = git_commit_lookup(&basketTargetCommit, *repo, basketTargetId);
+    assert(!ir);
+    
+    git_commit* cherryParent = nullptr;
+    ir = git_commit_parent(&cherryParent, cherry, 0);
+    assert(!ir);
+    
+    git_tree* base_tree = nullptr;
+    ir = git_commit_tree(&base_tree, cherryParent);
+    assert(!ir);
+    
+    git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+    git_index* index = nullptr;
+    ir = git_merge_trees(&index, *repo, base_tree, basketTree, cherryTree, &mergeOpts);
+    assert(!ir);
+    
+    git_oid tree_id;
+//    ir = git_index_write_tree(&tree_id, index); // fails: "Failed to write tree. the index file is not backed up by an existing repository"
+    ir = git_index_write_tree_to(&tree_id, index, *repo);
+    assert(!ir);
+    
+    git_tree* newTree = nullptr;
+    ir = git_tree_lookup(&newTree, *repo, &tree_id);
+    assert(!ir);
+    
+    git_oid newCommitId;
+    ir = git_commit_create(
+        &newCommitId,
+        *repo,
+        nullptr,
+        git_commit_author(cherry),
+        git_commit_committer(cherry),
+        git_commit_message_encoding(cherry),
+        git_commit_message(cherry),
+        newTree,
+        1,
+        (const git_commit**)&basketTargetCommit
+    );
+    
+    printf("New commit: %s\n", git_oid_tostr_s(&newCommitId));
+    
+//      base_tree = cherry.parents[0].tree
+    
+//      repo = pygit2.Repository('/path/to/repo')
+//
+//      cherry = repo.revparse_single('9e044d03c')
+//      basket = repo.branches.get('basket')
+//
+//      base      = repo.merge_base(cherry.id, basket.target)
+//      base_tree = cherry.parents[0].tree
+//
+//      index = repo.merge_trees(base_tree, basket, cherry)
+//      tree_id = index.write_tree(repo)
+//
+//      author    = cherry.author
+//      committer = pygit2.Signature('Archimedes', 'archy@jpl-classics.org')
+//
+//      repo.create_commit(basket.name, author, committer, cherry.message,
+//                       tree_id, [basket.target])
+//    del None # outdated, prevent from accidentally using it
+    
+    
+    
+    
+    
+    
+//    git_branch_create
+//    git_cherrypick(<#git_repository *repo#>, <#git_commit *commit#>, <#const git_cherrypick_options *cherrypick_options#>)
+    
+//    git_rebase* rebase = nullptr;
+//    git_rebase_options rebaseOpts = GIT_REBASE_OPTIONS_INIT;
+////    int ir = git_rebase_open(&rebase, *repo, &rebaseOpts);
+////    printf("%s\n", git_error_last()->message);
+////    assert(!ir);
+//    
+//    git_reference* onto_branch = nullptr;
+//    git_annotated_commit* onto = nullptr;
+//    ir = git_branch_lookup(&onto_branch, *repo, "new", GIT_BRANCH_LOCAL);
+//    assert(!ir);
+//    ir = git_annotated_commit_from_ref(&onto, *repo, onto_branch);
+//    assert(!ir);
+//    
+//    ir = git_rebase_init(&rebase, *repo, nullptr /* current branch */, nullptr /* upstream */, onto /* branch to rebase onto */, &rebaseOpts);
+//    printf("%s\n", git_error_last()->message);
+//    assert(!ir);
+//    
+//    git_rebase_operation* operation = nullptr;
+//    while (git_rebase_next(&operation, rebase) != GIT_ITEROVER) {
+//        
+//    }
+//    
+//    ir = git_rebase_finish(rebase, nullptr);
+//    assert(!ir);
+    
+//    try {
+//        // Handle args
+//        std::vector<std::string> branches;
+//        {
+//            for (int i=1; i<argc; i++) {
+//                branches.push_back(argv[i]);
+//            }
+//        }
+//        
+//        // Init ncurses
+//        {
+//            // Default linux installs may not contain the /usr/share/terminfo database,
+//            // so provide a fallback terminfo that usually works.
+//            nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
+//            
+//            // Override the terminfo 'kmous' and 'XM' properties
+//            //   kmous = the prefix used to detect/parse mouse events
+//            //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+//            //           event mode; 1003=report mouse-moved events in addition to clicks)
+//            setenv("TERM_KMOUS", "\x1b[<", true);
+//            setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+//            
+//            ::initscr();
+//            ::noecho();
+//            ::cbreak();
+//            
+//            ::use_default_colors();
+//            ::start_color();
+//            
+//            #warning TODO: cleanup color logic
+//            #warning TODO: fix: colors aren't restored when exiting
+//            // Redefine colors to our custom palette
+//            {
+//                int c = 1;
+//                
+//                ::init_color(c, 0, 0, 1000);
+//                ::init_pair(Colors::SelectionMove, c, -1);
+//                c++;
+//                
+//                ::init_color(c, 0, 1000, 0);
+//                ::init_pair(Colors::SelectionCopy, c, -1);
+//                c++;
+//                
+//                ::init_color(c, 300, 300, 300);
+//                ::init_pair(Colors::SubtitleText, c, -1);
+//                c++;
+//            }
+//            
+//            // Hide cursor
+//            ::curs_set(0);
+//        }
+//        
+//        // Init libgit2
+//        {
+//            git_libgit2_init();
+//        }
+//        
+////        volatile bool a = false;
+////        while (!a);
+//        
+//        _RootWindow = Window(::stdscr);
+//        
+//        // Create a BranchColumn for each specified branch
+//        {
+//            constexpr int InsetX = 3;
+//            constexpr int ColumnWidth = 32;
+//            constexpr int ColumnSpacing = 6;
+//            Git::Repo repo = Git::RepoOpen(".");
+//            
+//            int OffsetX = InsetX;
+//            branches.insert(branches.begin(), "HEAD");
+//            for (const std::string& branch : branches) {
+//                std::string displayName = branch;
+//                if (branch == "HEAD") {
+//                    std::string currentBranchName = Git::CurrentBranchName(repo);
+//                    if (!currentBranchName.empty()) {
+//                        displayName = currentBranchName + " (HEAD)";
+//                    }
+//                }
+//                _BranchColumns.emplace_back(_RootWindow, repo, branch, displayName, OffsetX, ColumnWidth);
+//                OffsetX += ColumnWidth+ColumnSpacing;
+//            }
+//        }
+//        
+//        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+//        mouseinterval(0);
+//        for (int i=0;; i++) {
+//            _Draw();
+//            int key = _RootWindow.getChar();
+//            if (key == KEY_MOUSE) {
+//                MEVENT mouse = {};
+//                int ir = ::getmouse(&mouse);
+//                if (ir != OK) continue;
+//                if (mouse.bstate & BUTTON1_PRESSED) {
+//                    const bool shift = (mouse.bstate & BUTTON_SHIFT);
+//                    const auto hitTest = _HitTest({mouse.x, mouse.y});
+//                    if (hitTest && !shift) {
+//                        // Mouse down inside of a CommitPanel, without shift key
+//                        _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
+//                    } else {
+//                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+//                        _TrackMouseOutsideCommitPanel(mouse);
+//                    }
+//                }
+//            
+//            } else if (key == KEY_RESIZE) {
+//                throw std::runtime_error("hello");
+//            }
+//        }
+//    
+//    } catch (const std::exception& e) {
+//        ::endwin();
+//        fprintf(stderr, "Error: %s\n", e.what());
+//    }
+//    
     return 0;
 }
