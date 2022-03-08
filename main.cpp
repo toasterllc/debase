@@ -86,6 +86,13 @@ static void _Draw() {
         if (_InsertionMarker) {
             Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(selectionColor));
             _RootWindow.drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
+            
+            const char* text = (_Drag.copy ? " Copy " : " Move ");
+            const Point point = {
+                _InsertionMarker->point.x + (_InsertionMarker->size.x - (int)strlen(text))/2,
+                _InsertionMarker->point.y
+            };
+            _RootWindow.drawText(point, "%s", text);
         }
         
         Window::Redraw();
@@ -179,6 +186,8 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         _Selection.panels.insert(&mouseDownPanel);
     }
     
+//    std::optional<Panel> plusPanel;
+    
     MEVENT mouse = mouseDownEvent;
     for (;;) {
         assert(!_Selection.panels.empty());
@@ -188,6 +197,12 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         const bool dragStart = w>1 || h>1;
         
         if (!_Drag.titlePanel && dragStart) {
+//            plusPanel = Panel();
+//            plusPanel->setSize({5, 3});
+//            plusPanel->setPosition({90,30});
+//            plusPanel->drawBorder();
+//            plusPanel->drawText({2,1}, "+");
+            
             const CommitPanel& titlePanel = *(*_Selection.panels.begin());
             Git::Commit titleCommit = titlePanel.commit();
             _Drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
