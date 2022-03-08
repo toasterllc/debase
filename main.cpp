@@ -186,9 +186,9 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         _Selection.panels.insert(&mouseDownPanel);
     }
     
-//    std::optional<Panel> plusPanel;
-    
     MEVENT mouse = mouseDownEvent;
+    BranchColumn* insertionCol = nullptr;
+    CommitPanelVecIter insertionIter;
     for (;;) {
         assert(!_Selection.panels.empty());
         
@@ -197,12 +197,6 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         const bool dragStart = w>1 || h>1;
         
         if (!_Drag.titlePanel && dragStart) {
-//            plusPanel = Panel();
-//            plusPanel->setSize({5, 3});
-//            plusPanel->setPosition({90,30});
-//            plusPanel->drawBorder();
-//            plusPanel->drawText({2,1}, "+");
-            
             const CommitPanel& titlePanel = *(*_Selection.panels.begin());
             Git::Commit titleCommit = titlePanel.commit();
             _Drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
@@ -251,7 +245,7 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
             }
             
             // Find insertion position
-            auto [insertionCol, insertionIter] = _FindInsertionPoint({mouse.x, mouse.y});
+            std::tie(insertionCol, insertionIter) = _FindInsertionPoint({mouse.x, mouse.y});
             
             // Update insertion marker
             {
@@ -271,6 +265,8 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         _Draw();
         if (!_WaitForMouseEvent(mouse)) break;
     }
+    
+    
     
     // Reset state
     {
@@ -361,8 +357,6 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         _SelectionRect = std::nullopt;
     }
 }
-
-
 
 int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
