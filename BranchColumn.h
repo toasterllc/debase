@@ -20,9 +20,9 @@ public:
         constexpr int InsetY = 2;
         size_t idx = 0;
         int offY = InsetY;
-        git_oid oid;
-        while (!git_revwalk_next(&oid, *walk)) {
-            Git::Commit commit = Git::CommitCreate(repo, oid);
+        git_oid commitId;
+        while (!git_revwalk_next(&commitId, *walk)) {
+            Git::Commit commit = Git::CommitLookup(repo, commitId);
             CommitPanel& p = _panels.emplace_back(commit, idx, width);
             p.setPosition({_offsetX, offY});
             offY += p.rect().size.y + 1;

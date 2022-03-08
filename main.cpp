@@ -357,75 +357,107 @@ int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
 //    while (!a);
     
-    int ir = 0;
+    GIT_EXTERN(int) git_branch_upstream(
+        git_reference **out,
+        const git_reference *branch);
+    
+    GIT_EXTERN(int) git_branch_set_upstream(
+        git_reference *branch,
+        const char *branch_name);
+    
+    
+    
+    
     git_libgit2_init();
     
     Git::Repo repo = Git::RepoOpen("/Users/dave/Desktop/CursesTest");
     
-    git_object* cherryObj = nullptr;
-    ir = git_revparse_single(&cherryObj, *repo, "36cc93379d04bbee75b8236fa62c47e4320e2b73");
-    assert(!ir);
-    git_commit* cherry = nullptr;
-    ir = git_object_peel((git_object**)&cherry, cherryObj, GIT_OBJECT_COMMIT);
-    assert(!ir);
-    git_tree* cherryTree = nullptr;
-    ir = git_commit_tree(&cherryTree, cherry);
-    assert(!ir);
+//    Git::Commit dst = Git::CommitLookup(repo, "c3f7353beadcc65ea6dcd38a445848802ea700db");
+//    Git::Commit src = Git::CommitLookup(repo, "102036bf1a25bbd06d48945c536297a3a80ad3bc");
+//    Git::Commit newCommit = Git::CherryPick(repo, dst, src);
     
-    git_reference* basket = nullptr;
-    ir = git_branch_lookup(&basket, *repo, "basket", GIT_BRANCH_LOCAL);
-    assert(!ir);
-    git_tree* basketTree = nullptr;
-    ir = git_reference_peel((git_object**)&basketTree, basket, GIT_OBJECT_TREE);
-    assert(!ir);
     
-    const git_oid* cherryId = git_object_id(cherryObj);
-    const git_oid* basketTargetId = git_reference_target(basket);
-    assert(basketTargetId);
-    git_oid baseId;
-    ir = git_merge_base(&baseId, *repo, cherryId, basketTargetId);
-    assert(!ir);
-    git_commit* basketTargetCommit = nullptr;
-    ir = git_commit_lookup(&basketTargetCommit, *repo, basketTargetId);
-    assert(!ir);
+    Git::Branch branch = Git::BranchLookup(repo, "PerfComparison2");
+    Git::Branch upstream = Git::BranchUpstreamGet(branch);
     
-    git_commit* cherryParent = nullptr;
-    ir = git_commit_parent(&cherryParent, cherry, 0);
-    assert(!ir);
+    Git::Commit someCommit = Git::CommitLookup(repo, "86ec5a0a5929c7bcd79ba773ba56cd355ff83000");
+    Git::Branch newBranch = Git::BranchCreate(repo, "PerfComparison-New", someCommit);
+    Git::BranchUpstreamSet(newBranch, upstream);
     
-    git_tree* base_tree = nullptr;
-    ir = git_commit_tree(&base_tree, cherryParent);
-    assert(!ir);
+//    Git::Branch branch = Git::BranchLookup(repo, "PerfComparison");
+//    Git::Branch branch = Git::BranchLookup(repo, "basket");
+//    Git::Branch upstream = Git::UpstreamGet(branch);
+//    git_branch_upstream_name(<#git_buf *out#>, <#git_repository *repo#>, <#const char *refname#>)
+//    
+//    git_branch_create(<#git_reference **out#>, <#git_repository *repo#>, <#const char *branch_name#>, <#const git_commit *target#>, <#int force#>)
     
-    git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
-    git_index* index = nullptr;
-    ir = git_merge_trees(&index, *repo, base_tree, basketTree, cherryTree, &mergeOpts);
-    assert(!ir);
     
-    git_oid tree_id;
-//    ir = git_index_write_tree(&tree_id, index); // fails: "Failed to write tree. the index file is not backed up by an existing repository"
-    ir = git_index_write_tree_to(&tree_id, index, *repo);
-    assert(!ir);
+//    git_branch_upstream(<#git_reference **out#>, <#const git_reference *branch#>)
     
-    git_tree* newTree = nullptr;
-    ir = git_tree_lookup(&newTree, *repo, &tree_id);
-    assert(!ir);
-    
-    git_oid newCommitId;
-    ir = git_commit_create(
-        &newCommitId,
-        *repo,
-        nullptr,
-        git_commit_author(cherry),
-        git_commit_committer(cherry),
-        git_commit_message_encoding(cherry),
-        git_commit_message(cherry),
-        newTree,
-        1,
-        (const git_commit**)&basketTargetCommit
-    );
-    
-    printf("New commit: %s\n", git_oid_tostr_s(&newCommitId));
+//    git_object* cherryObj = nullptr;
+//    ir = git_revparse_single(&cherryObj, *repo, "36cc93379d04bbee75b8236fa62c47e4320e2b73");
+//    assert(!ir);
+//    git_commit* cherry = nullptr;
+//    ir = git_object_peel((git_object**)&cherry, cherryObj, GIT_OBJECT_COMMIT);
+//    assert(!ir);
+//    git_tree* cherryTree = nullptr;
+//    ir = git_commit_tree(&cherryTree, cherry);
+//    assert(!ir);
+//    
+//    git_reference* basket = nullptr;
+//    ir = git_branch_lookup(&basket, *repo, "basket", GIT_BRANCH_LOCAL);
+//    assert(!ir);
+//    git_tree* basketTree = nullptr;
+//    ir = git_reference_peel((git_object**)&basketTree, basket, GIT_OBJECT_TREE);
+//    assert(!ir);
+//    
+//    const git_oid* cherryId = git_object_id(cherryObj);
+//    const git_oid* basketTargetId = git_reference_target(basket);
+//    assert(basketTargetId);
+//    git_oid baseId;
+//    ir = git_merge_base(&baseId, *repo, cherryId, basketTargetId);
+//    assert(!ir);
+//    git_commit* basketTargetCommit = nullptr;
+//    ir = git_commit_lookup(&basketTargetCommit, *repo, basketTargetId);
+//    assert(!ir);
+//    
+//    git_commit* cherryParent = nullptr;
+//    ir = git_commit_parent(&cherryParent, cherry, 0);
+//    assert(!ir);
+//    
+//    git_tree* base_tree = nullptr;
+//    ir = git_commit_tree(&base_tree, cherryParent);
+//    assert(!ir);
+//    
+//    git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+//    git_index* index = nullptr;
+//    ir = git_merge_trees(&index, *repo, base_tree, basketTree, cherryTree, &mergeOpts);
+//    assert(!ir);
+//    
+//    git_oid tree_id;
+////    ir = git_index_write_tree(&tree_id, index); // fails: "Failed to write tree. the index file is not backed up by an existing repository"
+//    ir = git_index_write_tree_to(&tree_id, index, *repo);
+//    assert(!ir);
+//    
+//    git_tree* newTree = nullptr;
+//    ir = git_tree_lookup(&newTree, *repo, &tree_id);
+//    assert(!ir);
+//    
+//    git_oid newCommitId;
+//    ir = git_commit_create(
+//        &newCommitId,
+//        *repo,
+//        nullptr,
+//        git_commit_author(cherry),
+//        git_commit_committer(cherry),
+//        git_commit_message_encoding(cherry),
+//        git_commit_message(cherry),
+//        newTree,
+//        1,
+//        (const git_commit**)&basketTargetCommit
+//    );
+//    
+//    printf("New commit: %s\n", git_oid_tostr_s(&newCommitId));
     
 //      base_tree = cherry.parents[0].tree
     
