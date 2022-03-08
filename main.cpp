@@ -21,7 +21,6 @@
 struct Selection {
     BranchColumn* column = nullptr;
     CommitPanelSet panels;
-    bool copy = false;
 };
 
 static Window _RootWindow;
@@ -31,6 +30,7 @@ static std::vector<BranchColumn> _BranchColumns;
 struct {
     std::optional<CommitPanel> titlePanel;
     std::vector<ShadowPanel> shadowPanels;
+    bool copy = false;
 } _Drag;
 
 static Selection _Selection;
@@ -38,7 +38,7 @@ static std::optional<Rect> _SelectionRect;
 static std::optional<Rect> _InsertionMarker;
 
 static void _Draw() {
-    const Color selectionColor = (_Selection.copy ? Colors::SelectionCopy : Colors::SelectionMove);
+    const Color selectionColor = (_Drag.copy ? Colors::SelectionCopy : Colors::SelectionMove);
     
     // Update selection colors
     {
@@ -154,7 +154,9 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
     }
 }
 
-static void _TrackMouse(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
+// _TrackMouseInsideCommitPanel
+// Handles dragging a set of CommitPanels
+static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
     const Rect mouseDownPanelRect = mouseDownPanel.rect();
     const Size delta = {
         mouseDownPanelRect.point.x-mouseDownEvent.x,
@@ -209,20 +211,28 @@ static void _TrackMouse(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, Co
         }
         
         if (_Drag.titlePanel) {
-            const Point pos0 = {
-                mouse.x+delta.x,
-                mouse.y+delta.y,
-            };
+            // Update _Drag.copy depending on whether the option key is held
+            {
+                const bool copy = (mouse.bstate & BUTTON_ALT);
+                _Drag.copy = copy;
+            }
             
-            // Position title panel
-            _Drag.titlePanel->setPosition(pos0);
-            
-            // Position shadowPanels
-            int off = 1;
-            for (Panel& p : _Drag.shadowPanels) {
-                const Point pos = {pos0.x+off, pos0.y+off};
-                p.setPosition(pos);
-                off++;
+            // Position title panel / shadow panels
+            {
+                const Point pos0 = {
+                    mouse.x+delta.x,
+                    mouse.y+delta.y,
+                };
+                
+                _Drag.titlePanel->setPosition(pos0);
+                
+                // Position shadowPanels
+                int off = 1;
+                for (Panel& p : _Drag.shadowPanels) {
+                    const Point pos = {pos0.x+off, pos0.y+off};
+                    p.setPosition(pos);
+                    off++;
+                }
             }
             
             // Find insertion position
@@ -250,7 +260,6 @@ static void _TrackMouse(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, Co
     // Reset state
     {
         _Drag = {};
-        _Selection.copy = false;
         _InsertionMarker = std::nullopt;
         
         // Make every commit visible again
@@ -262,7 +271,9 @@ static void _TrackMouse(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, Co
     }
 }
 
-static void _TrackMouse(MEVENT mouseDownEvent) {
+// _TrackMouseOutsideCommitPanel
+// Handles updating the selection rectangle / selection state
+static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     auto selectionOld = _Selection;
     MEVENT mouse = mouseDownEvent;
     for (;;) {
@@ -440,10 +451,10 @@ int main(int argc, const char* argv[]) {
                     const auto hitTest = _HitTest({mouse.x, mouse.y});
                     if (hitTest && !shift) {
                         // Mouse down inside of a CommitPanel, without shift key
-                        _TrackMouse(mouse, hitTest->column, hitTest->panel);
+                        _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
                     } else {
-                        // Mouse down outside of a CommitPanel, or mouse down with shift key
-                        _TrackMouse(mouse);
+                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                        _TrackMouseOutsideCommitPanel(mouse);
                     }
                 }
             

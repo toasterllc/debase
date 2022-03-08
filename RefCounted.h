@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 template <typename T, auto& T_Deleter>
 struct RefCounted : public std::shared_ptr<T> {
