@@ -266,7 +266,13 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         if (!_WaitForMouseEvent(mouse)) break;
     }
     
-    
+//    BranchColumn* insertionCol = nullptr;
+//    CommitPanelVecIter insertionIter;
+//    
+//    // Move or copy _Selection to `insertionIter` within `insertionCol`
+//    if () {
+//        
+//    }
     
     // Reset state
     {
@@ -305,27 +311,14 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Update selection
         {
             Selection selectionNew;
-            BranchColumn* preferredColumn = (!selectionOld.panels.empty() ? selectionOld.column : nullptr);
-            
-            if (preferredColumn) {
-                for (CommitPanel& panel : preferredColumn->panels()) {
+            for (BranchColumn& col : _BranchColumns) {
+                for (CommitPanel& panel : col.panels()) {
                     if (!Empty(Intersection(selectionRect, panel.rect()))) {
-                        selectionNew.column = preferredColumn;
+                        selectionNew.column = &col;
                         selectionNew.panels.insert(&panel);
                     }
                 }
-            }
-            
-            if (selectionNew.panels.empty()) {
-                for (BranchColumn& col : _BranchColumns) {
-                    for (CommitPanel& panel : col.panels()) {
-                        if (!Empty(Intersection(selectionRect, panel.rect()))) {
-                            selectionNew.column = &col;
-                            selectionNew.panels.insert(&panel);
-                        }
-                    }
-                    if (!selectionNew.panels.empty()) break;
-                }
+                if (!selectionNew.panels.empty()) break;
             }
             
             const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
