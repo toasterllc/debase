@@ -3,22 +3,22 @@
 #include "Panel.h"
 #include "Color.h"
 
-class ShadowPanel : public Panel {
+class BorderedPanel : public Panel {
 public:
-    ShadowPanel(const Size& size) {
+    BorderedPanel(const Size& size) {
         setSize(size);
         _drawNeeded = true;
     }
     
-    void setOutlineColor(std::optional<Color> x) {
-        if (_outlineColor == x) return;
-        _outlineColor = x;
+    void setBorderColor(std::optional<Color> x) {
+        if (_borderColor == x) return;
+        _borderColor = x;
         _drawNeeded = true;
     }
     
     void draw() {
         Window::Attr attr;
-        if (_outlineColor) attr = setAttr(COLOR_PAIR(*_outlineColor));
+        if (_borderColor) attr = setAttr(COLOR_PAIR(*_borderColor));
         drawBorder();
         _drawNeeded = false;
     }
@@ -30,6 +30,6 @@ public:
     }
     
 private:
-    std::optional<Color> _outlineColor;
+    std::optional<Color> _borderColor;
     bool _drawNeeded = false;
 };

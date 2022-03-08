@@ -15,7 +15,7 @@
 #include "xterm-256color.h"
 #include "RuntimeError.h"
 #include "CommitPanel.h"
-#include "ShadowPanel.h"
+#include "BorderedPanel.h"
 #include "BranchColumn.h"
 
 struct Selection {
@@ -27,14 +27,19 @@ static Window _RootWindow;
 
 static std::vector<BranchColumn> _BranchColumns;
 
-struct {
+static struct {
     std::optional<CommitPanel> titlePanel;
-    std::vector<ShadowPanel> shadowPanels;
+    std::vector<BorderedPanel> shadowPanels;
     bool copy = false;
 } _Drag;
 
 static Selection _Selection;
-static std::optional<Rect> _SelectionRect;
+
+static struct {
+    std::optional<Panel> panel;
+    Rect rect;
+} _SelectionRect;
+
 static std::optional<Rect> _InsertionMarker;
 
 static void _Draw() {
@@ -43,10 +48,10 @@ static void _Draw() {
     // Update selection colors
     {
         if (_Drag.titlePanel) {
-            _Drag.titlePanel->setOutlineColor(selectionColor);
+            _Drag.titlePanel->setBorderColor(selectionColor);
             
-            for (ShadowPanel& panel : _Drag.shadowPanels) {
-                panel.setOutlineColor(selectionColor);
+            for (BorderedPanel& panel : _Drag.shadowPanels) {
+                panel.setBorderColor(selectionColor);
             }
         }
         
@@ -54,9 +59,9 @@ static void _Draw() {
             for (CommitPanel& panel : col.panels()) {
                 bool selected = Contains(_Selection.panels, &panel);
                 if (selected) {
-                    panel.setOutlineColor(selectionColor);
+                    panel.setBorderColor(selectionColor);
                 } else {
-                    panel.setOutlineColor(std::nullopt);
+                    panel.setBorderColor(std::nullopt);
                 }
             }
         }
@@ -74,13 +79,14 @@ static void _Draw() {
             _Drag.titlePanel->drawIfNeeded();
         }
         
-        for (ShadowPanel& panel : _Drag.shadowPanels) {
+        for (BorderedPanel& panel : _Drag.shadowPanels) {
             panel.drawIfNeeded();
         }
         
-        if (_SelectionRect) {
-            Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(selectionColor));
-            _RootWindow.drawRect(*_SelectionRect);
+        if (_SelectionRect.panel) {
+            _SelectionRect.panel->erase();
+            Window::Attr attr = _SelectionRect.panel->setAttr(COLOR_PAIR(selectionColor));
+            _SelectionRect.panel->drawRect(_SelectionRect.rect);
         }
         
         if (_InsertionMarker) {
@@ -304,12 +310,16 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Handle selection rect drawing / selecting commits
         const Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
         
-        if (_SelectionRect || dragStart) {
-            _SelectionRect = selectionRect;
+        if (!_SelectionRect.panel && dragStart) {
+            _SelectionRect.panel.emplace();
+            _SelectionRect.panel->setSize(_RootWindow.rect().size);
+            _SelectionRect.panel->orderFront();
         }
         
         // Update selection
         {
+            _SelectionRect.rect = selectionRect;
+            
             Selection selectionNew;
             for (BranchColumn& col : _BranchColumns) {
                 for (CommitPanel& panel : col.panels()) {
@@ -347,7 +357,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     
     // Reset state
     {
-        _SelectionRect = std::nullopt;
+        _SelectionRect = {};
     }
 }
 
