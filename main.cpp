@@ -35,10 +35,7 @@ static struct {
 
 static Selection _Selection;
 
-static struct {
-    std::optional<Panel> panel;
-    Rect rect;
-} _SelectionRect;
+static std::optional<BorderedPanel> _SelectionRect;
 
 static std::optional<Rect> _InsertionMarker;
 
@@ -53,6 +50,10 @@ static void _Draw() {
             for (BorderedPanel& panel : _Drag.shadowPanels) {
                 panel.setBorderColor(selectionColor);
             }
+        }
+        
+        if (_SelectionRect) {
+            _SelectionRect->setBorderColor(selectionColor);
         }
         
         for (BranchColumn& col : _BranchColumns) {
@@ -83,10 +84,8 @@ static void _Draw() {
             panel.drawIfNeeded();
         }
         
-        if (_SelectionRect.panel) {
-            _SelectionRect.panel->erase();
-            Window::Attr attr = _SelectionRect.panel->setAttr(COLOR_PAIR(selectionColor));
-            _SelectionRect.panel->drawRect(_SelectionRect.rect);
+        if (_SelectionRect) {
+            _SelectionRect->drawIfNeeded();
         }
         
         if (_InsertionMarker) {
@@ -310,16 +309,14 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Handle selection rect drawing / selecting commits
         const Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
         
-        if (!_SelectionRect.panel && dragStart) {
-            _SelectionRect.panel.emplace();
-            _SelectionRect.panel->setSize(_RootWindow.rect().size);
-            _SelectionRect.panel->orderFront();
+        if (_SelectionRect || dragStart) {
+            _SelectionRect.emplace(selectionRect.size);
+            _SelectionRect->setPosition(selectionRect.point);
+            _SelectionRect->orderFront();
         }
         
         // Update selection
         {
-            _SelectionRect.rect = selectionRect;
-            
             Selection selectionNew;
             for (BranchColumn& col : _BranchColumns) {
                 for (CommitPanel& panel : col.panels()) {
