@@ -12,12 +12,12 @@ using Buf = RefCounted<git_buf, git_buf_dispose>;
 
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;
-    const Id& id() const { return *git_commit_id(*(*this)); }
+    const Id& id() const { return *git_commit_id(*get()); }
     bool operator==(const Commit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Commit& x) const { return !(*this==x); }
     bool operator<(const Commit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator git_commit*() { return *(*this); }
-//    operator const git_commit*() const { return *(*this); }
+//    operator git_commit*() { return *get(); }
+//    operator const git_commit*() const { return *get(); }
     
     static Commit Lookup(git_repository* repo, const Id& commitId) {
         git_commit* x = nullptr;
@@ -35,14 +35,14 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     
     Tree tree() const {
         git_tree* t = nullptr;
-        int ir = git_commit_tree(&t, *this);
+        int ir = git_commit_tree(&t, *get());
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
         return t;
     }
     
     Commit parent(unsigned int n=0) const {
         git_commit* c = nullptr;
-        int ir = git_commit_parent(&c, *this, n);
+        int ir = git_commit_parent(&c, *get(), n);
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
         return c;
     }
@@ -50,34 +50,41 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
 
 struct Reference : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
-    bool operator==(const Reference& x) const { return git_reference_cmp(*(*this), *x)==0; }
+    bool operator==(const Reference& x) const { return git_reference_cmp(*get(), *x)==0; }
     bool operator!=(const Reference& x) const { return !(*this==x); }
-    bool operator<(const Reference& x) const { return git_reference_cmp(*(*this), *x)<0; }
+    bool operator<(const Reference& x) const { return git_reference_cmp(*get(), *x)<0; }
     
     static Reference Lookup(git_repository* repo, std::string_view name) {
         git_reference* x = nullptr;
         int ir = git_reference_dwim(&x, repo, name.data());
-        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
+        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
         return x;
     }
     
-    static Reference Lookup(git_repository* repo, const Id& id) {
+    static Reference LookupFullName(git_repository* repo, std::string_view name) {
         git_reference* x = nullptr;
-        int ir = git_reference_dwim(&x, repo, git_oid_tostr_s(&id));
-        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
+        int ir = git_reference_lookup(&x, repo, name.data());
+        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
         return x;
     }
+    
+//    static Reference Lookup(git_repository* repo, const Id& id) {
+//        git_reference* x = nullptr;
+//        int ir = git_reference_dwim(&x, repo, git_oid_tostr_s(&id));
+//        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
+//        return x;
+//    }
     
     const char* name() const {
-        return git_reference_name(*this);
+        return git_reference_shorthand(*get());
     }
     
-    const char* shortName() const {
-        return git_reference_shorthand(*this);
+    const char* fullName() const {
+        return git_reference_name(*get());
     }
     
     bool isHead() const {
-        int ir = git_branch_is_head(*this);
+        int ir = git_branch_is_head(*get());
         if (ir < 0) throw RuntimeError("git_branch_is_head failed: %s", git_error_last()->message);
         return ir==1;
     }
@@ -92,7 +99,14 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
     
     Commit commit() const {
         git_commit* x = nullptr;
-        int ir = git_reference_peel((git_object**)&x, *this, GIT_OBJECT_COMMIT);
+        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_COMMIT);
+        if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Tree tree() const {
+        git_tree* x = nullptr;
+        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TREE);
         if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
         return x;
     }
@@ -108,11 +122,29 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    Reference head() {
+    Reference head() const {
         git_reference* x = nullptr;
-        int ir = git_repository_head(&x, *this);
+        int ir = git_repository_head(&x, *get());
         if (ir) throw RuntimeError("git_repository_head failed: %s", git_error_last()->message);
         return x;
+    }
+    
+//    void setHead(std::string_view head) const {
+//        git_repository_set_head(*get(), head.data());
+//    }
+    
+    void detachHead() const {
+        int ir = git_repository_detach_head(*get());
+        if (ir) throw RuntimeError("git_repository_detach_head failed: %s", git_error_last()->message);
+    }
+    
+    void checkout(std::string_view name) const {
+        Reference ref = Reference::LookupFullName(*get(), name);
+        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
+        if (ir) throw RuntimeError("git_checkout_tree failed: %s", git_error_last()->message);
+        ir = git_repository_set_head(*get(), name.data());
+        if (ir) throw RuntimeError("git_repository_set_head failed: %s", git_error_last()->message);
     }
     
 //    std::string currentBranchName() {
@@ -129,11 +161,11 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 
 struct Object : RefCounted<git_object*, git_object_free> {
     using RefCounted::RefCounted;
-    const Id& id() const { return *git_object_id(*(*this)); }
+    const Id& id() const { return *git_object_id(*get()); }
     bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Object& x) const { return !(*this==x); }
     bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator const git_object*() const { return *(*this); }
+//    operator const git_object*() const { return *get(); }
 };
 
 struct Branch : Reference {
@@ -161,16 +193,16 @@ struct Branch : Reference {
         return x;
     }
     
-//    const char* name() const {
-//        const char* x = nullptr;
-//        int ir = git_branch_name(&x, *this);
-//        if (ir) throw RuntimeError("git_branch_name failed: %s", git_error_last()->message);
-//        return x;
-//    }
+    const char* name() const {
+        const char* x = nullptr;
+        int ir = git_branch_name(&x, *get());
+        if (ir) throw RuntimeError("git_branch_name failed: %s", git_error_last()->message);
+        return x;
+    }
     
     Branch upstream() const {
         git_reference* x = nullptr;
-        int ir = git_branch_upstream(&x, *this);
+        int ir = git_branch_upstream(&x, *get());
         switch (ir) {
         case 0:             return x;
         case GIT_ENOTFOUND: return nullptr;
@@ -178,8 +210,8 @@ struct Branch : Reference {
         }
     }
     
-    void upstreamSet(git_reference* upstream) {
-        int ir = git_branch_set_upstream(*this, git_reference_name(upstream));
+    void setUpstream(git_reference* upstream) {
+        int ir = git_branch_set_upstream(*get(), git_reference_shorthand(upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
     }
 };
@@ -209,9 +241,9 @@ struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
     
     Commit next() {
         Id commitId;
-        int ir = git_revwalk_next(&commitId, *this);
+        int ir = git_revwalk_next(&commitId, *get());
         if (ir) return nullptr;
-        return Git::Commit::Lookup(git_revwalk_repository(*this), commitId);
+        return Git::Commit::Lookup(git_revwalk_repository(*get()), commitId);
     }
 };
 
@@ -268,7 +300,7 @@ inline Commit CommitAttach(Repo repo, Commit parent, Tree tree, Commit metadata)
         parents
     );
     if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-    return Commit::Lookup(repo, commitId);
+    return Commit::Lookup(*repo, commitId);
 }
 
 inline Commit CherryPick(Repo repo, Commit dst, Commit src) {

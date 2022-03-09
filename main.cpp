@@ -416,66 +416,68 @@ int main(int argc, const char* argv[]) {
 //    const git_oid* id2 = git_object_id(obj);
 //    printf("id2: %s\n", Git::Str(*id2).c_str());
     
+    std::string headPrev;
+    
+    // Handle args
+    std::vector<std::string> refNames;
+    {
+        for (int i=1; i<argc; i++) {
+            refNames.push_back(argv[i]);
+        }
+    }
+    
+    // Init ncurses
+    {
+        // Default linux installs may not contain the /usr/share/terminfo database,
+        // so provide a fallback terminfo that usually works.
+        nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
+        
+        // Override the terminfo 'kmous' and 'XM' properties
+        //   kmous = the prefix used to detect/parse mouse events
+        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+        //           event mode; 1003=report mouse-moved events in addition to clicks)
+        setenv("TERM_KMOUS", "\x1b[<", true);
+        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+        
+        ::initscr();
+        ::noecho();
+        ::cbreak();
+        
+        ::use_default_colors();
+        ::start_color();
+        
+        #warning TODO: cleanup color logic
+        #warning TODO: fix: colors aren't restored when exiting
+        // Redefine colors to our custom palette
+        {
+            int c = 1;
+            
+            ::init_color(c, 0, 0, 1000);
+            ::init_pair(Colors::SelectionMove, c, -1);
+            c++;
+            
+            ::init_color(c, 0, 1000, 0);
+            ::init_pair(Colors::SelectionCopy, c, -1);
+            c++;
+            
+            ::init_color(c, 300, 300, 300);
+            ::init_pair(Colors::SubtitleText, c, -1);
+            c++;
+        }
+        
+        // Hide cursor
+        ::curs_set(0);
+        
+        _RootWindow = Window(::stdscr);
+    }
+    
+    // Init git
+    {
+        git_libgit2_init();
+        _Repo = Git::Repo::Open(".");
+    }
+    
     try {
-        // Handle args
-        std::vector<std::string> refNames;
-        {
-            for (int i=1; i<argc; i++) {
-                refNames.push_back(argv[i]);
-            }
-        }
-        
-        // Init ncurses
-        {
-            // Default linux installs may not contain the /usr/share/terminfo database,
-            // so provide a fallback terminfo that usually works.
-            nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
-            
-            // Override the terminfo 'kmous' and 'XM' properties
-            //   kmous = the prefix used to detect/parse mouse events
-            //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-            //           event mode; 1003=report mouse-moved events in addition to clicks)
-            setenv("TERM_KMOUS", "\x1b[<", true);
-            setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
-            
-            ::initscr();
-            ::noecho();
-            ::cbreak();
-            
-            ::use_default_colors();
-            ::start_color();
-            
-            #warning TODO: cleanup color logic
-            #warning TODO: fix: colors aren't restored when exiting
-            // Redefine colors to our custom palette
-            {
-                int c = 1;
-                
-                ::init_color(c, 0, 0, 1000);
-                ::init_pair(Colors::SelectionMove, c, -1);
-                c++;
-                
-                ::init_color(c, 0, 1000, 0);
-                ::init_pair(Colors::SelectionCopy, c, -1);
-                c++;
-                
-                ::init_color(c, 300, 300, 300);
-                ::init_pair(Colors::SubtitleText, c, -1);
-                c++;
-            }
-            
-            // Hide cursor
-            ::curs_set(0);
-            
-            _RootWindow = Window(::stdscr);
-        }
-        
-        // Init git
-        {
-            git_libgit2_init();
-            _Repo = Git::Repo::Open(".");
-        }
-        
 //        volatile bool a = false;
 //        while (!a);
         
@@ -488,7 +490,7 @@ int main(int argc, const char* argv[]) {
             std::vector<Git::Reference> refs;
             refs.push_back(_Repo.head());
             for (const std::string& refName : refNames) {
-                refs.push_back(Git::Reference::Lookup(_Repo, refName));
+                refs.push_back(Git::Reference::Lookup(*_Repo, refName));
             }
             
             int OffsetX = InsetX;
