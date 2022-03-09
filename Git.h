@@ -10,6 +10,15 @@ using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
 using Buf = RefCounted<git_buf, git_buf_dispose>;
 
+struct Object : RefCounted<git_object*, git_object_free> {
+    using RefCounted::RefCounted;
+    const Id& id() const { return *git_object_id(*get()); }
+    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
+    bool operator!=(const Object& x) const { return !(*this==x); }
+    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
+//    operator const git_object*() const { return *get(); }
+};
+
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;
     const Id& id() const { return *git_commit_id(*get()); }
@@ -31,6 +40,13 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         int ir = git_oid_fromstr(&commitId, commitIdStr.data());
         if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
         return Lookup(repo, commitId);
+    }
+    
+    static Commit FromObject(git_object* obj) {
+        git_commit* x = nullptr;
+        int ir = git_object_peel((git_object**)&x, obj, GIT_OBJECT_COMMIT);
+        if (ir) throw RuntimeError("git_object_peel failed: %s", git_error_last()->message);
+        return x;
     }
     
     Tree tree() const {
@@ -282,15 +298,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 //    }
 };
 
-struct Object : RefCounted<git_object*, git_object_free> {
-    using RefCounted::RefCounted;
-    const Id& id() const { return *git_object_id(*get()); }
-    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
-    bool operator!=(const Object& x) const { return !(*this==x); }
-    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator const git_object*() const { return *get(); }
-};
-
 struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
     using RefCounted::RefCounted;
     
@@ -343,6 +350,35 @@ inline std::string Str(git_time_t t) {
 class Rev {
 public:
     Rev() {}
+    
+    Rev(Repo repo, std::string_view str) {
+        Object o;
+        Ref r;
+        
+        // Determine whether `str` is a ref or commit
+        {
+            git_object* po = nullptr;
+            git_reference* pr = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *repo, str.data());
+            if (ir) throw RuntimeError("git_revparse_ext failed: %s", git_error_last()->message);
+            o = po;
+            r = pr;
+        }
+        
+        // If we have a ref, construct this Rev as a ref
+        if (r) {
+            ref = r;
+            commit = ref.commit();
+            assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
+        
+        // Otherwise, construct this Rev as a commit
+        } else if (o) {
+            commit = Commit::FromObject(*o);
+        
+        } else {
+            throw RuntimeError("git_revparse_ext returned null");
+        }
+    }
     
     Rev(Commit c) : commit(c) {}
     

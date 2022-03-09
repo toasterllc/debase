@@ -16,11 +16,11 @@
 #include "RuntimeError.h"
 #include "CommitPanel.h"
 #include "BorderedPanel.h"
-#include "CommitsColumn.h"
+#include "RevColumn.h"
 #include "GitOp.h"
 
 struct Selection {
-    CommitsColumn* column = nullptr;
+    RevColumn* column = nullptr;
     std::set<CommitPanel*> panels;
 };
 
@@ -28,7 +28,7 @@ static Git::Repo _Repo;
 
 static Window _RootWindow;
 
-static std::vector<CommitsColumn> _Columns;
+static std::vector<RevColumn> _Columns;
 
 static struct {
     std::optional<CommitPanel> titlePanel;
@@ -53,7 +53,7 @@ static void _Draw() {
             }
         }
         
-        for (CommitsColumn& col : _Columns) {
+        for (RevColumn& col : _Columns) {
             for (CommitPanel& panel : col.panels()) {
                 bool selected = Contains(_Selection.panels, &panel);
                 if (selected) {
@@ -69,7 +69,7 @@ static void _Draw() {
     {
         _RootWindow.erase();
         
-        for (CommitsColumn& col : _Columns) {
+        for (RevColumn& col : _Columns) {
             col.draw();
         }
         
@@ -103,12 +103,12 @@ static void _Draw() {
 }
 
 struct _HitTestResult {
-    CommitsColumn& column;
+    RevColumn& column;
     CommitPanel& panel;
 };
 
 static std::optional<_HitTestResult> _HitTest(const Point& p) {
-    for (CommitsColumn& col : _Columns) {
+    for (RevColumn& col : _Columns) {
         if (CommitPanel* panel = col.hitTest(p)) {
             return _HitTestResult{col, *panel};
         }
@@ -116,11 +116,11 @@ static std::optional<_HitTestResult> _HitTest(const Point& p) {
     return std::nullopt;
 }
 
-static std::tuple<CommitsColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
-    CommitsColumn* insertionCol = nullptr;
+static std::tuple<RevColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
+    RevColumn* insertionCol = nullptr;
     CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
-    for (CommitsColumn& col : _Columns) {
+    for (RevColumn& col : _Columns) {
         CommitPanelVec& panels = col.panels();
         const Rect lastRect = panels.back().rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
@@ -166,7 +166,7 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
 
 // _TrackMouseInsideCommitPanel
 // Handles dragging a set of CommitPanels
-static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, CommitsColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, RevColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
     const Rect mouseDownPanelRect = mouseDownPanel.rect();
     const Size delta = {
         mouseDownPanelRect.point.x-mouseDownEvent.x,
@@ -190,7 +190,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     }
     
     MEVENT mouse = mouseDownEvent;
-    CommitsColumn* insertionCol = nullptr;
+    RevColumn* insertionCol = nullptr;
     CommitPanelVecIter insertionIter;
     for (;;) {
         assert(!_Selection.panels.empty());
@@ -318,7 +318,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         _InsertionMarker = std::nullopt;
         
         // Make every commit visible again
-        for (CommitsColumn& col : _Columns) {
+        for (RevColumn& col : _Columns) {
             for (CommitPanel& panel : col.panels()) {
                 panel.setVisible(true);
             }
@@ -351,7 +351,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Update selection
         {
             Selection selectionNew;
-            for (CommitsColumn& col : _Columns) {
+            for (RevColumn& col : _Columns) {
                 for (CommitPanel& panel : col.panels()) {
                     if (!Empty(Intersection(selectionRect, panel.rect()))) {
                         selectionNew.column = &col;
@@ -391,36 +391,36 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
-static void _Reload(const std::vector<std::string>& refNames) {
-    // Create a CommitsColumn for each specified branch
+static void _Reload(const std::vector<std::string>& revNames) {
+    // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
     constexpr int ColumnWidth = 32;
     constexpr int ColumnSpacing = 6;
     int OffsetX = InsetX;
     
     std::vector<Git::Rev> revs;
-    revs.push_back(_Repo.head());
-    for (const std::string& refName : refNames) {
-        revs.push_back(Git::Ref::Lookup(*_Repo, refName));
+    revs.emplace_back(_Repo.head());
+    for (const std::string& revName : revNames) {
+        revs.emplace_back(Git::Rev(_Repo, revName));
     }
     
     _Columns.clear();
-    for (const Git::Ref& ref : refs) {
-        _Columns.emplace_back(_RootWindow, _Repo, ref, OffsetX, ColumnWidth);
+    for (const Git::Rev& rev : revs) {
+        _Columns.emplace_back(_RootWindow, _Repo, rev, OffsetX, ColumnWidth);
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
 
 int main(int argc, const char* argv[]) {
-    git_libgit2_init();
-    
-    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-    
-    {
-        git_reference* ref = nullptr;
-        int ir = git_reference_dwim(&ref, *repo, "MyTag~1");
-        assert(!ir);
-    }
+//    git_libgit2_init();
+//    
+//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+//    
+//    {
+//        git_reference* ref = nullptr;
+//        int ir = git_reference_dwim(&ref, *repo, "MyTag~1");
+//        assert(!ir);
+//    }
     
 //    Git::Ref ref = Git::Ref::Lookup(repo, "PerfComparison2");
 //    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
@@ -447,10 +447,10 @@ int main(int argc, const char* argv[]) {
 //    printf("id2: %s\n", Git::Str(*id2).c_str());
     
     // Handle args
-    std::vector<std::string> refNames;
+    std::vector<std::string> revNames;
     {
         for (int i=1; i<argc; i++) {
-            refNames.push_back(argv[i]);
+            revNames.push_back(argv[i]);
         }
     }
     
@@ -509,7 +509,7 @@ int main(int argc, const char* argv[]) {
 //        volatile bool a = false;
 //        while (!a);
         
-        _Reload(refNames);
+        _Reload(revNames);
         
         mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         mouseinterval(0);
@@ -534,7 +534,7 @@ int main(int argc, const char* argv[]) {
                     
                     if (gitOp) {
                         Git::Exec(*gitOp);
-                        _Reload(refNames);
+                        _Reload(revNames);
                     }
                 }
             

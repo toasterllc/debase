@@ -3,11 +3,11 @@
 #include "Panel.h"
 #include "CommitPanel.h"
 
-// CommitsColumn: a column in the UI containing commits (of type CommitPanel)
-// for a particular git branch or ref
-class CommitsColumn {
+// RevColumn: a column in the UI containing commits (of type CommitPanel)
+// for a particular `Git::Rev` (commit/branch/tag)
+class RevColumn {
 public:
-    CommitsColumn(Window& win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
+    RevColumn(Window& win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
     _win(win), _rev(rev), _offsetX(offsetX), _width(width) {
         
         if (_rev.ref) {
