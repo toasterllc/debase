@@ -8,21 +8,21 @@
 class CommitsColumn {
 public:
     CommitsColumn(Window& win, Git::Repo repo, Git::Reference ref, int offsetX, int width) :
-    _win(win), _ref(ref), _name(_ref.name()), _displayName(_ref.name()), _offsetX(offsetX), _width(width) {
+    _win(win), _ref(ref), _name(_ref.shortName()), _offsetX(offsetX), _width(width) {
+        
         if (_ref.isHead()) {
-            _displayName = _displayName + " (HEAD)";
+            _name = _name + " (HEAD)";
         }
         
         // Create panels for each commit
         constexpr int InsetY = 2;
-        size_t idx = 0;
         int offY = InsetY;
-        Git::RevWalk walk = Git::RevWalk::Create(repo, _name+"~10.."+_name);
-        while (Git::Commit commit = walk.next()) {
-            CommitPanel& p = _panels.emplace_back(commit, idx, width);
+        Git::Commit commit = _ref.commit();
+        for (int i=0; commit && i<10; i++) {
+            CommitPanel& p = _panels.emplace_back(commit, i, width);
             p.setPosition({_offsetX, offY});
             offY += p.rect().size.y + 1;
-            idx++;
+            commit = commit.parent();
         }
     }
     
@@ -30,8 +30,8 @@ public:
         // Draw branch name
         {
             Window::Attr attr = _win.setAttr(A_UNDERLINE);
-            const int offX = _offsetX + std::max(0, (_width-(int)_displayName.size())/2);
-            _win.drawText({offX, 0}, _displayName.c_str());
+            const int offX = _offsetX + std::max(0, (_width-(int)_name.size())/2);
+            _win.drawText({offX, 0}, _name.c_str());
         }
         
         for (CommitPanel& p : _panels) {
@@ -53,7 +53,6 @@ private:
     Window& _win;
     Git::Reference _ref;
     std::string _name;
-    std::string _displayName;
     int _offsetX = 0;
     int _width = 0;
     CommitPanelVec _panels;

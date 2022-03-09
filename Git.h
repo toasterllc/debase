@@ -65,7 +65,7 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
         return git_reference_name(*this);
     }
     
-    const char* shorthandName() const {
+    const char* shortName() const {
         return git_reference_shorthand(*this);
     }
     
