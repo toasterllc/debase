@@ -147,6 +147,25 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         if (ir) throw RuntimeError("git_repository_set_head failed: %s", git_error_last()->message);
     }
     
+    Index mergeTrees(Tree ancestorTree, Tree dstTree, Tree srcTree) {
+        git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+        git_index* i = nullptr;
+        int ir = git_merge_trees(&i, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
+        if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
+        return i;
+    }
+    
+    Tree writeIndex(Index index) {
+        git_oid treeId;
+        int ir = git_index_write_tree_to(&treeId, *index, *get());
+        if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
+        
+        git_tree* newTree = nullptr;
+        ir = git_tree_lookup(&newTree, *get(), &treeId);
+        if (ir) throw RuntimeError("git_tree_lookup failed: %s", git_error_last()->message);
+        return newTree;
+    }
+    
 //    std::string currentBranchName() {
 //        Reference head;
 //        {
@@ -264,24 +283,9 @@ inline std::string Str(git_time_t t) {
     return ss.str();
 }
 
-inline Index TreesMerge(Repo repo, Tree ancestorTree, Tree dstTree, Tree srcTree) {
-    git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
-    git_index* i = nullptr;
-    int ir = git_merge_trees(&i, *repo, *ancestorTree, *dstTree, *srcTree, &mergeOpts);
-    if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
-    return i;
-}
+struct Rev {
 
-inline Tree IndexWrite(Repo repo, Index index) {
-    git_oid treeId;
-    int ir = git_index_write_tree_to(&treeId, *index, *repo);
-    if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
-    
-    git_tree* newTree = nullptr;
-    ir = git_tree_lookup(&newTree, *repo, &treeId);
-    if (ir) throw RuntimeError("git_tree_lookup failed: %s", git_error_last()->message);
-    return newTree;
-}
+};
 
 // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
 inline Commit CommitAttach(Repo repo, Commit parent, Tree tree, Commit metadata) {
@@ -317,8 +321,8 @@ inline Commit CherryPick(Repo repo, Commit dst, Commit src) {
     if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
     
     Tree ancestorTree = src.parent().tree();
-    Index mergedTreesIndex = TreesMerge(repo, ancestorTree, dstTree, srcTree);
-    Tree newTree = IndexWrite(repo, mergedTreesIndex);
+    Index mergedTreesIndex = repo.mergeTrees(ancestorTree, dstTree, srcTree);
+    Tree newTree = repo.writeIndex(mergedTreesIndex);
     Commit newCommit = CommitAttach(repo, dst, newTree, src);
 //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
     return newCommit;

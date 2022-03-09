@@ -408,10 +408,16 @@ static void _Reload(const std::vector<std::string>& refNames) {
 }
 
 int main(int argc, const char* argv[]) {
-//    git_libgit2_init();
-//    
-//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/CursesTest");
-//    
+    git_libgit2_init();
+    
+    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+    
+    {
+        git_reference* ref = nullptr;
+        int ir = git_reference_dwim(&ref, *repo, "MyTag~1");
+        assert(!ir);
+    }
+    
 //    Git::Reference ref = Git::Reference::Lookup(repo, "PerfComparison2");
 //    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
 //    Git::Branch branch2 = Git::Branch::Lookup(repo, "PerfComparison2");
