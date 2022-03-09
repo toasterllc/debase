@@ -17,30 +17,26 @@ struct Op {
     
     Repo repo;
     
-    Reference srcRef;
-    std::set<Commit> srcCommits;
-    
-    Reference dstRef;
-    Commit dstCommit;
-};
-
-struct OpResult {
     struct {
-        Commit commit;
-        Branch branch;
+        Rev rev;
+        std::set<Commit> commits;
     } src;
     
     struct {
-        Commit commit;
-        Branch branch;
+        Rev rev;
+        Commit position;
     } dst;
 };
 
-// _Sorted: sorts a set of commits according to the order that they appear in `ref`
-inline std::vector<Commit> _Sorted(Reference ref, const std::set<Commit>& s) {
+struct OpResult {
+    Rev src;
+    Rev dst;
+};
+
+// _Sorted: sorts a set of commits according to the order that they appear via `c`
+inline std::vector<Commit> _Sorted(Commit c, const std::set<Commit>& s) {
     std::vector<Commit> r;
     std::set<Commit> tmp = s;
-    Commit c = ref.commit();
     while (r.size() != s.size()) {
         if (tmp.erase(c)) r.push_back(c);
         c = c.parent();
@@ -57,7 +53,7 @@ inline std::vector<Commit> _Sorted(Reference ref, const std::set<Commit>& s) {
 
 inline Commit _AddRemoveCommits(
     Repo repo,
-    Reference ref,
+    Commit target,
     Commit addPoint,
     const std::vector<Commit>& add,
     const std::set<Commit>& remove
@@ -69,7 +65,7 @@ inline Commit _AddRemoveCommits(
     {
         const bool adding = !add.empty();
         std::set<Commit> r = remove;
-        Commit c = ref.commit();
+        Commit c = target;
         bool foundAddPoint = false;
         for (;;) {
             if (!c) throw RuntimeError("ran out of commits");
@@ -99,35 +95,55 @@ inline Commit _AddRemoveCommits(
 }
 
 inline OpResult _Exec_MoveCommits(const Op& op) {
+    // When moving commits, the source and destination must be references (branches
+    // or tags) since we're modifying both
+    if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
+    
     OpResult r;
     
-    // Move commits within the same branch
-    if (op.srcRef == op.dstRef) {
-        // Add and remove commits
-        r.dst.commit = _AddRemoveCommits(op.repo, op.dstRef,
-            op.dstCommit, _Sorted(op.srcRef, op.srcCommits), op.srcCommits);
-    
-    // Move commits between different branches
-    } else {
-        // Remove commits from `op.srcRef`
-        r.src.commit = _AddRemoveCommits(op.repo, op.srcRef, nullptr, {}, op.srcCommits);
+    // Move commits within the same ref (branch/tag)
+    if (op.src.rev.ref == op.dst.rev.ref) {
+        // References are the same, so the commits must be the same too
+        assert(op.src.rev.commit == op.dst.rev.commit);
         
-        // Add commits to `op.dstRef`
-        r.dst.commit = _AddRemoveCommits(op.repo, op.dstRef,
-            op.dstCommit, _Sorted(op.srcRef, op.srcCommits), {});
+        // Add and remove commits
+        r.dst.commit = _AddRemoveCommits(op.repo, op.dst.rev.commit,
+            op.dst.position, _Sorted(op.src.rev.commit, op.src.commits), op.src.commits);
+    
+    // Move commits between different refs (branches/tags)
+    } else {
+        // Remove commits from `op.src`
+        r.src.commit = _AddRemoveCommits(op.repo, op.src.rev.commit, nullptr, {}, op.src.commits);
+        
+        // Add commits to `op.dst`
+        r.dst.commit = _AddRemoveCommits(op.repo, op.dst.rev.commit,
+            op.dst.position, _Sorted(op.src.rev.commit, op.src.commits), {});
     }
     
-    // Create branches if the original refs (op.srcRef / op.dstRef) were branches
+    // Update source/destination refs (branches/tags)
     {
         if (r.src.commit) {
-            if (Branch branch = Branch::FromReference(*op.srcRef)) {
-                r.src.branch = op.repo.replaceBranch(branch, r.src.commit);
+            if (Branch branch = Branch::FromReference(*op.src.rev.ref)) {
+                r.src.ref = op.repo.replaceBranch(branch, r.src.commit);
+            
+            } else if (false) {
+                #warning TODO: handle tags
+            
+            } else {
+                throw RuntimeError("unknown source ref type");
             }
         }
         
         if (r.dst.commit) {
-            if (Branch branch = Branch::FromReference(*op.dstRef)) {
-                r.dst.branch = op.repo.replaceBranch(branch, r.dst.commit);
+            if (Branch branch = Branch::FromReference(*op.dst.rev.ref)) {
+                r.dst.ref = op.repo.replaceBranch(branch, r.dst.commit);
+            
+            } else if (false) {
+                #warning TODO: handle tags
+            
+            } else {
+                throw RuntimeError("unknown source ref type");
             }
         }
     }

@@ -7,8 +7,8 @@
 // for a particular git branch or ref
 class CommitsColumn {
 public:
-    CommitsColumn(Window& win, Git::Repo repo, Git::Reference ref, int offsetX, int width) :
-    _win(win), _ref(ref), _name(_ref.name()), _offsetX(offsetX), _width(width) {
+    CommitsColumn(Window& win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
+    _win(win), _rev(rev), _name(_rev.name()), _offsetX(offsetX), _width(width) {
         
         if (_ref.isHead()) {
             _name = _name + " (HEAD)";
@@ -46,12 +46,12 @@ public:
         return nullptr;
     }
     
-    Git::Reference ref() { return _ref; }
+    Git::Rev rev() { return _rev; }
     CommitPanelVec& panels() { return _panels; }
     
 private:
     Window& _win;
-    Git::Reference _ref;
+    Git::Rev _rev;
     std::string _name;
     int _offsetX = 0;
     int _width = 0;

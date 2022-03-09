@@ -48,27 +48,27 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     }
 };
 
-struct Reference : RefCounted<git_reference*, git_reference_free> {
+struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
-    bool operator==(const Reference& x) const { return git_reference_cmp(*get(), *x)==0; }
-    bool operator!=(const Reference& x) const { return !(*this==x); }
-    bool operator<(const Reference& x) const { return git_reference_cmp(*get(), *x)<0; }
+    bool operator==(const Ref& x) const { return git_reference_cmp(*get(), *x)==0; }
+    bool operator!=(const Ref& x) const { return !(*this==x); }
+    bool operator<(const Ref& x) const { return git_reference_cmp(*get(), *x)<0; }
     
-    static Reference Lookup(git_repository* repo, std::string_view name) {
+    static Ref Lookup(git_repository* repo, std::string_view name) {
         git_reference* x = nullptr;
         int ir = git_reference_dwim(&x, repo, name.data());
         if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
         return x;
     }
     
-    static Reference LookupFullName(git_repository* repo, std::string_view name) {
+    static Ref LookupFullName(git_repository* repo, std::string_view name) {
         git_reference* x = nullptr;
         int ir = git_reference_lookup(&x, repo, name.data());
         if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
         return x;
     }
     
-//    static Reference Lookup(git_repository* repo, const Id& id) {
+//    static Ref Lookup(git_repository* repo, const Id& id) {
 //        git_reference* x = nullptr;
 //        int ir = git_reference_dwim(&x, repo, git_oid_tostr_s(&id));
 //        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
@@ -81,6 +81,14 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
     
     const char* fullName() const {
         return git_reference_name(*get());
+    }
+    
+    bool isBranch() const {
+        return git_reference_is_branch(*get());
+    }
+    
+    bool isTag() const {
+        return git_reference_is_tag(*get());
     }
     
     bool isHead() const {
@@ -112,10 +120,10 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
     }
 };
 
-struct Branch : Reference {
-    using Reference::Reference;
+struct Branch : Ref {
+    using Ref::Ref;
     
-    static Branch FromReference(git_reference* ref) {
+    static Branch FromRef(git_reference* ref) {
         if (!git_reference_is_branch(ref)) return nullptr;
         git_reference* x = nullptr;
         int ir = git_reference_dup(&x, ref);
@@ -170,7 +178,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    Reference head() const {
+    Ref head() const {
         git_reference* x = nullptr;
         int ir = git_repository_head(&x, *get());
         if (ir) throw RuntimeError("git_repository_head failed: %s", git_error_last()->message);
@@ -187,7 +195,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
     void checkout(std::string_view name) const {
-        Reference ref = Reference::LookupFullName(*get(), name);
+        Ref ref = Ref::LookupFullName(*get(), name);
         const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
         int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
         if (ir) throw RuntimeError("git_checkout_tree failed: %s", git_error_last()->message);
@@ -263,7 +271,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
 //    std::string currentBranchName() {
-//        Reference head;
+//        Ref head;
 //        {
 //            git_reference* x = nullptr;
 //            int ir = git_repository_head(&x, *this);
@@ -315,9 +323,8 @@ struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
 };
 
 inline std::string Str(const git_oid& oid) {
-    char str[16];
-    sprintf(str, "%02x%02x%02x%02x", oid.id[0], oid.id[1], oid.id[2], oid.id[3]);
-    str[7] = 0;
+    char str[8];
+    git_oid_tostr(str, sizeof(str), &oid);
     return str;
 }
 
@@ -331,8 +338,11 @@ inline std::string Str(git_time_t t) {
     return ss.str();
 }
 
+// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
+// that targets that commit
 struct Rev {
-
+    Commit commit; // Mandatory
+    Ref ref;       // Optional
 };
 
 } // namespace Git
