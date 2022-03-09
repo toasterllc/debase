@@ -98,13 +98,6 @@ inline Commit _AddRemoveCommits(
     return cherry;
 }
 
-inline Branch _ReplaceBranch(Repo repo, Branch branch, Commit commit) {
-    Branch upstream = branch.upstream();
-    Branch newBranch = Branch::Create(*repo, branch.name(), *commit, true);
-    if (upstream) newBranch.setUpstream(*upstream);
-    return newBranch;
-}
-
 inline OpResult _Exec_MoveCommits(const Op& op) {
     OpResult r;
     
@@ -128,13 +121,13 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
     {
         if (r.src.commit) {
             if (Branch branch = Branch::FromReference(*op.srcRef)) {
-                r.src.branch = _ReplaceBranch(op.repo, branch, r.src.commit);
+                r.src.branch = op.repo.replaceBranch(branch, r.src.commit);
             }
         }
         
         if (r.dst.commit) {
             if (Branch branch = Branch::FromReference(*op.dstRef)) {
-                r.dst.branch = _ReplaceBranch(op.repo, branch, r.dst.commit);
+                r.dst.branch = op.repo.replaceBranch(branch, r.dst.commit);
             }
         }
     }

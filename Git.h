@@ -112,122 +112,6 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
     }
 };
 
-struct Repo : RefCounted<git_repository*, git_repository_free> {
-    using RefCounted::RefCounted;
-    
-    static Repo Open(std::string_view path) {
-        git_repository* x = nullptr;
-        int ir = git_repository_open(&x, path.data());
-        if (ir) throw RuntimeError("git_repository_open failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    Reference head() const {
-        git_reference* x = nullptr;
-        int ir = git_repository_head(&x, *get());
-        if (ir) throw RuntimeError("git_repository_head failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-//    void setHead(std::string_view head) const {
-//        git_repository_set_head(*get(), head.data());
-//    }
-    
-    void detachHead() const {
-        int ir = git_repository_detach_head(*get());
-        if (ir) throw RuntimeError("git_repository_detach_head failed: %s", git_error_last()->message);
-    }
-    
-    void checkout(std::string_view name) const {
-        Reference ref = Reference::LookupFullName(*get(), name);
-        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
-        if (ir) throw RuntimeError("git_checkout_tree failed: %s", git_error_last()->message);
-        ir = git_repository_set_head(*get(), name.data());
-        if (ir) throw RuntimeError("git_repository_set_head failed: %s", git_error_last()->message);
-    }
-    
-    Index mergeTrees(Tree ancestorTree, Tree dstTree, Tree srcTree) {
-        git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
-        git_index* i = nullptr;
-        int ir = git_merge_trees(&i, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
-        if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
-        return i;
-    }
-    
-    Tree writeIndex(Index index) {
-        git_oid treeId;
-        int ir = git_index_write_tree_to(&treeId, *index, *get());
-        if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
-        
-        git_tree* newTree = nullptr;
-        ir = git_tree_lookup(&newTree, *get(), &treeId);
-        if (ir) throw RuntimeError("git_tree_lookup failed: %s", git_error_last()->message);
-        return newTree;
-    }
-    
-    // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
-    Commit attachCommit(Commit parent, Tree tree, Commit metadata) {
-        git_oid commitId;
-        const git_commit* parents[] = {*parent};
-        int ir = git_commit_create(
-            &commitId,
-            *get(),
-            nullptr,
-            git_commit_author(*metadata),
-            git_commit_committer(*metadata),
-            git_commit_message_encoding(*metadata),
-            git_commit_message(*metadata),
-            *tree,
-            std::size(parents),
-            parents
-        );
-        if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-        return Commit::Lookup(*get(), commitId);
-    }
-
-    Commit cherryPick(Commit dst, Commit src) {
-        const git_oid* dstId = git_commit_id(*dst);
-        const git_oid* srcId = git_commit_id(*src);
-    //    const git_oid* dstTargetId = git_reference_target(basket);
-    //    if (!dstTargetId) throw RuntimeError("git_reference_target returned null failed: %s", git_error_last()->message);
-        
-        Tree srcTree = src.tree();
-        Tree dstTree = dst.tree();
-        
-        git_oid baseId;
-        int ir = git_merge_base(&baseId, *get(), srcId, dstId);
-        if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
-        
-        Tree ancestorTree = src.parent().tree();
-        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
-        Tree newTree = writeIndex(mergedTreesIndex);
-        Commit newCommit = attachCommit(dst, newTree, src);
-    //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
-        return newCommit;
-    }
-    
-//    std::string currentBranchName() {
-//        Reference head;
-//        {
-//            git_reference* x = nullptr;
-//            int ir = git_repository_head(&x, *this);
-//            if (ir) return {};
-//            head = x;
-//        }
-//        return git_reference_shorthand(*head);
-//    }
-};
-
-struct Object : RefCounted<git_object*, git_object_free> {
-    using RefCounted::RefCounted;
-    const Id& id() const { return *git_object_id(*get()); }
-    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
-    bool operator!=(const Object& x) const { return !(*this==x); }
-    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator const git_object*() const { return *get(); }
-};
-
 struct Branch : Reference {
     using Reference::Reference;
     
@@ -274,6 +158,129 @@ struct Branch : Reference {
         int ir = git_branch_set_upstream(*get(), git_reference_shorthand(upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
     }
+};
+
+struct Repo : RefCounted<git_repository*, git_repository_free> {
+    using RefCounted::RefCounted;
+    
+    static Repo Open(std::string_view path) {
+        git_repository* x = nullptr;
+        int ir = git_repository_open(&x, path.data());
+        if (ir) throw RuntimeError("git_repository_open failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Reference head() const {
+        git_reference* x = nullptr;
+        int ir = git_repository_head(&x, *get());
+        if (ir) throw RuntimeError("git_repository_head failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+//    void setHead(std::string_view head) const {
+//        git_repository_set_head(*get(), head.data());
+//    }
+    
+    void detachHead() const {
+        int ir = git_repository_detach_head(*get());
+        if (ir) throw RuntimeError("git_repository_detach_head failed: %s", git_error_last()->message);
+    }
+    
+    void checkout(std::string_view name) const {
+        Reference ref = Reference::LookupFullName(*get(), name);
+        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
+        if (ir) throw RuntimeError("git_checkout_tree failed: %s", git_error_last()->message);
+        ir = git_repository_set_head(*get(), name.data());
+        if (ir) throw RuntimeError("git_repository_set_head failed: %s", git_error_last()->message);
+    }
+    
+    Index mergeTrees(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
+        git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+        git_index* i = nullptr;
+        int ir = git_merge_trees(&i, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
+        if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
+        return i;
+    }
+    
+    Tree writeIndex(Index index) const {
+        git_oid treeId;
+        int ir = git_index_write_tree_to(&treeId, *index, *get());
+        if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
+        
+        git_tree* newTree = nullptr;
+        ir = git_tree_lookup(&newTree, *get(), &treeId);
+        if (ir) throw RuntimeError("git_tree_lookup failed: %s", git_error_last()->message);
+        return newTree;
+    }
+    
+    // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
+    Commit attachCommit(Commit parent, Tree tree, Commit metadata) const {
+        git_oid commitId;
+        const git_commit* parents[] = {*parent};
+        int ir = git_commit_create(
+            &commitId,
+            *get(),
+            nullptr,
+            git_commit_author(*metadata),
+            git_commit_committer(*metadata),
+            git_commit_message_encoding(*metadata),
+            git_commit_message(*metadata),
+            *tree,
+            std::size(parents),
+            parents
+        );
+        if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
+        return Commit::Lookup(*get(), commitId);
+    }
+
+    Commit cherryPick(Commit dst, Commit src) const {
+        const git_oid* dstId = git_commit_id(*dst);
+        const git_oid* srcId = git_commit_id(*src);
+    //    const git_oid* dstTargetId = git_reference_target(basket);
+    //    if (!dstTargetId) throw RuntimeError("git_reference_target returned null failed: %s", git_error_last()->message);
+        
+        Tree srcTree = src.tree();
+        Tree dstTree = dst.tree();
+        
+        git_oid baseId;
+        int ir = git_merge_base(&baseId, *get(), srcId, dstId);
+        if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
+        
+        Tree ancestorTree = src.parent().tree();
+        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
+        Tree newTree = writeIndex(mergedTreesIndex);
+        Commit newCommit = attachCommit(dst, newTree, src);
+    //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
+        return newCommit;
+    }
+    
+    Branch replaceBranch(Branch branch, Commit commit) const {
+        Branch upstream = branch.upstream();
+        Branch newBranch = Branch::Create(*get(), branch.name(), *commit, true);
+        if (upstream) newBranch.setUpstream(*upstream);
+        return newBranch;
+    }
+    
+//    std::string currentBranchName() {
+//        Reference head;
+//        {
+//            git_reference* x = nullptr;
+//            int ir = git_repository_head(&x, *this);
+//            if (ir) return {};
+//            head = x;
+//        }
+//        return git_reference_shorthand(*head);
+//    }
+};
+
+struct Object : RefCounted<git_object*, git_object_free> {
+    using RefCounted::RefCounted;
+    const Id& id() const { return *git_object_id(*get()); }
+    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
+    bool operator!=(const Object& x) const { return !(*this==x); }
+    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
+//    operator const git_object*() const { return *get(); }
 };
 
 struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
