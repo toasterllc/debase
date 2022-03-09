@@ -415,6 +415,19 @@ int main(int argc, const char* argv[]) {
 //    git_libgit2_init();
 //    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+//    Git::Ref head = repo.head();
+//    Git::Branch branch = Git::Branch::FromRef(*head);
+//    
+//    if (branch) {
+//        printf("branch != nullptr\n");
+//    }
+//    
+//    git_reference* b = *branch;
+//    printf("b == %p\n", b);
+//    
+//    for (;;);
+    
+    
 //    
 //    {
 //        git_reference* ref = nullptr;
