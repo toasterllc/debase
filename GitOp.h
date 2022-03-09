@@ -92,7 +92,7 @@ inline Commit _AddRemoveCommits(
     
     // Apply `combined`
     for (Commit commit : combined) {
-        cherry = CherryPick(repo, cherry, commit);
+        cherry = repo.cherryPick(cherry, commit);
     }
     
     return cherry;

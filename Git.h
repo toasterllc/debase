@@ -166,6 +166,47 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return newTree;
     }
     
+    // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
+    Commit attachCommit(Commit parent, Tree tree, Commit metadata) {
+        git_oid commitId;
+        const git_commit* parents[] = {*parent};
+        int ir = git_commit_create(
+            &commitId,
+            *get(),
+            nullptr,
+            git_commit_author(*metadata),
+            git_commit_committer(*metadata),
+            git_commit_message_encoding(*metadata),
+            git_commit_message(*metadata),
+            *tree,
+            std::size(parents),
+            parents
+        );
+        if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
+        return Commit::Lookup(*get(), commitId);
+    }
+
+    Commit cherryPick(Commit dst, Commit src) {
+        const git_oid* dstId = git_commit_id(*dst);
+        const git_oid* srcId = git_commit_id(*src);
+    //    const git_oid* dstTargetId = git_reference_target(basket);
+    //    if (!dstTargetId) throw RuntimeError("git_reference_target returned null failed: %s", git_error_last()->message);
+        
+        Tree srcTree = src.tree();
+        Tree dstTree = dst.tree();
+        
+        git_oid baseId;
+        int ir = git_merge_base(&baseId, *get(), srcId, dstId);
+        if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
+        
+        Tree ancestorTree = src.parent().tree();
+        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
+        Tree newTree = writeIndex(mergedTreesIndex);
+        Commit newCommit = attachCommit(dst, newTree, src);
+    //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
+        return newCommit;
+    }
+    
 //    std::string currentBranchName() {
 //        Reference head;
 //        {
@@ -286,46 +327,5 @@ inline std::string Str(git_time_t t) {
 struct Rev {
 
 };
-
-// Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
-inline Commit CommitAttach(Repo repo, Commit parent, Tree tree, Commit metadata) {
-    git_oid commitId;
-    const git_commit* parents[] = {*parent};
-    int ir = git_commit_create(
-        &commitId,
-        *repo,
-        nullptr,
-        git_commit_author(*metadata),
-        git_commit_committer(*metadata),
-        git_commit_message_encoding(*metadata),
-        git_commit_message(*metadata),
-        *tree,
-        std::size(parents),
-        parents
-    );
-    if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-    return Commit::Lookup(*repo, commitId);
-}
-
-inline Commit CherryPick(Repo repo, Commit dst, Commit src) {
-    const git_oid* dstId = git_commit_id(*dst);
-    const git_oid* srcId = git_commit_id(*src);
-//    const git_oid* dstTargetId = git_reference_target(basket);
-//    if (!dstTargetId) throw RuntimeError("git_reference_target returned null failed: %s", git_error_last()->message);
-    
-    Tree srcTree = src.tree();
-    Tree dstTree = dst.tree();
-    
-    git_oid baseId;
-    int ir = git_merge_base(&baseId, *repo, srcId, dstId);
-    if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
-    
-    Tree ancestorTree = src.parent().tree();
-    Index mergedTreesIndex = repo.mergeTrees(ancestorTree, dstTree, srcTree);
-    Tree newTree = repo.writeIndex(mergedTreesIndex);
-    Commit newCommit = CommitAttach(repo, dst, newTree, src);
-//    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
-    return newCommit;
-}
 
 } // namespace Git
