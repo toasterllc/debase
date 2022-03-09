@@ -36,7 +36,7 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         return Lookup(repo, commitId);
     }
     
-    Tree tree() {
+    Tree tree() const {
         git_tree* t = nullptr;
         int ir = git_commit_tree(&t, *this);
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
@@ -44,7 +44,7 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         return t;
     }
     
-    Commit parent(unsigned int n=0) {
+    Commit parent(unsigned int n=0) const {
         git_commit* c = nullptr;
         int ir = git_commit_parent(&c, *this, n);
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
@@ -87,7 +87,7 @@ struct Branch : Reference {
         return x;
     }
     
-    const char* name() {
+    const char* name() const {
         const char* x = nullptr;
         int ir = git_branch_name(&x, *this);
         if (ir) throw RuntimeError("git_branch_name failed: %s", git_error_last()->message);
