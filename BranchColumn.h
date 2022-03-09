@@ -22,7 +22,7 @@ public:
         int offY = InsetY;
         git_oid commitId;
         while (!git_revwalk_next(&commitId, *walk)) {
-            Git::Commit commit = Git::CommitLookup(repo, commitId);
+            Git::Commit commit = Git::Commit::Lookup(repo, commitId);
             CommitPanel& p = _panels.emplace_back(commit, idx, width);
             p.setPosition({_offsetX, offY});
             offY += p.rect().size.y + 1;

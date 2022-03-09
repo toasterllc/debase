@@ -108,6 +108,12 @@ public:
     const Git::Commit& commit() const { return _commit; }
     const size_t idx() const { return _idx; }
     
+    bool operator<(const CommitPanel& x) {
+        if (_idx != x.idx()) return _idx < x.idx();
+        // Indices are equal; perform pointer comparison
+        return this < &x;
+    }
+    
 private:
     Git::Commit _commit;
     size_t _idx = 0;
@@ -119,15 +125,16 @@ private:
     bool _drawNeeded = false;
 };
 
-struct _CommitPanelCompare {
-    bool operator() (CommitPanel* a, CommitPanel* b) const {
-        if (a->idx() != b->idx()) return a->idx() < b->idx();
-        // Indices are equal; perform pointer comparison
-        return a < b;
-    }
-};
+// Specialize std::less for CommitPanel*
+namespace std {
+    template<>
+    struct less<CommitPanel> {
+        bool operator()(const CommitPanel* a, const CommitPanel* b) const { return false; }
+//        bool operator()(const CommitPanel* a, const CommitPanel* b) const { return *a < *b; }
+    };
+} // namespace std
 
-using CommitPanelSet = std::set<CommitPanel*, _CommitPanelCompare>;
+using CommitPanelSet = std::set<CommitPanel*>;
 static bool Contains(const CommitPanelSet& s, CommitPanel* p) {
     return s.find(p) != s.end();
 }
