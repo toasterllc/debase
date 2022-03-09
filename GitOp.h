@@ -17,14 +17,19 @@ struct Op {
     
     Repo repo;
     
-    Branch srcBranch;
+    Reference srcRef;
     std::set<Commit> srcCommits;
     
-    Branch dstBranch;
+    Reference dstRef;
     Commit dstCommit;
 };
 
-inline void _Exec_MoveCommits(const Op& op) {
+struct OpResult {
+    Reference srcRef;
+    Reference dstRef;
+};
+
+inline OpResult _Exec_MoveCommits(const Op& op) {
     Commit finalCherryDst;
     Commit finalCherrySrc;
     
@@ -35,7 +40,7 @@ inline void _Exec_MoveCommits(const Op& op) {
         std::deque<Commit> srcCommits;
         {
             std::set<Commit> tmp = op.srcCommits;
-            Commit commit = op.srcBranch.commit();
+            Commit commit = op.srcRef.commit();
             while (srcCommits.size() != op.srcCommits.size()) {
                 if (tmp.find(commit) != tmp.end()) {
                     srcCommits.push_front(commit);
@@ -54,7 +59,7 @@ inline void _Exec_MoveCommits(const Op& op) {
         // dstCommits = commits to apply after `srcCommits`
         std::deque<Commit> dstCommits;
         {
-            Commit commit = op.dstBranch.commit();
+            Commit commit = op.dstRef.commit();
             while (commit != op.dstCommit) {
                 dstCommits.push_front(commit);
             }
@@ -80,7 +85,7 @@ inline void _Exec_MoveCommits(const Op& op) {
         // Collect all commits from `srcBranch` that should remain intact, until we hit
         // the parent of the earliest commit to be moved (`op.srcCommits`).
         std::deque<Commit> srcCommits;
-        Commit commit = op.srcBranch.commit();
+        Commit commit = op.srcRef.commit();
         {
             std::set<Commit> tmp = op.srcCommits;
             while (!tmp.empty()) {
@@ -103,17 +108,20 @@ inline void _Exec_MoveCommits(const Op& op) {
     
     // Create our branches
     {
-        Branch upstreamDst = op.dstBranch.upstream();
-        Branch upstreamSrc = op.srcBranch.upstream();
+        if (Branch branch = Branch::FromReference(op.dstRef)) {
+            Branch upstream = branch.upstream();
+            Branch newBranch = Branch::Create(op.repo, branch.name(), finalCherryDst, true);
+            if (upstream) newBranch.upstreamSet(upstream);
+        }
         
-        // Create a new branch from `finalCherry`
-        Branch newBranchDst = Branch::Create(op.repo, op.dstBranch.name(), finalCherryDst, true);
-        Branch newBranchSrc = Branch::Create(op.repo, op.srcBranch.name(), finalCherrySrc, true);
-        
-        // Copy upstream info to the new branches
-        newBranchDst.upstreamSet(upstreamDst);
-        newBranchSrc.upstreamSet(upstreamSrc);
+        if (Branch branch = Branch::FromReference(op.srcRef)) {
+            Branch upstream = branch.upstream();
+            Branch newBranch = Branch::Create(op.repo, branch.name(), finalCherrySrc, true);
+            if (upstream) newBranch.upstreamSet(upstream);
+        }
     }
+    
+    return {};
     
 //    // Find the earliest commit
 //    Commit earliestCommit;
@@ -135,25 +143,25 @@ inline void _Exec_MoveCommits(const Op& op) {
 //    }
 }
 
-inline void _Exec_CopyCommits(const Op& op) {
-    
+inline OpResult _Exec_CopyCommits(const Op& op) {
+    return {};
 }
 
-inline void _Exec_DeleteCommits(const Op& op) {
-    
+inline OpResult _Exec_DeleteCommits(const Op& op) {
+    return {};
 }
 
-inline void _Exec_CombineCommits(const Op& op) {
-    
+inline OpResult _Exec_CombineCommits(const Op& op) {
+    return {};
 }
 
-inline void _Exec_EditCommitMessage(const Op& op) {
-    
+inline OpResult _Exec_EditCommitMessage(const Op& op) {
+    return {};
 }
 
-inline void Exec(const Op& op) {
+inline OpResult Exec(const Op& op) {
     switch (op.type) {
-    case Op::Type::None:                return;
+    case Op::Type::None:                return {};
     case Op::Type::MoveCommits:         return _Exec_MoveCommits(op);
     case Op::Type::CopyCommits:         return _Exec_CopyCommits(op);
     case Op::Type::DeleteCommits:       return _Exec_DeleteCommits(op);

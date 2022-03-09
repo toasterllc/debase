@@ -3,26 +3,22 @@
 #include "Panel.h"
 #include "CommitPanel.h"
 
-// BranchColumn: a column in the UI containing commits (of type CommitPanel)
-// for a particular git branch
-class BranchColumn {
+// CommitsColumn: a column in the UI containing commits (of type CommitPanel)
+// for a particular git branch or ref
+class CommitsColumn {
 public:
-    BranchColumn(Window& win, Git::Repo repo, std::string_view name, std::string_view displayName, int offsetX, int width) :
-    _win(win), _name(name), _displayName(displayName), _offsetX(offsetX), _width(width) {
+    CommitsColumn(Window& win, Git::Repo repo, Git::Reference ref, int offsetX, int width) :
+    _win(win), _ref(ref), _name(_ref.name()), _displayName(_ref.name()), _offsetX(offsetX), _width(width) {
+        if (_ref.isHead()) {
+            _displayName = _displayName + " (HEAD)";
+        }
+        
         // Create panels for each commit
-        Git::RevWalk walk = Git::RevWalkCreate(repo);
-        
-        std::string revrangeStr = (_name+"~10.."+_name);
-        
-        int ir = git_revwalk_push_range(*walk, revrangeStr.c_str());
-        if (ir) throw RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
-        
         constexpr int InsetY = 2;
         size_t idx = 0;
         int offY = InsetY;
-        git_oid commitId;
-        while (!git_revwalk_next(&commitId, *walk)) {
-            Git::Commit commit = Git::Commit::Lookup(repo, commitId);
+        Git::RevWalk walk = Git::RevWalk::Create(repo, _name+"~10.."+_name);
+        while (Git::Commit commit = walk.next()) {
             CommitPanel& p = _panels.emplace_back(commit, idx, width);
             p.setPosition({_offsetX, offY});
             offY += p.rect().size.y + 1;
@@ -50,10 +46,12 @@ public:
         return nullptr;
     }
     
+    Git::Reference ref() { return _ref; }
     CommitPanelVec& panels() { return _panels; }
     
 private:
     Window& _win;
+    Git::Reference _ref;
     std::string _name;
     std::string _displayName;
     int _offsetX = 0;

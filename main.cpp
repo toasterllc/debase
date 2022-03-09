@@ -16,17 +16,19 @@
 #include "RuntimeError.h"
 #include "CommitPanel.h"
 #include "BorderedPanel.h"
-#include "BranchColumn.h"
+#include "CommitsColumn.h"
 #include "GitOp.h"
 
 struct Selection {
-    BranchColumn* column = nullptr;
-    CommitPanelSet panels;
+    CommitsColumn* column = nullptr;
+    std::set<CommitPanel*> panels;
 };
+
+static Git::Repo _Repo;
 
 static Window _RootWindow;
 
-static std::vector<BranchColumn> _BranchColumns;
+static std::vector<CommitsColumn> _Columns;
 
 static struct {
     std::optional<CommitPanel> titlePanel;
@@ -51,7 +53,7 @@ static void _Draw() {
             }
         }
         
-        for (BranchColumn& col : _BranchColumns) {
+        for (CommitsColumn& col : _Columns) {
             for (CommitPanel& panel : col.panels()) {
                 bool selected = Contains(_Selection.panels, &panel);
                 if (selected) {
@@ -67,7 +69,7 @@ static void _Draw() {
     {
         _RootWindow.erase();
         
-        for (BranchColumn& col : _BranchColumns) {
+        for (CommitsColumn& col : _Columns) {
             col.draw();
         }
         
@@ -101,12 +103,12 @@ static void _Draw() {
 }
 
 struct _HitTestResult {
-    BranchColumn& column;
+    CommitsColumn& column;
     CommitPanel& panel;
 };
 
 static std::optional<_HitTestResult> _HitTest(const Point& p) {
-    for (BranchColumn& col : _BranchColumns) {
+    for (CommitsColumn& col : _Columns) {
         if (CommitPanel* panel = col.hitTest(p)) {
             return _HitTestResult{col, *panel};
         }
@@ -114,11 +116,11 @@ static std::optional<_HitTestResult> _HitTest(const Point& p) {
     return std::nullopt;
 }
 
-static std::tuple<BranchColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
-    BranchColumn* insertionCol = nullptr;
+static std::tuple<CommitsColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
+    CommitsColumn* insertionCol = nullptr;
     CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
-    for (BranchColumn& col : _BranchColumns) {
+    for (CommitsColumn& col : _Columns) {
         CommitPanelVec& panels = col.panels();
         const Rect lastRect = panels.back().rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
@@ -164,7 +166,7 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
 
 // _TrackMouseInsideCommitPanel
 // Handles dragging a set of CommitPanels
-static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, CommitsColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
     const Rect mouseDownPanelRect = mouseDownPanel.rect();
     const Size delta = {
         mouseDownPanelRect.point.x-mouseDownEvent.x,
@@ -188,7 +190,7 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
     }
     
     MEVENT mouse = mouseDownEvent;
-    BranchColumn* insertionCol = nullptr;
+    CommitsColumn* insertionCol = nullptr;
     CommitPanelVecIter insertionIter;
     for (;;) {
         assert(!_Selection.panels.empty());
@@ -267,13 +269,44 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         if (!_WaitForMouseEvent(mouse)) break;
     }
     
-//    BranchColumn* insertionCol = nullptr;
-//    CommitPanelVecIter insertionIter;
+    
+//    Type type = Type::None;
 //    
-//    // Move or copy _Selection to `insertionIter` within `insertionCol`
-//    if () {
-//        
-//    }
+//    Repo repo;
+//    
+//    Branch srcBranch;
+//    std::set<Commit> srcCommits;
+//    
+//    Branch dstBranch;
+//    Commit dstCommit;
+    
+    
+    std::optional<Git::Op> gitOp;
+    if (_Drag.titlePanel) {
+        std::set<Git::Commit> srcCommits;
+        for (CommitPanel* panel : _Selection.panels) {
+            srcCommits.insert(panel->commit());
+        }
+        
+        Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? insertionIter->commit() : nullptr);
+        gitOp = Git::Op{
+            .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
+            .repo = _Repo,
+            .srcRef = _Selection.column->ref(),
+            .srcCommits = srcCommits,
+            .dstRef = insertionCol->ref(),
+            .dstCommit = dstCommit,
+        };
+        
+        
+        
+        
+        
+//        gitOp.emplace();
+//        gitOp->type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits);
+//        gitOp->repo = _Repo;
+//        git
+    }
     
     // Reset state
     {
@@ -281,12 +314,14 @@ static void _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, BranchColumn& mo
         _InsertionMarker = std::nullopt;
         
         // Make every commit visible again
-        for (BranchColumn& col : _BranchColumns) {
+        for (CommitsColumn& col : _Columns) {
             for (CommitPanel& panel : col.panels()) {
                 panel.setVisible(true);
             }
         }
     }
+    
+    return gitOp;
 }
 
 // _TrackMouseOutsideCommitPanel
@@ -312,7 +347,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Update selection
         {
             Selection selectionNew;
-            for (BranchColumn& col : _BranchColumns) {
+            for (CommitsColumn& col : _Columns) {
                 for (CommitPanel& panel : col.panels()) {
                     if (!Empty(Intersection(selectionRect, panel.rect()))) {
                         selectionNew.column = &col;
@@ -353,31 +388,40 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
 }
 
 int main(int argc, const char* argv[]) {
-    git_libgit2_init();
-    
-    Git::Repo repo = Git::RepoOpen("/Users/dave/Desktop/CursesTest");
-    
-    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
-    Git::Branch branch2 = Git::Branch::Lookup(repo, "PerfComparison2");
-    printf("%d\n", branch==branch2);
-    
-    const git_oid* id1 = git_reference_target(*branch);
-    assert(id1);
-    printf("id1: %s\n", Git::Str(*id1).c_str());
-    
-    git_object* obj = nullptr;
-    int ir = git_reference_peel(&obj, *branch, GIT_OBJECT_COMMIT);
-    assert(!ir);
-    
-    const git_oid* id2 = git_object_id(obj);
-    printf("id2: %s\n", Git::Str(*id2).c_str());
+//    git_libgit2_init();
+//    
+//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/CursesTest");
+//    
+//    Git::Reference ref = Git::Reference::Lookup(repo, "PerfComparison2");
+//    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
+//    Git::Branch branch2 = Git::Branch::Lookup(repo, "PerfComparison2");
+//    printf("branch==branch2: %d\n", branch==branch2);
+//    printf("ref==branch: %d\n", ref==branch);
+//    printf("ref.isSymbolic(): %d\n", ref.isSymbolic());
+//    printf("ref.isDirect(): %d\n", ref.isDirect());
+//    
+//    git_reference_t t = git_reference_type(ref);
+//    printf("git_reference_type: %d\n", t);
+//    
+//    printf("ref names: %s %s\n", ref.name(), ref.shorthandName());
+//    
+//    const git_oid* id1 = git_reference_target(*branch);
+//    assert(id1);
+//    printf("id1: %s\n", Git::Str(*id1).c_str());
+//    
+//    git_object* obj = nullptr;
+//    int ir = git_reference_peel(&obj, *branch, GIT_OBJECT_COMMIT);
+//    assert(!ir);
+//    
+//    const git_oid* id2 = git_object_id(obj);
+//    printf("id2: %s\n", Git::Str(*id2).c_str());
     
     try {
         // Handle args
-        std::vector<std::string> branches;
+        std::vector<std::string> refNames;
         {
             for (int i=1; i<argc; i++) {
-                branches.push_back(argv[i]);
+                refNames.push_back(argv[i]);
             }
         }
         
@@ -422,36 +466,34 @@ int main(int argc, const char* argv[]) {
             
             // Hide cursor
             ::curs_set(0);
+            
+            _RootWindow = Window(::stdscr);
         }
         
-        // Init libgit2
+        // Init git
         {
             git_libgit2_init();
+            _Repo = Git::Repo::Open(".");
         }
         
 //        volatile bool a = false;
 //        while (!a);
         
-        _RootWindow = Window(::stdscr);
-        
-        // Create a BranchColumn for each specified branch
+        // Create a CommitsColumn for each specified branch
         {
             constexpr int InsetX = 3;
             constexpr int ColumnWidth = 32;
             constexpr int ColumnSpacing = 6;
-            Git::Repo repo = Git::RepoOpen(".");
+            
+            std::vector<Git::Reference> refs;
+            refs.push_back(_Repo.head());
+            for (const std::string& refName : refNames) {
+                refs.push_back(Git::Reference::Lookup(_Repo, refName));
+            }
             
             int OffsetX = InsetX;
-            branches.insert(branches.begin(), "HEAD");
-            for (const std::string& branch : branches) {
-                std::string displayName = branch;
-                if (branch == "HEAD") {
-                    std::string currentBranchName = Git::RepoCurrentBranchNameGet(repo);
-                    if (!currentBranchName.empty()) {
-                        displayName = currentBranchName + " (HEAD)";
-                    }
-                }
-                _BranchColumns.emplace_back(_RootWindow, repo, branch, displayName, OffsetX, ColumnWidth);
+            for (const Git::Reference& ref : refs) {
+                _Columns.emplace_back(_RootWindow, _Repo, ref, OffsetX, ColumnWidth);
                 OffsetX += ColumnWidth+ColumnSpacing;
             }
         }
@@ -468,12 +510,17 @@ int main(int argc, const char* argv[]) {
                 if (mouse.bstate & BUTTON1_PRESSED) {
                     const bool shift = (mouse.bstate & BUTTON_SHIFT);
                     const auto hitTest = _HitTest({mouse.x, mouse.y});
+                    std::optional<Git::Op> gitOp;
                     if (hitTest && !shift) {
                         // Mouse down inside of a CommitPanel, without shift key
-                        _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
+                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
                     } else {
                         // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
                         _TrackMouseOutsideCommitPanel(mouse);
+                    }
+                    
+                    if (gitOp) {
+                        Git::Exec(*gitOp);
                     }
                 }
             

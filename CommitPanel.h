@@ -134,8 +134,7 @@ namespace std {
     };
 } // namespace std
 
-using CommitPanelSet = std::set<CommitPanel*>;
-static bool Contains(const CommitPanelSet& s, CommitPanel* p) {
+static bool Contains(const std::set<CommitPanel*>& s, CommitPanel* p) {
     return s.find(p) != s.end();
 }
 
