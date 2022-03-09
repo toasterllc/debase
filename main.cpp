@@ -387,6 +387,26 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
+static void _Reload(const std::vector<std::string>& refNames) {
+    // Create a CommitsColumn for each specified branch
+    constexpr int InsetX = 3;
+    constexpr int ColumnWidth = 32;
+    constexpr int ColumnSpacing = 6;
+    int OffsetX = InsetX;
+    
+    std::vector<Git::Reference> refs;
+    refs.push_back(_Repo.head());
+    for (const std::string& refName : refNames) {
+        refs.push_back(Git::Reference::Lookup(*_Repo, refName));
+    }
+    
+    _Columns.clear();
+    for (const Git::Reference& ref : refs) {
+        _Columns.emplace_back(_RootWindow, _Repo, ref, OffsetX, ColumnWidth);
+        OffsetX += ColumnWidth+ColumnSpacing;
+    }
+}
+
 int main(int argc, const char* argv[]) {
 //    git_libgit2_init();
 //    
@@ -415,8 +435,6 @@ int main(int argc, const char* argv[]) {
 //    
 //    const git_oid* id2 = git_object_id(obj);
 //    printf("id2: %s\n", Git::Str(*id2).c_str());
-    
-    std::string headPrev;
     
     // Handle args
     std::vector<std::string> refNames;
@@ -481,28 +499,11 @@ int main(int argc, const char* argv[]) {
 //        volatile bool a = false;
 //        while (!a);
         
-        // Create a CommitsColumn for each specified branch
-        {
-            constexpr int InsetX = 3;
-            constexpr int ColumnWidth = 32;
-            constexpr int ColumnSpacing = 6;
-            
-            std::vector<Git::Reference> refs;
-            refs.push_back(_Repo.head());
-            for (const std::string& refName : refNames) {
-                refs.push_back(Git::Reference::Lookup(*_Repo, refName));
-            }
-            
-            int OffsetX = InsetX;
-            for (const Git::Reference& ref : refs) {
-                _Columns.emplace_back(_RootWindow, _Repo, ref, OffsetX, ColumnWidth);
-                OffsetX += ColumnWidth+ColumnSpacing;
-            }
-        }
+        _Reload(refNames);
         
         mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         mouseinterval(0);
-        for (int i=0;; i++) {
+        for (;;) {
             _Draw();
             int key = _RootWindow.getChar();
             if (key == KEY_MOUSE) {
@@ -523,6 +524,7 @@ int main(int argc, const char* argv[]) {
                     
                     if (gitOp) {
                         Git::Exec(*gitOp);
+                        _Reload(refNames);
                     }
                 }
             

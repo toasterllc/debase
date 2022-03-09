@@ -334,7 +334,7 @@ inline OpResult _Exec_EditCommitMessage(const Op& op) {
 }
 
 inline OpResult Exec(const Op& op) {
-    // We have to detach the head, otherwise we'll get errors if we try
+    // We have to detach the head, otherwise we'll get an error if we try
     // to replace the current branch
     std::string headPrev = op.repo.head().fullName();
     op.repo.detachHead();
@@ -354,6 +354,7 @@ inline OpResult Exec(const Op& op) {
         err = std::current_exception();
     }
     
+    // Restore previous head
     if (!headPrev.empty()) {
         op.repo.checkout(headPrev);
 //        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
