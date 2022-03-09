@@ -12,10 +12,10 @@ using Buf = RefCounted<git_buf, git_buf_dispose>;
 
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;
-    const Id* id() const { return git_commit_id(*(*this)); }
-    bool operator==(const Commit& x) const { return git_oid_cmp(id(), x.id())==0; }
+    const Id& id() const { return *git_commit_id(*(*this)); }
+    bool operator==(const Commit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Commit& x) const { return !(*this==x); }
-    bool operator<(const Commit& x) const { return git_oid_cmp(id(), x.id())<0; }
+    bool operator<(const Commit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
 //    operator git_commit*() { return *(*this); }
 //    operator const git_commit*() const { return *(*this); }
     
@@ -57,6 +57,13 @@ struct Reference : RefCounted<git_reference*, git_reference_free> {
     static Reference Lookup(git_repository* repo, std::string_view name) {
         git_reference* x = nullptr;
         int ir = git_reference_dwim(&x, repo, name.data());
+        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    static Reference Lookup(git_repository* repo, const Id& id) {
+        git_reference* x = nullptr;
+        int ir = git_reference_dwim(&x, repo, git_oid_tostr_s(&id));
         if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
         return x;
     }
@@ -122,10 +129,10 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 
 struct Object : RefCounted<git_object*, git_object_free> {
     using RefCounted::RefCounted;
-    const Id* id() const { return git_object_id(*(*this)); }
-    bool operator==(const Object& x) const { return git_oid_cmp(id(), x.id())==0; }
+    const Id& id() const { return *git_object_id(*(*this)); }
+    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Object& x) const { return !(*this==x); }
-    bool operator<(const Object& x) const { return git_oid_cmp(id(), x.id())<0; }
+    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
 //    operator const git_object*() const { return *(*this); }
 };
 
