@@ -91,11 +91,11 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return git_reference_is_tag(*get());
     }
     
-    bool isHead() const {
-        int ir = git_branch_is_head(*get());
-        if (ir < 0) throw RuntimeError("git_branch_is_head failed: %s", git_error_last()->message);
-        return ir==1;
-    }
+//    bool isHead() const {
+//        int ir = git_branch_is_head(*get());
+//        if (ir < 0) throw RuntimeError("git_branch_is_head failed: %s", git_error_last()->message);
+//        return ir==1;
+//    }
     
 //    bool isSymbolic() const {
 //        return git_reference_type(*this)==GIT_REFERENCE_SYMBOLIC;
@@ -340,9 +340,25 @@ inline std::string Str(git_time_t t) {
 
 // A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
 // that targets that commit
-struct Rev {
+class Rev {
+public:
+    Rev() {}
+    
+    Rev(Commit c) : commit(c) {}
+    
+    Rev(Ref r) : ref(r) {
+        commit = ref.commit();
+    }
+    
     Commit commit; // Mandatory
     Ref ref;       // Optional
 };
+
+//// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
+//// that targets that commit
+//struct Rev {
+//    Commit commit; // Mandatory
+//    Ref ref;       // Optional
+//};
 
 } // namespace Git

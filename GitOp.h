@@ -124,7 +124,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
     // Update source/destination refs (branches/tags)
     {
         if (r.src.commit) {
-            if (Branch branch = Branch::FromReference(*op.src.rev.ref)) {
+            if (Branch branch = Branch::FromRef(*op.src.rev.ref)) {
                 r.src.ref = op.repo.replaceBranch(branch, r.src.commit);
             
             } else if (false) {
@@ -136,7 +136,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
         }
         
         if (r.dst.commit) {
-            if (Branch branch = Branch::FromReference(*op.dst.rev.ref)) {
+            if (Branch branch = Branch::FromRef(*op.dst.rev.ref)) {
                 r.dst.ref = op.repo.replaceBranch(branch, r.dst.commit);
             
             } else if (false) {

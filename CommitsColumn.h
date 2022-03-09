@@ -8,16 +8,23 @@
 class CommitsColumn {
 public:
     CommitsColumn(Window& win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
-    _win(win), _rev(rev), _name(_rev.name()), _offsetX(offsetX), _width(width) {
+    _win(win), _rev(rev), _offsetX(offsetX), _width(width) {
         
-        if (_ref.isHead()) {
+        if (_rev.ref) {
+            _name = _rev.ref.name();
+        } else {
+            _name = Git::Str(_rev.commit.id());
+        }
+        
+        bool isHead = repo.head().commit() == rev.commit;
+        if (isHead) {
             _name = _name + " (HEAD)";
         }
         
         // Create panels for each commit
         constexpr int InsetY = 2;
         int offY = InsetY;
-        Git::Commit commit = _ref.commit();
+        Git::Commit commit = rev.commit;
         for (int i=0; commit && i<8; i++) {
             CommitPanel& p = _panels.emplace_back(commit, i, width);
             p.setPosition({_offsetX, offY});

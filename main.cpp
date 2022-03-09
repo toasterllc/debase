@@ -292,10 +292,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         gitOp = Git::Op{
             .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
             .repo = _Repo,
-            .srcRef = _Selection.column->ref(),
-            .srcCommits = srcCommits,
-            .dstRef = insertionCol->ref(),
-            .dstCommit = dstCommit,
+            .src = {
+                .rev = _Selection.column->rev(),
+                .commits = srcCommits,
+            },
+            .dst = {
+                .rev = insertionCol->rev(),
+                .position = dstCommit,
+            }
         };
         
         
@@ -394,14 +398,14 @@ static void _Reload(const std::vector<std::string>& refNames) {
     constexpr int ColumnSpacing = 6;
     int OffsetX = InsetX;
     
-    std::vector<Git::Reference> refs;
-    refs.push_back(_Repo.head());
+    std::vector<Git::Rev> revs;
+    revs.push_back(_Repo.head());
     for (const std::string& refName : refNames) {
-        refs.push_back(Git::Reference::Lookup(*_Repo, refName));
+        revs.push_back(Git::Ref::Lookup(*_Repo, refName));
     }
     
     _Columns.clear();
-    for (const Git::Reference& ref : refs) {
+    for (const Git::Ref& ref : refs) {
         _Columns.emplace_back(_RootWindow, _Repo, ref, OffsetX, ColumnWidth);
         OffsetX += ColumnWidth+ColumnSpacing;
     }
@@ -418,7 +422,7 @@ int main(int argc, const char* argv[]) {
         assert(!ir);
     }
     
-//    Git::Reference ref = Git::Reference::Lookup(repo, "PerfComparison2");
+//    Git::Ref ref = Git::Ref::Lookup(repo, "PerfComparison2");
 //    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
 //    Git::Branch branch2 = Git::Branch::Lookup(repo, "PerfComparison2");
 //    printf("branch==branch2: %d\n", branch==branch2);
