@@ -459,7 +459,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: reject remote branches (eg 'origin/master')
+    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
     
     #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
     
@@ -467,7 +467,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: an undo/redo button would be nice
+    #warning TODO: an undo/redo button
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
