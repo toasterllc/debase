@@ -2,34 +2,44 @@
 #include <optional>
 #include "Panel.h"
 #include "Color.h"
+#include "Attr.h"
+
+namespace UI {
 
 class BorderedPanel : public Panel {
 public:
     BorderedPanel(const Size& size) {
+        _s = std::make_shared<_State>();
         setSize(size);
-        _drawNeeded = true;
+        _s->drawNeeded = true;
     }
     
     void setBorderColor(std::optional<Color> x) {
-        if (_borderColor == x) return;
-        _borderColor = x;
-        _drawNeeded = true;
+        if (_s->borderColor == x) return;
+        _s->borderColor = x;
+        _s->drawNeeded = true;
     }
     
     void draw() {
-        Window::Attr attr;
-        if (_borderColor) attr = setAttr(COLOR_PAIR(*_borderColor));
+        UI::Attr attr;
+        if (_s->borderColor) attr = Attr(*this, COLOR_PAIR(*_s->borderColor));
         drawBorder();
-        _drawNeeded = false;
+        _s->drawNeeded = false;
     }
     
     void drawIfNeeded() {
-        if (_drawNeeded) {
+        if (_s->drawNeeded) {
             draw();
         }
     }
     
 private:
-    std::optional<Color> _borderColor;
-    bool _drawNeeded = false;
+    struct _State {
+        std::optional<Color> borderColor;
+        bool drawNeeded = false;
+    };
+    
+    std::shared_ptr<_State> _s;
 };
+
+} // namespace UI

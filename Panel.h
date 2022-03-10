@@ -2,26 +2,12 @@
 #include "lib/ncurses/include/panel.h"
 #include "Window.h"
 
+namespace UI {
+
 class Panel : public Window {
 public:
     Panel() : Window(Window::New) {
-        _s.panel = ::new_panel(*this);
-        assert(_s.panel);
-    }
-    
-    // Move constructor: use move assignment operator
-    Panel(Panel&& x) { *this = std::move(x); }
-    
-    // Move assignment operator
-    Panel& operator=(Panel&& x) {
-        Window::operator=(std::move(x));
-        _s = std::move(x._s);
-        x._s = {};
-        return *this;
-    }
-    
-    ~Panel() {
-        ::del_panel(*this);
+        _s = std::make_shared<_State>(*this);
     }
     
     void setPosition(const Point& p) {
@@ -45,10 +31,26 @@ public:
         ::bottom_panel(*this);
     }
     
-    operator PANEL*() const { return _s.panel; }
+    operator PANEL*() const { return _s->panel; }
     
 private:
-    struct {
+    class _State {
+    public:
+        _State(Window win) : win(win) {
+            panel = ::new_panel(win);
+            assert(panel);
+        }
+        
+        ~_State() {
+            ::del_panel(panel);
+            panel = nullptr;
+        }
+        
+        Window win; // Hold onto `win` explicitly since our panel needs it
         PANEL* panel = nullptr;
-    } _s = {};
+    };
+    
+    std::shared_ptr<_State> _s;
 };
+
+} // namespace UI

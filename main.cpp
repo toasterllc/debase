@@ -20,42 +20,42 @@
 #include "GitOp.h"
 
 struct Selection {
-    RevColumn* column = nullptr;
-    std::set<CommitPanel*> panels;
+    UI::RevColumn column;
+    std::set<UI::CommitPanel> panels;
 };
 
 static Git::Repo _Repo;
 
-static Window _RootWindow;
+static UI::Window _RootWindow;
 
-static std::vector<RevColumn> _Columns;
+static std::vector<UI::RevColumn> _Columns;
 
 static struct {
-    std::optional<CommitPanel> titlePanel;
-    std::vector<BorderedPanel> shadowPanels;
+    std::optional<UI::CommitPanel> titlePanel;
+    std::vector<UI::BorderedPanel> shadowPanels;
     bool copy = false;
 } _Drag;
 
 static Selection _Selection;
-static std::optional<Rect> _SelectionRect;
-static std::optional<Rect> _InsertionMarker;
+static std::optional<UI::Rect> _SelectionRect;
+static std::optional<UI::Rect> _InsertionMarker;
 
 static void _Draw() {
-    const Color selectionColor = (_Drag.copy ? Colors::SelectionCopy : Colors::SelectionMove);
+    const UI::Color selectionColor = (_Drag.copy ? UI::Colors::SelectionCopy : UI::Colors::SelectionMove);
     
     // Update selection colors
     {
         if (_Drag.titlePanel) {
             _Drag.titlePanel->setBorderColor(selectionColor);
             
-            for (BorderedPanel& panel : _Drag.shadowPanels) {
+            for (UI::BorderedPanel& panel : _Drag.shadowPanels) {
                 panel.setBorderColor(selectionColor);
             }
         }
         
-        for (RevColumn& col : _Columns) {
-            for (CommitPanel& panel : col.panels()) {
-                bool selected = Contains(_Selection.panels, &panel);
+        for (UI::RevColumn& col : _Columns) {
+            for (UI::CommitPanel panel : col.panels()) {
+                bool selected = UI::Contains(_Selection.panels, panel);
                 if (selected) {
                     panel.setBorderColor(selectionColor);
                 } else {
@@ -69,7 +69,7 @@ static void _Draw() {
     {
         _RootWindow.erase();
         
-        for (RevColumn& col : _Columns) {
+        for (UI::RevColumn col : _Columns) {
             col.draw();
         }
         
@@ -77,17 +77,17 @@ static void _Draw() {
             _Drag.titlePanel->drawIfNeeded();
         }
         
-        for (BorderedPanel& panel : _Drag.shadowPanels) {
+        for (UI::BorderedPanel& panel : _Drag.shadowPanels) {
             panel.drawIfNeeded();
         }
         
         if (_SelectionRect) {
-            Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(selectionColor));
+            UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
             _RootWindow.drawRect(*_SelectionRect);
         }
         
         if (_InsertionMarker) {
-            Window::Attr attr = _RootWindow.setAttr(COLOR_PAIR(selectionColor));
+            UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
             _RootWindow.drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
             
             const char* text = (_Drag.copy ? " Copy " : " Move ");
@@ -98,19 +98,19 @@ static void _Draw() {
             _RootWindow.drawText(point, "%s", text);
         }
         
-        Window::Redraw();
+        UI::Window::Redraw();
     }
 }
 
 struct _HitTestResult {
-    RevColumn& column;
-    CommitPanel& panel;
+    UI::RevColumn column;
+    UI::CommitPanel panel;
 };
 
 static std::optional<_HitTestResult> _HitTest(const Point& p) {
-    for (RevColumn& col : _Columns) {
-        if (CommitPanel* panel = col.hitTest(p)) {
-            return _HitTestResult{col, *panel};
+    for (UI::RevColumn col : _Columns) {
+        if (UI::CommitPanel panel = col.hitTest(p)) {
+            return _HitTestResult{col, panel};
         }
     }
     return std::nullopt;
@@ -166,19 +166,19 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
 
 // _TrackMouseInsideCommitPanel
 // Handles dragging a set of CommitPanels
-static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, RevColumn& mouseDownColumn, CommitPanel& mouseDownPanel) {
-    const Rect mouseDownPanelRect = mouseDownPanel.rect();
-    const Size delta = {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+    const UI::Rect mouseDownPanelRect = mouseDownPanel.rect();
+    const UI::Size delta = {
         mouseDownPanelRect.point.x-mouseDownEvent.x,
         mouseDownPanelRect.point.y-mouseDownEvent.y,
     };
-    const bool wasSelected = Contains(_Selection.panels, &mouseDownPanel);
+    const bool wasSelected = UI::Contains(_Selection.panels, mouseDownPanel);
     
     // Reset the selection to solely contain the mouse-down CommitPanel if:
     //   - there's no selection; or
     //   - the mouse-down CommitPanel is in a different column than the current selection; or
     //   - an unselected CommitPanel was clicked
-    if (_Selection.panels.empty() || (_Selection.column != &mouseDownColumn) || !wasSelected) {
+    if (_Selection.panels.empty() || (_Selection.column != mouseDownColumn) || !wasSelected) {
         _Selection = {
             .column = &mouseDownColumn,
             .panels = {&mouseDownPanel},
@@ -284,7 +284,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     std::optional<Git::Op> gitOp;
     if (_Drag.titlePanel) {
         std::set<Git::Commit> srcCommits;
-        for (CommitPanel* panel : _Selection.panels) {
+        for (CommitPanel panel : _Selection.panels) {
             srcCommits.insert(panel->commit());
         }
         

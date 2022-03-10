@@ -1,5 +1,7 @@
 #pragma once
 
+namespace UI {
+
 struct Color {
     int idx = 0;
     int r = 0;
@@ -10,8 +12,16 @@ struct Color {
     bool operator ==(const Color& x) const { return !memcmp(this, &x, sizeof(Color)); }
 };
 
-namespace Colors {
-    constexpr Color SelectionMove = Color{1,    0,    0, 1000};
-    constexpr Color SelectionCopy = Color{2,    0, 1000,    0};
-    constexpr Color SubtitleText  = Color{3,  300,  300,  300};
-} // namespace Colors
+struct Colors {
+    static constexpr Color SelectionMove = Color{1,    0,    0, 1000};
+    static constexpr Color SelectionCopy = Color{2,    0, 1000,    0};
+    static constexpr Color SubtitleText  = Color{3,  300,  300,  300};
+};
+
+//namespace Colors {
+//    constexpr Color SelectionMove = Color{1,    0,    0, 1000};
+//    constexpr Color SelectionCopy = Color{2,    0, 1000,    0};
+//    constexpr Color SubtitleText  = Color{3,  300,  300,  300};
+//} // namespace Colors
+
+} // namespace UI

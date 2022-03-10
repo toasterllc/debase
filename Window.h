@@ -2,6 +2,8 @@
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 
+namespace UI {
+
 struct Vector {
     int x = 0;
     int y = 0;    
@@ -42,38 +44,6 @@ public:
         ::doupdate();
     }
     
-    class Attr {
-    public:
-        Attr() {}
-        Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
-            wattron(*_s.win, _s.attr);
-        }
-        
-        Attr(const Attr& x) = delete;
-        
-        // Move constructor: use move assignment operator
-        Attr(Attr&& x) { *this = std::move(x); }
-        
-        // Move assignment operator
-        Attr& operator=(Attr&& x) {
-            _s = std::move(x._s);
-            x._s = {};
-            return *this;
-        }
-        
-        ~Attr() {
-            if (_s.win) {
-                wattroff(*_s.win, _s.attr);
-            }
-        }
-    
-    private:
-        struct {
-            const Window* win = nullptr;
-            int attr = 0;
-        } _s;
-    };
-    
     // Invalid
     Window() {}
     
@@ -81,27 +51,15 @@ public:
     static constexpr NewType New;
     
     Window(NewType) {
-        _s.win = ::newwin(0, 0, 0, 0);
-        assert(_s.win);
-        
-        ::keypad(_s.win, true);
-        ::meta(_s.win, true);
+        _s = std::make_shared<_State>();
+        ::keypad(_s->win, true);
+        ::meta(_s->win, true);
     }
     
-    Window(WINDOW* window) {
-        _s.win = window;
-        ::keypad(_s.win, true);
-        ::meta(_s.win, true);
-    }
-    
-    // Move constructor: use move assignment operator
-    Window(Window&& x) { *this = std::move(x); }
-    
-    // Move assignment operator
-    Window& operator=(Window&& x) {
-        _s = std::move(x._s);
-        x._s = {};
-        return *this;
+    Window(WINDOW* win) {
+        _s = std::make_shared<_State>(win);
+        ::keypad(_s->win, true);
+        ::meta(_s->win, true);
     }
     
     void setSize(const Size& s) {
@@ -157,8 +115,8 @@ public:
     
     Rect rect() const {
         return Rect{
-            .point = { getbegx(_s.win), getbegy(_s.win) },
-            .size  = { getmaxx(_s.win), getmaxy(_s.win) },
+            .point = { getbegx(_s->win), getbegy(_s->win) },
+            .size  = { getmaxx(_s->win), getmaxy(_s->win) },
         };
     }
     
@@ -170,14 +128,31 @@ public:
         return ::wgetch(*this);
     }
     
-    operator WINDOW*() const { return _s.win; }
+    operator WINDOW*() const { return _s->win; }
     
-    Attr setAttr(int attr) const {
-        return Attr(*this, attr);
-    }
+//    Attr setAttr(int attr) const {
+//        return Attr(*this, attr);
+//    }
     
 private:
-    struct {
+    class _State {
+    public:
+        _State(WINDOW* win=nullptr) : win(win) {
+            if (!win) {
+                win = ::newwin(0, 0, 0, 0);
+                assert(win);
+            }
+        }
+        
+        ~_State() {
+            ::delwin(win);
+            win = nullptr;
+        }
+        
         WINDOW* win = nullptr;
-    } _s = {};
+    };
+    
+    std::shared_ptr<_State> _s;
 };
+
+} // namespace UI
