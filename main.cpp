@@ -61,14 +61,28 @@ static void _Draw() {
             }
         }
         
+        bool dragging = (bool)_Drag.titlePanel;
+        bool copying = _Drag.copy;
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
                 if (_Selected(col, panel)) {
+                    if (!dragging)      panel->setVisible(true);
+                    else if (copying)   panel->setVisible(true);
+                    else                panel->setVisible(false);
                     panel->setBorderColor(selectionColor);
                 } else {
+                    panel->setVisible(true);
                     panel->setBorderColor(std::nullopt);
                 }
             }
+        }
+        
+        // Order all the title panel and shadow panels
+        if (dragging) {
+            for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
+                (*it)->orderFront();
+            }
+            _Drag.titlePanel->orderFront();
         }
     }
     
@@ -247,13 +261,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
             }
             
-            // Hide the original CommitPanels while we're dragging
-            for (UI::CommitPanel panel : selectionColumn->panels()) {
-                if (_Selected(selectionColumn, panel)) {
-                    panel->setVisible(false);
-                }
-            }
-            
             // Order all the title panel and shadow panels
             for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
                 (*it)->orderFront();
@@ -350,13 +357,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     {
         _Drag = {};
         _InsertionMarker = std::nullopt;
-        
-        // Make every commit visible again
-        for (UI::RevColumn col : _Columns) {
-            for (UI::CommitPanel panel : col->panels()) {
-                panel->setVisible(true);
-            }
-        }
     }
     
     return gitOp;

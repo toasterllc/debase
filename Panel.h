@@ -25,8 +25,10 @@ public:
     }
     
     void setVisible(bool v) {
-        if (v) ::show_panel(*this);
-        else ::hide_panel(*this);
+        if (_visible == v) return;
+        _visible = v;
+        if (_visible) ::show_panel(*this);
+        else          ::hide_panel(*this);
     }
     
     void orderFront() {
@@ -41,6 +43,7 @@ public:
     
 private:
     PANEL* _panel = nullptr;
+    bool _visible = true;
 };
 
 using Panel = std::shared_ptr<_Panel>;
