@@ -108,7 +108,7 @@ public:
         }
     }
     
-    const Git::Commit& commit() const { return _commit; }
+    const Git::Commit commit() const { return _commit; }
     const size_t idx() const { return _idx; }
     
 //    bool operator<(const CommitPanel& x) {
@@ -129,11 +129,6 @@ private:
 };
 
 using CommitPanel = std::shared_ptr<_CommitPanel>;
-
-static bool Contains(const std::set<CommitPanel>& s, CommitPanel p) {
-    return s.find(p) != s.end();
-}
-
 using CommitPanelVec = std::vector<CommitPanel>;
 using CommitPanelVecIter = CommitPanelVec::iterator;
 

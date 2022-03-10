@@ -67,9 +67,9 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
 
 struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
-    bool operator==(const Ref& x) const { return git_reference_cmp(*get(), *x)==0; }
+    bool operator==(const Ref& x) const { return strcmp(fullName(), x.fullName())==0; }
     bool operator!=(const Ref& x) const { return !(*this==x); }
-    bool operator<(const Ref& x) const { return git_reference_cmp(*get(), *x)<0; }
+    bool operator<(const Ref& x) const { return strcmp(fullName(), x.fullName())<0; }
     
     template <typename Repo> // Forward declare Repo via template
     static Ref Lookup(Repo repo, std::string_view name) {

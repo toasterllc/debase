@@ -8,6 +8,7 @@
 #include <memory>
 #include <deque>
 #include <set>
+#include <map>
 #include "Git.h"
 #include "Window.h"
 #include "Panel.h"
@@ -21,8 +22,8 @@
 #include "MakeShared.h"
 
 struct Selection {
-    UI::RevColumn column;
-    std::set<UI::CommitPanel> panels;
+    Git::Rev rev;
+    std::set<Git::Commit> commits;
 };
 
 static Git::Repo _Repo;
@@ -41,6 +42,12 @@ static Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 static std::optional<UI::Rect> _InsertionMarker;
 
+static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
+    if (col->rev() != _Selection.rev) return false;
+    if (_Selection.commits.find(panel->commit()) == _Selection.commits.end()) return false;
+    return true;
+}
+
 static void _Draw() {
     const UI::Color selectionColor = (_Drag.copy ? UI::Colors::SelectionCopy : UI::Colors::SelectionMove);
     
@@ -56,8 +63,7 @@ static void _Draw() {
         
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
-                bool selected = UI::Contains(_Selection.panels, panel);
-                if (selected) {
+                if (_Selected(col, panel)) {
                     panel->setBorderColor(selectionColor);
                 } else {
                     panel->setBorderColor(std::nullopt);
@@ -145,7 +151,10 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     // Adjust the insert point so that it doesn't occur within a selection
     assert(insertionCol);
     UI::CommitPanelVec insertionColPanels = insertionCol->panels();
-    while (insertionIter!=insertionColPanels.begin() && Contains(_Selection.panels, *std::prev(insertionIter))) {
+    for (;;) {
+        if (insertionIter == insertionColPanels.begin()) break;
+        UI::CommitPanel prevPanel = *std::prev(insertionIter);
+        if (!_Selected(insertionCol, prevPanel)) break;
         insertionIter--;
     }
     
@@ -166,6 +175,31 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
     }
 }
 
+static UI::RevColumn _ColumnForRev(Git::Rev rev) {
+    for (UI::RevColumn col : _Columns) {
+        if (col->rev() == rev) return col;
+    }
+    // Programmer error if it doesn't exist
+    abort();
+}
+
+static UI::CommitPanel _PanelForCommit(UI::RevColumn col, Git::Commit commit) {
+    for (UI::CommitPanel panel : col->panels()) {
+        if (panel->commit() == commit) return panel;
+    }
+    // Programmer error if it doesn't exist
+    abort();
+}
+
+static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commit>& commits) {
+    while (head) {
+        if (commits.find(head) != commits.end()) return head;
+        head = head.parent();
+    }
+    // Programmer error if it doesn't exist
+    abort();
+}
+
 // _TrackMouseInsideCommitPanel
 // Handles dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
@@ -174,47 +208,50 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         mouseDownPanelRect.point.x-mouseDownEvent.x,
         mouseDownPanelRect.point.y-mouseDownEvent.y,
     };
-    const bool wasSelected = UI::Contains(_Selection.panels, mouseDownPanel);
+    const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
     
     // Reset the selection to solely contain the mouse-down CommitPanel if:
     //   - there's no selection; or
     //   - the mouse-down CommitPanel is in a different column than the current selection; or
     //   - an unselected CommitPanel was clicked
-    if (_Selection.panels.empty() || (_Selection.column != mouseDownColumn) || !wasSelected) {
+    if (_Selection.commits.empty() || (_Selection.rev != mouseDownColumn->rev()) || !wasSelected) {
         _Selection = {
-            .column = mouseDownColumn,
-            .panels = {mouseDownPanel},
+            .rev = mouseDownColumn->rev(),
+            .commits = {mouseDownPanel->commit()},
         };
     
     } else {
-        assert(!_Selection.panels.empty() && (_Selection.column == mouseDownColumn));
-        _Selection.panels.insert(mouseDownPanel);
+        assert(!_Selection.commits.empty() && (_Selection.rev == mouseDownColumn->rev()));
+        _Selection.commits.insert(mouseDownPanel->commit());
     }
     
     MEVENT mouse = mouseDownEvent;
     UI::RevColumn insertionCol;
     UI::CommitPanelVecIter insertionIter;
     for (;;) {
-        assert(!_Selection.panels.empty());
+        assert(!_Selection.commits.empty());
         
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
         const bool dragStart = w>1 || h>1;
         
         if (!_Drag.titlePanel && dragStart) {
-            const UI::CommitPanel titlePanel = *_Selection.panels.begin();
-            Git::Commit titleCommit = titlePanel->commit();
+            UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
+            Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
+            UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
             _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, titlePanel->rect().size.x);
             
             // Create shadow panels
-            UI::Size shadowSize = (*_Selection.panels.begin())->rect().size;
-            for (size_t i=0; i<_Selection.panels.size()-1; i++) {
+            UI::Size shadowSize = titlePanel->rect().size;
+            for (size_t i=0; i<_Selection.commits.size()-1; i++) {
                 _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
             }
             
             // Hide the original CommitPanels while we're dragging
-            for (auto it=_Selection.panels.begin(); it!=_Selection.panels.end(); it++) {
-                (*it)->setVisible(false);
+            for (UI::CommitPanel panel : selectionColumn->panels()) {
+                if (_Selected(selectionColumn, panel)) {
+                    panel->setVisible(false);
+                }
             }
             
             // Order all the title panel and shadow panels
@@ -285,18 +322,13 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     
     std::optional<Git::Op> gitOp;
     if (_Drag.titlePanel) {
-        std::set<Git::Commit> srcCommits;
-        for (UI::CommitPanel panel : _Selection.panels) {
-            srcCommits.insert(panel->commit());
-        }
-        
         Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
         gitOp = Git::Op{
             .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
             .repo = _Repo,
             .src = {
-                .rev = _Selection.column->rev(),
-                .commits = srcCommits,
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
             },
             .dst = {
                 .rev = insertionCol->rev(),
@@ -356,24 +388,24 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
             for (UI::RevColumn col : _Columns) {
                 for (UI::CommitPanel panel : col->panels()) {
                     if (!Empty(Intersection(selectionRect, panel->rect()))) {
-                        selectionNew.column = col;
-                        selectionNew.panels.insert(panel);
+                        selectionNew.rev = col->rev();
+                        selectionNew.commits.insert(panel->commit());
                     }
                 }
-                if (!selectionNew.panels.empty()) break;
+                if (!selectionNew.commits.empty()) break;
             }
             
             const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
-            if (shift && (selectionNew.panels.empty() || selectionOld.column==selectionNew.column)) {
+            if (shift && (selectionNew.commits.empty() || selectionOld.rev==selectionNew.rev)) {
                 Selection selection = {
-                    .column = selectionOld.column,
+                    .rev = selectionOld.rev,
                 };
                 
                 // selection = _Selection XOR selectionNew
                 std::set_symmetric_difference(
-                    selectionOld.panels.begin(), selectionOld.panels.end(),
-                    selectionNew.panels.begin(), selectionNew.panels.end(),
-                    std::inserter(selection.panels, selection.panels.begin())
+                    selectionOld.commits.begin(), selectionOld.commits.end(),
+                    selectionNew.commits.begin(), selectionNew.commits.end(),
+                    std::inserter(selection.commits, selection.commits.begin())
                 );
                 
                 _Selection = selection;
@@ -415,6 +447,9 @@ static void _Reload(const std::vector<std::string>& revNames) {
 
 int main(int argc, const char* argv[]) {
     #warning TODO: reject remote branches (eg 'origin/master')
+    
+    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
+    #warning TODO: to do so, we'll need to implement operator< on Rev so we can put them in a set
 //    git_libgit2_init();
 //    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
