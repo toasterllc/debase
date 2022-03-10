@@ -2,16 +2,15 @@
 #include "Git.h"
 #include "Panel.h"
 #include "CommitPanel.h"
+#include "MakeShared.h"
 
 namespace UI {
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
-class RevColumn {
+class _RevColumn {
 public:
-    RevColumn() {}
-    
-    RevColumn(UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
+    _RevColumn(UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width) :
     _win(win), _rev(rev), _offsetX(offsetX), _width(width) {
         
         if (_rev.ref) {
@@ -30,10 +29,11 @@ public:
         int offY = InsetY;
         Git::Commit commit = rev.commit;
         for (int i=0; commit && i<8; i++) {
-            UI::CommitPanel p = _panels.emplace_back(commit, i, width);
-            p.setPosition({_offsetX, offY});
-            offY += p.rect().size.y + 1;
+            UI::CommitPanel p = MakeShared<UI::CommitPanel>(commit, i, width);
+            p->setPosition({_offsetX, offY});
+            offY += p->rect().size.y + 1;
             commit = commit.parent();
+            _panels.push_back(p);
         }
     }
     
@@ -42,17 +42,17 @@ public:
         {
             UI::Attr attr(_win, A_UNDERLINE);
             const int offX = _offsetX + std::max(0, (_width-(int)_name.size())/2);
-            _win.drawText({offX, 0}, _name.c_str());
+            _win->drawText({offX, 0}, _name.c_str());
         }
         
         for (UI::CommitPanel p : _panels) {
-            p.drawIfNeeded();
+            p->drawIfNeeded();
         }
     }
     
     UI::CommitPanel hitTest(const UI::Point& p) {
         for (UI::CommitPanel panel : _panels) {
-            if (panel.hitTest(p)) return panel;
+            if (panel->hitTest(p)) return panel;
         }
         return {};
     }
@@ -68,5 +68,7 @@ private:
     int _width = 0;
     UI::CommitPanelVec _panels;
 };
+
+using RevColumn = std::shared_ptr<_RevColumn>;
 
 } // namespace UI

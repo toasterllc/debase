@@ -37,29 +37,26 @@ inline bool Empty(const Rect& r) {
     return r.size.x==0 || r.size.y==0;
 }
 
-class Window {
+inline void Redraw() {
+    ::update_panels();
+    ::doupdate();
+}
+
+class _Window {
 public:
-    static void Redraw() {
-        ::update_panels();
-        ::doupdate();
+    _Window(WINDOW* win=nullptr) : _win(win) {
+        if (!_win) {
+            _win = ::newwin(0, 0, 0, 0);
+            assert(_win);
+        }
+        
+        ::keypad(_win, true);
+        ::meta(_win, true);
     }
     
-    // Invalid
-    Window() {}
-    
-    struct NewType {};
-    static constexpr NewType New;
-    
-    Window(NewType) {
-        _s = std::make_shared<_State>();
-        ::keypad(_s->win, true);
-        ::meta(_s->win, true);
-    }
-    
-    Window(WINDOW* win) {
-        _s = std::make_shared<_State>(win);
-        ::keypad(_s->win, true);
-        ::meta(_s->win, true);
+    ~_Window() {
+        ::delwin(_win);
+        _win = nullptr;
     }
     
     void setSize(const Size& s) {
@@ -115,8 +112,8 @@ public:
     
     Rect rect() const {
         return Rect{
-            .point = { getbegx(_s->win), getbegy(_s->win) },
-            .size  = { getmaxx(_s->win), getmaxy(_s->win) },
+            .point = { getbegx(_win), getbegy(_win) },
+            .size  = { getmaxx(_win), getmaxy(_win) },
         };
     }
     
@@ -128,31 +125,16 @@ public:
         return ::wgetch(*this);
     }
     
-    operator WINDOW*() const { return _s->win; }
+    operator WINDOW*() const { return _win; }
     
 //    Attr setAttr(int attr) const {
 //        return Attr(*this, attr);
 //    }
     
 private:
-    class _State {
-    public:
-        _State(WINDOW* win=nullptr) : win(win) {
-            if (!win) {
-                win = ::newwin(0, 0, 0, 0);
-                assert(win);
-            }
-        }
-        
-        ~_State() {
-            ::delwin(win);
-            win = nullptr;
-        }
-        
-        WINDOW* win = nullptr;
-    };
-    
-    std::shared_ptr<_State> _s;
+    WINDOW* _win = nullptr;
 };
+
+using Window = std::shared_ptr<_Window>;
 
 } // namespace UI

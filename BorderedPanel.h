@@ -6,40 +6,37 @@
 
 namespace UI {
 
-class BorderedPanel : public Panel {
+class _BorderedPanel : public _Panel, public std::enable_shared_from_this<_BorderedPanel> {
 public:
-    BorderedPanel(const Size& size) {
-        _s = std::make_shared<_State>();
+    _BorderedPanel(const Size& size) {
         setSize(size);
-        _s->drawNeeded = true;
+        _drawNeeded = true;
     }
     
     void setBorderColor(std::optional<Color> x) {
-        if (_s->borderColor == x) return;
-        _s->borderColor = x;
-        _s->drawNeeded = true;
+        if (_borderColor == x) return;
+        _borderColor = x;
+        _drawNeeded = true;
     }
     
     void draw() {
         UI::Attr attr;
-        if (_s->borderColor) attr = Attr(*this, COLOR_PAIR(*_s->borderColor));
+        if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
         drawBorder();
-        _s->drawNeeded = false;
+        _drawNeeded = false;
     }
     
     void drawIfNeeded() {
-        if (_s->drawNeeded) {
+        if (_drawNeeded) {
             draw();
         }
     }
     
 private:
-    struct _State {
-        std::optional<Color> borderColor;
-        bool drawNeeded = false;
-    };
-    
-    std::shared_ptr<_State> _s;
+    std::optional<Color> _borderColor;
+    bool _drawNeeded = false;
 };
+
+using BorderedPanel = std::shared_ptr<_BorderedPanel>;
 
 } // namespace UI

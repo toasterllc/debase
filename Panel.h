@@ -4,10 +4,16 @@
 
 namespace UI {
 
-class Panel : public Window {
+class _Panel : public _Window {
 public:
-    Panel() : Window(Window::New) {
-        _s = std::make_shared<_State>(*this);
+    _Panel() {
+        _panel = ::new_panel(*this);
+        assert(_panel);
+    }
+    
+    ~_Panel() {
+        ::del_panel(_panel);
+        _panel = nullptr;
     }
     
     void setPosition(const Point& p) {
@@ -31,26 +37,12 @@ public:
         ::bottom_panel(*this);
     }
     
-    operator PANEL*() const { return _s->panel; }
+    operator PANEL*() const { return _panel; }
     
 private:
-    class _State {
-    public:
-        _State(Window win) : win(win) {
-            panel = ::new_panel(win);
-            assert(panel);
-        }
-        
-        ~_State() {
-            ::del_panel(panel);
-            panel = nullptr;
-        }
-        
-        Window win; // Hold onto `win` explicitly since our panel needs it
-        PANEL* panel = nullptr;
-    };
-    
-    std::shared_ptr<_State> _s;
+    PANEL* _panel = nullptr;
 };
+
+using Panel = std::shared_ptr<_Panel>;
 
 } // namespace UI

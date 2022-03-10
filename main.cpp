@@ -18,6 +18,7 @@
 #include "BorderedPanel.h"
 #include "RevColumn.h"
 #include "GitOp.h"
+#include "MakeShared.h"
 
 struct Selection {
     UI::RevColumn column;
@@ -31,7 +32,7 @@ static UI::Window _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
 
 static struct {
-    std::optional<UI::CommitPanel> titlePanel;
+    UI::CommitPanel titlePanel;
     std::vector<UI::BorderedPanel> shadowPanels;
     bool copy = false;
 } _Drag;
@@ -48,18 +49,18 @@ static void _Draw() {
         if (_Drag.titlePanel) {
             _Drag.titlePanel->setBorderColor(selectionColor);
             
-            for (UI::BorderedPanel& panel : _Drag.shadowPanels) {
-                panel.setBorderColor(selectionColor);
+            for (UI::BorderedPanel panel : _Drag.shadowPanels) {
+                panel->setBorderColor(selectionColor);
             }
         }
         
-        for (UI::RevColumn& col : _Columns) {
-            for (UI::CommitPanel panel : col.panels()) {
+        for (UI::RevColumn col : _Columns) {
+            for (UI::CommitPanel panel : col->panels()) {
                 bool selected = UI::Contains(_Selection.panels, panel);
                 if (selected) {
-                    panel.setBorderColor(selectionColor);
+                    panel->setBorderColor(selectionColor);
                 } else {
-                    panel.setBorderColor(std::nullopt);
+                    panel->setBorderColor(std::nullopt);
                 }
             }
         }
@@ -67,38 +68,38 @@ static void _Draw() {
     
     // Draw everything
     {
-        _RootWindow.erase();
+        _RootWindow->erase();
         
         for (UI::RevColumn col : _Columns) {
-            col.draw();
+            col->draw();
         }
         
         if (_Drag.titlePanel) {
             _Drag.titlePanel->drawIfNeeded();
         }
         
-        for (UI::BorderedPanel& panel : _Drag.shadowPanels) {
-            panel.drawIfNeeded();
+        for (UI::BorderedPanel panel : _Drag.shadowPanels) {
+            panel->drawIfNeeded();
         }
         
         if (_SelectionRect) {
             UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
-            _RootWindow.drawRect(*_SelectionRect);
+            _RootWindow->drawRect(*_SelectionRect);
         }
         
         if (_InsertionMarker) {
             UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
-            _RootWindow.drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
+            _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
             
             const char* text = (_Drag.copy ? " Copy " : " Move ");
-            const Point point = {
+            const UI::Point point = {
                 _InsertionMarker->point.x + (_InsertionMarker->size.x - (int)strlen(text))/2,
                 _InsertionMarker->point.y
             };
-            _RootWindow.drawText(point, "%s", text);
+            _RootWindow->drawText(point, "%s", text);
         }
         
-        UI::Window::Redraw();
+        UI::Redraw();
     }
 }
 
@@ -107,32 +108,33 @@ struct _HitTestResult {
     UI::CommitPanel panel;
 };
 
-static std::optional<_HitTestResult> _HitTest(const Point& p) {
+static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
     for (UI::RevColumn col : _Columns) {
-        if (UI::CommitPanel panel = col.hitTest(p)) {
+        if (UI::CommitPanel panel = col->hitTest(p)) {
             return _HitTestResult{col, panel};
         }
     }
     return std::nullopt;
 }
 
-static std::tuple<RevColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point& p) {
-    RevColumn* insertionCol = nullptr;
-    CommitPanelVec::iterator insertionIter;
+static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(const UI::Point& p) {
+    UI::RevColumn insertionCol;
+    UI::CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
-    for (RevColumn& col : _Columns) {
-        CommitPanelVec& panels = col.panels();
-        const Rect lastRect = panels.back().rect();
+    for (UI::RevColumn col : _Columns) {
+        UI::CommitPanelVec panels = col->panels();
+        const UI::Rect lastRect = panels.back()->rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
         const int endY = lastRect.point.y + lastRect.size.y;
         
         for (auto it=panels.begin();; it++) {
-            const int x = (it!=panels.end() ? it->rect().point.x+it->rect().size.x/2 : midX);
-            const int y = (it!=panels.end() ? it->rect().point.y : endY);
+            UI::CommitPanel panel = (it!=panels.end() ? *it : nullptr);
+            const int x = (panel ? panel->rect().point.x+panel->rect().size.x/2 : midX);
+            const int y = (panel ? panel->rect().point.y : endY);
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
             
             if (!insertLeastDistance || dist<insertLeastDistance) {
-                insertionCol = &col;
+                insertionCol = col;
                 insertionIter = it;
                 insertLeastDistance = dist;
             }
@@ -142,8 +144,8 @@ static std::tuple<RevColumn*,CommitPanelVecIter> _FindInsertionPoint(const Point
     
     // Adjust the insert point so that it doesn't occur within a selection
     assert(insertionCol);
-    CommitPanelVec& insertionColPanels = insertionCol->panels();
-    while (insertionIter!=insertionColPanels.begin() && Contains(_Selection.panels, &*std::prev(insertionIter))) {
+    UI::CommitPanelVec insertionColPanels = insertionCol->panels();
+    while (insertionIter!=insertionColPanels.begin() && Contains(_Selection.panels, *std::prev(insertionIter))) {
         insertionIter--;
     }
     
@@ -156,7 +158,7 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
     
     // Wait for another mouse event
     for (;;) {
-        int key = _RootWindow.getChar();
+        int key = _RootWindow->getChar();
         if (key != KEY_MOUSE) continue;
         int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
@@ -167,7 +169,7 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
 // _TrackMouseInsideCommitPanel
 // Handles dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
-    const UI::Rect mouseDownPanelRect = mouseDownPanel.rect();
+    const UI::Rect mouseDownPanelRect = mouseDownPanel->rect();
     const UI::Size delta = {
         mouseDownPanelRect.point.x-mouseDownEvent.x,
         mouseDownPanelRect.point.y-mouseDownEvent.y,
@@ -180,18 +182,18 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     //   - an unselected CommitPanel was clicked
     if (_Selection.panels.empty() || (_Selection.column != mouseDownColumn) || !wasSelected) {
         _Selection = {
-            .column = &mouseDownColumn,
-            .panels = {&mouseDownPanel},
+            .column = mouseDownColumn,
+            .panels = {mouseDownPanel},
         };
     
     } else {
-        assert(!_Selection.panels.empty() && (_Selection.column == &mouseDownColumn));
-        _Selection.panels.insert(&mouseDownPanel);
+        assert(!_Selection.panels.empty() && (_Selection.column == mouseDownColumn));
+        _Selection.panels.insert(mouseDownPanel);
     }
     
     MEVENT mouse = mouseDownEvent;
-    RevColumn* insertionCol = nullptr;
-    CommitPanelVecIter insertionIter;
+    UI::RevColumn insertionCol;
+    UI::CommitPanelVecIter insertionIter;
     for (;;) {
         assert(!_Selection.panels.empty());
         
@@ -200,14 +202,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         const bool dragStart = w>1 || h>1;
         
         if (!_Drag.titlePanel && dragStart) {
-            const CommitPanel& titlePanel = *(*_Selection.panels.begin());
-            Git::Commit titleCommit = titlePanel.commit();
-            _Drag.titlePanel.emplace(titlePanel.commit(), 0, titlePanel.rect().size.x);
+            const UI::CommitPanel titlePanel = *_Selection.panels.begin();
+            Git::Commit titleCommit = titlePanel->commit();
+            _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, titlePanel->rect().size.x);
             
             // Create shadow panels
-            Size shadowSize = (*_Selection.panels.begin())->rect().size;
+            UI::Size shadowSize = (*_Selection.panels.begin())->rect().size;
             for (size_t i=0; i<_Selection.panels.size()-1; i++) {
-                _Drag.shadowPanels.emplace_back(shadowSize);
+                _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
             }
             
             // Hide the original CommitPanels while we're dragging
@@ -217,7 +219,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             
             // Order all the title panel and shadow panels
             for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
-                it->orderFront();
+                (*it)->orderFront();
             }
             _Drag.titlePanel->orderFront();
         }
@@ -231,7 +233,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             
             // Position title panel / shadow panels
             {
-                const Point pos0 = {
+                const UI::Point pos0 = {
                     mouse.x+delta.x,
                     mouse.y+delta.y,
                 };
@@ -240,9 +242,9 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 
                 // Position shadowPanels
                 int off = 1;
-                for (Panel& p : _Drag.shadowPanels) {
-                    const Point pos = {pos0.x+off, pos0.y+off};
-                    p.setPosition(pos);
+                for (UI::Panel p : _Drag.shadowPanels) {
+                    const UI::Point pos = {pos0.x+off, pos0.y+off};
+                    p->setPosition(pos);
                     off++;
                 }
             }
@@ -253,10 +255,10 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             // Update insertion marker
             {
                 constexpr int InsertionExtraWidth = 6;
-                CommitPanelVec& insertionColPanels = insertionCol->panels();
-                const Rect lastRect = insertionColPanels.back().rect();
+                UI::CommitPanelVec& insertionColPanels = insertionCol->panels();
+                const UI::Rect lastRect = insertionColPanels.back()->rect();
                 const int endY = lastRect.point.y + lastRect.size.y;
-                const int insertY = (insertionIter!=insertionColPanels.end() ? insertionIter->rect().point.y : endY+1);
+                const int insertY = (insertionIter!=insertionColPanels.end() ? (*insertionIter)->rect().point.y : endY+1);
                 
                 _InsertionMarker = {
                     .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
@@ -284,11 +286,11 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     std::optional<Git::Op> gitOp;
     if (_Drag.titlePanel) {
         std::set<Git::Commit> srcCommits;
-        for (CommitPanel panel : _Selection.panels) {
+        for (UI::CommitPanel panel : _Selection.panels) {
             srcCommits.insert(panel->commit());
         }
         
-        Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? insertionIter->commit() : nullptr);
+        Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
         gitOp = Git::Op{
             .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
             .repo = _Repo,
@@ -318,9 +320,9 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         _InsertionMarker = std::nullopt;
         
         // Make every commit visible again
-        for (RevColumn& col : _Columns) {
-            for (CommitPanel& panel : col.panels()) {
-                panel.setVisible(true);
+        for (UI::RevColumn col : _Columns) {
+            for (UI::CommitPanel panel : col->panels()) {
+                panel->setVisible(true);
             }
         }
     }
@@ -342,7 +344,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         
         // Mouse-down outside of a commit:
         // Handle selection rect drawing / selecting commits
-        const Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
+        const UI::Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
         
         if (_SelectionRect || dragStart) {
             _SelectionRect = selectionRect;
@@ -351,11 +353,11 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         // Update selection
         {
             Selection selectionNew;
-            for (RevColumn& col : _Columns) {
-                for (CommitPanel& panel : col.panels()) {
-                    if (!Empty(Intersection(selectionRect, panel.rect()))) {
-                        selectionNew.column = &col;
-                        selectionNew.panels.insert(&panel);
+            for (UI::RevColumn col : _Columns) {
+                for (UI::CommitPanel panel : col->panels()) {
+                    if (!Empty(Intersection(selectionRect, panel->rect()))) {
+                        selectionNew.column = col;
+                        selectionNew.panels.insert(panel);
                     }
                 }
                 if (!selectionNew.panels.empty()) break;
@@ -406,7 +408,7 @@ static void _Reload(const std::vector<std::string>& revNames) {
     
     _Columns.clear();
     for (const Git::Rev& rev : revs) {
-        _Columns.emplace_back(_RootWindow, _Repo, rev, OffsetX, ColumnWidth);
+        _Columns.push_back(MakeShared<UI::RevColumn>(_RootWindow, _Repo, rev, OffsetX, ColumnWidth));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
@@ -460,6 +462,9 @@ int main(int argc, const char* argv[]) {
 //    const git_oid* id2 = git_object_id(obj);
 //    printf("id2: %s\n", Git::Str(*id2).c_str());
     
+//    volatile bool a = false;
+//    while (!a);
+    
     // Handle args
     std::vector<std::string> revNames;
     {
@@ -496,22 +501,22 @@ int main(int argc, const char* argv[]) {
             int c = 1;
             
             ::init_color(c, 0, 0, 1000);
-            ::init_pair(Colors::SelectionMove, c, -1);
+            ::init_pair(UI::Colors::SelectionMove, c, -1);
             c++;
             
             ::init_color(c, 0, 1000, 0);
-            ::init_pair(Colors::SelectionCopy, c, -1);
+            ::init_pair(UI::Colors::SelectionCopy, c, -1);
             c++;
             
             ::init_color(c, 300, 300, 300);
-            ::init_pair(Colors::SubtitleText, c, -1);
+            ::init_pair(UI::Colors::SubtitleText, c, -1);
             c++;
         }
         
         // Hide cursor
         ::curs_set(0);
         
-        _RootWindow = Window(::stdscr);
+        _RootWindow = MakeShared<UI::Window>(::stdscr);
     }
     
     // Init git
@@ -530,7 +535,7 @@ int main(int argc, const char* argv[]) {
         mouseinterval(0);
         for (;;) {
             _Draw();
-            int key = _RootWindow.getChar();
+            int key = _RootWindow->getChar();
             if (key == KEY_MOUSE) {
                 MEVENT mouse = {};
                 int ir = ::getmouse(&mouse);
