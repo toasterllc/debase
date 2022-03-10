@@ -3,7 +3,7 @@
 
 template <typename T, auto& T_Deleter>
 struct RefCounted : std::shared_ptr<T> {
-    RefCounted() : std::shared_ptr<T>() {}
+    using std::shared_ptr<T>::shared_ptr;
     
     // Pointer types
     template<
