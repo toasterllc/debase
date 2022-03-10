@@ -34,7 +34,7 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
         return x;
     }
-
+    
     static Commit Lookup(git_repository* repo, std::string_view commitIdStr) {
         Id commitId;
         int ir = git_oid_fromstr(&commitId, commitIdStr.data());
@@ -277,6 +277,18 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         Commit newCommit = attachCommit(dst, newTree, src);
     //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
         return newCommit;
+    }
+    
+    Ref replaceRef(Ref ref, Commit commit) const {
+        if (Branch branch = Branch::FromRef(*ref)) {
+            return replaceBranch(branch, commit);
+        
+        } else if (false) {
+            #warning TODO: handle tags
+        
+        } else {
+            throw RuntimeError("unknown ref type");
+        }
     }
     
     Branch replaceBranch(Branch branch, Commit commit) const {
