@@ -18,7 +18,6 @@ struct Object : RefCounted<git_object*, git_object_free> {
     bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Object& x) const { return !(*this==x); }
     bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator const git_object*() const { return *get(); }
 };
 
 struct Commit : RefCounted<git_commit*, git_commit_free> {
@@ -27,8 +26,6 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     bool operator==(const Commit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
     bool operator!=(const Commit& x) const { return !(*this==x); }
     bool operator<(const Commit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-//    operator git_commit*() { return *get(); }
-//    operator const git_commit*() const { return *get(); }
     
     static Commit Lookup(git_repository* repo, const Id& commitId) {
         git_commit* x = nullptr;
@@ -86,13 +83,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return x;
     }
     
-//    static Ref Lookup(git_repository* repo, const Id& id) {
-//        git_reference* x = nullptr;
-//        int ir = git_reference_dwim(&x, repo, git_oid_tostr_s(&id));
-//        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
-//        return x;
-//    }
-    
     const char* name() const {
         return git_reference_shorthand(*get());
     }
@@ -108,20 +98,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     bool isTag() const {
         return git_reference_is_tag(*get());
     }
-    
-//    bool isHead() const {
-//        int ir = git_branch_is_head(*get());
-//        if (ir < 0) throw RuntimeError("git_branch_is_head failed: %s", git_error_last()->message);
-//        return ir==1;
-//    }
-    
-//    bool isSymbolic() const {
-//        return git_reference_type(*this)==GIT_REFERENCE_SYMBOLIC;
-//    }
-//    
-//    bool isDirect() const {
-//        return git_reference_type(*this)==GIT_REFERENCE_DIRECT;
-//    }
     
     Commit commit() const {
         git_commit* x = nullptr;
@@ -202,10 +178,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         if (ir) throw RuntimeError("git_repository_head failed: %s", git_error_last()->message);
         return x;
     }
-    
-//    void setHead(std::string_view head) const {
-//        git_repository_set_head(*get(), head.data());
-//    }
     
     void detachHead() const {
         int ir = git_repository_detach_head(*get());
@@ -299,49 +271,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         if (upstream) newBranch.setUpstream(upstream);
         return newBranch;
     }
-    
-//    std::string currentBranchName() {
-//        Ref head;
-//        {
-//            git_reference* x = nullptr;
-//            int ir = git_repository_head(&x, *this);
-//            if (ir) return {};
-//            head = x;
-//        }
-//        return git_reference_shorthand(*head);
-//    }
 };
-
-//struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
-//    using RefCounted::RefCounted;
-//    
-//    static RevWalk Create(git_repository* repo, std::string_view str) {
-//        RevWalk walk;
-//        
-//        // Create a RevWalk
-//        {
-//            git_revwalk* x = nullptr;
-//            int ir = git_revwalk_new(&x, repo);
-//            if (ir) throw RuntimeError("git_revwalk_new failed: %s", git_error_last()->message);
-//            walk = RevWalk(x);
-//        }
-//        
-//        // Push the range specified by `str`
-//        {
-//            int ir = git_revwalk_push_range(*walk, str.data());
-//            if (ir) throw RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
-//        }
-//        
-//        return walk;
-//    }
-//    
-//    Commit next() {
-//        Id commitId;
-//        int ir = git_revwalk_next(&commitId, *get());
-//        if (ir) return nullptr;
-//        return Git::Commit::Lookup(git_revwalk_repository(*get()), commitId);
-//    }
-//};
 
 inline std::string Str(const git_oid& oid) {
     char str[8];
