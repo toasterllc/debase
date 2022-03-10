@@ -27,9 +27,9 @@ struct Selection {
 };
 
 static Git::Repo _Repo;
+static std::vector<Git::Rev> _Revs;
 
 static UI::Window _RootWindow;
-
 static std::vector<UI::RevColumn> _Columns;
 
 static struct {
@@ -414,35 +414,35 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
-static void _Reload(const std::vector<std::string>& revNames) {
+
+// _ReloadRevs: re-create the revs backed by refs. This is necessary because after modifying a branch,
+// the pre-existing git_reference's for that branch are stale (ie git_reference_target() doesn't
+// reflect the changed branch). To get updated revs, we have to to re-lookup the refs (via
+// Repo::refReload()), and recreate the rev from the new ref.
+static void _ReloadRevs(Git::Repo repo, std::vector<Git::Rev>& revs) {
+    for (Git::Rev& rev : revs) {
+        if (rev.ref) {
+            rev = Git::Rev(repo.refReload(rev.ref));
+        }
+    }
+}
+
+static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::RevColumn>& columns, std::vector<Git::Rev>& revs) {
     // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
     constexpr int ColumnWidth = 32;
     constexpr int ColumnSpacing = 6;
+    
+    columns.clear();
     int OffsetX = InsetX;
-    
-    std::vector<Git::Rev> revs;
-    if (revNames.empty()) {
-        revs.push_back(_Repo.head());
-    
-    } else {
-        for (const std::string& revName : revNames) {
-            revs.push_back(Git::Rev(_Repo, revName));
-        }
-    }
-    
-    _Columns.clear();
     for (const Git::Rev& rev : revs) {
-        _Columns.push_back(MakeShared<UI::RevColumn>(_RootWindow, _Repo, rev, OffsetX, ColumnWidth));
+        columns.push_back(MakeShared<UI::RevColumn>(win, repo, rev, OffsetX, ColumnWidth));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
 
 int main(int argc, const char* argv[]) {
     #warning TODO: reject remote branches (eg 'origin/master')
-    
-    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
-    #warning TODO: to do so, we'll need to implement operator< on Rev so we can put them in a set
     
     #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
     
@@ -456,9 +456,19 @@ int main(int argc, const char* argv[]) {
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
+    
 //    #warning TODO: allow escape key to abort a drag
     
+//    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
+//    #warning       to do so, we'll need to implement operator< on Rev so we can put them in a set
     
+    
+    
+//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+//    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
+//    Git::Commit b;
+//    
+//    return (a==b);
     
     
 //    git_libgit2_init();
@@ -511,11 +521,27 @@ int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
 //    while (!a);
     
-    // Handle args
-    std::vector<std::string> revNames;
+    // Init git
     {
-        for (int i=1; i<argc; i++) {
-            revNames.push_back(argv[i]);
+        _Repo = Git::Repo::Open(".");
+        
+        // Handle args
+        std::vector<std::string> revNames;
+        for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
+        
+        if (revNames.empty()) {
+            _Revs.push_back(_Repo.head());
+        
+        } else {
+            // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
+            std::set<Git::Rev> unique;
+            for (const std::string& revName : revNames) {
+                Git::Rev rev = Git::Rev(_Repo, revName);
+                if (unique.find(rev) == unique.end()) {
+                    _Revs.push_back(rev);
+                    unique.insert(rev);
+                }
+            }
         }
     }
     
@@ -565,17 +591,11 @@ int main(int argc, const char* argv[]) {
         _RootWindow = MakeShared<UI::Window>(::stdscr);
     }
     
-    // Init git
-    {
-        git_libgit2_init();
-        _Repo = Git::Repo::Open(".");
-    }
-    
     try {
 //        volatile bool a = false;
 //        while (!a);
         
-        _Reload(revNames);
+        _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
         
         ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         ::mouseinterval(0);
@@ -632,7 +652,8 @@ int main(int argc, const char* argv[]) {
                 Git::OpResult opResult = Git::Exec(*gitOp);
                 
                 // Reload the UI
-                _Reload(revNames);
+                _ReloadRevs(_Repo, _Revs);
+                _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
                 
                 // Update the selection
                 _Selection = {

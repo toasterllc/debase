@@ -25,22 +25,6 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     bool operator!=(const Commit& x) const { return !(*this==x); }
     bool operator<(const Commit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
     
-    template <typename Repo> // Forward declare Repo via template
-    static Commit Lookup(Repo repo, const Id& commitId) {
-        git_commit* x = nullptr;
-        int ir = git_commit_lookup(&x, *repo, &commitId);
-        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    template <typename Repo> // Forward declare Repo via template
-    static Commit Lookup(Repo repo, std::string_view commitIdStr) {
-        Id commitId;
-        int ir = git_oid_fromstr(&commitId, commitIdStr.data());
-        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
-        return Lookup(*repo, commitId);
-    }
-    
     static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
         int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
@@ -68,22 +52,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     bool operator==(const Ref& x) const { return strcmp(fullName(), x.fullName())==0; }
     bool operator!=(const Ref& x) const { return !(*this==x); }
     bool operator<(const Ref& x) const { return strcmp(fullName(), x.fullName())<0; }
-    
-    template <typename Repo> // Forward declare Repo via template
-    static Ref Lookup(Repo repo, std::string_view name) {
-        git_reference* x = nullptr;
-        int ir = git_reference_dwim(&x, *repo, name.data());
-        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    template <typename Repo> // Forward declare Repo via template
-    static Ref LookupFullName(Repo repo, std::string_view name) {
-        git_reference* x = nullptr;
-        int ir = git_reference_lookup(&x, *repo, name.data());
-        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
-        return x;
-    }
     
     const char* name() const {
         return git_reference_shorthand(*get());
@@ -127,22 +95,6 @@ struct Branch : Ref {
         return x;
     }
     
-    template <typename Repo> // Forward declare Repo via template
-    static Branch Lookup(Repo repo, std::string_view name) {
-        git_reference* x = nullptr;
-        int ir = git_branch_lookup(&x, *repo, name.data(), GIT_BRANCH_LOCAL);
-        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    template <typename Repo> // Forward declare Repo via template
-    static Branch Create(Repo repo, std::string_view name, Commit commit, bool force=false) {
-        git_reference* x = nullptr;
-        int ir = git_branch_create(&x, *repo, name.data(), *commit, force);
-        if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
-        return x;
-    }
-    
     const char* name() const {
         const char* x = nullptr;
         int ir = git_branch_name(&x, *get());
@@ -170,6 +122,9 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     using RefCounted::RefCounted;
     
     static Repo Open(std::string_view path) {
+        #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
+        git_libgit2_init();
+        
         git_repository* x = nullptr;
         int ir = git_repository_open(&x, path.data());
         if (ir) throw RuntimeError("git_repository_open failed: %s", git_error_last()->message);
@@ -189,7 +144,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
     void checkout(std::string_view name) const {
-        Ref ref = Ref::LookupFullName(*this, name);
+        Ref ref = refFullNameLookup(name);
         const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
         int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
         if (ir) throw RuntimeError("git_checkout_tree failed: %s", git_error_last()->message);
@@ -233,9 +188,9 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             parents
         );
         if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-        return Commit::Lookup(*this, commitId);
+        return commitLookup(commitId);
     }
-
+    
     Commit cherryPick(Commit dst, Commit src) const {
         const git_oid* dstId = git_commit_id(*dst);
         const git_oid* srcId = git_commit_id(*src);
@@ -269,9 +224,55 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     Branch replaceBranch(Branch branch, Commit commit) const {
         Branch upstream = branch.upstream();
-        Branch newBranch = Branch::Create(*this, branch.name(), commit, true);
+        Branch newBranch = branchCreate(branch.name(), commit, true);
         if (upstream) newBranch.setUpstream(upstream);
         return newBranch;
+    }
+    
+    Ref refLookup(std::string_view name) const {
+        git_reference* x = nullptr;
+        int ir = git_reference_dwim(&x, *get(), name.data());
+        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Ref refFullNameLookup(std::string_view name) const {
+        git_reference* x = nullptr;
+        int ir = git_reference_lookup(&x, *get(), name.data());
+        if (ir) throw RuntimeError("git_reference_dwim failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Ref refReload(Ref ref) const {
+        return refFullNameLookup(ref.fullName());
+    }
+    
+    Commit commitLookup(const Id& commitId) const {
+        git_commit* x = nullptr;
+        int ir = git_commit_lookup(&x, *get(), &commitId);
+        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Commit commitLookup(std::string_view commitIdStr) const {
+        Id commitId;
+        int ir = git_oid_fromstr(&commitId, commitIdStr.data());
+        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
+        return commitLookup(commitId);
+    }
+    
+    Branch branchLookup(std::string_view name) const {
+        git_reference* x = nullptr;
+        int ir = git_branch_lookup(&x, *get(), name.data(), GIT_BRANCH_LOCAL);
+        if (ir) throw RuntimeError("git_branch_lookup failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Branch branchCreate(std::string_view name, Commit commit, bool force=false) const {
+        git_reference* x = nullptr;
+        int ir = git_branch_create(&x, *get(), name.data(), *commit, force);
+        if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
+        return x;
     }
 };
 
@@ -295,6 +296,7 @@ inline std::string Str(git_time_t t) {
 // that targets that commit
 class Rev {
 public:
+    // Invalid Rev
     Rev() {}
     
     Rev(Repo repo, std::string_view str) {
@@ -332,6 +334,8 @@ public:
         commit = ref.commit();
     }
     
+    operator bool() const { return (bool)commit; }
+    
     bool operator==(const Rev& x) const {
         if ((bool)commit != (bool)x.commit) return false;
         if (commit && (commit != x.commit)) return false;
@@ -342,15 +346,19 @@ public:
     
     bool operator!=(const Rev& x) const { return !(*this==x); }
     
+    bool operator<(const Rev& x) const {
+        // Stage 1: compare commits
+        if ((bool)commit != (bool)x.commit) return (bool)commit<(bool)x.commit;
+        if (!commit) return false; // Handle both commits==nullptr
+        if (commit != x.commit) return commit<x.commit;
+        // Stage 2: commits are the same; compare the refs
+        if ((bool)ref != (bool)x.ref) return (bool)ref<(bool)x.ref;
+        if (!ref) return false; // Handle both refs==nullptr
+        return ref < x.ref;
+    }
+    
     Commit commit; // Mandatory
     Ref ref;       // Optional
 };
-
-//// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
-//// that targets that commit
-//struct Rev {
-//    Commit commit; // Mandatory
-//    Ref ref;       // Optional
-//};
 
 } // namespace Git
