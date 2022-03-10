@@ -175,17 +175,20 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     return std::make_tuple(insertionCol, insertionIter);
 }
 
-static bool _WaitForMouseEvent(MEVENT& mouse) {
+static std::optional<UI::Event> _WaitForMouseEvent(MEVENT& mouse) {
     const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
-    if (mouseUp) return false;
+    if (mouseUp) return std::nullopt;
     
     // Wait for another mouse event
     for (;;) {
         UI::Event ev = _RootWindow->nextEvent();
+        if (ev == UI::Event::KeyEscape) {
+            return UI::Event::KeyEscape;
+        }
         if (ev != UI::Event::Mouse) continue;
         int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
-        return true;
+        return UI::Event::Mouse;
     }
 }
 
@@ -242,6 +245,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     MEVENT mouse = mouseDownEvent;
     UI::RevColumn insertionCol;
     UI::CommitPanelVecIter insertionIter;
+    bool abort = false;
     for (;;) {
         assert(!_Selection.commits.empty());
         
@@ -312,23 +316,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         }
         
         _Draw();
-        if (!_WaitForMouseEvent(mouse)) break;
+        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse);
+        abort = (ev && *ev==UI::Event::KeyEscape);
+        if (!ev || abort) break;
     }
     
-    
-//    Type type = Type::None;
-//    
-//    Repo repo;
-//    
-//    Branch srcBranch;
-//    std::set<Commit> srcCommits;
-//    
-//    Branch dstBranch;
-//    Commit dstCommit;
-    
-    
     std::optional<Git::Op> gitOp;
-    if (_Drag.titlePanel) {
+    
+    if (!abort && _Drag.titlePanel) {
         Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
         gitOp = Git::Op{
             .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
@@ -342,15 +337,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 .position = dstCommit,
             }
         };
-        
-        
-        
-        
-        
-//        gitOp.emplace();
-//        gitOp->type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits);
-//        gitOp->repo = _Repo;
-//        git
     }
     
     // Reset state
@@ -367,6 +353,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
 static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     auto selectionOld = _Selection;
     MEVENT mouse = mouseDownEvent;
+    bool abort = false;
     for (;;) {
         const int x = std::min(mouseDownEvent.x, mouse.x);
         const int y = std::min(mouseDownEvent.y, mouse.y);
@@ -416,7 +403,9 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         }
         
         _Draw();
-        if (!_WaitForMouseEvent(mouse)) break;
+        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse);
+        abort = (ev && *ev==UI::Event::KeyEscape);
+        if (!ev || abort) break;
     }
     
     // Reset state
@@ -459,15 +448,18 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
-    #warning TODO: allow escape key to abort a drag
-    
     #warning TODO: show similar commits to the selected commit using a lighter color
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: when copying commmits, don't hide the source commits
-    
     #warning TODO: an undo/redo button would be nice
+    
+    // DONE:
+//    #warning TODO: when copying commmits, don't hide the source commits
+//    #warning TODO: allow escape key to abort a drag
+    
+    
+    
     
 //    git_libgit2_init();
 //    
@@ -585,8 +577,11 @@ int main(int argc, const char* argv[]) {
         
         _Reload(revNames);
         
-        mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-        mouseinterval(0);
+        ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        ::mouseinterval(0);
+        
+        #warning TODO: not sure if we're going to encounter issues with this set_escdelay
+        ::set_escdelay(0);
         for (;;) {
             _Draw();
             UI::Event ev = _RootWindow->nextEvent();
@@ -615,8 +610,8 @@ int main(int argc, const char* argv[]) {
                 break;
             }
             
-            case UI::Event::DeleteKey:
-            case UI::Event::DeleteFnKey: {
+            case UI::Event::KeyDelete:
+            case UI::Event::KeyDeleteFn: {
                 gitOp = {
                     .type = Git::Op::Type::DeleteCommits,
                     .repo = _Repo,
@@ -629,7 +624,7 @@ int main(int argc, const char* argv[]) {
             }
             
             default: {
-                printf("%x\n", (int)ev);
+//                printf("%x\n", (int)ev);
                 break;
             }}
             

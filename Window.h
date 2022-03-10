@@ -20,8 +20,9 @@ struct Rect {
 enum class Event : int {
     Mouse           = KEY_MOUSE,
     WindowResize    = KEY_RESIZE,
-    DeleteKey       = '\x7F',
-    DeleteFnKey     = KEY_DC,       // Fn+Delete
+    KeyDelete       = '\x7F',
+    KeyDeleteFn     = KEY_DC,       // Fn+Delete
+    KeyEscape       = '\x1B',
 };
 
 inline Rect Intersection(const Rect& a, const Rect& b) {
