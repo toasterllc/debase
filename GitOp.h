@@ -39,6 +39,13 @@ struct OpResult {
     } dst;
 };
 
+inline bool RevMutable(const Rev& rev) {
+    assert(rev);
+    // Only ref-backed revs are mutable
+    if (!rev.ref) return false;
+    return rev.ref.isBranch() || rev.ref.isTag();
+}
+
 // _Sorted: sorts a set of commits according to the order that they appear via `c`
 inline std::vector<Commit> _Sorted(Commit c, const std::set<Commit>& s) {
     std::vector<Commit> r;
@@ -70,9 +77,6 @@ inline _AddRemoveResult _AddRemoveCommits(
     Commit addPosition, // In `dst`
     const std::set<Commit>& remove
 ) {
-//    // The addPosition can't be in the set of commits to remove
-//    assert(remove.find(addPosition) == remove.end());
-    
     std::vector<Commit> addv = _Sorted(addSrc, add);
     
     // Construct `combined` and find `cherry`
@@ -183,66 +187,6 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
             },
         };
     }
-    
-//    OpResult r = {
-//        .src = {
-//            .rev = srcResult.commit,
-//        },
-//        .dst = {
-//            .rev = dstResult.commit,
-//            .commits = dstResult.added,
-//        },
-//    };
-//    
-////    OpResult r = {
-////        .src = {
-////            .rev = ,
-////        }
-////        
-////        .dst = {
-////            .rev = ,
-////            .commits = addResult.added,
-////        }
-////    };
-////struct OpResult {
-////    struct {
-////        Rev rev;
-////    } src;
-////    
-////    struct {
-////        Rev rev;
-////        std::set<Commit> commits; // The commits that were added
-////    } dst;
-////};
-//    
-//    // Update source/destination refs (branches/tags)
-//    {
-//        if (r.src.rev.commit) {
-//            if (Branch branch = Branch::FromRef(*op.src.rev.ref)) {
-//                r.src.rev.ref = op.repo.replaceBranch(branch, r.src.rev.commit);
-//            
-//            } else if (false) {
-//                #warning TODO: handle tags
-//            
-//            } else {
-//                throw RuntimeError("unknown source ref type");
-//            }
-//        }
-//        
-//        if (r.dst.rev.commit) {
-//            if (Branch branch = Branch::FromRef(*op.dst.rev.ref)) {
-//                r.dst.rev.ref = op.repo.replaceBranch(branch, r.dst.rev.commit);
-//            
-//            } else if (false) {
-//                #warning TODO: handle tags
-//            
-//            } else {
-//                throw RuntimeError("unknown source ref type");
-//            }
-//        }
-//    }
-//    
-//    return r;
 }
 
 inline OpResult _Exec_CopyCommits(const Op& op) {

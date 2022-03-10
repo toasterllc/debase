@@ -159,6 +159,9 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     UI::CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
     for (UI::RevColumn col : _Columns) {
+        // Ignore immutable columns
+        if (!Git::RevMutable(col->rev())) continue;
+        
         UI::CommitPanelVec& panels = col->panels();
         const UI::Rect lastRect = panels.back()->rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
@@ -265,13 +268,13 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     bool abort = false;
     for (;;) {
         assert(!_Selection.commits.empty());
+        UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
         
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
         const bool dragStart = w>1 || h>1;
         
         if (!_Drag.titlePanel && dragStart) {
-            UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
             _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, titlePanel->rect().size.x);
@@ -292,7 +295,11 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (_Drag.titlePanel) {
             // Update _Drag.copy depending on whether the option key is held
             {
-                const bool copy = (mouse.bstate & BUTTON_ALT);
+                // forceCopy: require copying if the source column isn't mutable (and therefore commits
+                // can't be moved away from it, because that would require deleting the commits from
+                // the source column)
+                const bool forceCopy = !Git::RevMutable(selectionColumn->rev());
+                const bool copy = (mouse.bstate & BUTTON_ALT) || forceCopy;
                 _Drag.copy = copy;
             }
             
@@ -318,7 +325,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             std::tie(insertionCol, insertionIter) = _FindInsertionPoint({mouse.x, mouse.y});
             
             // Update insertion marker
-            {
+            if (insertionCol) {
                 constexpr int InsertionExtraWidth = 6;
                 UI::CommitPanelVec& insertionColPanels = insertionCol->panels();
                 const UI::Rect lastRect = insertionColPanels.back()->rect();
@@ -329,6 +336,9 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                     .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
                     .size = {lastRect.size.x+InsertionExtraWidth, 0},
                 };
+            
+            } else {
+                _InsertionMarker = std::nullopt;
             }
         }
         
@@ -459,8 +469,6 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
-    
     #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
@@ -469,15 +477,21 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: an undo/redo button
     
+    #warning TODO: add column scrolling
+    
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
-    
+//    
 //    #warning TODO: allow escape key to abort a drag
-    
+//    
 //    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
 //    #warning       to do so, we'll need to implement operator< on Rev so we can put them in a set
-    
+//    
 //    #warning TODO: show similar commits to the selected commit using a lighter color
+//    
+//    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
+//    
+//    #warning TODO: create concept of revs being mutable. if they're not mutable, don't allow moves from them (only copies), moves to them, deletes, etc
     
     
     
