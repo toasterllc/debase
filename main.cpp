@@ -412,6 +412,7 @@ static void _Reload(const std::vector<std::string>& revNames) {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: reject remote branches (eg 'origin/master')
 //    git_libgit2_init();
 //    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
@@ -473,7 +474,8 @@ int main(int argc, const char* argv[]) {
         // so provide a fallback terminfo that usually works.
         nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
         
-        // Override the terminfo 'kmous' and 'XM' properties
+        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
+        // in addition to the default mouse-down/up events.
         //   kmous = the prefix used to detect/parse mouse events
         //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
         //           event mode; 1003=report mouse-moved events in addition to clicks)

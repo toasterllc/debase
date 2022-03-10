@@ -54,14 +54,19 @@ inline std::vector<Commit> _Sorted(Commit c, const std::set<Commit>& s) {
 inline Commit _AddRemoveCommits(
     Repo repo,
     Commit target,
-    Commit addPoint,
+    Commit addPosition,
     const std::vector<Commit>& add,
     const std::set<Commit>& remove
 ) {
-    assert(remove.find(addPoint) == remove.end());
+//    // The addPosition can't be in the set of commits to remove
+//    assert(remove.find(addPosition) == remove.end());
     
     std::deque<Commit> combined;
     Commit cherry;
+    
+    // Construct `combined` and find `cherry`
+    // `cherry` is the earliest commit from `target` which remains intact
+    // `combined` is the ordered set of commits that need to be applied on top of `cherry`
     {
         const bool adding = !add.empty();
         std::set<Commit> r = remove;
@@ -69,17 +74,15 @@ inline Commit _AddRemoveCommits(
         bool foundAddPoint = false;
         for (;;) {
             if (!c) throw RuntimeError("ran out of commits");
-            if (!r.erase(c)) {
-                if (adding && c==addPoint) {
-                    assert(!foundAddPoint);
-                    combined.insert(combined.begin(), add.begin(), add.end());
-                    foundAddPoint = true;
-                }
-                
-                if (r.empty() && (!adding || foundAddPoint)) break;
-                combined.push_front(c);
+            
+            if (adding && c==addPosition) {
+                assert(!foundAddPoint);
+                combined.insert(combined.begin(), add.begin(), add.end());
+                foundAddPoint = true;
             }
             
+            if (r.empty() && (!adding || foundAddPoint)) break;
+            if (!r.erase(c)) combined.push_front(c);
             c = c.parent();
         }
         
