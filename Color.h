@@ -13,9 +13,17 @@ struct Color {
 };
 
 struct Colors {
-    static constexpr Color SelectionMove = Color{1,    0,    0, 1000};
-    static constexpr Color SelectionCopy = Color{2,    0, 1000,    0};
-    static constexpr Color SubtitleText  = Color{3,  300,  300,  300};
+    static constexpr Color SelectionMove    = Color{1,    0,    0, 1000};
+    static constexpr Color SelectionCopy    = Color{2,    0, 1000,    0};
+    static constexpr Color SelectionSimilar = Color{3,  450,  450, 1000};
+    static constexpr Color SubtitleText     = Color{4,  300,  300,  300};
+    
+    static constexpr Color All[] = {
+        SelectionMove,
+        SelectionCopy,
+        SelectionSimilar,
+        SubtitleText
+    };
 };
 
 //namespace Colors {

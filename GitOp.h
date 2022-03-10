@@ -246,6 +246,8 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
 }
 
 inline OpResult _Exec_CopyCommits(const Op& op) {
+    if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
+    
     // Add commits to `op.dst`
     _AddRemoveResult dstResult = _AddRemoveCommits(
         op.repo,            // repo:        Repo
@@ -269,6 +271,8 @@ inline OpResult _Exec_CopyCommits(const Op& op) {
 }
 
 inline OpResult _Exec_DeleteCommits(const Op& op) {
+    if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    
     // Remove commits from `op.src`
     _AddRemoveResult srcResult = _AddRemoveCommits(
         op.repo,            // repo:        Repo

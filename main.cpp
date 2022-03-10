@@ -42,10 +42,20 @@ static Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 static std::optional<UI::Rect> _InsertionMarker;
 
+enum class SelectState {
+    False,
+    True,
+    Similar,
+};
+
+static SelectState _SelectState(UI::RevColumn col, UI::CommitPanel panel) {
+    bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
+    if (!similar) return SelectState::False;
+    return (col->rev()==_Selection.rev ? SelectState::True : SelectState::Similar);
+}
+
 static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
-    if (col->rev() != _Selection.rev) return false;
-    if (_Selection.commits.find(panel->commit()) == _Selection.commits.end()) return false;
-    return true;
+    return _SelectState(col, panel) == SelectState::True;
 }
 
 static void _Draw() {
@@ -65,14 +75,21 @@ static void _Draw() {
         bool copying = _Drag.copy;
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
-                if (_Selected(col, panel)) {
+                SelectState selectState = _SelectState(col, panel);
+                if (selectState == SelectState::True) {
                     if (!dragging)      panel->setVisible(true);
                     else if (copying)   panel->setVisible(true);
                     else                panel->setVisible(false);
                     panel->setBorderColor(selectionColor);
+                
                 } else {
                     panel->setVisible(true);
-                    panel->setBorderColor(std::nullopt);
+                    
+                    if (selectState == SelectState::Similar) {
+                        panel->setBorderColor(UI::Colors::SelectionSimilar);
+                    } else {
+                        panel->setBorderColor(std::nullopt);
+                    }
                 }
             }
         }
@@ -448,8 +465,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
-    #warning TODO: show similar commits to the selected commit using a lighter color
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: an undo/redo button would be nice
@@ -461,6 +476,8 @@ int main(int argc, const char* argv[]) {
     
 //    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
 //    #warning       to do so, we'll need to implement operator< on Rev so we can put them in a set
+    
+//    #warning TODO: show similar commits to the selected commit using a lighter color
     
     
     
@@ -566,23 +583,11 @@ int main(int argc, const char* argv[]) {
         ::use_default_colors();
         ::start_color();
         
-        #warning TODO: cleanup color logic
         #warning TODO: fix: colors aren't restored when exiting
         // Redefine colors to our custom palette
-        {
-            int c = 1;
-            
-            ::init_color(c, 0, 0, 1000);
-            ::init_pair(UI::Colors::SelectionMove, c, -1);
-            c++;
-            
-            ::init_color(c, 0, 1000, 0);
-            ::init_pair(UI::Colors::SelectionCopy, c, -1);
-            c++;
-            
-            ::init_color(c, 300, 300, 300);
-            ::init_pair(UI::Colors::SubtitleText, c, -1);
-            c++;
+        for (const UI::Color& c : UI::Colors::All) {
+            ::init_color(c.idx, c.r, c.g, c.b);
+            ::init_pair(c.idx, c.idx, -1);
         }
         
         // Hide cursor
