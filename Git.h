@@ -3,6 +3,8 @@
 #include "RuntimeError.h"
 #include "lib/libgit2/include/git2.h"
 
+#warning TODO: formalize what types these APIs accept and return. can we only accept the wrapper objects? do we need to worry about implicit creation of RefCounted objects if a non-wrapper is supplied?
+
 namespace Git {
 
 using Id = git_oid;
@@ -42,25 +44,25 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         return Lookup(repo, commitId);
     }
     
-    static Commit FromObject(git_object* obj) {
+    static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
-        int ir = git_object_peel((git_object**)&x, obj, GIT_OBJECT_COMMIT);
+        int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
         if (ir) throw RuntimeError("git_object_peel failed: %s", git_error_last()->message);
         return x;
     }
     
     Tree tree() const {
-        git_tree* t = nullptr;
-        int ir = git_commit_tree(&t, *get());
+        git_tree* x = nullptr;
+        int ir = git_commit_tree(&x, *get());
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
-        return t;
+        return x;
     }
     
     Commit parent(unsigned int n=0) const {
-        git_commit* c = nullptr;
-        int ir = git_commit_parent(&c, *get(), n);
+        git_commit* x = nullptr;
+        int ir = git_commit_parent(&x, *get(), n);
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
-        return c;
+        return x;
     }
 };
 
@@ -139,10 +141,10 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
 struct Branch : Ref {
     using Ref::Ref;
     
-    static Branch FromRef(git_reference* ref) {
-        if (!git_reference_is_branch(ref)) return nullptr;
+    static Branch FromRef(Ref ref) {
+        if (!ref.isBranch()) return nullptr;
         git_reference* x = nullptr;
-        int ir = git_reference_dup(&x, ref);
+        int ir = git_reference_dup(&x, *ref);
         if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
         return x;
     }
@@ -154,9 +156,9 @@ struct Branch : Ref {
         return x;
     }
     
-    static Branch Create(git_repository* repo, std::string_view name, git_commit* commit, bool force=false) {
+    static Branch Create(git_repository* repo, std::string_view name, Commit commit, bool force=false) {
         git_reference* x = nullptr;
-        int ir = git_branch_create(&x, repo, name.data(), commit, force);
+        int ir = git_branch_create(&x, repo, name.data(), *commit, force);
         if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
         return x;
     }
@@ -178,8 +180,8 @@ struct Branch : Ref {
         }
     }
     
-    void setUpstream(git_reference* upstream) {
-        int ir = git_branch_set_upstream(*get(), git_reference_shorthand(upstream));
+    void setUpstream(Branch upstream) {
+        int ir = git_branch_set_upstream(*get(), git_reference_shorthand(*upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
     }
 };
@@ -221,10 +223,10 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     Index mergeTrees(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
-        git_index* i = nullptr;
-        int ir = git_merge_trees(&i, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
+        git_index* x = nullptr;
+        int ir = git_merge_trees(&x, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
         if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
-        return i;
+        return x;
     }
     
     Tree writeIndex(Index index) const {
@@ -232,10 +234,10 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         int ir = git_index_write_tree_to(&treeId, *index, *get());
         if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
         
-        git_tree* newTree = nullptr;
-        ir = git_tree_lookup(&newTree, *get(), &treeId);
+        git_tree* x = nullptr;
+        ir = git_tree_lookup(&x, *get(), &treeId);
         if (ir) throw RuntimeError("git_tree_lookup failed: %s", git_error_last()->message);
-        return newTree;
+        return x;
     }
     
     // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
@@ -280,7 +282,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
     Ref replaceRef(Ref ref, Commit commit) const {
-        if (Branch branch = Branch::FromRef(*ref)) {
+        if (Branch branch = Branch::FromRef(ref)) {
             return replaceBranch(branch, commit);
         
         } else if (false) {
@@ -293,8 +295,8 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     Branch replaceBranch(Branch branch, Commit commit) const {
         Branch upstream = branch.upstream();
-        Branch newBranch = Branch::Create(*get(), branch.name(), *commit, true);
-        if (upstream) newBranch.setUpstream(*upstream);
+        Branch newBranch = Branch::Create(*get(), branch.name(), commit, true);
+        if (upstream) newBranch.setUpstream(upstream);
         return newBranch;
     }
     
@@ -310,36 +312,36 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 //    }
 };
 
-struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
-    using RefCounted::RefCounted;
-    
-    static RevWalk Create(git_repository* repo, std::string_view str) {
-        RevWalk walk;
-        
-        // Create a RevWalk
-        {
-            git_revwalk* x = nullptr;
-            int ir = git_revwalk_new(&x, repo);
-            if (ir) throw RuntimeError("git_revwalk_new failed: %s", git_error_last()->message);
-            walk = x;
-        }
-        
-        // Push the range specified by `str`
-        {
-            int ir = git_revwalk_push_range(*walk, str.data());
-            if (ir) throw RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
-        }
-        
-        return walk;
-    }
-    
-    Commit next() {
-        Id commitId;
-        int ir = git_revwalk_next(&commitId, *get());
-        if (ir) return nullptr;
-        return Git::Commit::Lookup(git_revwalk_repository(*get()), commitId);
-    }
-};
+//struct RevWalk : RefCounted<git_revwalk*, git_revwalk_free> {
+//    using RefCounted::RefCounted;
+//    
+//    static RevWalk Create(git_repository* repo, std::string_view str) {
+//        RevWalk walk;
+//        
+//        // Create a RevWalk
+//        {
+//            git_revwalk* x = nullptr;
+//            int ir = git_revwalk_new(&x, repo);
+//            if (ir) throw RuntimeError("git_revwalk_new failed: %s", git_error_last()->message);
+//            walk = RevWalk(x);
+//        }
+//        
+//        // Push the range specified by `str`
+//        {
+//            int ir = git_revwalk_push_range(*walk, str.data());
+//            if (ir) throw RuntimeError("git_revwalk_push_range failed: %s", git_error_last()->message);
+//        }
+//        
+//        return walk;
+//    }
+//    
+//    Commit next() {
+//        Id commitId;
+//        int ir = git_revwalk_next(&commitId, *get());
+//        if (ir) return nullptr;
+//        return Git::Commit::Lookup(git_revwalk_repository(*get()), commitId);
+//    }
+//};
 
 inline std::string Str(const git_oid& oid) {
     char str[8];
@@ -385,7 +387,7 @@ public:
         
         // Otherwise, construct this Rev as a commit
         } else if (o) {
-            commit = Commit::FromObject(*o);
+            commit = Commit::FromObject(o);
         
         } else {
             throw RuntimeError("git_revparse_ext returned null");
