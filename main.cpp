@@ -588,8 +588,16 @@ int main(int argc, const char* argv[]) {
                     }
                     
                     if (gitOp) {
-                        Git::Exec(*gitOp);
+                        Git::OpResult opResult = Git::Exec(*gitOp);
+                        
+                        // Reload the UI
                         _Reload(revNames);
+                        
+                        // Update the selection
+                        _Selection = {
+                            .rev = opResult.dst.rev,
+                            .commits = opResult.dst.commits,
+                        };
                     }
                 }
             
