@@ -20,7 +20,7 @@ public:
         }
         
         bool isHead = repo.head().commit() == rev.commit;
-        if (isHead) {
+        if (_name!="HEAD" && isHead) {
             _name = _name + " (HEAD)";
         }
         

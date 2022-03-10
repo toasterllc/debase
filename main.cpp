@@ -128,7 +128,7 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     UI::CommitPanelVec::iterator insertionIter;
     std::optional<int> insertLeastDistance;
     for (UI::RevColumn col : _Columns) {
-        UI::CommitPanelVec panels = col->panels();
+        UI::CommitPanelVec& panels = col->panels();
         const UI::Rect lastRect = panels.back()->rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
         const int endY = lastRect.point.y + lastRect.size.y;
@@ -150,7 +150,7 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     
     // Adjust the insert point so that it doesn't occur within a selection
     assert(insertionCol);
-    UI::CommitPanelVec insertionColPanels = insertionCol->panels();
+    UI::CommitPanelVec& insertionColPanels = insertionCol->panels();
     for (;;) {
         if (insertionIter == insertionColPanels.begin()) break;
         UI::CommitPanel prevPanel = *std::prev(insertionIter);

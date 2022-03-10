@@ -172,7 +172,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
         );
         
         Rev srcRev = op.repo.replaceRef(op.src.rev.ref, srcResult.commit);
-        Rev dstRev = op.repo.replaceRef(op.src.rev.ref, dstResult.commit);
+        Rev dstRev = op.repo.replaceRef(op.dst.rev.ref, dstResult.commit);
         return {
             .src = {
                 .rev = srcRev,
