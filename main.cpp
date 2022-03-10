@@ -167,8 +167,8 @@ static bool _WaitForMouseEvent(MEVENT& mouse) {
     
     // Wait for another mouse event
     for (;;) {
-        int key = _RootWindow->getChar();
-        if (key != KEY_MOUSE) continue;
+        UI::Event ev = _RootWindow->nextEvent();
+        if (ev != UI::Event::Mouse) continue;
         int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
         return true;
@@ -467,6 +467,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: when copying commmits, don't hide the source commits
     
+    #warning TODO: an undo/redo button would be nice
+    
 //    git_libgit2_init();
 //    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
@@ -587,15 +589,16 @@ int main(int argc, const char* argv[]) {
         mouseinterval(0);
         for (;;) {
             _Draw();
-            int key = _RootWindow->getChar();
-            if (key == KEY_MOUSE) {
+            UI::Event ev = _RootWindow->nextEvent();
+            std::optional<Git::Op> gitOp;
+            switch (ev) {
+            case UI::Event::Mouse: {
                 MEVENT mouse = {};
                 int ir = ::getmouse(&mouse);
                 if (ir != OK) continue;
                 if (mouse.bstate & BUTTON1_PRESSED) {
                     const bool shift = (mouse.bstate & BUTTON_SHIFT);
                     const auto hitTest = _HitTest({mouse.x, mouse.y});
-                    std::optional<Git::Op> gitOp;
                     if (hitTest && !shift) {
                         // Mouse down inside of a CommitPanel, without shift key
                         gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
@@ -603,23 +606,44 @@ int main(int argc, const char* argv[]) {
                         // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
                         _TrackMouseOutsideCommitPanel(mouse);
                     }
-                    
-                    if (gitOp) {
-                        Git::OpResult opResult = Git::Exec(*gitOp);
-                        
-                        // Reload the UI
-                        _Reload(revNames);
-                        
-                        // Update the selection
-                        _Selection = {
-                            .rev = opResult.dst.rev,
-                            .commits = opResult.dst.commits,
-                        };
-                    }
                 }
+                break;
+            }
             
-            } else if (key == KEY_RESIZE) {
-                throw std::runtime_error("hello");
+            case UI::Event::WindowResize: {
+                throw std::runtime_error("window resize");
+                break;
+            }
+            
+            case UI::Event::DeleteKey:
+            case UI::Event::DeleteFnKey: {
+                gitOp = {
+                    .type = Git::Op::Type::DeleteCommits,
+                    .repo = _Repo,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                break;
+            }
+            
+            default: {
+                printf("%x\n", (int)ev);
+                break;
+            }}
+            
+            if (gitOp) {
+                Git::OpResult opResult = Git::Exec(*gitOp);
+                
+                // Reload the UI
+                _Reload(revNames);
+                
+                // Update the selection
+                _Selection = {
+                    .rev = opResult.dst.rev,
+                    .commits = opResult.dst.commits,
+                };
             }
         }
     

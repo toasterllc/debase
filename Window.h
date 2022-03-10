@@ -17,6 +17,13 @@ struct Rect {
     Size size;
 };
 
+enum class Event : int {
+    Mouse           = KEY_MOUSE,
+    WindowResize    = KEY_RESIZE,
+    DeleteKey       = '\x7F',
+    DeleteFnKey     = KEY_DC,       // Fn+Delete
+};
+
 inline Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.point.x, b.point.x);
     const int maxX = std::min(a.point.x+a.size.x, b.point.x+b.size.x);
@@ -121,8 +128,8 @@ public:
         return !Empty(Intersection(rect(), Rect{.point=p, .size={1,1}}));
     }
     
-    int getChar() const {
-        return ::wgetch(*this);
+    Event nextEvent() const {
+        return (Event)::wgetch(*this);
     }
     
     operator WINDOW*() const { return _win; }

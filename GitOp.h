@@ -246,11 +246,49 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
 }
 
 inline OpResult _Exec_CopyCommits(const Op& op) {
-    return {};
+    // Add commits to `op.dst`
+    _AddRemoveResult dstResult = _AddRemoveCommits(
+        op.repo,            // repo:        Repo
+        op.dst.rev.commit,  // dst:         Commit
+        op.src.commits,     // add:         std::set<Commit>
+        op.src.rev.commit,  // addSrc:      Commit
+        op.dst.position,    // addPosition: Commit
+        {}                  // remove:      std::set<Commit>
+    );
+    
+    Rev dstRev = op.repo.replaceRef(op.dst.rev.ref, dstResult.commit);
+    return {
+        .src = {
+            .rev = op.src.rev,
+        },
+        .dst = {
+            .rev = dstRev,
+            .commits = dstResult.added,
+        },
+    };
 }
 
 inline OpResult _Exec_DeleteCommits(const Op& op) {
-    return {};
+    // Remove commits from `op.src`
+    _AddRemoveResult srcResult = _AddRemoveCommits(
+        op.repo,            // repo:        Repo
+        op.src.rev.commit,  // dst:         Commit
+        {},                 // add:         std::set<Commit>
+        nullptr,            // addSrc:      Commit
+        nullptr,            // addPosition: Commit
+        op.src.commits      // remove:      std::set<Commit>
+    );
+    
+    Rev srcRev = op.repo.replaceRef(op.src.rev.ref, srcResult.commit);
+    return {
+        .src = {
+            .rev = srcRev,
+        },
+        .dst = {
+            .rev = op.dst.rev,
+            .commits = {},
+        },
+    };
 }
 
 inline OpResult _Exec_CombineCommits(const Op& op) {
