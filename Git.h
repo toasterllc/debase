@@ -3,8 +3,6 @@
 #include "RuntimeError.h"
 #include "lib/libgit2/include/git2.h"
 
-#warning TODO: formalize what types these APIs accept and return. can we only accept the wrapper objects? do we need to worry about implicit creation of RefCounted objects if a non-wrapper is supplied?
-
 namespace Git {
 
 using Id = git_oid;

@@ -433,9 +433,13 @@ static void _Reload(const std::vector<std::string>& revNames) {
     int OffsetX = InsetX;
     
     std::vector<Git::Rev> revs;
-    revs.emplace_back(_Repo.head());
-    for (const std::string& revName : revNames) {
-        revs.emplace_back(Git::Rev(_Repo, revName));
+    if (revNames.empty()) {
+        revs.push_back(_Repo.head());
+    
+    } else {
+        for (const std::string& revName : revNames) {
+            revs.push_back(Git::Rev(_Repo, revName));
+        }
     }
     
     _Columns.clear();
@@ -450,6 +454,19 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
     #warning TODO: to do so, we'll need to implement operator< on Rev so we can put them in a set
+    
+    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
+    
+    #warning TODO: move commits away from dragged commits to show where the commits will land
+    
+    #warning TODO: allow escape key to abort a drag
+    
+    #warning TODO: show similar commits to the selected commit using a lighter color
+    
+    #warning TODO: backup all supplied revs before doing anything
+    
+    #warning TODO: when copying commmits, don't hide the source commits
+    
 //    git_libgit2_init();
 //    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
