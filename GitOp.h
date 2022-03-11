@@ -271,7 +271,7 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     Commit integrated = head;
     
     // Attach every commit in `attach` to `head`
-    for (Commit commit : integrate) {
+    for (Commit commit : attach) {
         head = op.repo.commitAttach(head, commit);
     }
     
