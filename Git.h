@@ -241,10 +241,10 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
     Commit attachCommit(Commit parent, Tree tree, Commit metadata) const {
-        git_oid commitId;
+        git_oid id;
         const git_commit* parents[] = {*parent};
         int ir = git_commit_create(
-            &commitId,
+            &id,
             *get(),
             nullptr,
             git_commit_author(*metadata),
@@ -256,26 +256,30 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             parents
         );
         if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-        return commitLookup(commitId);
+        return commitLookup(id);
     }
     
-    Commit cherryPick(Commit dst, Commit src) const {
-        const git_oid* dstId = git_commit_id(*dst);
-        const git_oid* srcId = git_commit_id(*src);
-        
+    // attachCommit: attaches (cherry-picks) `src` onto `dst` and returns the result
+    Commit attachCommit(Commit dst, Commit src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
-        
-        git_oid baseId;
-        int ir = git_merge_base(&baseId, *get(), srcId, dstId);
-        if (ir) throw RuntimeError("git_merge_base failed: %s", git_error_last()->message);
-        
         Tree ancestorTree = src.parent().tree();
         Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
         Tree newTree = writeIndex(mergedTreesIndex);
-        Commit newCommit = attachCommit(dst, newTree, src);
-    //    printf("New commit: %s\n", git_oid_tostr_s(git_commit_id(*newCommit)));
-        return newCommit;
+        return attachCommit(dst, newTree, src);
+    }
+    
+    // integrateCommit: adds the content of `src` into `dst` and returns the result
+    Commit integrateCommit(Commit dst, Commit src) const {
+        Tree srcTree = src.tree();
+        Tree dstTree = dst.tree();
+        Tree ancestorTree = src.parent().tree();
+        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
+        Tree newTree = writeIndex(mergedTreesIndex);
+        git_oid id;
+        int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, nullptr, nullptr, *newTree);
+        if (ir) throw RuntimeError("git_commit_amend failed: %s", git_error_last()->message);
+        return commitLookup(id);
     }
     
     Ref replaceRef(Ref ref, Commit commit) const {

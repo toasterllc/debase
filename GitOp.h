@@ -79,11 +79,11 @@ inline _AddRemoveResult _AddRemoveCommits(
 ) {
     std::vector<Commit> addv = _Sorted(addSrc, add);
     
-    // Construct `combined` and find `cherry`
-    // `cherry` is the earliest commit from `dst` that we'll apply the commits on top of
-    // `combined` is the ordered set of commits that need to be applied on top of `cherry`
+    // Construct `combined` and find `head`
+    // `head` is the earliest commit from `dst` that we'll apply the commits on top of
+    // `combined` is the ordered set of commits that need to be applied on top of `head`
     std::deque<Commit> combined;
-    Commit cherry;
+    Commit head;
     {
         const bool adding = !addv.empty();
         std::set<Commit> r = remove;
@@ -103,20 +103,20 @@ inline _AddRemoveResult _AddRemoveCommits(
             c = c.parent();
         }
         
-        cherry = c;
+        head = c;
     }
     
-    // Apply `combined` on top of `cherry`, and keep track of the added commits
+    // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
     for (Commit commit : combined) {
-        cherry = repo.cherryPick(cherry, commit);
+        head = repo.attachCommit(head, commit);
         if (add.find(commit) != add.end()) {
-            added.insert(cherry);
+            added.insert(head);
         }
     }
     
     return {
-        .commit = cherry,
+        .commit = head,
         .added = added,
     };
 }
