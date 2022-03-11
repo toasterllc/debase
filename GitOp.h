@@ -109,7 +109,7 @@ inline _AddRemoveResult _AddRemoveCommits(
     // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
     for (Commit commit : combined) {
-        head = repo.attachCommit(head, commit);
+        head = repo.commitAttach(head, commit);
         if (add.find(commit) != add.end()) {
             added.insert(head);
         }
@@ -142,7 +142,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
             op.src.commits      // remove:      std::set<Commit>
         );
         
-        Rev srcDstRev = op.repo.replaceRef(op.src.rev.ref, srcDstResult.commit);
+        Rev srcDstRev = op.repo.refReplace(op.src.rev.ref, srcDstResult.commit);
         return {
             .src = {
                 .rev = srcDstRev,
@@ -175,8 +175,8 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
             {}                  // remove:      std::set<Commit>
         );
         
-        Rev srcRev = op.repo.replaceRef(op.src.rev.ref, srcResult.commit);
-        Rev dstRev = op.repo.replaceRef(op.dst.rev.ref, dstResult.commit);
+        Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
+        Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
         return {
             .src = {
                 .rev = srcRev,
@@ -202,7 +202,7 @@ inline OpResult _Exec_CopyCommits(const Op& op) {
         {}                  // remove:      std::set<Commit>
     );
     
-    Rev dstRev = op.repo.replaceRef(op.dst.rev.ref, dstResult.commit);
+    Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
     return {
         .src = {
             .rev = op.src.rev,
@@ -227,7 +227,7 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
         op.src.commits      // remove:      std::set<Commit>
     );
     
-    Rev srcRev = op.repo.replaceRef(op.src.rev.ref, srcResult.commit);
+    Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
     return {
         .src = {
             .rev = srcRev,
@@ -251,7 +251,7 @@ inline OpResult Exec(const Op& op) {
     // We have to detach the head, otherwise we'll get an error if we try
     // to replace the current branch
     std::string headPrev = op.repo.head().fullName();
-    op.repo.detachHead();
+    op.repo.headDetach();
     
     OpResult r;
     std::exception_ptr err;

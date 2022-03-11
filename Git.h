@@ -206,7 +206,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    void detachHead() const {
+    void headDetach() const {
         int ir = git_repository_detach_head(*get());
         if (ir) throw RuntimeError("git_repository_detach_head failed: %s", git_error_last()->message);
     }
@@ -220,7 +220,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         if (ir) throw RuntimeError("git_repository_set_head failed: %s", git_error_last()->message);
     }
     
-    Index mergeTrees(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
+    Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
         git_index* x = nullptr;
         int ir = git_merge_trees(&x, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
@@ -228,7 +228,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    Tree writeIndex(Index index) const {
+    Tree indexWrite(Index index) const {
         git_oid treeId;
         int ir = git_index_write_tree_to(&treeId, *index, *get());
         if (ir) throw RuntimeError("git_index_write_tree_to failed: %s", git_error_last()->message);
@@ -240,7 +240,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
     // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
-    Commit attachCommit(Commit parent, Tree tree, Commit metadata) const {
+    Commit commitAttach(Commit parent, Tree tree, Commit metadata) const {
         git_oid id;
         const git_commit* parents[] = {*parent};
         int ir = git_commit_create(
@@ -259,23 +259,23 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return commitLookup(id);
     }
     
-    // attachCommit: attaches (cherry-picks) `src` onto `dst` and returns the result
-    Commit attachCommit(Commit dst, Commit src) const {
+    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
+    Commit commitAttach(Commit dst, Commit src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree();
-        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
-        Tree newTree = writeIndex(mergedTreesIndex);
-        return attachCommit(dst, newTree, src);
+        Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+        Tree newTree = indexWrite(mergedTreesIndex);
+        return commitAttach(dst, newTree, src);
     }
     
-    // integrateCommit: adds the content of `src` into `dst` and returns the result
-    Commit integrateCommit(Commit dst, Commit src) const {
+    // commitIntegrate: adds the content of `src` into `dst` and returns the result
+    Commit commitIntegrate(Commit dst, Commit src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree();
-        Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
-        Tree newTree = writeIndex(mergedTreesIndex);
+        Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+        Tree newTree = indexWrite(mergedTreesIndex);
         git_oid id;
         
         // Combine the commit messages
@@ -289,9 +289,9 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return commitLookup(id);
     }
     
-    Ref replaceRef(Ref ref, Commit commit) const {
+    Ref refReplace(Ref ref, Commit commit) const {
         if (Branch branch = Branch::FromRef(ref)) {
-            return replaceBranch(branch, commit);
+            return branchReplace(branch, commit);
         
         } else if (false) {
             #warning TODO: handle tags
@@ -301,7 +301,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         }
     }
     
-    Branch replaceBranch(Branch branch, Commit commit) const {
+    Branch branchReplace(Branch branch, Commit commit) const {
         Branch upstream = branch.upstream();
         Branch newBranch = branchCreate(branch.name(), commit, true);
         if (upstream) newBranch.setUpstream(upstream);

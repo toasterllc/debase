@@ -510,7 +510,7 @@ int main(int argc, const char* argv[]) {
     Git::Commit later = repo.revLookup("master2").commit;
     Git::Commit earlier = repo.revLookup("master2~1").commit;
     
-    Git::Commit res = repo.integrateCommit(earlier, later);
+    Git::Commit res = repo.commitIntegrate(earlier, later);
     res.printId();
     
 //    git_rebase* rebase = nullptr;
