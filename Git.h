@@ -45,6 +45,10 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
         return x;
     }
+    
+    void printId() const {
+        printf("%s\n", git_oid_tostr_s(&id()));
+    }
 };
 
 struct Ref : RefCounted<git_reference*, git_reference_free> {
@@ -84,54 +88,22 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     }
 };
 
-struct Rev : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
+struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
     using RefCounted::RefCounted;
-    const Id& id() const { return *git_annotated_commit_id(*get()); }
     
-    static Rev FromCommit(Commit commit) {
+    static AnnotatedCommit FromCommit(Commit commit) {
         git_annotated_commit* x = nullptr;
         int ir = git_annotated_commit_lookup(&x, git_commit_owner(*commit), &commit.id());
         if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
         return x;
     }
     
-    static Rev FromRef(Ref ref) {
+    static AnnotatedCommit FromRef(Ref ref) {
         git_annotated_commit* x = nullptr;
         int ir = git_annotated_commit_from_ref(&x, git_reference_owner(*ref), *ref);
         if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
         return x;
     }
-    
-    template <typename Repo> // Forward declare Repo via template
-    static Rev FromStr(Repo repo, std::string_view str) {
-        Object obj;
-        Ref ref;
-        
-        // Determine whether `str` is a ref or commit
-        {
-            git_object* po = nullptr;
-            git_reference* pr = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *repo, str.data());
-            if (ir) throw RuntimeError("git_revparse_ext failed: %s", git_error_last()->message);
-            obj = po;
-            ref = pr;
-        }
-        
-        if (ref) return FromRef(ref);
-        return FromCommit(Commit::FromObject(obj));
-    }
-    
-    bool operator==(const Rev& x) const {
-        
-        if ((bool)commit != (bool)x.commit) return false;
-        if (commit && (commit != x.commit)) return false;
-        if ((bool)ref != (bool)x.ref) return false;
-        if (ref && (ref != x.ref)) return false;
-        return true;
-    }
-    
-    bool operator!=(const Rev& x) const { return !(*this==x); }
-    bool operator<(const Rev& x) const { return git_oid_cmp(&id(), &x.id())<0; }
 };
 
 struct Branch : Ref {
@@ -166,6 +138,52 @@ struct Branch : Ref {
         int ir = git_branch_set_upstream(*get(), git_reference_shorthand(*upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
     }
+};
+
+// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
+// that targets that commit
+class Rev {
+public:
+    // Invalid Rev
+    Rev() {}
+    
+    Rev(Commit c) : commit(c) {}
+    
+    Rev(Ref r) : ref(r) {
+        commit = ref.commit();
+        assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
+    }
+    
+    AnnotatedCommit annotatedCommit() const {
+        if (ref) return AnnotatedCommit::FromRef(ref);
+        return AnnotatedCommit::FromCommit(commit);
+    }
+    
+    operator bool() const { return (bool)commit; }
+    
+    bool operator==(const Rev& x) const {
+        if ((bool)commit != (bool)x.commit) return false;
+        if (commit && (commit != x.commit)) return false;
+        if ((bool)ref != (bool)x.ref) return false;
+        if (ref && (ref != x.ref)) return false;
+        return true;
+    }
+    
+    bool operator!=(const Rev& x) const { return !(*this==x); }
+    
+    bool operator<(const Rev& x) const {
+        // Stage 1: compare commits
+        if ((bool)commit != (bool)x.commit) return (bool)commit<(bool)x.commit;
+        if (!commit) return false; // Handle both commits==nullptr
+        if (commit != x.commit) return commit<x.commit;
+        // Stage 2: commits are the same; compare the refs
+        if ((bool)ref != (bool)x.ref) return (bool)ref<(bool)x.ref;
+        if (!ref) return false; // Handle both refs==nullptr
+        return ref < x.ref;
+    }
+    
+    Commit commit; // Mandatory
+    Ref ref;       // Optional
 };
 
 struct Repo : RefCounted<git_repository*, git_repository_free> {
@@ -297,6 +315,25 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return refFullNameLookup(ref.fullName());
     }
     
+    Rev revLookup(std::string_view str) {
+        Object obj;
+        Ref ref;
+        
+        // Determine whether `str` is a ref or commit
+        {
+            git_object* po = nullptr;
+            git_reference* pr = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
+            if (ir) throw RuntimeError("git_revparse_ext failed: %s", git_error_last()->message);
+            obj = po;
+            ref = pr;
+        }
+        
+        // If we have a ref, construct this Rev as a ref
+        if (ref) return Rev(ref);
+        return Rev(Commit::FromObject(obj));
+    }
+    
     Commit commitLookup(const Id& id) const {
         git_commit* x = nullptr;
         int ir = git_commit_lookup(&x, *get(), &id);
@@ -362,74 +399,5 @@ inline std::string Str(git_time_t t) {
     ss << std::put_time(&tm, "%a %b %d %R");
     return ss.str();
 }
-
-// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
-// that targets that commit
-class Rev {
-public:
-    // Invalid Rev
-    Rev() {}
-    
-    Rev(Repo repo, std::string_view str) {
-        Object o;
-        Ref r;
-        
-        // Determine whether `str` is a ref or commit
-        {
-            git_object* po = nullptr;
-            git_reference* pr = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *repo, str.data());
-            if (ir) throw RuntimeError("git_revparse_ext failed: %s", git_error_last()->message);
-            o = po;
-            r = pr;
-        }
-        
-        // If we have a ref, construct this Rev as a ref
-        if (r) {
-            ref = r;
-            commit = ref.commit();
-            assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
-        
-        // Otherwise, construct this Rev as a commit
-        } else if (o) {
-            commit = Commit::FromObject(o);
-        
-        } else {
-            throw RuntimeError("git_revparse_ext returned null");
-        }
-    }
-    
-    Rev(Commit c) : commit(c) {}
-    
-    Rev(Ref r) : ref(r) {
-        commit = ref.commit();
-    }
-    
-    operator bool() const { return (bool)commit; }
-    
-    bool operator==(const Rev& x) const {
-        if ((bool)commit != (bool)x.commit) return false;
-        if (commit && (commit != x.commit)) return false;
-        if ((bool)ref != (bool)x.ref) return false;
-        if (ref && (ref != x.ref)) return false;
-        return true;
-    }
-    
-    bool operator!=(const Rev& x) const { return !(*this==x); }
-    
-    bool operator<(const Rev& x) const {
-        // Stage 1: compare commits
-        if ((bool)commit != (bool)x.commit) return (bool)commit<(bool)x.commit;
-        if (!commit) return false; // Handle both commits==nullptr
-        if (commit != x.commit) return commit<x.commit;
-        // Stage 2: commits are the same; compare the refs
-        if ((bool)ref != (bool)x.ref) return (bool)ref<(bool)x.ref;
-        if (!ref) return false; // Handle both refs==nullptr
-        return ref < x.ref;
-    }
-    
-    Commit commit; // Mandatory
-    Ref ref;       // Optional
-};
 
 } // namespace Git

@@ -507,26 +507,81 @@ int main(int argc, const char* argv[]) {
     
     
     Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-    git_annotated_commit* ac = nullptr;
+    Git::Rev rebaseEnd = repo.revLookup("master2");
+    Git::Rev rebaseStart = repo.revLookup("master2~3");
     
-    Git::Ref masterRef = repo.refLookup("master");
-    int ir = git_annotated_commit_from_ref(&ac, *repo, *masterRef);
+    git_rebase* rebase = nullptr;
+    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
+    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
+    Git::Rev newBranchRev(newBranch);
+    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
     assert(!ir);
+    
+    
+    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
+    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
+    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
+//    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
+//    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
+    rebase0.type = GIT_REBASE_OPERATION_PICK;
+    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
+    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
+//    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
+//    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
+    
+    git_rebase_operation* op = nullptr;
+    git_oid id;
+    for (;;) {
+        ir = git_rebase_next(&op, rebase);
+        if (ir == GIT_ITEROVER) break;
+        assert(!ir);
+        Git::Commit commit = repo.commitLookup(op->id);
+        commit.printId();
+//        
+//        if (squash) {
+//            op->type = GIT_REBASE_OPERATION_SQUASH;
+//        } else {
+//            op->type = GIT_REBASE_OPERATION_PICK;
+//        }
+        if (op->type == GIT_REBASE_OPERATION_PICK) {
+            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
+            printf("id before: %s\n", git_oid_tostr_s(&id));
+            ir = git_rebase_commit(
+                &id,
+                rebase,
+                git_commit_author(*commit),
+                git_commit_committer(*commit),
+                git_commit_message_encoding(*commit),
+                git_commit_message(*commit)
+            );
+            assert(!ir);
+            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
+            printf("id after: %s\n", git_oid_tostr_s(&id));
+        }
+    }
+    
+    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
+    printf("id end: %s\n", git_oid_tostr_s(&id));
+    
+    ir = git_rebase_finish(rebase, nullptr);
+    assert(!ir);
+    
+    return 0;
     
 //    ir = git_annotated_commit_from_revspec(&ac, *repo, "master");
 //    assert(!ir);
     
-    printf("ref: %s\n", git_annotated_commit_ref(ac));
+//    printf("ref: %s\n", git_annotated_commit_ref(ac));
     
 //    git_rebase* rebase = nullptr;
 //    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
 //    git_rebase_init(&rebase, *repo, <#const git_annotated_commit *branch#>, <#const git_annotated_commit *upstream#>, nullptr, &opts);
 //    int ir = git_rebase_open(&rebase, *repo, &opts);
     
-    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
-    Git::Commit b;
-    
-    return (a==b);
+//    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
+//    Git::Commit b;
+//    
+//    return (a==b);
     
     
     
@@ -605,7 +660,7 @@ int main(int argc, const char* argv[]) {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
             std::set<Git::Rev> unique;
             for (const std::string& revName : revNames) {
-                Git::Rev rev = Git::Rev(_Repo, revName);
+                Git::Rev rev = _Repo.revLookup(revName);
                 if (unique.find(rev) == unique.end()) {
                     _Revs.push_back(rev);
                     unique.insert(rev);
