@@ -277,7 +277,14 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         Index mergedTreesIndex = mergeTrees(ancestorTree, dstTree, srcTree);
         Tree newTree = writeIndex(mergedTreesIndex);
         git_oid id;
-        int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, nullptr, nullptr, *newTree);
+        
+        // Combine the commit messages
+        std::stringstream msg;
+        msg << git_commit_message(*dst);
+        msg << "\n";
+        msg << git_commit_message(*src);
+        
+        int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, git_commit_message_encoding(*dst), msg.str().c_str(), *newTree);
         if (ir) throw RuntimeError("git_commit_amend failed: %s", git_error_last()->message);
         return commitLookup(id);
     }

@@ -507,64 +507,67 @@ int main(int argc, const char* argv[]) {
     
     
     Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-    Git::Rev rebaseEnd = repo.revLookup("master2");
-    Git::Rev rebaseStart = repo.revLookup("master2~3");
+    Git::Commit later = repo.revLookup("master2").commit;
+    Git::Commit earlier = repo.revLookup("master2~1").commit;
     
-    git_rebase* rebase = nullptr;
-    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
-    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
-    Git::Rev newBranchRev(newBranch);
-    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
-    assert(!ir);
+    Git::Commit res = repo.integrateCommit(earlier, later);
+    res.printId();
     
-    
-    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
-    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
-    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
-//    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
-//    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
-    rebase0.type = GIT_REBASE_OPERATION_PICK;
-    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
-    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
-//    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
-//    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
-    
-    git_rebase_operation* op = nullptr;
-    git_oid id;
-    for (;;) {
-        ir = git_rebase_next(&op, rebase);
-        if (ir == GIT_ITEROVER) break;
-        assert(!ir);
-        Git::Commit commit = repo.commitLookup(op->id);
-        commit.printId();
-//        
-//        if (squash) {
-//            op->type = GIT_REBASE_OPERATION_SQUASH;
-//        } else {
-//            op->type = GIT_REBASE_OPERATION_PICK;
+//    git_rebase* rebase = nullptr;
+//    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
+//    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
+//    Git::Rev newBranchRev(newBranch);
+//    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
+//    assert(!ir);
+//    
+//    
+//    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
+//    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
+//    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
+////    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
+////    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
+//    rebase0.type = GIT_REBASE_OPERATION_PICK;
+//    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
+//    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
+////    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
+////    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
+//    
+//    git_rebase_operation* op = nullptr;
+//    git_oid id;
+//    for (;;) {
+//        ir = git_rebase_next(&op, rebase);
+//        if (ir == GIT_ITEROVER) break;
+//        assert(!ir);
+//        Git::Commit commit = repo.commitLookup(op->id);
+//        commit.printId();
+////        
+////        if (squash) {
+////            op->type = GIT_REBASE_OPERATION_SQUASH;
+////        } else {
+////            op->type = GIT_REBASE_OPERATION_PICK;
+////        }
+//        if (op->type == GIT_REBASE_OPERATION_PICK) {
+//            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
+//            printf("id before: %s\n", git_oid_tostr_s(&id));
+//            ir = git_rebase_commit(
+//                &id,
+//                rebase,
+//                git_commit_author(*commit),
+//                git_commit_committer(*commit),
+//                git_commit_message_encoding(*commit),
+//                git_commit_message(*commit)
+//            );
+//            assert(!ir);
+//            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
+//            printf("id after: %s\n", git_oid_tostr_s(&id));
 //        }
-        if (op->type == GIT_REBASE_OPERATION_PICK) {
-            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
-            printf("id before: %s\n", git_oid_tostr_s(&id));
-            ir = git_rebase_commit(
-                &id,
-                rebase,
-                git_commit_author(*commit),
-                git_commit_committer(*commit),
-                git_commit_message_encoding(*commit),
-                git_commit_message(*commit)
-            );
-            assert(!ir);
-            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
-            printf("id after: %s\n", git_oid_tostr_s(&id));
-        }
-    }
-    
-    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
-    printf("id end: %s\n", git_oid_tostr_s(&id));
-    
-    ir = git_rebase_finish(rebase, nullptr);
-    assert(!ir);
+//    }
+//    
+//    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
+//    printf("id end: %s\n", git_oid_tostr_s(&id));
+//    
+//    ir = git_rebase_finish(rebase, nullptr);
+//    assert(!ir);
     
     return 0;
     
