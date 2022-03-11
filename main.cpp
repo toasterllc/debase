@@ -506,6 +506,33 @@ int main(int argc, const char* argv[]) {
     
     
     
+    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+    git_annotated_commit* ac = nullptr;
+    
+    Git::Ref masterRef = repo.refLookup("master");
+    int ir = git_annotated_commit_from_ref(&ac, *repo, *masterRef);
+    assert(!ir);
+    
+//    ir = git_annotated_commit_from_revspec(&ac, *repo, "master");
+//    assert(!ir);
+    
+    printf("ref: %s\n", git_annotated_commit_ref(ac));
+    
+//    git_rebase* rebase = nullptr;
+//    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
+//    git_rebase_init(&rebase, *repo, <#const git_annotated_commit *branch#>, <#const git_annotated_commit *upstream#>, nullptr, &opts);
+//    int ir = git_rebase_open(&rebase, *repo, &opts);
+    
+    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
+    Git::Commit b;
+    
+    return (a==b);
+    
+    
+    
+    
+    
+    
 //    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
 //    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
 //    Git::Commit b;

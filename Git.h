@@ -47,6 +47,14 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     }
 };
 
+struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
+    using RefCounted::RefCounted;
+    const Id& id() const { return *git_annotated_commit_id(*get()); }
+    bool operator==(const AnnotatedCommit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
+    bool operator!=(const AnnotatedCommit& x) const { return !(*this==x); }
+    bool operator<(const AnnotatedCommit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
+};
+
 struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
     bool operator==(const Ref& x) const { return strcmp(fullName(), x.fullName())==0; }
@@ -247,19 +255,40 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return refFullNameLookup(ref.fullName());
     }
     
-    Commit commitLookup(const Id& commitId) const {
+    Commit commitLookup(const Id& id) const {
         git_commit* x = nullptr;
-        int ir = git_commit_lookup(&x, *get(), &commitId);
+        int ir = git_commit_lookup(&x, *get(), &id);
         if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
         return x;
     }
     
-    Commit commitLookup(std::string_view commitIdStr) const {
-        Id commitId;
-        int ir = git_oid_fromstr(&commitId, commitIdStr.data());
+    Commit commitLookup(std::string_view idStr) const {
+        Id id;
+        int ir = git_oid_fromstr(&id, idStr.data());
         if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
-        return commitLookup(commitId);
+        return commitLookup(id);
     }
+    
+//    AnnotatedCommit annotatedCommitForRef(const Id& id) const {
+//        git_annotated_commit* x = nullptr;
+//        int ir = git_annotated_commit_lookup(&x, *get(), &id);
+//        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
+//        return x;
+//    }
+    
+//    AnnotatedCommit annotatedCommitLookup(const Id& id) const {
+//        git_annotated_commit* x = nullptr;
+//        int ir = git_annotated_commit_lookup(&x, *get(), &id);
+//        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
+//        return x;
+//    }
+//    
+//    AnnotatedCommit annotatedCommitLookup(std::string_view idStr) const {
+//        Id id;
+//        int ir = git_oid_fromstr(&id, idStr.data());
+//        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
+//        return annotatedCommitLookup(id);
+//    }
     
     Branch branchLookup(std::string_view name) const {
         git_reference* x = nullptr;

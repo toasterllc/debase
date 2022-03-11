@@ -271,9 +271,6 @@ inline OpResult Exec(const Op& op) {
     // Restore previous head
     if (!headPrev.empty()) {
         op.repo.checkout(headPrev);
-//        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-//        git_checkout_tree(repo, treeish, &opts);
-//        op.repo.setHead(headPrev);
     }
     
     if (err) std::rethrow_exception(err);
