@@ -114,10 +114,6 @@ static void _Draw() {
     {
         _RootWindow->erase();
         
-        for (UI::RevColumn col : _Columns) {
-            col->draw();
-        }
-        
         if (_Drag.titlePanel) {
             _Drag.titlePanel->drawIfNeeded();
         }
@@ -134,6 +130,10 @@ static void _Draw() {
         if (_InsertionMarker) {
             UI::Attr attr(_RootWindow, selectionColor);
             _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
+        }
+        
+        for (UI::RevColumn col : _Columns) {
+            col->draw();
         }
         
         if (_Menu) {
