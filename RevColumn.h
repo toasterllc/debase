@@ -42,7 +42,7 @@ public:
         {
             UI::Attr attr(_win, A_UNDERLINE);
             const int offX = _offsetX + std::max(0, (_width-(int)_name.size())/2);
-            _win->drawText({offX, 0}, _name.c_str());
+            _win->drawText({offX, 0}, "%s", _name.c_str());
         }
         
         for (UI::CommitPanel p : _panels) {

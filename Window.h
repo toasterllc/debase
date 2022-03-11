@@ -102,16 +102,9 @@ public:
         mvwaddch(*this, y2, x2, ACS_LRCORNER);
     }
     
-    void drawText(const Point& p, const char* fmt, ...) const {
-        va_list args;
-        va_start(args, fmt);
-        drawText(p, fmt, args);
-        va_end(args);
-    }
-
-    void drawText(const Point& p, const char* fmt, va_list args) const {
-        ::wmove(*this, p.y, p.x);
-        ::vw_printw(*this, fmt, args);
+    template <typename ...T_Args>
+    void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
+        mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
     void erase() const {
