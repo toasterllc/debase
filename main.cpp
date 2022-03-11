@@ -17,6 +17,7 @@
 #include "RuntimeError.h"
 #include "CommitPanel.h"
 #include "BorderedPanel.h"
+#include "ButtonMenu.h"
 #include "RevColumn.h"
 #include "GitOp.h"
 #include "MakeShared.h"
@@ -41,6 +42,8 @@ static struct {
 static Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 static std::optional<UI::Rect> _InsertionMarker;
+
+static UI::ButtonMenu _ButtonMenu;
 
 enum class SelectState {
     False,
@@ -100,6 +103,10 @@ static void _Draw() {
             }
             _Drag.titlePanel->orderFront();
         }
+        
+        if (_ButtonMenu && _ButtonMenu->visible()) {
+            _ButtonMenu->orderFront();
+        }
     }
     
     // Draw everything
@@ -126,6 +133,10 @@ static void _Draw() {
         if (_InsertionMarker) {
             UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
             _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
+        }
+        
+        if (_ButtonMenu) {
+            _ButtonMenu->drawIfNeeded();
         }
         
         UI::Redraw();
@@ -232,6 +243,35 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
     }
     // Programmer error if it doesn't exist
     abort();
+}
+
+static void _UpdateButtonMenu() {
+    if (!_Selection.commits.empty()) {
+        _ButtonMenu->setVisible(true);
+        
+        UI::RevColumn col = _ColumnForRev(_Selection.rev);
+        UI::Point pos;
+        int count = 0;
+        for (UI::CommitPanel panel : col->panels()) {
+            if (_Selected(col, panel)) {
+                UI::Point p = panel->rect().point;
+                pos.x += p.x;
+                pos.y += p.y;
+                count++;
+            }
+        }
+        pos.x /= count;
+        pos.y /= count;
+        
+        UI::Size buttonMenuSize = _ButtonMenu->rect().size;
+        pos.x -= (buttonMenuSize.x + 3);
+//        pos.y -= buttonMenuSize.y/2;
+        
+        _ButtonMenu->setPosition(pos);
+        
+    } else {
+        _ButtonMenu->setVisible(false);
+    }
 }
 
 // _TrackMouseInsideCommitPanel
@@ -369,6 +409,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         }
     }
     
+    _UpdateButtonMenu();
+    
     // Reset state
     {
         _Drag = {};
@@ -438,6 +480,8 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         if (!ev || abort) break;
     }
     
+    _UpdateButtonMenu();
+    
     // Reset state
     {
         _SelectionRect = std::nullopt;
@@ -506,70 +550,70 @@ int main(int argc, const char* argv[]) {
     
     
     
-    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-    Git::Commit later = repo.revLookup("master2").commit;
-    Git::Commit earlier = repo.revLookup("master2~1").commit;
-    
-    Git::Commit res = repo.commitIntegrate(earlier, later);
-    res.printId();
-    
-//    git_rebase* rebase = nullptr;
-//    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
-//    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
-//    Git::Rev newBranchRev(newBranch);
-//    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
-//    assert(!ir);
+//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
+//    Git::Commit later = repo.revLookup("master2").commit;
+//    Git::Commit earlier = repo.revLookup("master2~1").commit;
 //    
+//    Git::Commit res = repo.commitIntegrate(earlier, later);
+//    res.printId();
 //    
-//    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
-//    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
-//    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
-////    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
-////    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
-//    rebase0.type = GIT_REBASE_OPERATION_PICK;
-//    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
-//    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
-////    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
-////    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
-//    
-//    git_rebase_operation* op = nullptr;
-//    git_oid id;
-//    for (;;) {
-//        ir = git_rebase_next(&op, rebase);
-//        if (ir == GIT_ITEROVER) break;
-//        assert(!ir);
-//        Git::Commit commit = repo.commitLookup(op->id);
-//        commit.printId();
-////        
-////        if (squash) {
-////            op->type = GIT_REBASE_OPERATION_SQUASH;
-////        } else {
-////            op->type = GIT_REBASE_OPERATION_PICK;
+////    git_rebase* rebase = nullptr;
+////    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
+////    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
+////    Git::Rev newBranchRev(newBranch);
+////    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
+////    assert(!ir);
+////    
+////    
+////    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
+////    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
+////    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
+//////    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
+//////    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
+////    rebase0.type = GIT_REBASE_OPERATION_PICK;
+////    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
+////    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
+//////    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
+//////    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
+////    
+////    git_rebase_operation* op = nullptr;
+////    git_oid id;
+////    for (;;) {
+////        ir = git_rebase_next(&op, rebase);
+////        if (ir == GIT_ITEROVER) break;
+////        assert(!ir);
+////        Git::Commit commit = repo.commitLookup(op->id);
+////        commit.printId();
+//////        
+//////        if (squash) {
+//////            op->type = GIT_REBASE_OPERATION_SQUASH;
+//////        } else {
+//////            op->type = GIT_REBASE_OPERATION_PICK;
+//////        }
+////        if (op->type == GIT_REBASE_OPERATION_PICK) {
+////            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
+////            printf("id before: %s\n", git_oid_tostr_s(&id));
+////            ir = git_rebase_commit(
+////                &id,
+////                rebase,
+////                git_commit_author(*commit),
+////                git_commit_committer(*commit),
+////                git_commit_message_encoding(*commit),
+////                git_commit_message(*commit)
+////            );
+////            assert(!ir);
+////            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
+////            printf("id after: %s\n", git_oid_tostr_s(&id));
 ////        }
-//        if (op->type == GIT_REBASE_OPERATION_PICK) {
-//            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
-//            printf("id before: %s\n", git_oid_tostr_s(&id));
-//            ir = git_rebase_commit(
-//                &id,
-//                rebase,
-//                git_commit_author(*commit),
-//                git_commit_committer(*commit),
-//                git_commit_message_encoding(*commit),
-//                git_commit_message(*commit)
-//            );
-//            assert(!ir);
-//            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
-//            printf("id after: %s\n", git_oid_tostr_s(&id));
-//        }
-//    }
+////    }
+////    
+////    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
+////    printf("id end: %s\n", git_oid_tostr_s(&id));
+////    
+////    ir = git_rebase_finish(rebase, nullptr);
+////    assert(!ir);
 //    
-//    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
-//    printf("id end: %s\n", git_oid_tostr_s(&id));
-//    
-//    ir = git_rebase_finish(rebase, nullptr);
-//    assert(!ir);
-    
-    return 0;
+//    return 0;
     
 //    ir = git_annotated_commit_from_revspec(&ac, *repo, "master");
 //    assert(!ir);
@@ -648,6 +692,8 @@ int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
 //    while (!a);
     
+    setlocale(LC_ALL, "");
+    
     // Init git
     {
         _Repo = Git::Repo::Open(".");
@@ -704,6 +750,14 @@ int main(int argc, const char* argv[]) {
         ::curs_set(0);
         
         _RootWindow = MakeShared<UI::Window>(::stdscr);
+        
+        std::vector<UI::Button> buttons = {
+            UI::Button{"Combine", "^C"},
+            UI::Button{"Delete", "Del"},
+        };
+        
+        _ButtonMenu = MakeShared<UI::ButtonMenu>(buttons);
+        _ButtonMenu->setVisible(false);
     }
     
     try {

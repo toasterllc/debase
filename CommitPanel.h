@@ -86,7 +86,7 @@ public:
     }
     
     void draw() {
-        erase();
+//        erase();
         
         const int offY = (_header ? 1 : 0);
         
