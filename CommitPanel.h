@@ -96,11 +96,11 @@ public:
             i++;
         }
         
-        {
-            UI::Attr attr;
-            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
-            drawLineHoriz({0, offY}, rect().size.x);
-        }
+//        if (_header) {
+//            UI::Attr attr;
+//            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+//            drawLineHoriz({0, offY}, rect().size.x);
+//        }
         
         {
             UI::Attr attr;
@@ -108,8 +108,10 @@ public:
             drawBorder();
         }
         
-        drawText({2, offY+0}, " %s ", _id.c_str());
-        drawText({12, offY+0}, " %s ", _time.c_str());
+        
+        
+        drawText({2  + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
+        drawText({12 + (_header ?  1 : 0), offY+0}, " %s ", _time.c_str());
         
         if (_header) {
             UI::Attr attr;

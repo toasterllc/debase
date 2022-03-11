@@ -198,6 +198,11 @@ static std::optional<UI::Event> _WaitForMouseEvent(MEVENT& mouse) {
         if (ev == UI::Event::KeyEscape) {
             return UI::Event::KeyEscape;
         }
+        
+        if ((int)ev == BUTTON1_DOUBLE_CLICKED) {
+            abort();
+        }
+        
         if (ev != UI::Event::Mouse) continue;
         int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
@@ -463,6 +468,10 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: implement CombineCommits
+    
+    #warning TODO: implement EditCommitMessage
+    
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
     #warning TODO: backup all supplied revs before doing anything
@@ -470,6 +479,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: an undo/redo button
     
     #warning TODO: add column scrolling
+    
+    #warning TODO: handle window resizing
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
