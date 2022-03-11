@@ -80,8 +80,8 @@ inline _AddRemoveResult _AddRemoveCommits(
     std::vector<Commit> addv = _Sorted(addSrc, add);
     
     // Construct `combined` and find `head`
-    // `head` is the earliest commit from `dst` that we'll apply the commits on top of
-    // `combined` is the ordered set of commits that need to be applied on top of `head`
+    // `head` is the earliest commit from `dst` that we'll apply the commits on top of.
+    // `combined` is the ordered set of commits that need to be applied on top of `head`.
     std::deque<Commit> combined;
     Commit head;
     {
@@ -142,6 +142,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
             op.src.commits      // remove:      std::set<Commit>
         );
         
+        // Replace the source branch/tag
         Rev srcDstRev = op.repo.refReplace(op.src.rev.ref, srcDstResult.commit);
         return {
             .src = {
@@ -175,6 +176,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
             {}                  // remove:      std::set<Commit>
         );
         
+        // Replace the source and destination branches/tags
         Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
         Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
         return {
@@ -202,6 +204,7 @@ inline OpResult _Exec_CopyCommits(const Op& op) {
         {}                  // remove:      std::set<Commit>
     );
     
+    // Replace the destination branch/tag
     Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
     return {
         .src = {
@@ -227,6 +230,7 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
         op.src.commits      // remove:      std::set<Commit>
     );
     
+    // Replace the source branch/tag
     Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
     return {
         .src = {
@@ -240,7 +244,48 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
 }
 
 inline OpResult _Exec_CombineCommits(const Op& op) {
-    return {};
+    if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    
+    std::deque<Commit> integrate; // Commits that need to be integrated into a single commit
+    std::deque<Commit> attach;    // Commits that need to be attached after the integrate step
+    Commit head;
+    {
+        std::set<Commit> rem = op.src.commits;
+        head = op.src.rev.commit;
+        for (;;) {
+            if (!head) throw RuntimeError("ran out of commits");
+            bool erased = rem.erase(head);
+            if (rem.empty()) break;
+            if (erased) integrate.push_front(head);
+            else        attach.push_front(head);
+            head = head.parent();
+        }
+    }
+    
+    // Combine `head` with all the commits in `integrate`
+    for (Commit commit : integrate) {
+        head = op.repo.commitIntegrate(head, commit);
+    }
+    
+    // Remember the final commit containing all the integrated commits
+    Commit integrated = head;
+    
+    // Attach every commit in `attach` to `head`
+    for (Commit commit : integrate) {
+        head = op.repo.commitAttach(head, commit);
+    }
+    
+    // Replace the source branch/tag
+    Rev srcRev = op.repo.refReplace(op.src.rev.ref, head);
+    return {
+        .src = {
+            .rev = srcRev,
+        },
+        .dst = {
+            .rev = srcRev,
+            .commits = {integrated},
+        },
+    };
 }
 
 inline OpResult _Exec_EditCommitMessage(const Op& op) {
