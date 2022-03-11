@@ -17,10 +17,11 @@
 #include "RuntimeError.h"
 #include "CommitPanel.h"
 #include "BorderedPanel.h"
-#include "ButtonMenu.h"
+#include "Menu.h"
 #include "RevColumn.h"
 #include "GitOp.h"
 #include "MakeShared.h"
+#include "Bitfield.h"
 
 struct Selection {
     Git::Rev rev;
@@ -43,7 +44,7 @@ static Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 static std::optional<UI::Rect> _InsertionMarker;
 
-static UI::ButtonMenu _ButtonMenu;
+static UI::Menu _Menu;
 
 enum class SelectState {
     False,
@@ -104,8 +105,8 @@ static void _Draw() {
             _Drag.titlePanel->orderFront();
         }
         
-        if (_ButtonMenu && _ButtonMenu->visible()) {
-            _ButtonMenu->orderFront();
+        if (_Menu) {
+            _Menu->orderFront();
         }
     }
     
@@ -126,17 +127,17 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::Attr attr(_RootWindow, COLOR_PAIR(UI::Colors::SelectionMove));
+            UI::Attr attr(_RootWindow, UI::Colors::SelectionMove);
             _RootWindow->drawRect(*_SelectionRect);
         }
         
         if (_InsertionMarker) {
-            UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
+            UI::Attr attr(_RootWindow, selectionColor);
             _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
         }
         
-        if (_ButtonMenu) {
-            _ButtonMenu->drawIfNeeded();
+        if (_Menu) {
+            _Menu->drawIfNeeded();
         }
         
         UI::Redraw();
@@ -198,24 +199,42 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
     return std::make_tuple(insertionCol, insertionIter);
 }
 
-static std::optional<UI::Event> _WaitForMouseEvent(MEVENT& mouse) {
-    const bool mouseUp = mouse.bstate & BUTTON1_RELEASED;
-    if (mouseUp) return std::nullopt;
-    
+struct MouseButtons : Bitfield<uint8_t> {
+    static constexpr Bit Left  = 1<<0;
+    static constexpr Bit Right = 1<<1;
+    using Bitfield::Bitfield;
+};
+
+//namespace MouseButtons {
+//    static constexpr uint8_t Primary = 1<<0;
+//    static constexpr uint8_t Right = 1<<1;
+//};
+//
+//using MouseButtons = uint8_t;
+//
+//
+//enum class MouseButtons : uint8_t {
+//    Primary = 1<<0,
+//    Right = 1<<1,
+//};
+
+static mmask_t _MouseButtonReleasedMask(MouseButtons buttons) {
+    mmask_t r = 0;
+    if (buttons & MouseButtons::Left)  r |= BUTTON1_RELEASED;
+    if (buttons & MouseButtons::Right) r |= BUTTON3_RELEASED;
+    return r;
+}
+
+static std::optional<UI::Event> _WaitForMouseEvent(MEVENT& mouse, MouseButtons buttons=MouseButtons::Left) {
+    const mmask_t mouseReleasedMask = _MouseButtonReleasedMask(buttons);
     // Wait for another mouse event
     for (;;) {
         UI::Event ev = _RootWindow->nextEvent();
-        if (ev == UI::Event::KeyEscape) {
-            return UI::Event::KeyEscape;
-        }
-        
-        if ((int)ev == BUTTON1_DOUBLE_CLICKED) {
-            abort();
-        }
-        
+        if (ev == UI::Event::KeyEscape) return UI::Event::KeyEscape;
         if (ev != UI::Event::Mouse) continue;
         int ir = ::getmouse(&mouse);
         if (ir != OK) continue;
+        if (mouse.bstate & mouseReleasedMask) return std::nullopt;
         return UI::Event::Mouse;
     }
 }
@@ -243,35 +262,6 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
     }
     // Programmer error if it doesn't exist
     abort();
-}
-
-static void _UpdateButtonMenu() {
-    if (!_Selection.commits.empty()) {
-        _ButtonMenu->setVisible(true);
-        
-        UI::RevColumn col = _ColumnForRev(_Selection.rev);
-        UI::Point pos;
-        int count = 0;
-        for (UI::CommitPanel panel : col->panels()) {
-            if (_Selected(col, panel)) {
-                UI::Point p = panel->rect().point;
-                pos.x += p.x;
-                pos.y += p.y;
-                count++;
-            }
-        }
-        pos.x /= count;
-        pos.y /= count;
-        
-        UI::Size buttonMenuSize = _ButtonMenu->rect().size;
-        pos.x -= (buttonMenuSize.x + 3);
-//        pos.y -= buttonMenuSize.y/2;
-        
-        _ButtonMenu->setPosition(pos);
-        
-    } else {
-        _ButtonMenu->setVisible(false);
-    }
 }
 
 // _TrackMouseInsideCommitPanel
@@ -343,17 +333,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             
             // Position title panel / shadow panels
             {
-                const UI::Point pos0 = {
-                    mouse.x+delta.x,
-                    mouse.y+delta.y,
-                };
+                const UI::Point pos0 = UI::Point{mouse.x, mouse.y} + delta;
                 
                 _Drag.titlePanel->setPosition(pos0);
                 
                 // Position shadowPanels
                 int off = 1;
                 for (UI::Panel p : _Drag.shadowPanels) {
-                    const UI::Point pos = {pos0.x+off, pos0.y+off};
+                    const UI::Point pos = pos0+off;
                     p->setPosition(pos);
                     off++;
                 }
@@ -408,8 +395,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             _Selection.commits = {mouseDownPanel->commit()};
         }
     }
-    
-    _UpdateButtonMenu();
     
     // Reset state
     {
@@ -480,13 +465,152 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         if (!ev || abort) break;
     }
     
-    _UpdateButtonMenu();
-    
     // Reset state
     {
         _SelectionRect = std::nullopt;
     }
 }
+
+
+
+
+
+static void _UpdateMenu() {
+    if (!_Selection.commits.empty()) {
+        _Menu->setVisible(true);
+        
+        UI::RevColumn col = _ColumnForRev(_Selection.rev);
+        UI::Point pos;
+        int count = 0;
+        for (UI::CommitPanel panel : col->panels()) {
+            if (_Selected(col, panel)) {
+                pos += panel->rect().point;
+                count++;
+            }
+        }
+        pos.x /= count;
+        pos.y /= count;
+        
+        UI::Size buttonMenuSize = _Menu->rect().size;
+        pos.x -= (buttonMenuSize.x + 3);
+//        pos.y -= buttonMenuSize.y/2;
+        
+        _Menu->setPosition(pos);
+        
+    } else {
+        _Menu->setVisible(false);
+    }
+}
+
+
+
+
+
+
+
+
+// _TrackRightMouse
+static void _TrackRightMouse(MEVENT mouseDownEvent) {
+    auto mouseDownTime = std::chrono::steady_clock::now();
+    MEVENT mouse = mouseDownEvent;
+    
+    static UI::Button CombineButton = {"Combine", "^C"};
+    static UI::Button DeleteButton  = {"Delete", "Del"};
+    static const UI::Button* Buttons[] = {
+        &CombineButton,
+        &DeleteButton,
+    };
+    
+    _Menu = MakeShared<UI::Menu>(Buttons);
+    _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
+    
+    const UI::Button* clickedButton = nullptr;
+    MouseButtons mouseUpButtons = MouseButtons::Right;
+    for (;;) {
+        _Draw();
+        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, mouseUpButtons);
+        // Check if we should abort
+        if (ev && *ev==UI::Event::KeyEscape) {
+            clickedButton = nullptr;
+            break;
+        }
+        // Handle mouse up
+        if (!ev) {
+            if (!(mouseUpButtons & MouseButtons::Left)) {
+                // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
+                // stay open and we should start listening for left-mouse-down events.
+                // If the right-mouse-up occurs af
+                constexpr std::chrono::milliseconds StayOpenThresh(300);
+                auto duration = std::chrono::steady_clock::now()-mouseDownTime;
+                if (duration >= StayOpenThresh) break;
+                
+                // Start listening for left mouse up
+                mouseUpButtons |= MouseButtons::Left;
+                
+                // Right mouse up, but menu stays open
+                // Now start tracking both left+right mouse down
+            
+            } else {
+                break;
+            }
+        
+        // Handle mouse moved
+        } else {
+            
+        }
+        
+        clickedButton = _Menu->updateMousePosition({mouse.x, mouse.y});
+    }
+    
+    // Handle the clicked button
+    if (clickedButton == &CombineButton) {
+        ::abort();
+    
+    } else if (clickedButton == &DeleteButton) {
+        ::abort();
+    }
+    
+    // Reset state
+    {
+        _Menu = nullptr;
+    }
+    
+    
+    
+    
+    
+    
+//    bool abort = false;
+//    for (;;) {
+//        if (!_Menu) {
+//            std::vector<UI::Button> buttons = {
+//                UI::Button{"Combine", "^C"},
+//                UI::Button{"Delete", "Del"},
+//            };
+//            
+//            _Menu = MakeShared<UI::Menu>(buttons);
+//            _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
+//        }
+//        
+//        _Draw();
+//        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, MouseButtons::Left|MouseButtons::Right);
+//        abort = (ev && *ev==UI::Event::KeyEscape);
+//        if (!ev || abort) break;
+//        
+//        constexpr std::chrono::milliseconds StayOpenThresh(300);
+//        auto duration = std::chrono::steady_clock::now()-mouseDownTime;
+//        if (duration >= StayOpenThresh) break;
+//    }
+//    
+//    _Menu = nullptr;
+}
+
+
+
+
+
+
+
 
 
 // _ReloadRevs: re-create the revs backed by refs. This is necessary because after modifying a branch,
@@ -750,14 +874,6 @@ int main(int argc, const char* argv[]) {
         ::curs_set(0);
         
         _RootWindow = MakeShared<UI::Window>(::stdscr);
-        
-        std::vector<UI::Button> buttons = {
-            UI::Button{"Combine", "^C"},
-            UI::Button{"Delete", "Del"},
-        };
-        
-        _ButtonMenu = MakeShared<UI::ButtonMenu>(buttons);
-        _ButtonMenu->setVisible(false);
     }
     
     try {
@@ -790,6 +906,9 @@ int main(int argc, const char* argv[]) {
                         // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
                         _TrackMouseOutsideCommitPanel(mouse);
                     }
+                
+                } else if (mouse.bstate & BUTTON3_PRESSED) {
+                    _TrackRightMouse(mouse);
                 }
                 break;
             }

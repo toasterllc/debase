@@ -21,7 +21,7 @@ public:
     
     void draw() {
         UI::Attr attr;
-        if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+        if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
         drawBorder();
         _drawNeeded = false;
     }

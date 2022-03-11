@@ -6,7 +6,19 @@ namespace UI {
 
 struct Vector {
     int x = 0;
-    int y = 0;    
+    int y = 0;
+    
+    Vector operator+(const Vector& v) const { return {x+v.x, y+v.y}; }
+    template <typename T> Vector operator+(const T& t) const { return {x+t, y+t}; }
+    
+    Vector& operator+=(const Vector& v) { x+=v.x; y+=v.y; return *this; }
+    template <typename T> Vector& operator+=(const T& t) { x+=t; y+=t; return *this; }
+    
+    Vector operator-(const Vector& v) const { return {x-v.x, y-v.y}; }
+    template <typename T> Vector operator-(const T& t) const { return {x-t, y-t}; }
+    
+    Vector& operator-=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
+    template <typename T> Vector& operator-=(const T& t) { x-=t; y-=t; return *this; }
 };
 
 using Point = Vector;
@@ -41,8 +53,12 @@ inline Rect Intersection(const Rect& a, const Rect& b) {
     };
 }
 
-inline bool Empty(const Rect& r) {
-    return r.size.x==0 || r.size.y==0;
+inline Rect Inset(const Rect& x, const Size& s) {
+    return {x.point+s, x.size-s-s};
+}
+
+inline bool Empty(const Rect& x) {
+    return x.size.x==0 || x.size.y==0;
 }
 
 inline void Redraw() {

@@ -6,6 +6,7 @@ namespace UI {
 class Attr {
 public:
     Attr() {}
+    
     Attr(Window win, int attr) : _s({.win=win, .attr=attr}) {
         wattron(*_s.win, _s.attr);
     }

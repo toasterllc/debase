@@ -98,13 +98,13 @@ public:
         
         {
             UI::Attr attr;
-            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
             drawBorder();
         }
         
         {
             UI::Attr attr;
-            if (!_header && _borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            if (!_header && _borderColor) attr = Attr(shared_from_this(), *_borderColor);
             drawText({2  + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
         
@@ -112,12 +112,12 @@ public:
         
         if (_header) {
             UI::Attr attr;
-            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
             drawText({3, 0}, " %s ", _headerLabel.c_str());
         }
         
         {
-            UI::Attr attr(shared_from_this(), COLOR_PAIR(Colors::SubtitleText));
+            UI::Attr attr(shared_from_this(), Colors::SubtitleText);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
         
