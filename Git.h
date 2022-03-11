@@ -47,14 +47,6 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     }
 };
 
-struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
-    using RefCounted::RefCounted;
-    const Id& id() const { return *git_annotated_commit_id(*get()); }
-    bool operator==(const AnnotatedCommit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
-    bool operator!=(const AnnotatedCommit& x) const { return !(*this==x); }
-    bool operator<(const AnnotatedCommit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
-};
-
 struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
     bool operator==(const Ref& x) const { return strcmp(fullName(), x.fullName())==0; }
@@ -90,6 +82,56 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
         return x;
     }
+};
+
+struct Rev : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
+    using RefCounted::RefCounted;
+    const Id& id() const { return *git_annotated_commit_id(*get()); }
+    
+    static Rev FromCommit(Commit commit) {
+        git_annotated_commit* x = nullptr;
+        int ir = git_annotated_commit_lookup(&x, git_commit_owner(*commit), &commit.id());
+        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    static Rev FromRef(Ref ref) {
+        git_annotated_commit* x = nullptr;
+        int ir = git_annotated_commit_from_ref(&x, git_reference_owner(*ref), *ref);
+        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    template <typename Repo> // Forward declare Repo via template
+    static Rev FromStr(Repo repo, std::string_view str) {
+        Object obj;
+        Ref ref;
+        
+        // Determine whether `str` is a ref or commit
+        {
+            git_object* po = nullptr;
+            git_reference* pr = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *repo, str.data());
+            if (ir) throw RuntimeError("git_revparse_ext failed: %s", git_error_last()->message);
+            obj = po;
+            ref = pr;
+        }
+        
+        if (ref) return FromRef(ref);
+        return FromCommit(Commit::FromObject(obj));
+    }
+    
+    bool operator==(const Rev& x) const {
+        
+        if ((bool)commit != (bool)x.commit) return false;
+        if (commit && (commit != x.commit)) return false;
+        if ((bool)ref != (bool)x.ref) return false;
+        if (ref && (ref != x.ref)) return false;
+        return true;
+    }
+    
+    bool operator!=(const Rev& x) const { return !(*this==x); }
+    bool operator<(const Rev& x) const { return git_oid_cmp(&id(), &x.id())<0; }
 };
 
 struct Branch : Ref {
