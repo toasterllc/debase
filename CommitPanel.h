@@ -102,7 +102,12 @@ public:
             drawBorder();
         }
         
-        drawText({2  + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
+        {
+            UI::Attr attr;
+            if (!_header && _borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            drawText({2  + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
+        }
+        
         drawText({12 + (_header ?  1 : 0), offY+0}, " %s ", _time.c_str());
         
         if (_header) {

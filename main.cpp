@@ -75,22 +75,21 @@ static void _Draw() {
         bool copying = _Drag.copy;
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
+                bool visible = false;
+                std::optional<UI::Color> borderColor;
                 SelectState selectState = _SelectState(col, panel);
                 if (selectState == SelectState::True) {
-                    if (!dragging)      panel->setVisible(true);
-                    else if (copying)   panel->setVisible(true);
-                    else                panel->setVisible(false);
-                    panel->setBorderColor(selectionColor);
+                    visible = !dragging || copying;
+                    if (dragging) borderColor = UI::Colors::SelectionSimilar;
+                    else          borderColor = UI::Colors::SelectionMove;
                 
                 } else {
-                    panel->setVisible(true);
-                    
-                    if (selectState == SelectState::Similar) {
-                        panel->setBorderColor(UI::Colors::SelectionSimilar);
-                    } else {
-                        panel->setBorderColor(std::nullopt);
-                    }
+                    visible = true;
+                    if (!dragging && selectState==SelectState::Similar) borderColor = UI::Colors::SelectionSimilar;
                 }
+                
+                panel->setVisible(visible);
+                panel->setBorderColor(borderColor);
             }
         }
         
@@ -120,7 +119,7 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
+            UI::Attr attr(_RootWindow, COLOR_PAIR(UI::Colors::SelectionMove));
             _RootWindow->drawRect(*_SelectionRect);
         }
         
@@ -349,20 +348,25 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     
     std::optional<Git::Op> gitOp;
     
-    if (!abort && _Drag.titlePanel) {
-        Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
-        gitOp = Git::Op{
-            .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
-            .repo = _Repo,
-            .src = {
-                .rev = _Selection.rev,
-                .commits = _Selection.commits,
-            },
-            .dst = {
-                .rev = insertionCol->rev(),
-                .position = dstCommit,
-            }
-        };
+    if (!abort) {
+        if (_Drag.titlePanel) {
+            Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
+            gitOp = Git::Op{
+                .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
+                .repo = _Repo,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+                .dst = {
+                    .rev = insertionCol->rev(),
+                    .position = dstCommit,
+                }
+            };
+        
+        } else {
+            _Selection.commits = {mouseDownPanel->commit()};
+        }
     }
     
     // Reset state
@@ -481,6 +485,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add column scrolling
     
     #warning TODO: handle window resizing
+    
+    #warning TODO: show some indication in the UI that a column is immutable
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
