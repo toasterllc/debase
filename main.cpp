@@ -127,13 +127,6 @@ static void _Draw() {
         if (_InsertionMarker) {
             UI::Attr attr(_RootWindow, COLOR_PAIR(selectionColor));
             _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
-            
-            const char* text = (_Drag.copy ? " Copy " : " Move ");
-            const UI::Point point = {
-                _InsertionMarker->point.x + (_InsertionMarker->size.x - (int)strlen(text))/2,
-                _InsertionMarker->point.y
-            };
-            _RootWindow->drawText(point, "%s", text);
         }
         
         UI::Redraw();
@@ -277,10 +270,10 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (!_Drag.titlePanel && dragStart) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, titlePanel->rect().size.x);
+            _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, true, titlePanel->rect().size.x);
             
             // Create shadow panels
-            UI::Size shadowSize = titlePanel->rect().size;
+            UI::Size shadowSize = _Drag.titlePanel->rect().size;
             for (size_t i=0; i<_Selection.commits.size()-1; i++) {
                 _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
             }
@@ -301,6 +294,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 const bool forceCopy = !Git::RevMutable(selectionColumn->rev());
                 const bool copy = (mouse.bstate & BUTTON_ALT) || forceCopy;
                 _Drag.copy = copy;
+                _Drag.titlePanel->setHeaderLabel(_Drag.copy ? "Copy" : "Move");
             }
             
             // Position title panel / shadow panels
@@ -469,8 +463,6 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
-    
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
     #warning TODO: backup all supplied revs before doing anything
@@ -492,6 +484,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
 //    
 //    #warning TODO: create concept of revs being mutable. if they're not mutable, don't allow moves from them (only copies), moves to them, deletes, etc
+//    
+//    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
     
     
     

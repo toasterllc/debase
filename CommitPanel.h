@@ -12,10 +12,11 @@ namespace UI {
 // its containing branch, where the top/first CommitPanel is index 0
 class _CommitPanel : public _Panel, public std::enable_shared_from_this<_CommitPanel> {
 public:
-    _CommitPanel(Git::Commit commit, size_t idx, int width) {
+    _CommitPanel(Git::Commit commit, size_t idx, bool header, int width) {
         _commit = commit;
         _idx = idx;
-        _oid = Git::Str(*git_commit_id(*_commit));
+        _header = header;
+        _id = Git::Str(*git_commit_id(*_commit));
         _time = Git::Str(git_commit_time(*_commit));
         _author = git_commit_author(*_commit)->name;
         
@@ -67,7 +68,7 @@ public:
 //            line.replace(it, it+strlen(ellipses), ellipses);
         }
         
-        setSize({width, 3 + (int)_message.size()});
+        setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
         _drawNeeded = true;
     }
     
@@ -77,26 +78,48 @@ public:
         _drawNeeded = true;
     }
     
+    void setHeaderLabel(std::string_view x) {
+        assert(_header);
+        if (_headerLabel == x) return;
+        _headerLabel = x;
+        _drawNeeded = true;
+    }
+    
     void draw() {
         erase();
         
+        const int offY = (_header ? 1 : 0);
+        
         int i = 0;
         for (const std::string& line : _message) {
-            drawText({2, 2+i}, "%s", line.c_str());
+            drawText({2, offY+2+i}, "%s", line.c_str());
             i++;
         }
         
         {
             UI::Attr attr;
             if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
-            drawBorder();
-            drawText({2, 0}, " %s ", _oid.c_str());
+            drawLineHoriz({0, offY}, rect().size.x);
         }
-        drawText({12, 0}, " %s ", _time.c_str());
         
         {
-            auto attr = Attr(shared_from_this(), COLOR_PAIR(Colors::SubtitleText));
-            drawText({2, 1}, "%s", _author.c_str());
+            UI::Attr attr;
+            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            drawBorder();
+        }
+        
+        drawText({2, offY+0}, " %s ", _id.c_str());
+        drawText({12, offY+0}, " %s ", _time.c_str());
+        
+        if (_header) {
+            UI::Attr attr;
+            if (_borderColor) attr = Attr(shared_from_this(), COLOR_PAIR(*_borderColor));
+            drawText({3, 0}, " %s ", _headerLabel.c_str());
+        }
+        
+        {
+            UI::Attr attr(shared_from_this(), COLOR_PAIR(Colors::SubtitleText));
+            drawText({2, offY+1}, "%s", _author.c_str());
         }
         
         _drawNeeded = false;
@@ -120,7 +143,9 @@ public:
 private:
     Git::Commit _commit;
     size_t _idx = 0;
-    std::string _oid;
+    bool _header = false;
+    std::string _headerLabel;
+    std::string _id;
     std::string _time;
     std::string _author;
     std::vector<std::string> _message;
