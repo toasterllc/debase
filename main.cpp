@@ -379,8 +379,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (_Drag.titlePanel) {
             Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
             gitOp = Git::Op{
-                .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
                 .repo = _Repo,
+                .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
                 .src = {
                     .rev = _Selection.rev,
                     .commits = _Selection.commits,
@@ -471,52 +471,13 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
-
-
-
-
-static void _UpdateMenu() {
-    if (!_Selection.commits.empty()) {
-        _Menu->setVisible(true);
-        
-        UI::RevColumn col = _ColumnForRev(_Selection.rev);
-        UI::Point pos;
-        int count = 0;
-        for (UI::CommitPanel panel : col->panels()) {
-            if (_Selected(col, panel)) {
-                pos += panel->rect().point;
-                count++;
-            }
-        }
-        pos.x /= count;
-        pos.y /= count;
-        
-        UI::Size buttonMenuSize = _Menu->rect().size;
-        pos.x -= (buttonMenuSize.x + 3);
-//        pos.y -= buttonMenuSize.y/2;
-        
-        _Menu->setPosition(pos);
-        
-    } else {
-        _Menu->setVisible(false);
-    }
-}
-
-
-
-
-
-
-
-
-// _TrackRightMouse
-static void _TrackRightMouse(MEVENT mouseDownEvent) {
+static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent) {
     auto mouseDownTime = std::chrono::steady_clock::now();
     MEVENT mouse = mouseDownEvent;
     
-    static UI::Button CombineButton = {"Combine", "^C"};
-    static UI::Button DeleteButton  = {"Delete", "Del"};
-    static const UI::Button* Buttons[] = {
+    static UI::MenuButton CombineButton = {"Combine", "^C"};
+    static UI::MenuButton DeleteButton  = {"Delete", "Del"};
+    static const UI::MenuButton* Buttons[] = {
         &CombineButton,
         &DeleteButton,
     };
@@ -524,14 +485,14 @@ static void _TrackRightMouse(MEVENT mouseDownEvent) {
     _Menu = MakeShared<UI::Menu>(Buttons);
     _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
-    const UI::Button* clickedButton = nullptr;
+    const UI::MenuButton* menuButton = nullptr;
     MouseButtons mouseUpButtons = MouseButtons::Right;
     for (;;) {
         _Draw();
         std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, mouseUpButtons);
         // Check if we should abort
         if (ev && *ev==UI::Event::KeyEscape) {
-            clickedButton = nullptr;
+            menuButton = nullptr;
             break;
         }
         // Handle mouse up
@@ -559,21 +520,38 @@ static void _TrackRightMouse(MEVENT mouseDownEvent) {
             
         }
         
-        clickedButton = _Menu->updateMousePosition({mouse.x, mouse.y});
+        menuButton = _Menu->updateMousePosition({mouse.x, mouse.y});
     }
     
     // Handle the clicked button
-    if (clickedButton == &CombineButton) {
-        ::abort();
+    std::optional<Git::Op> gitOp;
+    if (menuButton == &CombineButton) {
+        gitOp = Git::Op{
+            .repo = _Repo,
+            .type = Git::Op::Type::CombineCommits,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
     
-    } else if (clickedButton == &DeleteButton) {
-        ::abort();
+    } else if (menuButton == &DeleteButton) {
+        gitOp = Git::Op{
+            .repo = _Repo,
+            .type = Git::Op::Type::DeleteCommits,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
     }
     
     // Reset state
     {
         _Menu = nullptr;
     }
+    
+    return gitOp;
     
     
     
@@ -908,7 +886,7 @@ int main(int argc, const char* argv[]) {
                     }
                 
                 } else if (mouse.bstate & BUTTON3_PRESSED) {
-                    _TrackRightMouse(mouse);
+                    gitOp = _TrackRightMouse(mouse);
                 }
                 break;
             }
@@ -921,8 +899,8 @@ int main(int argc, const char* argv[]) {
             case UI::Event::KeyDelete:
             case UI::Event::KeyDeleteFn: {
                 gitOp = {
-                    .type = Git::Op::Type::DeleteCommits,
                     .repo = _Repo,
+                    .type = Git::Op::Type::DeleteCommits,
                     .src = {
                         .rev = _Selection.rev,
                         .commits = _Selection.commits,

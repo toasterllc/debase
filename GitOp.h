@@ -13,9 +13,9 @@ struct Op {
         EditCommitMessage,
     };
     
-    Type type = Type::None;
-    
     Repo repo;
+    
+    Type type = Type::None;
     
     struct {
         Rev rev;

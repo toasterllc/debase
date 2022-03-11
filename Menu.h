@@ -4,7 +4,7 @@
 
 namespace UI {
 
-struct Button {
+struct MenuButton {
     std::string name;
     std::string key;
 };
@@ -12,7 +12,7 @@ struct Button {
 class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
     template<size_t T_ButtonCount>
-    _Menu(const Button*(&buttons)[T_ButtonCount]) : _buttons(buttons), _buttonCount(T_ButtonCount) {
+    _Menu(const MenuButton*(&buttons)[T_ButtonCount]) : _buttons(buttons), _buttonCount(T_ButtonCount) {
         static_assert(T_ButtonCount>0, "Must have at least 1 button");
         
         // Find the longest button to set our width
@@ -72,13 +72,13 @@ public:
 //        return _highlightButton;
 //    }
     
-    const Button* updateMousePosition(const Point& p) {
+    const MenuButton* updateMousePosition(const Point& p) {
         Rect frame = rect();
         Size inset = {BorderSize+InsetX, BorderSize};
         Rect innerBounds = Inset({{}, frame.size}, inset);
         Point off = p-frame.point;
         
-        const Button* highlightButton = nullptr;
+        const MenuButton* highlightButton = nullptr;
         if (!Empty(Intersection(innerBounds, {off, {1,1}}))) {
             off -= innerBounds.point;
             size_t idx = std::min(_buttonCount-1, (size_t)(off.y / RowHeight));
@@ -158,9 +158,9 @@ private:
     static constexpr int InsetX     = 1;
     static constexpr int KeySpacing = 2;
     static constexpr int RowHeight  = 2;
-    const Button**const _buttons = nullptr;
+    const MenuButton**const _buttons = nullptr;
     const size_t _buttonCount = 0;
-    const Button* _highlightButton = nullptr;
+    const MenuButton* _highlightButton = nullptr;
     bool _drawNeeded = false;
 };
 
