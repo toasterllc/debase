@@ -23,11 +23,12 @@ struct Object : RefCounted<git_object*, git_object_free> {
 
 struct Config : RefCounted<git_config*, git_config_free> {
     using RefCounted::RefCounted;
-    std::string stringGet(std::string_view key) {
+    std::optional<std::string> stringGet(std::string_view key) {
         Buf buf;
         {
             git_buf x = GIT_BUF_INIT;
             int ir = git_config_get_string_buf(&x, *get(), key.data());
+            if (ir == GIT_ENOTFOUND) return std::nullopt;
             if (ir) throw RuntimeError("git_config_get_string_buf failed: %s", git_error_last()->message);
             buf = x;
         }

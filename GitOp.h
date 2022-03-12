@@ -295,6 +295,14 @@ extern "C" {
     extern char** environ;
 };
 
+inline std::string _EditorCommand(Repo repo) {
+    const std::optional<std::string> editorCmd = repo.config().stringGet("core.editor");
+    if (editorCmd) return *editorCmd;
+    if (const char* x = getenv("VISUAL")) return x;
+    if (const char* x = getenv("EDITOR")) return x;
+    return "vi";
+}
+
 inline OpResult _Exec_EditCommit(const Op& op) {
     using File = RefCounted<int, close>;
     
@@ -318,17 +326,17 @@ inline OpResult _Exec_EditCommit(const Op& op) {
         f.write(msg, strlen(msg));
     }
     
-    const std::string editorCmd = op.repo.config().stringGet("core.editor");
-    std::vector<std::string> editorCmdArgs;
+    const std::string editorCmd = _EditorCommand(op.repo);
+    std::vector<std::string> args;
     std::vector<const char*> argv;
     {
         std::istringstream ss(editorCmd);
         std::string arg;
-        while (ss >> arg) editorCmdArgs.push_back(arg);
+        while (ss >> arg) args.push_back(arg);
         // Constructing argv must be a separate loop from constructing editorCmdArgs,
         // because modifying editorCmdArgs can invalidate all its elements, including
         // the c_str's that we'd get from each element
-        for (const std::string& arg : editorCmdArgs) {
+        for (const std::string& arg : args) {
             argv.push_back(arg.c_str());
         }
         argv.push_back(tmpFilePath);

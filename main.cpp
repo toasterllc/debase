@@ -626,6 +626,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: allow editing author/date of commit
     
+    #warning TODO: configure tty before/after calling out to a new editor
+    
     // Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
