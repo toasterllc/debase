@@ -42,6 +42,7 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     Commit parent(unsigned int n=0) const {
         git_commit* x = nullptr;
         int ir = git_commit_parent(&x, *get(), n);
+        if (ir == GIT_ENOTFOUND) return nullptr; // `this` is the root commit -> no parent exists
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
         return x;
     }
