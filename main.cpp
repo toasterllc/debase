@@ -594,8 +594,6 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: implement CombineCommits
-    
     #warning TODO: implement EditCommit
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
@@ -625,6 +623,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: create concept of revs being mutable. if they're not mutable, don't allow moves from them (only copies), moves to them, deletes, etc
 //    
 //    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
+//
+//    #warning TODO: implement CombineCommits
     
     
     
