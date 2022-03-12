@@ -8,7 +8,9 @@ namespace Git {
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
-using Buf = RefCounted<git_buf, git_buf_dispose>;
+
+static void _BufDelete(git_buf& buf) { git_buf_dispose(&buf); }
+using Buf = RefCounted<git_buf, _BufDelete>;
 
 struct Object : RefCounted<git_object*, git_object_free> {
     using RefCounted::RefCounted;
@@ -17,6 +19,21 @@ struct Object : RefCounted<git_object*, git_object_free> {
     bool operator!=(const Object& x) const { return !(*this==x); }
     bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
 };
+
+struct Config : RefCounted<git_config*, git_config_free> {
+    using RefCounted::RefCounted;
+    std::string stringGet(std::string_view key) {
+        Buf buf;
+        {
+            git_buf x;
+            int ir = git_config_get_string_buf(&x, *get(), key.data());
+            if (ir) throw RuntimeError("git_config_get_string_buf failed: %s", git_error_last()->message);
+            buf = x;
+        }
+        return buf->ptr;
+    }
+};
+
 
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;
@@ -89,23 +106,23 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     }
 };
 
-struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
-    using RefCounted::RefCounted;
-    
-    static AnnotatedCommit FromCommit(Commit commit) {
-        git_annotated_commit* x = nullptr;
-        int ir = git_annotated_commit_lookup(&x, git_commit_owner(*commit), &commit.id());
-        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    static AnnotatedCommit FromRef(Ref ref) {
-        git_annotated_commit* x = nullptr;
-        int ir = git_annotated_commit_from_ref(&x, git_reference_owner(*ref), *ref);
-        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
-        return x;
-    }
-};
+//struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
+//    using RefCounted::RefCounted;
+//    
+//    static AnnotatedCommit FromCommit(Commit commit) {
+//        git_annotated_commit* x = nullptr;
+//        int ir = git_annotated_commit_lookup(&x, git_commit_owner(*commit), &commit.id());
+//        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
+//        return x;
+//    }
+//    
+//    static AnnotatedCommit FromRef(Ref ref) {
+//        git_annotated_commit* x = nullptr;
+//        int ir = git_annotated_commit_from_ref(&x, git_reference_owner(*ref), *ref);
+//        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
+//        return x;
+//    }
+//};
 
 struct Branch : Ref {
     using Ref::Ref;
@@ -155,10 +172,10 @@ public:
         assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
     }
     
-    AnnotatedCommit annotatedCommit() const {
-        if (ref) return AnnotatedCommit::FromRef(ref);
-        return AnnotatedCommit::FromCommit(commit);
-    }
+//    AnnotatedCommit annotatedCommit() const {
+//        if (ref) return AnnotatedCommit::FromRef(ref);
+//        return AnnotatedCommit::FromCommit(commit);
+//    }
     
     operator bool() const { return (bool)commit; }
     
@@ -305,7 +322,12 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     Branch branchReplace(Branch branch, Commit commit) const {
         Branch upstream = branch.upstream();
         Branch newBranch = branchCreate(branch.name(), commit, true);
-        if (upstream) newBranch.setUpstream(upstream);
+        Branch newBranchUpstream = newBranch.upstream();
+        
+        if (upstream && !newBranchUpstream) {
+            newBranch.setUpstream(upstream);
+        }
+        
         return newBranch;
     }
     
@@ -392,6 +414,13 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         git_reference* x = nullptr;
         int ir = git_branch_create(&x, *get(), name.data(), *commit, force);
         if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Config config() const {
+        git_config* x = nullptr;
+        int ir = git_repository_config(&x, *get());
+        if (ir) throw RuntimeError("git_repository_config failed: %s", git_error_last()->message);
         return x;
     }
 };

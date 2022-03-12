@@ -1,4 +1,5 @@
 #pragma once
+#include <spawn.h>
 #include "Git.h"
 
 namespace Git {
@@ -288,9 +289,46 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     };
 }
 
+extern "C" {
+    extern char** environ;
+};
+
 inline OpResult _Exec_EditCommit(const Op& op) {
     assert(op.src.commits.size() == 1); // Programmer error
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    
+    Git::Config cfg = op.repo.config();
+    const std::string editorCmd = cfg.stringGet("core.editor");
+    std::vector<std::string> editorCmdArgs;
+    std::vector<const char*> argv;
+    {
+        std::istringstream ss(editorCmd);
+        std::string tmp;
+        while (ss >> tmp) {
+            std::string& arg = editorCmdArgs.emplace_back(tmp);
+            editorCmdArgs.push_back(arg);
+            argv.push_back(arg.c_str());
+        }
+    }
+    
+//    using FileActions = RefCounted<posix_spawn_file_actions_t, git_tree_free>;
+//    using Tree = RefCounted<git_tree*, git_tree_free>;
+//    posix_spawn_file_actions_t fileActions = 0;
+    
+    // Spawn the text editor and wait for it to exit
+    {
+        pid_t pid = -1;
+        int ir = posix_spawnp(&pid, editorCmdArgs[0].c_str(), nullptr, nullptr, (char**)argv.data(), environ);
+        if (ir) throw RuntimeError("posix_spawnp failed: %s", strerror(ir));
+        
+        int status = 0;
+        ir = 0;
+        do ir = waitpid(pid, &status, 0);
+        while (ir==-1 && errno==EINTR);
+        if (ir == -1) throw RuntimeError("waitpid failed: %s", strerror(errno));
+        if (ir != pid) throw RuntimeError("unknown waitpid result: %d", ir);
+    }
+    
     return {
         .src = {
             .rev = op.src.rev,

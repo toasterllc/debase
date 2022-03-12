@@ -611,15 +611,11 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 int main(int argc, const char* argv[]) {
     #warning TODO: implement EditCommit
     
-    #warning TODO: move commits away from dragged commits to show where the commits will land
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
     
     #warning TODO: show some indication in the UI that a column is immutable
-    
-    #warning TODO: fix commit message rendering when there are newlines
     
     #warning TODO: implement key combos for combine/edit
     
@@ -627,7 +623,11 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
-    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
+    #warning TODO: handle merge conflicts
+    
+    // Future:
+    
+    #warning TODO: move commits away from dragged commits to show where the commits will land
     
     #warning TODO: an undo/redo button
     
@@ -652,6 +652,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: implement CombineCommits
 //
 //    #warning TODO: add affordance to cancel current drag by moving mouse to edge of terminal
+//
+//    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
+//
+//    #warning TODO: fix commit message rendering when there are newlines
     
     
     
