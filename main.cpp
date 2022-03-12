@@ -46,6 +46,8 @@ static std::optional<UI::Rect> _InsertionMarker;
 
 static UI::Menu _Menu;
 
+static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT | BUTTON_ALT;
+
 enum class SelectState {
     False,
     True,
@@ -426,7 +428,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
                 if (!selectionNew.commits.empty()) break;
             }
             
-            const bool shift = (mouseDownEvent.bstate & BUTTON_SHIFT);
+            const bool shift = (mouseDownEvent.bstate & _SelectionShiftKeys);
             if (shift && (selectionNew.commits.empty() || selectionOld.rev==selectionNew.rev)) {
                 Selection selection = {
                     .rev = selectionOld.rev,
@@ -607,6 +609,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: handle window resizing
     
     #warning TODO: show some indication in the UI that a column is immutable
+    
+    #warning TODO: fix commit message rendering when there are newlines
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
@@ -852,7 +856,7 @@ int main(int argc, const char* argv[]) {
                 if (ir != OK) continue;
                 const auto hitTest = _HitTest({mouse.x, mouse.y});
                 if (mouse.bstate & BUTTON1_PRESSED) {
-                    const bool shift = (mouse.bstate & BUTTON_SHIFT);
+                    const bool shift = (mouse.bstate & _SelectionShiftKeys);
                     if (hitTest && !shift) {
                         // Mouse down inside of a CommitPanel, without shift key
                         gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
