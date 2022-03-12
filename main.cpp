@@ -205,19 +205,6 @@ struct MouseButtons : Bitfield<uint8_t> {
     using Bitfield::Bitfield;
 };
 
-//namespace MouseButtons {
-//    static constexpr uint8_t Primary = 1<<0;
-//    static constexpr uint8_t Right = 1<<1;
-//};
-//
-//using MouseButtons = uint8_t;
-//
-//
-//enum class MouseButtons : uint8_t {
-//    Primary = 1<<0,
-//    Right = 1<<1,
-//};
-
 static mmask_t _MouseButtonReleasedMask(MouseButtons buttons) {
     mmask_t r = 0;
     if (buttons & MouseButtons::Left)  r |= BUTTON1_RELEASED;
@@ -531,14 +518,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 
                 // Right mouse up, but menu stays open
                 // Now start tracking both left+right mouse down
-            
             } else {
                 break;
             }
-        
-        // Handle mouse moved
-        } else {
-            
         }
         
         menuButton = _Menu->updateMousePosition({mouse.x, mouse.y});
@@ -583,44 +565,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     return gitOp;
-    
-    
-    
-    
-    
-    
-//    bool abort = false;
-//    for (;;) {
-//        if (!_Menu) {
-//            std::vector<UI::Button> buttons = {
-//                UI::Button{"Combine", "^C"},
-//                UI::Button{"Delete", "Del"},
-//            };
-//            
-//            _Menu = MakeShared<UI::Menu>(buttons);
-//            _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
-//        }
-//        
-//        _Draw();
-//        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, MouseButtons::Left|MouseButtons::Right);
-//        abort = (ev && *ev==UI::Event::KeyEscape);
-//        if (!ev || abort) break;
-//        
-//        constexpr std::chrono::milliseconds StayOpenThresh(300);
-//        auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-//        if (duration >= StayOpenThresh) break;
-//    }
-//    
-//    _Menu = nullptr;
 }
-
-
-
-
-
-
-
-
 
 // _ReloadRevs: re-create the revs backed by refs. This is necessary because after modifying a branch,
 // the pre-existing git_reference's for that branch are stale (ie git_reference_target() doesn't
