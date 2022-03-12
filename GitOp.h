@@ -10,7 +10,7 @@ struct Op {
         CopyCommits,
         DeleteCommits,
         CombineCommits,
-        EditCommitMessage,
+        EditCommit,
     };
     
     Repo repo;
@@ -288,8 +288,18 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     };
 }
 
-inline OpResult _Exec_EditCommitMessage(const Op& op) {
-    return {};
+inline OpResult _Exec_EditCommit(const Op& op) {
+    assert(op.src.commits.size() == 1); // Programmer error
+    if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    return {
+        .src = {
+            .rev = op.src.rev,
+        },
+        .dst = {
+            .rev = op.src.rev,
+            .commits = op.src.commits,
+        },
+    };
 }
 
 inline OpResult Exec(const Op& op) {
@@ -307,7 +317,7 @@ inline OpResult Exec(const Op& op) {
         case Op::Type::CopyCommits:         r = _Exec_CopyCommits(op); break;
         case Op::Type::DeleteCommits:       r = _Exec_DeleteCommits(op); break;
         case Op::Type::CombineCommits:      r = _Exec_CombineCommits(op); break;
-        case Op::Type::EditCommitMessage:   r = _Exec_EditCommitMessage(op); break;
+        case Op::Type::EditCommit:          r = _Exec_EditCommit(op); break;
         }
     } catch (const std::exception& e) {
         err = std::current_exception();

@@ -471,18 +471,39 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
-static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent) {
+static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     auto mouseDownTime = std::chrono::steady_clock::now();
     MEVENT mouse = mouseDownEvent;
     
-    static UI::MenuButton CombineButton = {"Combine", "^C"};
-    static UI::MenuButton DeleteButton  = {"Delete", "Del"};
-    static const UI::MenuButton* Buttons[] = {
-        &CombineButton,
-        &DeleteButton,
-    };
+    // If the commit that was clicked isn't selected, set the selection to only that commit
+    if (!_Selected(mouseDownColumn, mouseDownPanel)) {
+        _Selection = {
+            .rev = mouseDownColumn->rev(),
+            .commits = {mouseDownPanel->commit()},
+        };
+    }
     
-    _Menu = MakeShared<UI::Menu>(Buttons);
+    static UI::MenuButton CombineButton = {"Combine", "^C"};
+    static UI::MenuButton EditButton    = {"Edit",   "Ret"};
+    static UI::MenuButton DeleteButton  = {"Delete", "Del"};
+    
+    assert(!_Selection.commits.empty());
+    
+    if (_Selection.commits.size() > 1) {
+        static const UI::MenuButton* Buttons[] = {
+            &CombineButton,
+            &DeleteButton,
+        };
+        _Menu = MakeShared<UI::Menu>(Buttons);
+    
+    } else {
+        static const UI::MenuButton* Buttons[] = {
+            &EditButton,
+            &DeleteButton,
+        };
+        _Menu = MakeShared<UI::Menu>(Buttons);
+    }
+    
     _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
     const UI::MenuButton* menuButton = nullptr;
@@ -529,6 +550,16 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::CombineCommits,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
+    
+    } else if (menuButton == &EditButton) {
+        gitOp = Git::Op{
+            .repo = _Repo,
+            .type = Git::Op::Type::EditCommit,
             .src = {
                 .rev = _Selection.rev,
                 .commits = _Selection.commits,
@@ -620,7 +651,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 int main(int argc, const char* argv[]) {
     #warning TODO: implement CombineCommits
     
-    #warning TODO: implement EditCommitMessage
+    #warning TODO: implement EditCommit
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
@@ -874,9 +905,9 @@ int main(int argc, const char* argv[]) {
                 MEVENT mouse = {};
                 int ir = ::getmouse(&mouse);
                 if (ir != OK) continue;
+                const auto hitTest = _HitTest({mouse.x, mouse.y});
                 if (mouse.bstate & BUTTON1_PRESSED) {
                     const bool shift = (mouse.bstate & BUTTON_SHIFT);
-                    const auto hitTest = _HitTest({mouse.x, mouse.y});
                     if (hitTest && !shift) {
                         // Mouse down inside of a CommitPanel, without shift key
                         gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
@@ -886,7 +917,9 @@ int main(int argc, const char* argv[]) {
                     }
                 
                 } else if (mouse.bstate & BUTTON3_PRESSED) {
-                    gitOp = _TrackRightMouse(mouse);
+                    if (hitTest) {
+                        gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
+                    }
                 }
                 break;
             }
