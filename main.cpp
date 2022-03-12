@@ -168,7 +168,7 @@ struct _InsertionPosition {
 
 static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
     // Affordance to cancel drag by moving mouse to the edge
-    UI::Rect innerBounds = Inset(_RootWindow->rect(), {3,3});
+    UI::Rect innerBounds = Inset(_RootWindow->rect(), {1,1});
     if (Empty(Intersection(innerBounds, {p, {1,1}}))) return std::nullopt;
     
     UI::RevColumn icol;
@@ -615,10 +615,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: an undo/redo button
-    
-    #warning TODO: add column scrolling
-    
     #warning TODO: handle window resizing
     
     #warning TODO: show some indication in the UI that a column is immutable
@@ -632,6 +628,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
+    
+    #warning TODO: an undo/redo button
+    
+    #warning TODO: add column scrolling
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits

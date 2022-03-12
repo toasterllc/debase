@@ -102,12 +102,28 @@ mvwin(WINDOW *win, int by, int bx)
         returnCode(err);
     }
 #endif
-
-    if (by + win->_maxy > screen_lines(SP_PARM) - 1
-        || bx + win->_maxx > screen_columns(SP_PARM) - 1
-        || by < 0
-        || bx < 0)
-        returnCode(ERR);
+    
+    // DK: if the new position would push the window (partially or fully) offscreen,
+    // clamp the window position to the screen bounds to prevent it.
+    // By default, ncurses just returns an error if this happens, without changing
+    // the window position at all.
+    NCURSES_SIZE_T maxx = (screen_columns(SP_PARM) - win->_maxx - 1);
+    NCURSES_SIZE_T maxy = (screen_lines(SP_PARM) - win->_maxy - 1);
+    
+    if (maxx < 0) returnCode(ERR);
+    if (maxy < 0) returnCode(ERR);
+    
+    if (bx < 0) bx = 0;
+    if (by < 0) by = 0;
+    
+    if (bx > maxx) bx = maxx;
+    if (by > maxy) by = maxy;
+    
+//    if (by + win->_maxy > screen_lines(SP_PARM) - 1
+//        || bx + win->_maxx > screen_columns(SP_PARM) - 1
+//        || by < 0
+//        || bx < 0)
+//        returnCode(ERR);
 
     /*
      * Whether or not the window is moved, touch the window's contents so
