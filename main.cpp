@@ -612,6 +612,14 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: fix commit message rendering when there are newlines
     
+    #warning TODO: implement key combos for combine/edit
+    
+    #warning TODO: implement error messages
+    
+    #warning TODO: figure out why moving/copying commits is slow sometimes
+    
+    #warning TODO: if the insertion point is at the source point, cancel the move/copy
+    
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
 //    
