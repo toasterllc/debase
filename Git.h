@@ -1,10 +1,11 @@
 #pragma once
 #include "RefCounted.h"
-#include "RuntimeError.h"
+#include "lib/Toastbox/RuntimeError.h"
 #include "lib/libgit2/include/git2.h"
 
 namespace Git {
 
+using namespace Toastbox;
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
@@ -25,7 +26,7 @@ struct Config : RefCounted<git_config*, git_config_free> {
     std::string stringGet(std::string_view key) {
         Buf buf;
         {
-            git_buf x;
+            git_buf x = GIT_BUF_INIT;
             int ir = git_config_get_string_buf(&x, *get(), key.data());
             if (ir) throw RuntimeError("git_config_get_string_buf failed: %s", git_error_last()->message);
             buf = x;
@@ -33,7 +34,6 @@ struct Config : RefCounted<git_config*, git_config_free> {
         return buf->ptr;
     }
 };
-
 
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;

@@ -9,12 +9,11 @@
 #include <deque>
 #include <set>
 #include <map>
+#include "lib/Toastbox/RuntimeError.h"
 #include "Git.h"
 #include "Window.h"
 #include "Panel.h"
-#include "RuntimeError.h"
 #include "xterm-256color.h"
-#include "RuntimeError.h"
 #include "CommitPanel.h"
 #include "BorderedPanel.h"
 #include "Menu.h"
@@ -624,6 +623,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: handle merge conflicts
+    
+    #warning TODO: allow editing author/date of commit
     
     // Future:
     

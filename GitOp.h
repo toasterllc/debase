@@ -1,6 +1,8 @@
 #pragma once
 #include <spawn.h>
+#include <fstream>
 #include "Git.h"
+#include "lib/Toastbox/Defer.h"
 
 namespace Git {
 
@@ -294,21 +296,43 @@ extern "C" {
 };
 
 inline OpResult _Exec_EditCommit(const Op& op) {
+    using File = RefCounted<int, close>;
+    
     assert(op.src.commits.size() == 1); // Programmer error
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     
-    Git::Config cfg = op.repo.config();
-    const std::string editorCmd = cfg.stringGet("core.editor");
+    // Write the commit message to `tmpFilePath`
+    char tmpFilePath[] = "/tmp/debase.XXXXXX";
+    int ir = mkstemp(tmpFilePath);
+    if (ir < 0) throw RuntimeError("mkstemp failed: %s", strerror(errno));
+    File fd(ir); // Handles closing the file descriptor upon return
+    Defer(unlink(tmpFilePath)); // Delete the temporary file upon return
+    
+    // Write the commit message to the file
+    {
+        Commit commit = *op.src.commits.begin();
+        const char* msg = git_commit_message(*commit);
+        std::ofstream f;
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        f.open(tmpFilePath);
+        f.write(msg, strlen(msg));
+    }
+    
+    const std::string editorCmd = op.repo.config().stringGet("core.editor");
     std::vector<std::string> editorCmdArgs;
     std::vector<const char*> argv;
     {
         std::istringstream ss(editorCmd);
-        std::string tmp;
-        while (ss >> tmp) {
-            std::string& arg = editorCmdArgs.emplace_back(tmp);
-            editorCmdArgs.push_back(arg);
+        std::string arg;
+        while (ss >> arg) editorCmdArgs.push_back(arg);
+        // Constructing argv must be a separate loop from constructing editorCmdArgs,
+        // because modifying editorCmdArgs can invalidate all its elements, including
+        // the c_str's that we'd get from each element
+        for (const std::string& arg : editorCmdArgs) {
             argv.push_back(arg.c_str());
         }
+        argv.push_back(tmpFilePath);
+        argv.push_back(nullptr);
     }
     
 //    using FileActions = RefCounted<posix_spawn_file_actions_t, git_tree_free>;
@@ -318,7 +342,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     // Spawn the text editor and wait for it to exit
     {
         pid_t pid = -1;
-        int ir = posix_spawnp(&pid, editorCmdArgs[0].c_str(), nullptr, nullptr, (char**)argv.data(), environ);
+        int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char**)argv.data(), environ);
         if (ir) throw RuntimeError("posix_spawnp failed: %s", strerror(ir));
         
         int status = 0;

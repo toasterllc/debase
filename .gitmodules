@@ -1,0 +1,3 @@
+[submodule "lib/Toastbox"]
+	path = lib/Toastbox
+	url = git@github.com:heytoaster/Toastbox.git
