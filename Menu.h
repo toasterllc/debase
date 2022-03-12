@@ -108,8 +108,8 @@ public:
             
             // Draw button name
             {
-//                UI::Attr attr(shared_from_this(), Colors::MenuBorder);
-                UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? Colors::MenuBorder|A_BOLD : A_NORMAL);
+//                UI::Attr attr(shared_from_this(), Colors::Menu);
+                UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? Colors::Menu|A_BOLD : A_NORMAL);
                 drawText({BorderSize+InsetX, y}, "%s", _buttons[i]->name.c_str());
             }
             
@@ -127,7 +127,7 @@ public:
             
             // Draw separator
             if (i != _buttonCount-1) {
-                UI::Attr attr(shared_from_this(), Colors::MenuBorder);
+                UI::Attr attr(shared_from_this(), Colors::Menu);
                 drawLineHoriz({0,y+1}, w);
             }
             
@@ -140,7 +140,7 @@ public:
         
         // Draw border
         {
-            UI::Attr attr(shared_from_this(), Colors::MenuBorder);
+            UI::Attr attr(shared_from_this(), Colors::Menu);
             drawBorder();
         }
         

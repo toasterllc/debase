@@ -23,7 +23,7 @@
 #include "MakeShared.h"
 #include "Bitfield.h"
 
-struct Selection {
+struct _Selection {
     Git::Rev rev;
     std::set<Git::Commit> commits;
 };
@@ -37,31 +37,31 @@ static std::vector<UI::RevColumn> _Columns;
 static struct {
     UI::CommitPanel titlePanel;
     std::vector<UI::BorderedPanel> shadowPanels;
+    UI::Rect insertionMarker;
     bool copy = false;
 } _Drag;
 
-static Selection _Selection;
+static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
-static std::optional<UI::Rect> _InsertionMarker;
 
 static UI::Menu _Menu;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT | BUTTON_ALT;
 
-enum class SelectState {
+enum class _SelectState {
     False,
     True,
     Similar,
 };
 
-static SelectState _SelectState(UI::RevColumn col, UI::CommitPanel panel) {
+static _SelectState _SelectStateGet(UI::RevColumn col, UI::CommitPanel panel) {
     bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
-    if (!similar) return SelectState::False;
-    return (col->rev()==_Selection.rev ? SelectState::True : SelectState::Similar);
+    if (!similar) return _SelectState::False;
+    return (col->rev()==_Selection.rev ? _SelectState::True : _SelectState::Similar);
 }
 
 static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
-    return _SelectState(col, panel) == SelectState::True;
+    return _SelectStateGet(col, panel) == _SelectState::True;
 }
 
 static void _Draw() {
@@ -83,15 +83,15 @@ static void _Draw() {
             for (UI::CommitPanel panel : col->panels()) {
                 bool visible = false;
                 std::optional<UI::Color> borderColor;
-                SelectState selectState = _SelectState(col, panel);
-                if (selectState == SelectState::True) {
+                _SelectState selectState = _SelectStateGet(col, panel);
+                if (selectState == _SelectState::True) {
                     visible = !dragging || copying;
                     if (dragging) borderColor = UI::Colors::SelectionSimilar;
                     else          borderColor = UI::Colors::SelectionMove;
                 
                 } else {
                     visible = true;
-                    if (!dragging && selectState==SelectState::Similar) borderColor = UI::Colors::SelectionSimilar;
+                    if (!dragging && selectState==_SelectState::Similar) borderColor = UI::Colors::SelectionSimilar;
                 }
                 
                 panel->setVisible(visible);
@@ -118,6 +118,12 @@ static void _Draw() {
         
         if (_Drag.titlePanel) {
             _Drag.titlePanel->drawIfNeeded();
+            
+            // Draw insertion marker
+            {
+                UI::Attr attr(_RootWindow, selectionColor);
+                _RootWindow->drawLineHoriz(_Drag.insertionMarker.point, _Drag.insertionMarker.size.x);
+            }
         }
         
         for (UI::BorderedPanel panel : _Drag.shadowPanels) {
@@ -127,11 +133,6 @@ static void _Draw() {
         if (_SelectionRect) {
             UI::Attr attr(_RootWindow, UI::Colors::SelectionMove);
             _RootWindow->drawRect(*_SelectionRect);
-        }
-        
-        if (_InsertionMarker) {
-            UI::Attr attr(_RootWindow, selectionColor);
-            _RootWindow->drawLineHoriz(_InsertionMarker->point, _InsertionMarker->size.x);
         }
         
         for (UI::RevColumn col : _Columns) {
@@ -160,10 +161,19 @@ static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
     return std::nullopt;
 }
 
-static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(const UI::Point& p) {
-    UI::RevColumn insertionCol;
-    UI::CommitPanelVec::iterator insertionIter;
-    std::optional<int> insertLeastDistance;
+struct _InsertionPosition {
+    UI::RevColumn col;
+    UI::CommitPanelVecIter iter;
+};
+
+static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
+    // Affordance to cancel drag by moving mouse to the edge
+    UI::Rect innerBounds = Inset(_RootWindow->rect(), {3,3});
+    if (Empty(Intersection(innerBounds, {p, {1,1}}))) return std::nullopt;
+    
+    UI::RevColumn icol;
+    UI::CommitPanelVecIter iiter;
+    std::optional<int> leastDistance;
     for (UI::RevColumn col : _Columns) {
         // Ignore immutable columns
         if (!Git::RevMutable(col->rev())) continue;
@@ -179,26 +189,27 @@ static std::tuple<UI::RevColumn,UI::CommitPanelVecIter> _FindInsertionPoint(cons
             const int y = (panel ? panel->rect().point.y : endY);
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
             
-            if (!insertLeastDistance || dist<insertLeastDistance) {
-                insertionCol = col;
-                insertionIter = it;
-                insertLeastDistance = dist;
+            if (!leastDistance || dist<leastDistance) {
+                icol = col;
+                iiter = it;
+                leastDistance = dist;
             }
             if (it==panels.end()) break;
         }
     }
     
+    if (!icol) return std::nullopt;
+    
     // Adjust the insert point so that it doesn't occur within a selection
-    assert(insertionCol);
-    UI::CommitPanelVec& insertionColPanels = insertionCol->panels();
+    UI::CommitPanelVec& icolPanels = icol->panels();
     for (;;) {
-        if (insertionIter == insertionColPanels.begin()) break;
-        UI::CommitPanel prevPanel = *std::prev(insertionIter);
-        if (!_Selected(insertionCol, prevPanel)) break;
-        insertionIter--;
+        if (iiter == icolPanels.begin()) break;
+        UI::CommitPanel prevPanel = *std::prev(iiter);
+        if (!_Selected(icol, prevPanel)) break;
+        iiter--;
     }
     
-    return std::make_tuple(insertionCol, insertionIter);
+    return _InsertionPosition{icol, iiter};
 }
 
 struct MouseButtons : Bitfield<uint8_t> {
@@ -279,18 +290,21 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     }
     
     MEVENT mouse = mouseDownEvent;
-    UI::RevColumn insertionCol;
-    UI::CommitPanelVecIter insertionIter;
+    std::optional<_InsertionPosition> ipos;
     bool abort = false;
+    bool dragging = false;
     for (;;) {
         assert(!_Selection.commits.empty());
         UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
         
         const int w = std::abs(mouseDownEvent.x - mouse.x);
         const int h = std::abs(mouseDownEvent.y - mouse.y);
-        const bool dragStart = w>1 || h>1;
+        dragging |= w>1 || h>1;
         
-        if (!_Drag.titlePanel && dragStart) {
+        // Find insertion position
+        ipos = _FindInsertionPosition({mouse.x, mouse.y});
+        
+        if (!_Drag.titlePanel && dragging && ipos) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
             _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, true, titlePanel->rect().size.x);
@@ -306,6 +320,9 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 (*it)->orderFront();
             }
             _Drag.titlePanel->orderFront();
+        
+        } else if (!ipos) {
+            _Drag = {};
         }
         
         if (_Drag.titlePanel) {
@@ -335,25 +352,19 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 }
             }
             
-            // Find insertion position
-            std::tie(insertionCol, insertionIter) = _FindInsertionPoint({mouse.x, mouse.y});
-            
             // Update insertion marker
-            if (insertionCol) {
-                constexpr int InsertionExtraWidth = 6;
-                UI::CommitPanelVec& insertionColPanels = insertionCol->panels();
-                const UI::Rect lastRect = insertionColPanels.back()->rect();
-                const int endY = lastRect.point.y + lastRect.size.y;
-                const int insertY = (insertionIter!=insertionColPanels.end() ? (*insertionIter)->rect().point.y : endY+1);
-                
-                _InsertionMarker = {
-                    .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
-                    .size = {lastRect.size.x+InsertionExtraWidth, 0},
-                };
+            assert(ipos);
             
-            } else {
-                _InsertionMarker = std::nullopt;
-            }
+            constexpr int InsertionExtraWidth = 6;
+            UI::CommitPanelVec& ipanels = ipos->col->panels();
+            const UI::Rect lastRect = ipanels.back()->rect();
+            const int endY = lastRect.point.y + lastRect.size.y;
+            const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->rect().point.y : endY+1);
+            
+            _Drag.insertionMarker = {
+                .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
+                .size = {lastRect.size.x+InsertionExtraWidth, 0},
+            };
         }
         
         _Draw();
@@ -366,7 +377,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     
     if (!abort) {
         if (_Drag.titlePanel) {
-            Git::Commit dstCommit = (insertionIter!=insertionCol->panels().end() ? (*insertionIter)->commit() : nullptr);
+            assert(ipos);
+            Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
             gitOp = Git::Op{
                 .repo = _Repo,
                 .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
@@ -375,12 +387,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                     .commits = _Selection.commits,
                 },
                 .dst = {
-                    .rev = insertionCol->rev(),
+                    .rev = ipos->col->rev(),
                     .position = dstCommit,
                 }
             };
         
-        } else {
+        // If this was a mouse-down + mouse-up without dragging in between,
+        // set the selection to the commit that was clicked
+        } else if (!dragging) {
             _Selection.commits = {mouseDownPanel->commit()};
         }
     }
@@ -388,7 +402,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     // Reset state
     {
         _Drag = {};
-        _InsertionMarker = std::nullopt;
     }
     
     return gitOp;
@@ -417,7 +430,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         
         // Update selection
         {
-            Selection selectionNew;
+            struct _Selection selectionNew;
             for (UI::RevColumn col : _Columns) {
                 for (UI::CommitPanel panel : col->panels()) {
                     if (!Empty(Intersection(selectionRect, panel->rect()))) {
@@ -430,7 +443,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
             
             const bool shift = (mouseDownEvent.bstate & _SelectionShiftKeys);
             if (shift && (selectionNew.commits.empty() || selectionOld.rev==selectionNew.rev)) {
-                Selection selection = {
+                struct _Selection selection = {
                     .rev = selectionOld.rev,
                 };
                 
@@ -618,7 +631,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
-    #warning TODO: if the insertion point is at the source point, cancel the move/copy
+    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
@@ -637,6 +650,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
 //
 //    #warning TODO: implement CombineCommits
+//
+//    #warning TODO: add affordance to cancel current drag by moving mouse to edge of terminal
     
     
     
