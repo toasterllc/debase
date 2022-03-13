@@ -9,6 +9,7 @@
 #include <deque>
 #include <set>
 #include <map>
+#include <spawn.h>
 #include "lib/Toastbox/RuntimeError.h"
 #include "Git.h"
 #include "Window.h"
@@ -607,6 +608,64 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     }
 }
 
+void _CursesInit() {
+    // Default linux installs may not contain the /usr/share/terminfo database,
+    // so provide a fallback terminfo that usually works.
+    nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
+    
+    // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
+    // in addition to the default mouse-down/up events.
+    //   kmous = the prefix used to detect/parse mouse events
+    //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+    //           event mode; 1003=report mouse-moved events in addition to clicks)
+    setenv("TERM_KMOUS", "\x1b[<", true);
+    setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+    
+    ::initscr();
+    ::noecho();
+    ::cbreak();
+    
+    ::use_default_colors();
+    ::start_color();
+    
+    #warning TODO: fix: colors aren't restored when exiting
+    // Redefine colors to our custom palette
+    for (const UI::Color& c : UI::Colors::All) {
+        ::init_color(c.idx, c.r, c.g, c.b);
+        ::init_pair(c.idx, c.idx, -1);
+    }
+    
+    // Hide cursor
+    ::curs_set(0);
+}
+
+void _CursesDeinit() {
+    ::endwin();
+}
+
+extern "C" {
+    extern char** environ;
+};
+
+static void _Spawn(const char*const* argv) {
+    // Spawn the text editor and wait for it to exit
+    {
+        pid_t pid = -1;
+        int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
+        if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
+        
+        int status = 0;
+        ir = 0;
+        do ir = waitpid(pid, &status, 0);
+        while (ir==-1 && errno==EINTR);
+        if (ir == -1) throw Toastbox::RuntimeError("waitpid failed: %s", strerror(errno));
+        if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
+    }
+    
+    _CursesDeinit();
+    _CursesInit();
+}
+
 int main(int argc, const char* argv[]) {
     #warning TODO: implement EditCommit
     
@@ -831,42 +890,13 @@ int main(int argc, const char* argv[]) {
     }
     
     // Init ncurses
-    {
-        // Default linux installs may not contain the /usr/share/terminfo database,
-        // so provide a fallback terminfo that usually works.
-        nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
-        
-        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
-        // in addition to the default mouse-down/up events.
-        //   kmous = the prefix used to detect/parse mouse events
-        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-        //           event mode; 1003=report mouse-moved events in addition to clicks)
-        setenv("TERM_KMOUS", "\x1b[<", true);
-        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
-        
-        ::initscr();
-        ::noecho();
-        ::cbreak();
-        
-        ::use_default_colors();
-        ::start_color();
-        
-        #warning TODO: fix: colors aren't restored when exiting
-        // Redefine colors to our custom palette
-        for (const UI::Color& c : UI::Colors::All) {
-            ::init_color(c.idx, c.r, c.g, c.b);
-            ::init_pair(c.idx, c.idx, -1);
-        }
-        
-        // Hide cursor
-        ::curs_set(0);
-        
-        _RootWindow = MakeShared<UI::Window>(::stdscr);
-    }
+    _CursesInit();
     
     try {
 //        volatile bool a = false;
 //        while (!a);
+        
+        _RootWindow = MakeShared<UI::Window>(::stdscr);
         
         _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
         
@@ -927,7 +957,7 @@ int main(int argc, const char* argv[]) {
             }}
             
             if (gitOp) {
-                Git::OpResult opResult = Git::Exec(*gitOp);
+                Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
                 
                 // Reload the UI
                 _ReloadRevs(_Repo, _Revs);
@@ -942,9 +972,10 @@ int main(int argc, const char* argv[]) {
         }
     
     } catch (const std::exception& e) {
-        ::endwin();
         fprintf(stderr, "Error: %s\n", e.what());
     }
+    
+    _CursesDeinit();
     
     return 0;
 }

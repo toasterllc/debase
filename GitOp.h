@@ -1,5 +1,4 @@
 #pragma once
-#include <spawn.h>
 #include <fstream>
 #include "Git.h"
 #include "lib/Toastbox/Defer.h"
@@ -291,10 +290,6 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     };
 }
 
-extern "C" {
-    extern char** environ;
-};
-
 inline std::string _EditorCommand(Repo repo) {
     const std::optional<std::string> editorCmd = repo.config().stringGet("core.editor");
     if (editorCmd) return *editorCmd;
@@ -303,6 +298,7 @@ inline std::string _EditorCommand(Repo repo) {
     return "vi";
 }
 
+template <auto T_SpawnFn>
 inline OpResult _Exec_EditCommit(const Op& op) {
     using File = RefCounted<int, close>;
     
@@ -343,23 +339,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
         argv.push_back(nullptr);
     }
     
-//    using FileActions = RefCounted<posix_spawn_file_actions_t, git_tree_free>;
-//    using Tree = RefCounted<git_tree*, git_tree_free>;
-//    posix_spawn_file_actions_t fileActions = 0;
-    
-    // Spawn the text editor and wait for it to exit
-    {
-        pid_t pid = -1;
-        int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char**)argv.data(), environ);
-        if (ir) throw RuntimeError("posix_spawnp failed: %s", strerror(ir));
-        
-        int status = 0;
-        ir = 0;
-        do ir = waitpid(pid, &status, 0);
-        while (ir==-1 && errno==EINTR);
-        if (ir == -1) throw RuntimeError("waitpid failed: %s", strerror(errno));
-        if (ir != pid) throw RuntimeError("unknown waitpid result: %d", ir);
-    }
+    T_SpawnFn(argv.data());
     
     return {
         .src = {
@@ -372,6 +352,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     };
 }
 
+template <auto T_SpawnFn>
 inline OpResult Exec(const Op& op) {
     // We have to detach the head, otherwise we'll get an error if we try
     // to replace the current branch
@@ -387,7 +368,7 @@ inline OpResult Exec(const Op& op) {
         case Op::Type::CopyCommits:         r = _Exec_CopyCommits(op); break;
         case Op::Type::DeleteCommits:       r = _Exec_DeleteCommits(op); break;
         case Op::Type::CombineCommits:      r = _Exec_CombineCommits(op); break;
-        case Op::Type::EditCommit:          r = _Exec_EditCommit(op); break;
+        case Op::Type::EditCommit:          r = _Exec_EditCommit<T_SpawnFn>(op); break;
         }
     } catch (const std::exception& e) {
         err = std::current_exception();
