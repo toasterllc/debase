@@ -37,7 +37,7 @@ static std::vector<UI::RevColumn> _Columns;
 static struct {
     UI::CommitPanel titlePanel;
     std::vector<UI::BorderedPanel> shadowPanels;
-    UI::Rect insertionMarker;
+    std::optional<UI::Rect> insertionMarker;
     bool copy = false;
 } _Drag;
 
@@ -46,7 +46,7 @@ static std::optional<UI::Rect> _SelectionRect;
 
 static UI::Menu _Menu;
 
-static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT | BUTTON_ALT;
+static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
 enum class _SelectState {
     False,
@@ -120,9 +120,9 @@ static void _Draw() {
             _Drag.titlePanel->drawIfNeeded();
             
             // Draw insertion marker
-            {
+            if (_Drag.insertionMarker) {
                 UI::Attr attr(_RootWindow, selectionColor);
-                _RootWindow->drawLineHoriz(_Drag.insertionMarker.point, _Drag.insertionMarker.size.x);
+                _RootWindow->drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
             }
         }
         
@@ -167,17 +167,10 @@ struct _InsertionPosition {
 };
 
 static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
-    // Affordance to cancel drag by moving mouse to the edge
-    UI::Rect innerBounds = Inset(_RootWindow->rect(), {1,1});
-    if (Empty(Intersection(innerBounds, {p, {1,1}}))) return std::nullopt;
-    
     UI::RevColumn icol;
     UI::CommitPanelVecIter iiter;
     std::optional<int> leastDistance;
     for (UI::RevColumn col : _Columns) {
-        // Ignore immutable columns
-        if (!Git::RevMutable(col->rev())) continue;
-        
         UI::CommitPanelVec& panels = col->panels();
         const UI::Rect lastRect = panels.back()->rect();
         const int midX = lastRect.point.x + lastRect.size.x/2;
@@ -199,6 +192,8 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     }
     
     if (!icol) return std::nullopt;
+    // Ignore immutable columns
+    if (!icol->rev().isMutable()) return std::nullopt;
     
     // Adjust the insert point so that it doesn't occur within a selection
     UI::CommitPanelVec& icolPanels = icol->panels();
@@ -273,6 +268,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         mouseDownPanelRect.point.y-mouseDownEvent.y,
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
+    const UI::Rect innerBounds = Inset(_RootWindow->rect(), {1,1});
     
     // Reset the selection to solely contain the mouse-down CommitPanel if:
     //   - there's no selection; or
@@ -297,14 +293,17 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         assert(!_Selection.commits.empty());
         UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
         
-        const int w = std::abs(mouseDownEvent.x - mouse.x);
-        const int h = std::abs(mouseDownEvent.y - mouse.y);
+        const UI::Point p = {mouse.x, mouse.y};
+        const int w = std::abs(mouseDownEvent.x - p.x);
+        const int h = std::abs(mouseDownEvent.y - p.y);
+        // Affordance to cancel drag by moving mouse to the edge
+        const bool allow = !Empty(Intersection(innerBounds, {p, {1,1}}));
         dragging |= w>1 || h>1;
         
         // Find insertion position
-        ipos = _FindInsertionPosition({mouse.x, mouse.y});
+        ipos = _FindInsertionPosition(p);
         
-        if (!_Drag.titlePanel && dragging && ipos) {
+        if (!_Drag.titlePanel && dragging && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
             _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, true, titlePanel->rect().size.x);
@@ -321,7 +320,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             }
             _Drag.titlePanel->orderFront();
         
-        } else if (!ipos) {
+        } else if (!allow) {
             _Drag = {};
         }
         
@@ -331,7 +330,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                 // forceCopy: require copying if the source column isn't mutable (and therefore commits
                 // can't be moved away from it, because that would require deleting the commits from
                 // the source column)
-                const bool forceCopy = !Git::RevMutable(selectionColumn->rev());
+                const bool forceCopy = !selectionColumn->rev().isMutable();
                 const bool copy = (mouse.bstate & BUTTON_ALT) || forceCopy;
                 _Drag.copy = copy;
                 _Drag.titlePanel->setHeaderLabel(_Drag.copy ? "Copy" : "Move");
@@ -339,7 +338,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             
             // Position title panel / shadow panels
             {
-                const UI::Point pos0 = UI::Point{mouse.x, mouse.y} + delta;
+                const UI::Point pos0 = p + delta;
                 
                 _Drag.titlePanel->setPosition(pos0);
                 
@@ -353,18 +352,21 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             }
             
             // Update insertion marker
-            assert(ipos);
+            if (ipos) {
+                constexpr int InsertionExtraWidth = 6;
+                UI::CommitPanelVec& ipanels = ipos->col->panels();
+                const UI::Rect lastRect = ipanels.back()->rect();
+                const int endY = lastRect.point.y + lastRect.size.y;
+                const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->rect().point.y : endY+1);
+                
+                _Drag.insertionMarker = {
+                    .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
+                    .size = {lastRect.size.x+InsertionExtraWidth, 0},
+                };
             
-            constexpr int InsertionExtraWidth = 6;
-            UI::CommitPanelVec& ipanels = ipos->col->panels();
-            const UI::Rect lastRect = ipanels.back()->rect();
-            const int endY = lastRect.point.y + lastRect.size.y;
-            const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->rect().point.y : endY+1);
-            
-            _Drag.insertionMarker = {
-                .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
-                .size = {lastRect.size.x+InsertionExtraWidth, 0},
-            };
+            } else {
+                _Drag.insertionMarker = std::nullopt;
+            }
         }
         
         _Draw();
@@ -600,10 +602,18 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     constexpr int ColumnWidth = 32;
     constexpr int ColumnSpacing = 6;
     
+    bool showMutability = false;
+    for (const Git::Rev& rev : revs) {
+        if (!rev.isMutable()) {
+            showMutability = true;
+            break;
+        }
+    }
+    
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
-        columns.push_back(MakeShared<UI::RevColumn>(win, repo, rev, OffsetX, ColumnWidth));
+        columns.push_back(MakeShared<UI::RevColumn>(win, repo, rev, OffsetX, ColumnWidth, showMutability));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
@@ -684,12 +694,6 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: backup all supplied revs before doing anything
-    
-    #warning TODO: handle window resizing
-    
-    #warning TODO: show some indication in the UI that a column is immutable
-    
     #warning TODO: implement key combos for combine/edit
     
     #warning TODO: implement error messages
@@ -697,6 +701,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: handle merge conflicts
+    
+    #warning TODO: backup all supplied revs before doing anything
+    
+    #warning TODO: handle window resizing
     
     // Future:
     
@@ -744,6 +752,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: implement EditCommit
 //
 //    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
+//
+//    #warning TODO: show indication in the UI that a column is immutable
     
     
     

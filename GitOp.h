@@ -41,13 +41,6 @@ struct OpResult {
     } dst;
 };
 
-inline bool RevMutable(const Rev& rev) {
-    assert(rev);
-    // Only ref-backed revs are mutable
-    if (!rev.ref) return false;
-    return rev.ref.isBranch() || rev.ref.isTag();
-}
-
 // _Sorted: sorts a set of commits according to the order that they appear via `c`
 inline std::vector<Commit> _Sorted(Commit c, const std::set<Commit>& s) {
     std::vector<Commit> r;

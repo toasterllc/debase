@@ -211,6 +211,13 @@ public:
         return ref < x.ref;
     }
     
+    inline bool isMutable() const {
+        assert(*this);
+        // Only ref-backed revs are mutable
+        if (!ref) return false;
+        return ref.isBranch() || ref.isTag();
+    }
+    
     Commit commit; // Mandatory
     Ref ref;       // Optional
 };
