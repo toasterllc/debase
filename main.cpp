@@ -675,8 +675,6 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: implement EditCommit
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
@@ -690,10 +688,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: handle merge conflicts
-    
-    #warning TODO: allow editing author/date of commit
-    
-    #warning TODO: configure tty before/after calling out to a new editor
     
     #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
     
@@ -735,6 +729,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
 //
 //    #warning TODO: fix commit message rendering when there are newlines
+//    
+//    #warning TODO: configure tty before/after calling out to a new editor
+//    
+//    #warning TODO: allow editing author/date of commit
+//
+//    #warning TODO: implement EditCommit
     
     
     
