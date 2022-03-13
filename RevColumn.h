@@ -16,7 +16,7 @@ public:
         if (_rev.ref) {
             _name = _rev.ref.name();
         } else {
-            _name = Git::Str(_rev.commit.id());
+            _name = Git::StringForId(_rev.commit.id());
         }
         
         bool isHead = repo.head().commit() == rev.commit;

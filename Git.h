@@ -10,6 +10,16 @@ using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
 
+struct Signature : RefCounted<git_signature*, git_signature_free> {
+    using RefCounted::RefCounted;
+    static Signature Create(std::string_view name, std::string_view email, git_time_t time, int offset) {
+        git_signature* x = nullptr;
+        int ir = git_signature_new(&x, name.data(), email.data(), time, offset);
+        if (ir) throw RuntimeError("git_signature_new failed: %s", git_error_last()->message);
+        return x;
+    }
+};
+
 static void _BufDelete(git_buf& buf) { git_buf_dispose(&buf); }
 using Buf = RefCounted<git_buf, _BufDelete>;
 
@@ -153,7 +163,7 @@ struct Branch : Ref {
         }
     }
     
-    void setUpstream(Branch upstream) {
+    void upstreamSet(Branch upstream) {
         int ir = git_branch_set_upstream(*get(), git_reference_shorthand(*upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
     }
@@ -295,7 +305,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         Tree ancestorTree = src.parent().tree();
         Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
         Tree newTree = indexWrite(mergedTreesIndex);
-        git_oid id;
         
         // Combine the commit messages
         std::stringstream msg;
@@ -303,8 +312,31 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         msg << "\n";
         msg << git_commit_message(*src);
         
+        git_oid id;
         int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, git_commit_message_encoding(*dst), msg.str().c_str(), *newTree);
         if (ir) throw RuntimeError("git_commit_amend failed: %s", git_error_last()->message);
+        return commitLookup(id);
+    }
+    
+    Commit commitAmend(Commit commit, Signature author, std::string_view msg) const {
+        git_oid id;
+        int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
+            nullptr, (!msg.empty() ? msg.data() : nullptr), nullptr);
+        if (ir) throw RuntimeError("git_commit_amend failed: %s", git_error_last()->message);
+        return commitLookup(id);
+    }
+    
+    Commit commitLookup(const Id& id) const {
+        git_commit* x = nullptr;
+        int ir = git_commit_lookup(&x, *get(), &id);
+        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Commit commitLookup(std::string_view idStr) const {
+        Id id;
+        int ir = git_oid_fromstr(&id, idStr.data());
+        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
         return commitLookup(id);
     }
     
@@ -326,7 +358,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         Branch newBranchUpstream = newBranch.upstream();
         
         if (upstream && !newBranchUpstream) {
-            newBranch.setUpstream(upstream);
+            newBranch.upstreamSet(upstream);
         }
         
         return newBranch;
@@ -367,20 +399,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         // If we have a ref, construct this Rev as a ref
         if (ref) return Rev(ref);
         return Rev(Commit::FromObject(obj));
-    }
-    
-    Commit commitLookup(const Id& id) const {
-        git_commit* x = nullptr;
-        int ir = git_commit_lookup(&x, *get(), &id);
-        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
-        return x;
-    }
-    
-    Commit commitLookup(std::string_view idStr) const {
-        Id id;
-        int ir = git_oid_fromstr(&id, idStr.data());
-        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
-        return commitLookup(id);
     }
     
 //    AnnotatedCommit annotatedCommitForRef(const Id& id) const {
@@ -426,20 +444,46 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
 };
 
-inline std::string Str(const git_oid& oid) {
+inline std::string StringForId(const git_oid& oid) {
     char str[8];
     git_oid_tostr(str, sizeof(str), &oid);
     return str;
 }
 
-inline std::string Str(git_time_t t) {
-    const std::time_t tmp = t;
-    std::tm tm;
-    localtime_r(&tmp, &tm);
+inline std::string ShortStringForTime(git_time_t t) {
+    time_t tmp = t;
+    struct tm tm = {};
+    struct tm* tr = localtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("localtime_r failed: %s", strerror(errno));
     
-    std::stringstream ss;
-    ss << std::put_time(&tm, "%a %b %d %R");
-    return ss.str();
+    char buf[64];
+    size_t sr = strftime(buf, sizeof(buf), "%a %b %d %R", &tm);
+    if (!sr) throw RuntimeError("strftime failed");
+    return buf;
+}
+
+inline std::string StringFromTime(git_time_t t) {
+    time_t tmp = t;
+    struct tm tm = {};
+    struct tm* tr = localtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("localtime_r failed: %s", strerror(errno));
+    
+    char buf[64];
+    size_t sr = strftime(buf, sizeof(buf), "%a %b %d %T %Y %z", &tm);
+    if (!sr) throw RuntimeError("strftime failed");
+    return buf;
+}
+
+inline git_time_t TimeFromString(std::string_view str, int* offset=nullptr) {
+    struct tm tm = {};
+    char* cr = strptime(str.data(), "%a %b %d %T %Y %z", &tm);
+    if (!cr) throw RuntimeError("strptime failed");
+    
+    if (offset) *offset = (int)(tm.tm_gmtoff/60);
+    
+    time_t t = mktime(&tm);
+    if (t == -1) throw RuntimeError("mktime failed");
+    return t;
 }
 
 } // namespace Git

@@ -19,8 +19,8 @@ public:
         _commit = commit;
         _idx = idx;
         _header = header;
-        _id = Git::Str(*git_commit_id(*_commit));
-        _time = Git::Str(git_commit_time(*_commit));
+        _id = Git::StringForId(*git_commit_id(*_commit));
+        _time = Git::ShortStringForTime(git_commit_author(*_commit)->when.time);
         _author = git_commit_author(*_commit)->name;
         
         const std::string message = git_commit_message(*_commit);

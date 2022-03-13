@@ -298,6 +298,192 @@ inline std::string _EditorCommand(Repo repo) {
     return "vi";
 }
 
+inline std::string _Trim(std::string_view str) {
+    std::string x(str);
+    x.erase(x.find_last_not_of(' ')+1);
+    x.erase(0, x.find_first_not_of(' '));
+    return x;
+}
+
+inline bool _StartsWith(std::string_view prefix, std::string_view str) {
+    return !str.compare(0, prefix.size(), prefix);
+}
+
+struct _CommitAuthor {
+    std::string name;
+    std::string email;
+};
+
+struct _CommitTime {
+    git_time_t time = 0;
+    int offset = 0;
+};
+
+struct _CommitMessage {
+    std::optional<_CommitAuthor> author;
+    std::optional<_CommitTime> time;
+    std::string message;
+};
+
+inline std::optional<_CommitAuthor> _CommitAuthorParse(std::string_view str) {
+    size_t emailStart = str.find_first_of('<');
+    if (emailStart == std::string::npos) return std::nullopt;
+    size_t emailEnd = str.find_last_of('>');
+    if (emailEnd == std::string::npos) return std::nullopt;
+    if (emailStart >= emailEnd) return std::nullopt;
+    
+    std::string name = _Trim(str.substr(0, emailStart));
+    if (name.empty()) return std::nullopt;
+    
+    std::string email = _Trim(str.substr(emailStart+1, emailEnd-emailStart-1));
+    if (email.empty()) return std::nullopt;
+    
+    return _CommitAuthor{
+        .name = name,
+        .email = email,
+    };
+}
+
+inline std::optional<_CommitTime> _CommitTimeParse(std::string_view str) {
+    int offset = 0;
+    time_t time = 0;
+    try {
+        time = TimeFromString(str, &offset);
+    } catch (...) {
+        return std::nullopt;
+    }
+    return _CommitTime{
+        .time = time,
+        .offset = offset,
+    };
+}
+
+
+
+
+//inline Signature _SignatureParse(std::string_view authorEmailStr, std::string_view timeStr) {
+//    size_t emailStart = authorEmailStr.find_first_of('<');
+//    if (emailStart == std::string::npos) throw RuntimeError("invalid name/email");
+//    size_t emailEnd = authorEmailStr.find_last_of('>');
+//    if (emailEnd == std::string::npos) throw RuntimeError("invalid name/email");
+//    if (emailStart >= emailEnd) throw RuntimeError("invalid name/email");
+//    
+//    std::string name = _Trim(authorEmailStr.substr(0, emailStart));
+//    std::string email = _Trim(authorEmailStr.substr(emailStart+1, emailEnd-emailStart-1));
+//    
+//    int offset = 0;
+//    git_time_t time = TimeFromString(timeStr, &offset);
+//    
+//    git_signature* sig = nullptr;
+//    int ir = git_signature_new(&sig, name.c_str(), email.c_str(), time, offset);
+//    if (ir) throw RuntimeError("git_signature_new failed: %s", git_error_last()->message);
+//    return sig;
+//}
+
+//inline std::optional<git_time> _TimeParse(std::string_view str) {
+//    return {};
+//}
+
+constexpr const char _AuthorPrefix[] = "Author:";
+constexpr const char _TimePrefix[]   = "Date:";
+
+inline void _CommitMessageWrite(Commit commit, const std::filesystem::path& path) {
+    const git_signature* sig = git_commit_author(*commit);
+    std::string timeStr = StringFromTime(sig->when.time);
+    const char* msg = git_commit_message(*commit);
+    
+    std::ofstream f;
+    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    f.open(path);
+    
+    f << _AuthorPrefix << " " << sig->name << " <" << sig->email << ">" << '\n';
+    f << _TimePrefix << "   " << timeStr << '\n';
+    f << '\n';
+    f << msg;
+}
+
+inline _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
+    // Read back the file
+    std::vector<std::string> lines;
+    {
+        std::ifstream f;
+        f.exceptions(std::ifstream::badbit);
+        f.open(path);
+        
+        std::string line;
+        while (std::getline(f, line)) lines.push_back(line);
+    }
+    
+    auto iter = lines.begin();
+    
+    // Find author string
+    std::optional<std::string> authorStr;
+    for (; !authorStr && iter!=lines.end(); iter++) {
+        std::string line = _Trim(*iter);
+        if (_StartsWith(_AuthorPrefix, line)) {
+            authorStr = _Trim(line.substr(std::size(_AuthorPrefix)-1));
+        }
+        else if (!line.empty()) break;
+    }
+    
+    // Find time string
+    std::optional<std::string> timeStr;
+    for (; !timeStr && iter!=lines.end(); iter++) {
+        std::string line = _Trim(*iter);
+        if (_StartsWith(_TimePrefix, line)) {
+            timeStr = _Trim(line.substr(std::size(_TimePrefix)-1));
+        }
+        else if (!line.empty()) break;
+    }
+    
+    // Skip whitespace until message starts
+    for (; iter!=lines.end(); iter++) {
+        std::string line = _Trim(*iter);
+        if (!line.empty()) break;
+    }
+    
+    // Re-compose message after skipping author+time+whitspace
+    std::string msg;
+    for (; iter!=lines.end(); iter++) {
+        msg += *iter + '\n';
+    }
+    
+    std::optional<_CommitAuthor> author;
+    std::optional<_CommitTime> time;
+    
+    if (authorStr) author = _CommitAuthorParse(*authorStr);
+    if (timeStr) time = _CommitTimeParse(*timeStr);
+    
+    return _CommitMessage{
+        .author = author,
+        .time = time,
+        .message = msg,
+    };
+}
+
+struct _Argv {
+    std::vector<std::string> args;
+    std::vector<const char*> argv;
+};
+
+inline _Argv _CreateArgv(Repo repo, std::string_view filePath) {
+    const std::string editorCmd = _EditorCommand(repo);
+    std::vector<std::string> args;
+    std::vector<const char*> argv;
+    std::istringstream ss(editorCmd);
+    std::string arg;
+    while (ss >> arg) args.push_back(arg);
+    args.push_back(std::string(filePath));
+    // Constructing `argv` must be a separate loop from constructing `args`,
+    // because modifying `args` can invalidate all its elements, including
+    // the c_str's that we'd get from each element
+    for (const std::string& arg : args) {
+        argv.push_back(arg.c_str());
+    }
+    argv.push_back(nullptr);
+    return _Argv{args, argv};
+}
+
 template <auto T_SpawnFn>
 inline OpResult _Exec_EditCommit(const Op& op) {
     using File = RefCounted<int, close>;
@@ -313,41 +499,45 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     Defer(unlink(tmpFilePath)); // Delete the temporary file upon return
     
     // Write the commit message to the file
-    {
-        Commit commit = *op.src.commits.begin();
-        const char* msg = git_commit_message(*commit);
-        std::ofstream f;
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        f.open(tmpFilePath);
-        f.write(msg, strlen(msg));
-    }
+    Commit origCommit = *op.src.commits.begin();
+    const git_signature* origAuthor = git_commit_author(*origCommit);
+    _CommitMessageWrite(origCommit, tmpFilePath);
     
-    const std::string editorCmd = _EditorCommand(op.repo);
-    std::vector<std::string> args;
-    std::vector<const char*> argv;
-    {
-        std::istringstream ss(editorCmd);
-        std::string arg;
-        while (ss >> arg) args.push_back(arg);
-        // Constructing argv must be a separate loop from constructing editorCmdArgs,
-        // because modifying editorCmdArgs can invalidate all its elements, including
-        // the c_str's that we'd get from each element
-        for (const std::string& arg : args) {
-            argv.push_back(arg.c_str());
-        }
-        argv.push_back(tmpFilePath);
-        argv.push_back(nullptr);
-    }
+    // Spawn text editor
+    _Argv argv = _CreateArgv(op.repo, tmpFilePath);
+    T_SpawnFn(argv.argv.data());
     
-    T_SpawnFn(argv.data());
+    // Read back the edited commit message
+    _CommitMessage newMessage = _CommitMessageRead(tmpFilePath);
     
+    // Construct a new signature, using the original signature values if a new value didn't exist
+    const char* newName = newMessage.author ? newMessage.author->name.c_str() : origAuthor->name;
+    const char* newEmail = newMessage.author ? newMessage.author->email.c_str() : origAuthor->email;
+    time_t newTime = newMessage.time ? newMessage.time->time : origAuthor->when.time;
+    int newOffset = newMessage.time ? newMessage.time->offset : origAuthor->when.offset;
+    Signature newAuthor = Signature::Create(newName, newEmail, newTime, newOffset);
+    Commit newCommit = op.repo.commitAmend(origCommit, newAuthor, newMessage.message);
+    
+    // Rewrite the rev
+    // Add and remove commits
+    _AddRemoveResult srcDstResult = _AddRemoveCommits(
+        op.repo,            // repo:        Repo
+        op.src.rev.commit,  // dst:         Commit
+        {newCommit},        // add:         std::set<Commit>
+        newCommit,          // addSrc:      Commit
+        origCommit,         // addPosition: Commit
+        {origCommit}        // remove:      std::set<Commit>
+    );
+    
+    // Replace the source branch/tag
+    Rev srcDstRev = op.repo.refReplace(op.src.rev.ref, srcDstResult.commit);
     return {
         .src = {
-            .rev = op.src.rev,
+            .rev = srcDstRev,
         },
         .dst = {
-            .rev = op.src.rev,
-            .commits = op.src.commits,
+            .rev = srcDstRev,
+            .commits = srcDstResult.added,
         },
     };
 }

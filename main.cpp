@@ -637,6 +637,12 @@ void _CursesInit() {
     
     // Hide cursor
     ::curs_set(0);
+    
+    ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+    ::mouseinterval(0);
+    
+    #warning TODO: not sure if we're going to encounter issues with this set_escdelay
+    ::set_escdelay(0);
 }
 
 void _CursesDeinit() {
@@ -694,6 +700,13 @@ int main(int argc, const char* argv[]) {
     #warning TODO: an undo/redo button
     
     #warning TODO: add column scrolling
+    
+    
+    
+//    git_libgit2_init();
+//    git_signature* sig = nullptr;
+//    int ir = git_signature_from_buffer(&sig, "Dave Keck <dave@heytoaster.com> 1000 -0700");
+//    assert(!ir);
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
@@ -900,11 +913,6 @@ int main(int argc, const char* argv[]) {
         
         _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
         
-        ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-        ::mouseinterval(0);
-        
-        #warning TODO: not sure if we're going to encounter issues with this set_escdelay
-        ::set_escdelay(0);
         for (;;) {
             _Draw();
             UI::Event ev = _RootWindow->nextEvent();
