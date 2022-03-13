@@ -485,9 +485,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         };
     }
     
-    static UI::MenuButton CombineButton = {"Combine", "^C"};
-    static UI::MenuButton EditButton    = {"Edit",   "Ret"};
-    static UI::MenuButton DeleteButton  = {"Delete", "Del"};
+    static UI::MenuButton CombineButton = {"Combine", "c"};
+    static UI::MenuButton EditButton    = {"Edit",    "ret"};
+    static UI::MenuButton DeleteButton  = {"Delete",  "del"};
     
     assert(!_Selection.commits.empty());
     
@@ -655,7 +655,16 @@ extern "C" {
 };
 
 static void _Spawn(const char*const* argv) {
-    _CursesDeinit();
+    // preserveTerminalCmds: these commands don't modify the terminal, and therefore
+    // we don't want to deinit/reinit curses when calling them.
+    // When invoking commands such as vi/pico, we need to deinit/reinit curses
+    // when calling out to them, because those commands reconfigure the terminal.
+    static const std::set<std::string> preserveTerminalCmds = {
+        "mate"
+    };
+    
+    const bool preserveTerminal = preserveTerminalCmds.find(argv[0]) != preserveTerminalCmds.end();
+    if (!preserveTerminal) _CursesDeinit();
     
     // Spawn the text editor and wait for it to exit
     {
@@ -671,7 +680,7 @@ static void _Spawn(const char*const* argv) {
         if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
     }
     
-    _CursesInit();
+    if (!preserveTerminal) _CursesInit();
 }
 
 int main(int argc, const char* argv[]) {
@@ -688,8 +697,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: handle merge conflicts
-    
-    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
     
     // Future:
     
@@ -735,6 +742,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: allow editing author/date of commit
 //
 //    #warning TODO: implement EditCommit
+//
+//    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
     
     
     
