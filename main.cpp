@@ -695,6 +695,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: configure tty before/after calling out to a new editor
     
+    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
+    
     // Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
