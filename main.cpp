@@ -646,6 +646,7 @@ void _CursesInit() {
 }
 
 void _CursesDeinit() {
+//    ::mousemask(0, NULL);
     ::endwin();
 }
 
@@ -654,6 +655,8 @@ extern "C" {
 };
 
 static void _Spawn(const char*const* argv) {
+    _CursesDeinit();
+    
     // Spawn the text editor and wait for it to exit
     {
         pid_t pid = -1;
@@ -668,7 +671,6 @@ static void _Spawn(const char*const* argv) {
         if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
     }
     
-    _CursesDeinit();
     _CursesInit();
 }
 
