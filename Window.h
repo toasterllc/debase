@@ -35,6 +35,8 @@ enum class Event : int {
     KeyDelete       = '\x7F',
     KeyDeleteFn     = KEY_DC,       // Fn+Delete
     KeyEscape       = '\x1B',
+    KeyReturn       = '\n',
+    KeyC            = 'c',
 };
 
 inline Rect Intersection(const Rect& a, const Rect& b) {

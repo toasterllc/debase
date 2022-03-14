@@ -8,11 +8,11 @@ namespace Git {
 struct Op {
     enum class Type {
         None,
-        MoveCommits,
-        CopyCommits,
-        DeleteCommits,
-        CombineCommits,
-        EditCommit,
+        Move,
+        Copy,
+        Delete,
+        Combine,
+        Edit,
     };
     
     Repo repo;
@@ -72,6 +72,8 @@ inline _AddRemoveResult _AddRemoveCommits(
     Commit addPosition, // In `dst`
     const std::set<Commit>& remove
 ) {
+    assert(dst);
+    
     std::vector<Commit> addv = _Sorted(addSrc, add);
     
     // Construct `combined` and find `head`
@@ -84,9 +86,7 @@ inline _AddRemoveResult _AddRemoveCommits(
         std::set<Commit> r = remove;
         Commit c = dst;
         bool foundAddPoint = false;
-        for (;;) {
-            if (!c) throw RuntimeError("ran out of commits");
-            
+        while (c) {
             if (adding && c==addPosition) {
                 assert(!foundAddPoint);
                 combined.insert(combined.begin(), addv.begin(), addv.end());
@@ -97,6 +97,8 @@ inline _AddRemoveResult _AddRemoveCommits(
             if (!r.erase(c)) combined.push_front(c);
             c = c.parent();
         }
+        assert(!adding || foundAddPoint);
+        assert(r.empty());
         
         head = c;
     }
@@ -104,7 +106,8 @@ inline _AddRemoveResult _AddRemoveCommits(
     // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
     for (Commit commit : combined) {
-        head = repo.commitAttach(head, commit);
+        if (head) head = repo.commitAttach(head, commit);
+        else      head = commit;
         if (add.find(commit) != add.end()) {
             added.insert(head);
         }
@@ -240,6 +243,7 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
 
 inline OpResult _Exec_CombineCommits(const Op& op) {
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+    if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
     
     std::deque<Commit> integrate; // Commits that need to be integrated into a single commit
     std::deque<Commit> attach;    // Commits that need to be attached after the integrate step
@@ -546,12 +550,12 @@ inline OpResult Exec(const Op& op) {
     std::exception_ptr err;
     try {
         switch (op.type) {
-        case Op::Type::None:                r = {}; break;
-        case Op::Type::MoveCommits:         r = _Exec_MoveCommits(op); break;
-        case Op::Type::CopyCommits:         r = _Exec_CopyCommits(op); break;
-        case Op::Type::DeleteCommits:       r = _Exec_DeleteCommits(op); break;
-        case Op::Type::CombineCommits:      r = _Exec_CombineCommits(op); break;
-        case Op::Type::EditCommit:          r = _Exec_EditCommit<T_SpawnFn>(op); break;
+        case Op::Type::None:    r = {}; break;
+        case Op::Type::Move:    r = _Exec_MoveCommits(op); break;
+        case Op::Type::Copy:    r = _Exec_CopyCommits(op); break;
+        case Op::Type::Delete:  r = _Exec_DeleteCommits(op); break;
+        case Op::Type::Combine: r = _Exec_CombineCommits(op); break;
+        case Op::Type::Edit:    r = _Exec_EditCommit<T_SpawnFn>(op); break;
         }
     } catch (const std::exception& e) {
         err = std::current_exception();

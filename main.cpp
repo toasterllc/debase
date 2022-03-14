@@ -41,6 +41,14 @@ static struct {
     bool copy = false;
 } _Drag;
 
+static struct {
+    Git::Commit commit;
+    std::chrono::steady_clock::time_point mouseUpTime;
+} _DoubleClickState;
+
+static constexpr std::chrono::milliseconds _DoubleClickThresh(300);
+static constexpr std::chrono::milliseconds _MenuStayOpenThresh(300);
+
 static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
@@ -269,6 +277,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
     const UI::Rect innerBounds = Inset(_RootWindow->rect(), {1,1});
+    const auto doubleClickStatePrev = _DoubleClickState;
+    _DoubleClickState = {};
     
     // Reset the selection to solely contain the mouse-down CommitPanel if:
     //   - there's no selection; or
@@ -376,14 +386,13 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     }
     
     std::optional<Git::Op> gitOp;
-    
     if (!abort) {
         if (_Drag.titlePanel) {
             assert(ipos);
             Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
             gitOp = Git::Op{
                 .repo = _Repo,
-                .type = (_Drag.copy ? Git::Op::Type::CopyCommits : Git::Op::Type::MoveCommits),
+                .type = (_Drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
                 .src = {
                     .rev = _Selection.rev,
                     .commits = _Selection.commits,
@@ -398,6 +407,30 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         // set the selection to the commit that was clicked
         } else if (!dragging) {
             _Selection.commits = {mouseDownPanel->commit()};
+            
+            if (_Selection.commits.size() == 1) {
+                auto currentTime = std::chrono::steady_clock::now();
+                Git::Commit commit = *_Selection.commits.begin();
+                if (doubleClickStatePrev.commit && doubleClickStatePrev.commit==commit) {
+                    auto duration = currentTime-doubleClickStatePrev.mouseUpTime;
+                    if (duration < _DoubleClickThresh) {
+                        gitOp = {
+                            .repo = _Repo,
+                            .type = Git::Op::Type::Edit,
+                            .src = {
+                                .rev = _Selection.rev,
+                                .commits = _Selection.commits,
+                            },
+                        };
+                    }
+                
+                } else {
+                    _DoubleClickState = {
+                        .commit = *_Selection.commits.begin(),
+                        .mouseUpTime = currentTime,
+                    };
+                }
+            }
         }
     }
     
@@ -526,9 +559,8 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
                 // stay open and we should start listening for left-mouse-down events.
                 // If the right-mouse-up occurs af
-                constexpr std::chrono::milliseconds StayOpenThresh(300);
                 auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-                if (duration >= StayOpenThresh) break;
+                if (duration >= _MenuStayOpenThresh) break;
                 
                 // Start listening for left mouse up
                 mouseUpButtons |= MouseButtons::Left;
@@ -548,7 +580,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     if (menuButton == &CombineButton) {
         gitOp = Git::Op{
             .repo = _Repo,
-            .type = Git::Op::Type::CombineCommits,
+            .type = Git::Op::Type::Combine,
             .src = {
                 .rev = _Selection.rev,
                 .commits = _Selection.commits,
@@ -558,7 +590,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     } else if (menuButton == &EditButton) {
         gitOp = Git::Op{
             .repo = _Repo,
-            .type = Git::Op::Type::EditCommit,
+            .type = Git::Op::Type::Edit,
             .src = {
                 .rev = _Selection.rev,
                 .commits = _Selection.commits,
@@ -568,7 +600,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     } else if (menuButton == &DeleteButton) {
         gitOp = Git::Op{
             .repo = _Repo,
-            .type = Git::Op::Type::DeleteCommits,
+            .type = Git::Op::Type::Delete,
             .src = {
                 .rev = _Selection.rev,
                 .commits = _Selection.commits,
@@ -694,13 +726,11 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: implement key combos for combine/edit
-    
     #warning TODO: implement error messages
     
-    #warning TODO: figure out why moving/copying commits is slow sometimes
-    
     #warning TODO: handle merge conflicts
+    
+    #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: backup all supplied revs before doing anything
     
@@ -714,12 +744,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: add column scrolling
     
-    
-    
-//    git_libgit2_init();
-//    git_signature* sig = nullptr;
-//    int ir = git_signature_from_buffer(&sig, "Dave Keck <dave@heytoaster.com> 1000 -0700");
-//    assert(!ir);
     
     // DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
@@ -754,6 +778,18 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
 //
 //    #warning TODO: show indication in the UI that a column is immutable
+//
+//    #warning TODO: implement key combos for combine/edit
+//
+//    #warning TODO: implement double-click to edit
+    
+    
+    
+    
+//    git_libgit2_init();
+//    git_signature* sig = nullptr;
+//    int ir = git_signature_from_buffer(&sig, "Dave Keck <dave@heytoaster.com> 1000 -0700");
+//    assert(!ir);
     
     
     
@@ -964,21 +1000,51 @@ int main(int argc, const char* argv[]) {
                 break;
             }
             
-            case UI::Event::WindowResize: {
-                throw std::runtime_error("window resize");
+            case UI::Event::KeyDelete:
+            case UI::Event::KeyDeleteFn: {
+                if (!_Selection.commits.empty()) {
+                    gitOp = {
+                        .repo = _Repo,
+                        .type = Git::Op::Type::Delete,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
+                }
                 break;
             }
             
-            case UI::Event::KeyDelete:
-            case UI::Event::KeyDeleteFn: {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::DeleteCommits,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
+            case UI::Event::KeyC: {
+                if (_Selection.commits.size() > 1) {
+                    gitOp = {
+                        .repo = _Repo,
+                        .type = Git::Op::Type::Combine,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
+                }
+                break;
+            }
+            
+            case UI::Event::KeyReturn: {
+                if (_Selection.commits.size() == 1) {
+                    gitOp = {
+                        .repo = _Repo,
+                        .type = Git::Op::Type::Edit,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
+                }
+                break;
+            }
+            
+            case UI::Event::WindowResize: {
+                throw std::runtime_error("window resize");
                 break;
             }
             
