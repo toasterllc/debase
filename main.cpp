@@ -931,9 +931,11 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
+    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
     
-    #warning TODO: fix: colors aren't restored when exiting
+    #warning TODO: create special color palette for apple terminal
+    
+    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
     
@@ -946,10 +948,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
-    
-    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
-    
-    #warning TODO: create special color palette for apple terminal
     
     // Future:
     
@@ -1003,6 +1001,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: implement error messages
 //
 //    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
+//
+//    #warning TODO: fix: colors aren't restored when exiting
     
     
     
