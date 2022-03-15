@@ -736,6 +736,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: handle window resizing
     
+    #warning TODO: double-click broken: click commit, wait, then double-click
+    
     // Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land

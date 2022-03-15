@@ -4,6 +4,7 @@
 #include "Panel.h"
 #include "Color.h"
 #include "Attr.h"
+#include "LineWrap.h"
 
 namespace UI {
 
@@ -13,9 +14,6 @@ namespace UI {
 class _CommitPanel : public _Panel, public std::enable_shared_from_this<_CommitPanel> {
 public:
     _CommitPanel(Git::Commit commit, size_t idx, bool header, int width) {
-        using Line = std::deque<std::string>;
-        using Lines = std::vector<Line>;
-        
         _commit = commit;
         _idx = idx;
         _header = header;
@@ -24,62 +22,7 @@ public:
         _author = git_commit_author(*_commit)->name;
         
         const std::string message = git_commit_message(*_commit);
-        Lines lines;
-        {
-            std::istringstream stream(message);
-            std::string line;
-            while (std::getline(stream, line)) {
-                if (line.empty()) continue;
-                
-                Line& words = lines.emplace_back();
-                std::istringstream stream(line);
-                std::string word;
-                while (stream >> word) words.push_back(word);
-            }
-        }
-        
-        for (Line& words : lines) {
-            const int MaxLineCount = 2;
-            const int MaxLineLen = width-4;
-            if (_message.size() >= MaxLineCount) break; // Hit max number of lines -> done
-            
-            for (;;) {
-                std::string& msgline = _message.emplace_back();
-                for (;;) {
-                    if (words.empty()) break;
-                    const std::string& word = words.front();
-                    const std::string add = (msgline.empty() ? "" : " ") + word;
-                    if (msgline.size()+add.size() > MaxLineLen) break; // Line filled, next line
-                    msgline += add;
-                    words.pop_front();
-                }
-                
-                if (words.empty()) break; // No more words -> done
-                if (_message.size() >= MaxLineCount) break; // Hit max number of lines -> done
-                if (words.front().size() > MaxLineLen) break; // Current word is too large for line -> done
-            }
-            
-            // Add as many letters from the remaining word as will fit on the last line
-            if (!words.empty()) {
-                const std::string& word = words.front();
-                std::string& line = _message.back();
-                line += (line.empty() ? "" : " ") + word;
-                // Our logic guarantees that if the word would have fit, it would've been included in the last line.
-                // So since the word isn't included, the length of the line (with the word included) must be larger
-                // than `MaxLineLen`. So verify that assumption.
-                assert(line.size() > MaxLineLen);
-                
-    //            const char*const ellipses = "...";
-    //            // Find the first non-space character, at least strlen(ellipses) characters before the end
-    //            auto it =line.begin()+MaxLineLen-strlen(ellipses);
-    //            for (; it!=line.begin() && std::isspace(*it); it--);
-    //            
-    //            line.erase(it, line.end());
-    //            
-    //            // Replace the line's final characters with an ellipses
-    //            line.replace(it, it+strlen(ellipses), ellipses);
-            }
-        }
+        _message = LineWrap::Wrap(LineCountMax, width-4, message);
         
         setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
         _drawNeeded = true;
@@ -153,6 +96,9 @@ public:
 //    }
     
 private:
+    static constexpr size_t LineCountMax = 2;
+    static constexpr size_t LineLenInset = 2;
+    
     Git::Commit _commit;
     size_t _idx = 0;
     bool _header = false;
