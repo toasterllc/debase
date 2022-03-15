@@ -268,7 +268,7 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
 }
 
 // _TrackMouseInsideCommitPanel
-// Handles dragging a set of CommitPanels
+// Handles clicking/dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     const UI::Rect mouseDownPanelRect = mouseDownPanel->rect();
     const UI::Size delta = {
@@ -423,13 +423,12 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
                             },
                         };
                     }
-                
-                } else {
-                    _DoubleClickState = {
-                        .commit = *_Selection.commits.begin(),
-                        .mouseUpTime = currentTime,
-                    };
                 }
+                
+                _DoubleClickState = {
+                    .commit = *_Selection.commits.begin(),
+                    .mouseUpTime = currentTime,
+                };
             }
         }
     }
@@ -736,8 +735,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: handle window resizing
     
-    #warning TODO: double-click broken: click commit, wait, then double-click
-    
     // Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
@@ -784,6 +781,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: implement key combos for combine/edit
 //
 //    #warning TODO: implement double-click to edit
+//
+//    #warning TODO: double-click broken: click commit, wait, then double-click
     
     
     
