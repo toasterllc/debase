@@ -73,7 +73,7 @@ public:
 //    }
     
     const MenuButton* updateMousePosition(const Point& p) {
-        Rect frame = rect();
+        Rect frame = _Panel::frame();
         Size inset = {BorderSize+InsetX, BorderSize};
         Rect innerBounds = Inset({{}, frame.size}, inset);
         Point off = p-frame.point;
@@ -96,7 +96,7 @@ public:
     void draw() {
         erase();
         
-        const int w = rect().size.x;
+        const int w = bounds().size.x;
         size_t idx = 0;
         for (size_t i=0; i<_buttonCount; i++) {
 //            ::wmove(*this, p.y, p.x);

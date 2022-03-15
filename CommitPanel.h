@@ -13,7 +13,7 @@ namespace UI {
 // its containing branch, where the top/first CommitPanel is index 0
 class _CommitPanel : public _Panel, public std::enable_shared_from_this<_CommitPanel> {
 public:
-    _CommitPanel(Git::Commit commit, size_t idx, bool header, int width) {
+    _CommitPanel(size_t idx, bool header, int width, Git::Commit commit) {
         _commit = commit;
         _idx = idx;
         _header = header;
@@ -22,7 +22,7 @@ public:
         _author = git_commit_author(*_commit)->name;
         
         const std::string message = git_commit_message(*_commit);
-        _message = LineWrap::Wrap(LineCountMax, width-4, message);
+        _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, message);
         
         setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
         _drawNeeded = true;
@@ -61,7 +61,7 @@ public:
         {
             UI::Attr attr;
             if (!_header && _borderColor) attr = Attr(shared_from_this(), *_borderColor);
-            drawText({2  + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
+            drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
         
         drawText({12 + (_header ?  1 : 0), offY+0}, " %s ", _time.c_str());
@@ -96,8 +96,8 @@ public:
 //    }
     
 private:
-    static constexpr size_t LineCountMax = 2;
-    static constexpr size_t LineLenInset = 2;
+    static constexpr size_t _LineCountMax = 2;
+    static constexpr size_t _LineLenInset = 2;
     
     Git::Commit _commit;
     size_t _idx = 0;

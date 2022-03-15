@@ -30,9 +30,9 @@ public:
         int offY = InsetY;
         Git::Commit commit = rev.commit;
         for (int i=0; commit && i<10; i++) {
-            UI::CommitPanel p = MakeShared<UI::CommitPanel>(commit, i, false, width);
+            UI::CommitPanel p = MakeShared<UI::CommitPanel>(i, false, width, commit);
             p->setPosition({_offsetX, offY});
-            offY += p->rect().size.y + 1;
+            offY += p->frame().size.y + 1;
             _panels.push_back(p);
             commit = commit.parent();
         }

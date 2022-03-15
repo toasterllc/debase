@@ -4,8 +4,21 @@
 #include "lib/libgit2/include/git2.h"
 
 namespace Git {
-
 using namespace Toastbox;
+
+// Macros to handle checking for nullptr before comparing underlying objects
+#define _Equal(a, b, cmp) ({                \
+    bool r = ((bool)(a) == (bool)(b));      \
+    if ((bool)(a) && (bool)(b)) r = (cmp);  \
+    r;                                      \
+})
+
+#define _Less(a, b, cmp) ({                 \
+    bool r = ((bool)(a) < (bool)(b));       \
+    if ((bool)(a) && (bool)(b)) r = (cmp);  \
+    r;                                      \
+})
+
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
@@ -26,9 +39,9 @@ using Buf = RefCounted<git_buf, _BufDelete>;
 struct Object : RefCounted<git_object*, git_object_free> {
     using RefCounted::RefCounted;
     const Id& id() const { return *git_object_id(*get()); }
-    bool operator==(const Object& x) const { return git_oid_cmp(&id(), &x.id())==0; }
+    bool operator==(const Object& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
     bool operator!=(const Object& x) const { return !(*this==x); }
-    bool operator<(const Object& x) const { return git_oid_cmp(&id(), &x.id())<0; }
+    bool operator<(const Object& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
 };
 
 struct Config : RefCounted<git_config*, git_config_free> {
@@ -49,9 +62,9 @@ struct Config : RefCounted<git_config*, git_config_free> {
 struct Commit : RefCounted<git_commit*, git_commit_free> {
     using RefCounted::RefCounted;
     const Id& id() const { return *git_commit_id(*get()); }
-    bool operator==(const Commit& x) const { return git_oid_cmp(&id(), &x.id())==0; }
+    bool operator==(const Commit& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
     bool operator!=(const Commit& x) const { return !(*this==x); }
-    bool operator<(const Commit& x) const { return git_oid_cmp(&id(), &x.id())<0; }
+    bool operator<(const Commit& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
     
     static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
@@ -82,9 +95,9 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
 
 struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
-    bool operator==(const Ref& x) const { return strcmp(fullName(), x.fullName())==0; }
+    bool operator==(const Ref& x) const { return _Equal(*this, x, strcmp(fullName(), x.fullName())==0); }
     bool operator!=(const Ref& x) const { return !(*this==x); }
-    bool operator<(const Ref& x) const { return strcmp(fullName(), x.fullName())<0; }
+    bool operator<(const Ref& x) const { return _Less(*this, x, strcmp(fullName(), x.fullName())<0); }
     
     const char* name() const {
         return git_reference_shorthand(*get());
@@ -191,10 +204,8 @@ public:
     operator bool() const { return (bool)commit; }
     
     bool operator==(const Rev& x) const {
-        if ((bool)commit != (bool)x.commit) return false;
-        if (commit && (commit != x.commit)) return false;
-        if ((bool)ref != (bool)x.ref) return false;
-        if (ref && (ref != x.ref)) return false;
+        if (commit != x.commit) return false;
+        if (ref != x.ref) return false;
         return true;
     }
     
@@ -202,12 +213,8 @@ public:
     
     bool operator<(const Rev& x) const {
         // Stage 1: compare commits
-        if ((bool)commit != (bool)x.commit) return (bool)commit<(bool)x.commit;
-        if (!commit) return false; // Handle both commits==nullptr
         if (commit != x.commit) return commit<x.commit;
         // Stage 2: commits are the same; compare the refs
-        if ((bool)ref != (bool)x.ref) return (bool)ref<(bool)x.ref;
-        if (!ref) return false; // Handle both refs==nullptr
         return ref < x.ref;
     }
     
@@ -259,7 +266,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
         git_index* x = nullptr;
-        int ir = git_merge_trees(&x, *get(), *ancestorTree, *dstTree, *srcTree, &mergeOpts);
+        int ir = git_merge_trees(&x, *get(), (ancestorTree ? *ancestorTree : nullptr), *dstTree, *srcTree, &mergeOpts);
         if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
         return x;
     }
@@ -278,7 +285,9 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
     Commit commitAttach(Commit parent, Tree tree, Commit metadata) const {
         git_oid id;
-        const git_commit* parents[] = {*parent};
+        // `parent` can be null if we're creating a root commit
+        const git_commit* parents[] = {(parent ? *parent : nullptr)};
+        const size_t parentsLen = (parent ? 1 : 0);
         int ir = git_commit_create(
             &id,
             *get(),
@@ -288,7 +297,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             git_commit_message_encoding(*metadata),
             git_commit_message(*metadata),
             *tree,
-            std::size(parents),
+            parentsLen,
             parents
         );
         if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
@@ -298,10 +307,18 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
     Commit commitAttach(Commit dst, Commit src) const {
         Tree srcTree = src.tree();
-        Tree dstTree = dst.tree();
-        Tree ancestorTree = src.parent().tree();
-        Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
-        Tree newTree = indexWrite(mergedTreesIndex);
+        Tree newTree;
+        // `dst` can be null if we're making `src` a root commit
+        if (dst) {
+            Tree dstTree = dst.tree();
+            Commit srcParent = src.parent();
+            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
+            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+            newTree = indexWrite(mergedTreesIndex);
+        } else {
+            newTree = src.tree();
+        }
+        
         return commitAttach(dst, newTree, src);
     }
     
@@ -438,7 +455,7 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     Branch branchCreate(std::string_view name, Commit commit, bool force=false) const {
         git_reference* x = nullptr;
-        int ir = git_branch_create(&x, *get(), name.data(), *commit, force);
+        int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
         if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
         return x;
     }
@@ -492,5 +509,8 @@ inline git_time_t TimeFromString(std::string_view str, int* offset=nullptr) {
     if (t == -1) throw RuntimeError("mktime failed");
     return t;
 }
+
+#undef _Equal
+#undef _Less
 
 } // namespace Git

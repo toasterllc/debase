@@ -22,6 +22,7 @@
 #include "GitOp.h"
 #include "MakeShared.h"
 #include "Bitfield.h"
+#include "ErrorPanel.h"
 
 struct _Selection {
     Git::Rev rev;
@@ -53,6 +54,8 @@ static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
 static UI::Menu _Menu;
+
+static UI::ErrorPanel _ErrorPanel;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
@@ -118,6 +121,17 @@ static void _Draw() {
         if (_Menu) {
             _Menu->orderFront();
         }
+        
+        if (_ErrorPanel) {
+            UI::Size ps = _ErrorPanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _ErrorPanel->setPosition(p);
+            _ErrorPanel->orderFront();
+        }
     }
     
     // Draw everything
@@ -151,6 +165,10 @@ static void _Draw() {
             _Menu->drawIfNeeded();
         }
         
+        if (_ErrorPanel) {
+            _ErrorPanel->drawIfNeeded();
+        }
+        
         UI::Redraw();
     }
 }
@@ -180,14 +198,14 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     std::optional<int> leastDistance;
     for (UI::RevColumn col : _Columns) {
         UI::CommitPanelVec& panels = col->panels();
-        const UI::Rect lastRect = panels.back()->rect();
-        const int midX = lastRect.point.x + lastRect.size.x/2;
-        const int endY = lastRect.point.y + lastRect.size.y;
+        const UI::Rect lastFrame = panels.back()->frame();
+        const int midX = lastFrame.point.x + lastFrame.size.x/2;
+        const int endY = lastFrame.point.y + lastFrame.size.y;
         
         for (auto it=panels.begin();; it++) {
             UI::CommitPanel panel = (it!=panels.end() ? *it : nullptr);
-            const int x = (panel ? panel->rect().point.x+panel->rect().size.x/2 : midX);
-            const int y = (panel ? panel->rect().point.y : endY);
+            const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
+            const int y = (panel ? panel->frame().point.y : endY);
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
             
             if (!leastDistance || dist<leastDistance) {
@@ -270,13 +288,13 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
 // _TrackMouseInsideCommitPanel
 // Handles clicking/dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
-    const UI::Rect mouseDownPanelRect = mouseDownPanel->rect();
+    const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
     const UI::Size delta = {
-        mouseDownPanelRect.point.x-mouseDownEvent.x,
-        mouseDownPanelRect.point.y-mouseDownEvent.y,
+        mouseDownPanelFrame.point.x-mouseDownEvent.x,
+        mouseDownPanelFrame.point.y-mouseDownEvent.y,
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
-    const UI::Rect innerBounds = Inset(_RootWindow->rect(), {1,1});
+    const UI::Rect innerBounds = Inset(_RootWindow->bounds(), {1,1});
     const auto doubleClickStatePrev = _DoubleClickState;
     _DoubleClickState = {};
     
@@ -316,10 +334,10 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (!_Drag.titlePanel && dragging && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanel>(titleCommit, 0, true, titlePanel->rect().size.x);
+            _Drag.titlePanel = MakeShared<UI::CommitPanel>(0, true, titlePanel->frame().size.x, titleCommit);
             
             // Create shadow panels
-            UI::Size shadowSize = _Drag.titlePanel->rect().size;
+            UI::Size shadowSize = _Drag.titlePanel->frame().size;
             for (size_t i=0; i<_Selection.commits.size()-1; i++) {
                 _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
             }
@@ -365,13 +383,13 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             if (ipos) {
                 constexpr int InsertionExtraWidth = 6;
                 UI::CommitPanelVec& ipanels = ipos->col->panels();
-                const UI::Rect lastRect = ipanels.back()->rect();
-                const int endY = lastRect.point.y + lastRect.size.y;
-                const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->rect().point.y : endY+1);
+                const UI::Rect lastFrame = ipanels.back()->frame();
+                const int endY = lastFrame.point.y + lastFrame.size.y;
+                const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().point.y : endY+1);
                 
                 _Drag.insertionMarker = {
-                    .point = {lastRect.point.x-InsertionExtraWidth/2, insertY-1},
-                    .size = {lastRect.size.x+InsertionExtraWidth, 0},
+                    .point = {lastFrame.point.x-InsertionExtraWidth/2, insertY-1},
+                    .size = {lastFrame.size.x+InsertionExtraWidth, 0},
                 };
             
             } else {
@@ -456,7 +474,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         
         // Mouse-down outside of a commit:
         // Handle selection rect drawing / selecting commits
-        const UI::Rect selectionRect = {{x,y}, {std::max(1,w),std::max(1,h)}};
+        const UI::Rect selectionRect = {{x,y}, {std::max(2,w),std::max(2,h)}};
         
         if (_SelectionRect || dragStart) {
             _SelectionRect = selectionRect;
@@ -467,7 +485,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
             struct _Selection selectionNew;
             for (UI::RevColumn col : _Columns) {
                 for (UI::CommitPanel panel : col->panels()) {
-                    if (!Empty(Intersection(selectionRect, panel->rect()))) {
+                    if (!Empty(Intersection(selectionRect, panel->frame()))) {
                         selectionNew.rev = col->rev();
                         selectionNew.commits.insert(panel->commit());
                     }
@@ -725,8 +743,6 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: implement error messages
-    
     #warning TODO: handle merge conflicts
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
@@ -734,6 +750,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
+    
+    #warning TODO: fix assertion that gets triggered when dragging commit from read-only column
     
     // Future:
     
@@ -783,6 +801,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: implement double-click to edit
 //
 //    #warning TODO: double-click broken: click commit, wait, then double-click
+//
+//    #warning TODO: implement error messages
     
     
     
@@ -965,96 +985,111 @@ int main(int argc, const char* argv[]) {
     // Init ncurses
     _CursesInit();
     
-    try {
 //        volatile bool a = false;
 //        while (!a);
-        
-        _RootWindow = MakeShared<UI::Window>(::stdscr);
-        
-        _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
-        
-        for (;;) {
-            _Draw();
-            UI::Event ev = _RootWindow->nextEvent();
-            std::optional<Git::Op> gitOp;
-            switch (ev) {
-            case UI::Event::Mouse: {
-                MEVENT mouse = {};
-                int ir = ::getmouse(&mouse);
-                if (ir != OK) continue;
-                const auto hitTest = _HitTest({mouse.x, mouse.y});
+    
+    _RootWindow = MakeShared<UI::Window>(::stdscr);
+    
+    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+    
+    for (;;) {
+        _Draw();
+        UI::Event ev = _RootWindow->nextEvent();
+        std::optional<Git::Op> gitOp;
+        switch (ev) {
+        case UI::Event::Mouse: {
+            MEVENT mouse = {};
+            int ir = ::getmouse(&mouse);
+            if (ir != OK) continue;
+            
+            // If there's an error displayed, the first click should dismiss the error
+            if (_ErrorPanel) {
                 if (mouse.bstate & BUTTON1_PRESSED) {
-                    const bool shift = (mouse.bstate & _SelectionShiftKeys);
-                    if (hitTest && !shift) {
-                        // Mouse down inside of a CommitPanel, without shift key
-                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
-                    } else {
-                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _TrackMouseOutsideCommitPanel(mouse);
-                    }
-                
-                } else if (mouse.bstate & BUTTON3_PRESSED) {
-                    if (hitTest) {
-                        gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
-                    }
+                    _ErrorPanel = nullptr;
+                    continue;
                 }
-                break;
             }
             
-            case UI::Event::KeyDelete:
-            case UI::Event::KeyDeleteFn: {
-                if (!_Selection.commits.empty()) {
-                    gitOp = {
-                        .repo = _Repo,
-                        .type = Git::Op::Type::Delete,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
+            const auto hitTest = _HitTest({mouse.x, mouse.y});
+            if (mouse.bstate & BUTTON1_PRESSED) {
+                const bool shift = (mouse.bstate & _SelectionShiftKeys);
+                if (hitTest && !shift) {
+                    // Mouse down inside of a CommitPanel, without shift key
+                    gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
+                } else {
+                    // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                    _TrackMouseOutsideCommitPanel(mouse);
                 }
-                break;
-            }
             
-            case UI::Event::KeyC: {
-                if (_Selection.commits.size() > 1) {
-                    gitOp = {
-                        .repo = _Repo,
-                        .type = Git::Op::Type::Combine,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
+            } else if (mouse.bstate & BUTTON3_PRESSED) {
+                if (hitTest) {
+                    gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
                 }
-                break;
             }
-            
-            case UI::Event::KeyReturn: {
-                if (_Selection.commits.size() == 1) {
-                    gitOp = {
-                        .repo = _Repo,
-                        .type = Git::Op::Type::Edit,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
-                }
-                break;
+            break;
+        }
+        
+        case UI::Event::KeyEscape: {
+            // Dismiss error panel if it's open
+            _ErrorPanel = nullptr;
+            break;
+        }
+        
+        case UI::Event::KeyDelete:
+        case UI::Event::KeyDeleteFn: {
+            if (!_Selection.commits.empty()) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Delete,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
             }
-            
-            case UI::Event::WindowResize: {
-                throw std::runtime_error("window resize");
-                break;
+            break;
+        }
+        
+        case UI::Event::KeyC: {
+            if (_Selection.commits.size() > 1) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Combine,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
             }
-            
-            default: {
+            break;
+        }
+        
+        case UI::Event::KeyReturn: {
+            if (_Selection.commits.size() == 1) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Edit,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+            }
+            break;
+        }
+        
+        case UI::Event::WindowResize: {
+            throw std::runtime_error("window resize");
+            break;
+        }
+        
+        default: {
 //                printf("%x\n", (int)ev);
-                break;
-            }}
-            
-            if (gitOp) {
+            break;
+        }}
+        
+        if (gitOp) {
+            try {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
                 
                 // Reload the UI
@@ -1066,11 +1101,12 @@ int main(int argc, const char* argv[]) {
                     .rev = opResult.dst.rev,
                     .commits = opResult.dst.commits,
                 };
+            
+            } catch (const std::exception& e) {
+                const int width = std::min(35, _RootWindow->bounds().size.x);
+                _ErrorPanel = MakeShared<UI::ErrorPanel>(width, "Error", e.what());
             }
         }
-    
-    } catch (const std::exception& e) {
-        fprintf(stderr, "Error: %s\n", e.what());
     }
     
     _CursesDeinit();

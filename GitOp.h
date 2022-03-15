@@ -86,7 +86,7 @@ inline _AddRemoveResult _AddRemoveCommits(
         std::set<Commit> r = remove;
         Commit c = dst;
         bool foundAddPoint = false;
-        while (c) {
+        for (;;) {
             if (adding && c==addPosition) {
                 assert(!foundAddPoint);
                 combined.insert(combined.begin(), addv.begin(), addv.end());
@@ -94,6 +94,14 @@ inline _AddRemoveResult _AddRemoveCommits(
             }
             
             if (r.empty() && (!adding || foundAddPoint)) break;
+            // The location of this c!=null assertion is important:
+            // We explicitly allow adding commits before the root commit, and also removing
+            // the root commit itself, which requires us to allow c==null for a single
+            // iteration of this loop.
+            // Therefore this check needs to occur after our break (above). So if we get to
+            // this point and we didn't break, but c==null, then we exhausted our one
+            // c==null iteration and have a problem.
+            assert(c);
             if (!r.erase(c)) combined.push_front(c);
             c = c.parent();
         }
@@ -106,8 +114,7 @@ inline _AddRemoveResult _AddRemoveCommits(
     // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
     for (Commit commit : combined) {
-        if (head) head = repo.commitAttach(head, commit);
-        else      head = commit;
+        head = repo.commitAttach(head, commit);
         if (add.find(commit) != add.end()) {
             added.insert(head);
         }

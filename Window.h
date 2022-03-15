@@ -108,8 +108,8 @@ public:
     void drawRect(const Rect& rect) const {
         const int x1 = rect.point.x;
         const int y1 = rect.point.y;
-        const int x2 = rect.point.x+rect.size.x;
-        const int y2 = rect.point.y+rect.size.y;
+        const int x2 = rect.point.x+rect.size.x-1;
+        const int y2 = rect.point.y+rect.size.y-1;
         mvwhline(*this, y1, x1, 0, rect.size.x);
         mvwhline(*this, y2, x1, 0, rect.size.x);
         mvwvline(*this, y1, x1, 0, rect.size.y);
@@ -129,7 +129,14 @@ public:
         ::werase(*this);
     }
     
-    Rect rect() const {
+    Rect bounds() const {
+        return Rect{
+            .point = {},
+            .size  = { getmaxx(_win), getmaxy(_win) },
+        };
+    }
+    
+    Rect frame() const {
         return Rect{
             .point = { getbegx(_win), getbegy(_win) },
             .size  = { getmaxx(_win), getmaxy(_win) },
@@ -137,7 +144,7 @@ public:
     }
     
     bool hitTest(const Point& p) const {
-        return !Empty(Intersection(rect(), Rect{.point=p, .size={1,1}}));
+        return !Empty(Intersection(frame(), Rect{.point=p, .size={1,1}}));
     }
     
     Event nextEvent() const {
