@@ -233,8 +233,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     using RefCounted::RefCounted;
     
     static Repo Open(std::string_view path) {
-        git_libgit2_init();
-        
         git_repository* x = nullptr;
         int ir = git_repository_open(&x, path.data());
         if (ir) throw RuntimeError("git_repository_open failed: %s", git_error_last()->message);

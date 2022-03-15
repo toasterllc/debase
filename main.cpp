@@ -666,7 +666,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     }
 }
 
-void _CursesInit() {
+static void _CursesInit() {
     // Default linux installs may not contain the /usr/share/terminfo database,
     // so provide a fallback terminfo that usually works.
     nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
@@ -681,7 +681,8 @@ void _CursesInit() {
     
     ::initscr();
     ::noecho();
-    ::cbreak();
+//    ::cbreak();
+    ::raw();
     
     ::use_default_colors();
     ::start_color();
@@ -701,9 +702,34 @@ void _CursesInit() {
     ::set_escdelay(0);
 }
 
-void _CursesDeinit() {
+static void _CursesDeinit() {
 //    ::mousemask(0, NULL);
     ::endwin();
+}
+
+static void _GitInit(const std::vector<std::string>& revNames) {
+    git_libgit2_init();
+    
+    _Repo = Git::Repo::Open(".");
+    
+    if (revNames.empty()) {
+        _Revs.push_back(_Repo.head());
+    
+    } else {
+        // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
+        std::set<Git::Rev> unique;
+        for (const std::string& revName : revNames) {
+            Git::Rev rev = _Repo.revLookup(revName);
+            if (unique.find(rev) == unique.end()) {
+                _Revs.push_back(rev);
+                unique.insert(rev);
+            }
+        }
+    }
+}
+
+static void _GitDeinit() {
+    git_libgit2_shutdown();
 }
 
 extern "C" {
@@ -739,6 +765,132 @@ static void _Spawn(const char*const* argv) {
     if (!preserveTerminal) _CursesInit();
 }
 
+static void _EventLoop() {
+    _RootWindow = MakeShared<UI::Window>(::stdscr);
+    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+    
+    for (;;) {
+        _Draw();
+        UI::Event ev = _RootWindow->nextEvent();
+        std::optional<Git::Op> gitOp;
+        switch (ev) {
+        case UI::Event::Mouse: {
+            MEVENT mouse = {};
+            int ir = ::getmouse(&mouse);
+            if (ir != OK) continue;
+            
+            // If there's an error displayed, the first click should dismiss the error
+            if (_ErrorPanel) {
+                if (mouse.bstate & BUTTON1_PRESSED) {
+                    _ErrorPanel = nullptr;
+                    continue;
+                }
+            }
+            
+            const auto hitTest = _HitTest({mouse.x, mouse.y});
+            if (mouse.bstate & BUTTON1_PRESSED) {
+                const bool shift = (mouse.bstate & _SelectionShiftKeys);
+                if (hitTest && !shift) {
+                    // Mouse down inside of a CommitPanel, without shift key
+                    gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
+                } else {
+                    // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                    _TrackMouseOutsideCommitPanel(mouse);
+                }
+            
+            } else if (mouse.bstate & BUTTON3_PRESSED) {
+                if (hitTest) {
+                    gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
+                }
+            }
+            break;
+        }
+        
+        case UI::Event::KeyEscape: {
+            // Dismiss error panel if it's open
+            _ErrorPanel = nullptr;
+            break;
+        }
+        
+        case UI::Event::KeyDelete:
+        case UI::Event::KeyFnDelete: {
+            if (!_Selection.commits.empty()) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Delete,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+            }
+            break;
+        }
+        
+        case UI::Event::KeyC: {
+            if (_Selection.commits.size() > 1) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Combine,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+            }
+            break;
+        }
+        
+        case UI::Event::KeyReturn: {
+            if (_Selection.commits.size() == 1) {
+                gitOp = {
+                    .repo = _Repo,
+                    .type = Git::Op::Type::Edit,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+            }
+            break;
+        }
+        
+        case UI::Event::WindowResize: {
+            throw std::runtime_error("window resize");
+            break;
+        }
+        
+        case UI::Event::KeyCtrlC:
+        case UI::Event::KeyCtrlD: {
+            return;
+        }
+        
+        default: {
+            break;
+        }}
+        
+        if (gitOp) {
+            try {
+                Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
+                
+                // Reload the UI
+                _ReloadRevs(_Repo, _Revs);
+                _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+                
+                // Update the selection
+                _Selection = {
+                    .rev = opResult.dst.rev,
+                    .commits = opResult.dst.commits,
+                };
+            
+            } catch (const std::exception& e) {
+                const int width = std::min(35, _RootWindow->bounds().size.x);
+                _ErrorPanel = MakeShared<UI::ErrorPanel>(width, "Error", e.what());
+            }
+        }
+    }
+}
+
 int main(int argc, const char* argv[]) {
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
@@ -747,8 +899,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
     
     #warning TODO: handle rewriting tags
-    
-    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
     
     #warning TODO: handle merge conflicts
     
@@ -808,6 +958,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: double-click broken: click commit, wait, then double-click
 //
 //    #warning TODO: implement error messages
+//
+//    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
     
     
     
@@ -961,160 +1113,20 @@ int main(int argc, const char* argv[]) {
 //    volatile bool a = false;
 //    while (!a);
     
-    setlocale(LC_ALL, "");
-    
-    // Init git
-    {
-        _Repo = Git::Repo::Open(".");
-        
-        // Handle args
-        std::vector<std::string> revNames;
-        for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
-        
-        if (revNames.empty()) {
-            _Revs.push_back(_Repo.head());
-        
-        } else {
-            // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
-            std::set<Git::Rev> unique;
-            for (const std::string& revName : revNames) {
-                Git::Rev rev = _Repo.revLookup(revName);
-                if (unique.find(rev) == unique.end()) {
-                    _Revs.push_back(rev);
-                    unique.insert(rev);
-                }
-            }
-        }
-    }
-    
-    // Init ncurses
-    _CursesInit();
-    
 //        volatile bool a = false;
 //        while (!a);
     
-    _RootWindow = MakeShared<UI::Window>(::stdscr);
+    setlocale(LC_ALL, "");
     
-    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+    std::vector<std::string> revNames;
+    for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
+    _GitInit(revNames);
     
-    for (;;) {
-        _Draw();
-        UI::Event ev = _RootWindow->nextEvent();
-        std::optional<Git::Op> gitOp;
-        switch (ev) {
-        case UI::Event::Mouse: {
-            MEVENT mouse = {};
-            int ir = ::getmouse(&mouse);
-            if (ir != OK) continue;
-            
-            // If there's an error displayed, the first click should dismiss the error
-            if (_ErrorPanel) {
-                if (mouse.bstate & BUTTON1_PRESSED) {
-                    _ErrorPanel = nullptr;
-                    continue;
-                }
-            }
-            
-            const auto hitTest = _HitTest({mouse.x, mouse.y});
-            if (mouse.bstate & BUTTON1_PRESSED) {
-                const bool shift = (mouse.bstate & _SelectionShiftKeys);
-                if (hitTest && !shift) {
-                    // Mouse down inside of a CommitPanel, without shift key
-                    gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
-                } else {
-                    // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                    _TrackMouseOutsideCommitPanel(mouse);
-                }
-            
-            } else if (mouse.bstate & BUTTON3_PRESSED) {
-                if (hitTest) {
-                    gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
-                }
-            }
-            break;
-        }
-        
-        case UI::Event::KeyEscape: {
-            // Dismiss error panel if it's open
-            _ErrorPanel = nullptr;
-            break;
-        }
-        
-        case UI::Event::KeyDelete:
-        case UI::Event::KeyDeleteFn: {
-            if (!_Selection.commits.empty()) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Delete,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-            }
-            break;
-        }
-        
-        case UI::Event::KeyC: {
-            if (_Selection.commits.size() > 1) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Combine,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-            }
-            break;
-        }
-        
-        case UI::Event::KeyReturn: {
-            if (_Selection.commits.size() == 1) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Edit,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-            }
-            break;
-        }
-        
-        case UI::Event::WindowResize: {
-            throw std::runtime_error("window resize");
-            break;
-        }
-        
-        default: {
-//                printf("%x\n", (int)ev);
-            break;
-        }}
-        
-        if (gitOp) {
-            try {
-                Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
-                
-                // Reload the UI
-                _ReloadRevs(_Repo, _Revs);
-                _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
-                
-                // Update the selection
-                _Selection = {
-                    .rev = opResult.dst.rev,
-                    .commits = opResult.dst.commits,
-                };
-            
-            } catch (const std::exception& e) {
-                const int width = std::min(35, _RootWindow->bounds().size.x);
-                _ErrorPanel = MakeShared<UI::ErrorPanel>(width, "Error", e.what());
-            }
-        }
-    }
-    
+    _CursesInit();
+    _EventLoop();
     _CursesDeinit();
+    
+    _GitDeinit();
     
     return 0;
 }

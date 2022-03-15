@@ -33,9 +33,11 @@ enum class Event : int {
     Mouse           = KEY_MOUSE,
     WindowResize    = KEY_RESIZE,
     KeyDelete       = '\x7F',
-    KeyDeleteFn     = KEY_DC,       // Fn+Delete
+    KeyFnDelete     = KEY_DC,
     KeyEscape       = '\x1B',
     KeyReturn       = '\n',
+    KeyCtrlC        = '\x03',
+    KeyCtrlD        = '\x04',
     KeyC            = 'c',
 };
 
