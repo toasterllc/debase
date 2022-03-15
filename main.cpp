@@ -57,6 +57,8 @@ static UI::Menu _Menu;
 
 static UI::ErrorPanel _ErrorPanel;
 
+static std::vector<UI::Color> _ColorsPrev;
+
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
 enum class _SelectState {
@@ -666,6 +668,42 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     }
 }
 
+struct _SavedColor {
+    short r = 0;
+    short g = 0;
+    short b = 0;
+};
+
+static std::vector<UI::Color> _SetColors(const std::vector<UI::Color>& colors) {
+    std::vector<UI::Color> prev;
+    for (const UI::Color& c : colors) {
+        UI::Color& cprev = prev.emplace_back(UI::Color{.idx = c.idx});
+        color_content(cprev.idx, &cprev.r, &cprev.g, &cprev.b);
+        
+        ::init_color(c.idx, c.r, c.g, c.b);
+        ::init_pair(c.idx, c.idx, -1);
+    }
+    return prev;
+}
+
+//static _SavedColor _SavedColors[8];
+//
+//static void _CursesSaveColors() {
+//    for (size_t i=16; i<16+std::size(_SavedColors); i++) {
+//        _SavedColor& c = _SavedColors[i];
+//        int ir = color_content(i, &c.r, &c.g, &c.b);
+//        assert(!ir);
+//    }
+//}
+//
+//static void _CursesRestoreColors() {
+//    for (size_t i=1; i<std::size(_SavedColors); i++) {
+//        _SavedColor& c = _SavedColors[i];
+//        ::init_color(i, c.r, c.g, c.b);
+//        ::init_pair(i, i, -1);
+//    }
+//}
+
 static void _CursesInit() {
     // Default linux installs may not contain the /usr/share/terminfo database,
     // so provide a fallback terminfo that usually works.
@@ -687,11 +725,7 @@ static void _CursesInit() {
     ::use_default_colors();
     ::start_color();
     
-    // Redefine colors to our custom palette
-    for (const UI::Color& c : UI::Colors::All) {
-        ::init_color(c.idx, c.r, c.g, c.b);
-        ::init_pair(c.idx, c.idx, -1);
-    }
+    _ColorsPrev = _SetColors(UI::Colors::All);
     
     // Hide cursor
     ::curs_set(0);
@@ -704,6 +738,11 @@ static void _CursesInit() {
 
 static void _CursesDeinit() {
 //    ::mousemask(0, NULL);
+    
+    assert(!_ColorsPrev.empty());
+    _SetColors(_ColorsPrev);
+    _ColorsPrev.clear();
+    
     ::endwin();
 }
 
@@ -907,6 +946,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
+    
+    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
+    
+    #warning TODO: create special color palette for apple terminal
     
     // Future:
     
@@ -1112,9 +1155,6 @@ int main(int argc, const char* argv[]) {
     
 //    volatile bool a = false;
 //    while (!a);
-    
-//        volatile bool a = false;
-//        while (!a);
     
     setlocale(LC_ALL, "");
     
