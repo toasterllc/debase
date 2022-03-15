@@ -686,7 +686,6 @@ void _CursesInit() {
     ::use_default_colors();
     ::start_color();
     
-    #warning TODO: fix: colors aren't restored when exiting
     // Redefine colors to our custom palette
     for (const UI::Color& c : UI::Colors::All) {
         ::init_color(c.idx, c.r, c.g, c.b);
@@ -699,7 +698,6 @@ void _CursesInit() {
     ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
     ::mouseinterval(0);
     
-    #warning TODO: not sure if we're going to encounter issues with this set_escdelay
     ::set_escdelay(0);
 }
 
@@ -742,6 +740,14 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: fix: colors aren't restored when exiting
+    
+    #warning TODO: set_escdelay: not sure if we're going to encounter issues?
+    
+    #warning TODO: handle rewriting tags
+    
+    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
+    
     #warning TODO: handle merge conflicts
     
     #warning TODO: figure out why moving/copying commits is slow sometimes

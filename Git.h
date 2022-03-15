@@ -233,7 +233,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     using RefCounted::RefCounted;
     
     static Repo Open(std::string_view path) {
-        #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
         git_libgit2_init();
         
         git_repository* x = nullptr;
@@ -369,7 +368,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             return branchReplace(branch, commit);
         
         } else if (false) {
-            #warning TODO: handle tags
         
         } else {
             throw RuntimeError("unknown ref type");
