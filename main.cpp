@@ -1007,6 +1007,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: handle window resizing
     
+    #warning TODO: figure out strategy to handle merge commits
+    
     // Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
