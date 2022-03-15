@@ -29,6 +29,9 @@ struct _Selection {
     std::set<Git::Commit> commits;
 };
 
+static UI::ColorPalette _Colors;
+static std::optional<UI::ColorPalette> _ColorsPrev;
+
 static Git::Repo _Repo;
 static std::vector<Git::Rev> _Revs;
 
@@ -57,8 +60,6 @@ static UI::Menu _Menu;
 
 static UI::ErrorPanel _ErrorPanel;
 
-static std::vector<UI::Color> _ColorsPrev;
-
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
 enum class _SelectState {
@@ -78,7 +79,7 @@ static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
 }
 
 static void _Draw() {
-    const UI::Color selectionColor = (_Drag.copy ? UI::Colors::SelectionCopy : UI::Colors::SelectionMove);
+    const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selectionMove);
     
     // Update selection colors
     {
@@ -99,12 +100,12 @@ static void _Draw() {
                 _SelectState selectState = _SelectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
                     visible = !dragging || copying;
-                    if (dragging) borderColor = UI::Colors::SelectionSimilar;
-                    else          borderColor = UI::Colors::SelectionMove;
+                    if (dragging) borderColor = _Colors.selectionSimilar;
+                    else          borderColor = _Colors.selectionMove;
                 
                 } else {
                     visible = true;
-                    if (!dragging && selectState==_SelectState::Similar) borderColor = UI::Colors::SelectionSimilar;
+                    if (!dragging && selectState==_SelectState::Similar) borderColor = _Colors.selectionSimilar;
                 }
                 
                 panel->setVisible(visible);
@@ -155,7 +156,7 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::Attr attr(_RootWindow, UI::Colors::SelectionMove);
+            UI::Attr attr(_RootWindow, _Colors.selectionMove);
             _RootWindow->drawRect(*_SelectionRect);
         }
         
@@ -336,7 +337,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (!_Drag.titlePanel && mouseDragged && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanel>(0, true, titlePanel->frame().size.x, titleCommit);
+            _Drag.titlePanel = MakeShared<UI::CommitPanel>(_Colors, 0, true, titlePanel->frame().size.x, titleCommit);
             
             // Create shadow panels
             UI::Size shadowSize = _Drag.titlePanel->frame().size;
@@ -549,14 +550,14 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             &CombineButton,
             &DeleteButton,
         };
-        _Menu = MakeShared<UI::Menu>(Buttons);
+        _Menu = MakeShared<UI::Menu>(_Colors, Buttons);
     
     } else {
         static const UI::MenuButton* Buttons[] = {
             &EditButton,
             &DeleteButton,
         };
-        _Menu = MakeShared<UI::Menu>(Buttons);
+        _Menu = MakeShared<UI::Menu>(_Colors, Buttons);
     }
     
     _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
@@ -663,7 +664,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
-        columns.push_back(MakeShared<UI::RevColumn>(win, repo, rev, OffsetX, ColumnWidth, showMutability));
+        columns.push_back(MakeShared<UI::RevColumn>(_Colors, win, repo, rev, OffsetX, ColumnWidth, showMutability));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
@@ -674,16 +675,73 @@ struct _SavedColor {
     short b = 0;
 };
 
-static std::vector<UI::Color> _SetColors(const std::vector<UI::Color>& colors) {
-    std::vector<UI::Color> prev;
-    for (const UI::Color& c : colors) {
-        UI::Color& cprev = prev.emplace_back(UI::Color{.idx = c.idx});
-        color_content(cprev.idx, &cprev.r, &cprev.g, &cprev.b);
+static std::optional<UI::ColorPalette> _ColorsSet(const UI::ColorPalette& colors, bool custom) {
+    UI::ColorPalette colorsPrev;
+    auto colorsAll = colors.all();
+    auto colorsPrevAll = colorsPrev.all();
+    for (auto i=colorsAll.begin(), ip=colorsPrevAll.begin(); i!=colorsAll.end(); i++, ip++) {
+        UI::Color& c     = i->get();
         
-        ::init_color(c.idx, c.r, c.g, c.b);
+        if (custom) {
+            UI::Color& cprev = ip->get();
+            cprev.idx = c.idx;
+            color_content(cprev.idx, &cprev.r, &cprev.g, &cprev.b);
+            ::init_color(c.idx, c.r, c.g, c.b);
+        }
+        
         ::init_pair(c.idx, c.idx, -1);
     }
-    return prev;
+    
+    if (custom) return colorsPrev;
+    return std::nullopt;
+}
+
+static UI::ColorPalette _ColorsCreate() {
+    // _Idx0: start outside the standard 0-7 range because we don't want to clobber the standard terminal colors.
+    // This is because reading the current terminal colors isn't reliable (via color_content), therefore when we
+    // restore colors on exit, we won't necessarily be restoring the original color. So if we're going to clobber
+    // colors, clobber the colors that are less likely to be used.
+    static constexpr int Idx0 = 16;
+    
+    std::string termProg = getenv("TERM_PROGRAM");
+    
+    UI::ColorPalette colors;
+    
+    if (termProg == "Apple_Terminal") {
+        // Colorspace: unknown
+        // There's no simple relation between these numbers and the resulting colors because Apple's
+        // Terminal.app applies some kind of filtering on top of these numbers. These values were
+        // manually chosen based on their appearance.
+        colors.selectionMove    = UI::Color{Idx0+0,    0,    0, 1000};
+        colors.selectionCopy    = UI::Color{Idx0+1,    0, 1000,    0};
+        colors.selectionSimilar = UI::Color{Idx0+2,  550,  550, 1000};
+        colors.subtitleText     = UI::Color{Idx0+3,  300,  300,  300};
+        colors.menu             = UI::Color{Idx0+4,  800,  300,  300};
+        colors.error            = UI::Color{Idx0+5, 1000,    0,    0};
+    
+    } else {
+        // Colorspace: sRGB
+        // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
+        colors.selectionMove    = UI::Color{Idx0+0,  463,  271, 1000};
+        colors.selectionCopy    = UI::Color{Idx0+1,  165, 1000,  114};
+        colors.selectionSimilar = UI::Color{Idx0+2,  671,  667, 1000};
+        colors.subtitleText     = UI::Color{Idx0+3,  486,  486,  486};
+        colors.menu             = UI::Color{Idx0+4,  969,  447,  431};
+        colors.error            = UI::Color{Idx0+5, 1000,  298,  153};
+    }
+    
+    return colors;
+}
+
+static UI::ColorPalette _ColorsDefaultCreate() {
+    UI::ColorPalette colors;
+    colors.selectionMove    = UI::Color{COLOR_BLUE};
+    colors.selectionCopy    = UI::Color{COLOR_GREEN};
+    colors.selectionSimilar = UI::Color{COLOR_BLACK};
+    colors.subtitleText     = UI::Color{COLOR_BLACK};
+    colors.menu             = UI::Color{COLOR_RED};
+    colors.error            = UI::Color{COLOR_RED};
+    return colors;
 }
 
 //static _SavedColor _SavedColors[8];
@@ -725,7 +783,10 @@ static void _CursesInit() {
     ::use_default_colors();
     ::start_color();
     
-    _ColorsPrev = _SetColors(UI::Colors::All);
+    const bool customColors = can_change_color();
+//    const bool customColors = false;
+    _Colors = (customColors ? _ColorsCreate() : _ColorsDefaultCreate());
+    _ColorsPrev = _ColorsSet(_Colors, customColors);
     
     // Hide cursor
     ::curs_set(0);
@@ -739,9 +800,10 @@ static void _CursesInit() {
 static void _CursesDeinit() {
 //    ::mousemask(0, NULL);
     
-    assert(!_ColorsPrev.empty());
-    _SetColors(_ColorsPrev);
-    _ColorsPrev.clear();
+    if (_ColorsPrev) {
+        _ColorsSet(*_ColorsPrev, true);
+        _ColorsPrev = std::nullopt;
+    }
     
     ::endwin();
 }
@@ -924,17 +986,13 @@ static void _EventLoop() {
             
             } catch (const std::exception& e) {
                 const int width = std::min(35, _RootWindow->bounds().size.x);
-                _ErrorPanel = MakeShared<UI::ErrorPanel>(width, "Error", e.what());
+                _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, width, "Error", e.what());
             }
         }
     }
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
-    
-    #warning TODO: create special color palette for apple terminal
-    
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
@@ -1003,6 +1061,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
 //
 //    #warning TODO: fix: colors aren't restored when exiting
+//
+//    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
+//
+//    #warning TODO: create special color palette for apple terminal
     
     
     

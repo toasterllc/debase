@@ -11,8 +11,8 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class _RevColumn {
 public:
-    _RevColumn(UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
-    _win(win), _rev(rev), _offsetX(offsetX), _width(width), _showMutability(showMutability) {
+    _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
+    _colors(colors), _win(win), _rev(rev), _offsetX(offsetX), _width(width), _showMutability(showMutability) {
         
         if (_rev.ref) {
             _name = _rev.ref.name();
@@ -30,7 +30,7 @@ public:
         int offY = InsetY;
         Git::Commit commit = rev.commit;
         for (int i=0; commit && i<10; i++) {
-            UI::CommitPanel p = MakeShared<UI::CommitPanel>(i, false, width, commit);
+            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
             p->setPosition({_offsetX, offY});
             offY += p->frame().size.y + 1;
             _panels.push_back(p);
@@ -47,7 +47,7 @@ public:
         }
         
         if (_showMutability) {
-            UI::Attr attr(_win, Colors::Error);
+            UI::Attr attr(_win, _colors.error);
             const char immutableText[] = "read-only";
             const int offX = _offsetX + std::max(0, (_width-(int)(std::size(immutableText)-1))/2);
             if (!_rev.isMutable()) {
@@ -71,6 +71,7 @@ public:
     UI::CommitPanelVec& panels() { return _panels; }
     
 private:
+    const ColorPalette& _colors;
     UI::Window _win;
     Git::Rev _rev;
     std::string _name;

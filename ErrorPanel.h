@@ -9,7 +9,8 @@ namespace UI {
 
 class _ErrorPanel : public _Panel, public std::enable_shared_from_this<_ErrorPanel> {
 public:
-    _ErrorPanel(int width, std::string_view title, std::string_view message) : _title(title) {
+    _ErrorPanel(const ColorPalette& colors, int width, std::string_view title, std::string_view message) :
+    _colors(colors), _title(title) {
         _message = LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);
 //        setSize({10, 10});
         setSize({width, (int)_message.size()+2*_MessageInsetY});
@@ -20,7 +21,7 @@ public:
 //        drawRect(<#const Rect &rect#>)
         
         {
-            UI::Attr attr(shared_from_this(), Colors::Error);
+            UI::Attr attr(shared_from_this(), _colors.error);
             drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
 //            drawBorder();
@@ -29,7 +30,7 @@ public:
         }
         
         {
-            UI::Attr attr(shared_from_this(), Colors::Error);
+            UI::Attr attr(shared_from_this(), _colors.error);
             drawText({_MessageInsetX, _MessageInsetY-1}, " %s ", _title.c_str());
         }
         
@@ -52,6 +53,7 @@ private:
     static constexpr int _MessageInsetX = 4;
     static constexpr int _MessageInsetY = 2;
     
+    const ColorPalette& _colors;
     std::string _title;
     std::vector<std::string> _message;
     bool _drawNeeded = false;

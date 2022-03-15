@@ -12,7 +12,8 @@ struct MenuButton {
 class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
     template<size_t T_ButtonCount>
-    _Menu(const MenuButton*(&buttons)[T_ButtonCount]) : _buttons(buttons), _buttonCount(T_ButtonCount) {
+    _Menu(const ColorPalette& colors, const MenuButton*(&buttons)[T_ButtonCount]) :
+    _colors(colors), _buttons(buttons), _buttonCount(T_ButtonCount) {
         static_assert(T_ButtonCount>0, "Must have at least 1 button");
         
         // Find the longest button to set our width
@@ -108,8 +109,8 @@ public:
             
             // Draw button name
             {
-//                UI::Attr attr(shared_from_this(), Colors::Menu);
-                UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? Colors::Menu|A_BOLD : A_NORMAL);
+//                UI::Attr attr(shared_from_this(), _colors.menu);
+                UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? _colors.menu|A_BOLD : A_NORMAL);
                 drawText({BorderSize+InsetX, y}, "%s", _buttons[i]->name.c_str());
             }
             
@@ -121,13 +122,13 @@ public:
             
             // Draw button key
             {
-                UI::Attr attr(shared_from_this(), Colors::SubtitleText);
+                UI::Attr attr(shared_from_this(), _colors.subtitleText);
                 drawText({w-BorderSize-InsetX-(int)_buttons[i]->key.size(), y}, "%s", _buttons[i]->key.c_str());
             }
             
             // Draw separator
             if (i != _buttonCount-1) {
-                UI::Attr attr(shared_from_this(), Colors::Menu);
+                UI::Attr attr(shared_from_this(), _colors.menu);
                 drawLineHoriz({0,y+1}, w);
             }
             
@@ -140,7 +141,7 @@ public:
         
         // Draw border
         {
-            UI::Attr attr(shared_from_this(), Colors::Menu);
+            UI::Attr attr(shared_from_this(), _colors.menu);
             drawBorder();
         }
         
@@ -158,6 +159,7 @@ private:
     static constexpr int InsetX     = 1;
     static constexpr int KeySpacing = 2;
     static constexpr int RowHeight  = 2;
+    const ColorPalette& _colors;
     const MenuButton**const _buttons = nullptr;
     const size_t _buttonCount = 0;
     const MenuButton* _highlightButton = nullptr;
