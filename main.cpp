@@ -1009,7 +1009,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out strategy to handle merge commits
     
-    // Future:
+//  Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
@@ -1018,7 +1018,7 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add column scrolling
     
     
-    // DONE:
+//  DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
 //    
 //    #warning TODO: allow escape key to abort a drag
@@ -1067,155 +1067,6 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
 //
 //    #warning TODO: create special color palette for apple terminal
-    
-    
-    
-    
-//    git_libgit2_init();
-//    git_signature* sig = nullptr;
-//    int ir = git_signature_from_buffer(&sig, "Dave Keck <dave@heytoaster.com> 1000 -0700");
-//    assert(!ir);
-    
-    
-    
-//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-//    Git::Commit later = repo.revLookup("master2").commit;
-//    Git::Commit earlier = repo.revLookup("master2~1").commit;
-//    
-//    Git::Commit res = repo.commitIntegrate(earlier, later);
-//    res.printId();
-//    
-////    git_rebase* rebase = nullptr;
-////    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
-////    Git::Branch newBranch = repo.branchCreate("test", rebaseStart.commit, true);
-////    Git::Rev newBranchRev(newBranch);
-////    int ir = git_rebase_init(&rebase, *repo, *rebaseEnd.annotatedCommit(), *rebaseStart.annotatedCommit(), *newBranchRev.annotatedCommit(), &opts);
-////    assert(!ir);
-////    
-////    
-////    git_rebase_operation& rebase0 = *git_rebase_operation_byindex(rebase, 0);
-////    git_rebase_operation& rebase1 = *git_rebase_operation_byindex(rebase, 1);
-////    git_rebase_operation& rebase2 = *git_rebase_operation_byindex(rebase, 2);
-//////    git_rebase_operation& rebase3 = *git_rebase_operation_byindex(rebase, 3);
-//////    git_rebase_operation& rebase4 = *git_rebase_operation_byindex(rebase, 4);
-////    rebase0.type = GIT_REBASE_OPERATION_PICK;
-////    rebase1.type = GIT_REBASE_OPERATION_SQUASH;
-////    rebase2.type = GIT_REBASE_OPERATION_SQUASH;
-//////    rebase3.type = GIT_REBASE_OPERATION_SQUASH;
-//////    rebase4.type = GIT_REBASE_OPERATION_SQUASH;
-////    
-////    git_rebase_operation* op = nullptr;
-////    git_oid id;
-////    for (;;) {
-////        ir = git_rebase_next(&op, rebase);
-////        if (ir == GIT_ITEROVER) break;
-////        assert(!ir);
-////        Git::Commit commit = repo.commitLookup(op->id);
-////        commit.printId();
-//////        
-//////        if (squash) {
-//////            op->type = GIT_REBASE_OPERATION_SQUASH;
-//////        } else {
-//////            op->type = GIT_REBASE_OPERATION_PICK;
-//////        }
-////        if (op->type == GIT_REBASE_OPERATION_PICK) {
-////            printf("op->id before: %s\n", git_oid_tostr_s(&op->id));
-////            printf("id before: %s\n", git_oid_tostr_s(&id));
-////            ir = git_rebase_commit(
-////                &id,
-////                rebase,
-////                git_commit_author(*commit),
-////                git_commit_committer(*commit),
-////                git_commit_message_encoding(*commit),
-////                git_commit_message(*commit)
-////            );
-////            assert(!ir);
-////            printf("op->id after: %s\n", git_oid_tostr_s(&op->id));
-////            printf("id after: %s\n", git_oid_tostr_s(&id));
-////        }
-////    }
-////    
-////    printf("op->id end: %s\n", git_oid_tostr_s(&op->id));
-////    printf("id end: %s\n", git_oid_tostr_s(&id));
-////    
-////    ir = git_rebase_finish(rebase, nullptr);
-////    assert(!ir);
-//    
-//    return 0;
-    
-//    ir = git_annotated_commit_from_revspec(&ac, *repo, "master");
-//    assert(!ir);
-    
-//    printf("ref: %s\n", git_annotated_commit_ref(ac));
-    
-//    git_rebase* rebase = nullptr;
-//    git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
-//    git_rebase_init(&rebase, *repo, <#const git_annotated_commit *branch#>, <#const git_annotated_commit *upstream#>, nullptr, &opts);
-//    int ir = git_rebase_open(&rebase, *repo, &opts);
-    
-//    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
-//    Git::Commit b;
-//    
-//    return (a==b);
-    
-    
-    
-    
-    
-    
-//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-//    Git::Commit a = repo.commitLookup("a1cd11495f48b04960b930d7b381e56e7e4e645f");
-//    Git::Commit b;
-//    
-//    return (a==b);
-    
-    
-//    git_libgit2_init();
-//    
-//    Git::Repo repo = Git::Repo::Open("/Users/dave/Desktop/HouseStuff");
-//    Git::Ref head = repo.head();
-//    Git::Branch branch = Git::Branch::FromRef(*head);
-//    
-//    if (branch) {
-//        printf("branch != nullptr\n");
-//    }
-//    
-//    git_reference* b = *branch;
-//    printf("b == %p\n", b);
-//    
-//    for (;;);
-    
-    
-//    
-//    {
-//        git_reference* ref = nullptr;
-//        int ir = git_reference_dwim(&ref, *repo, "MyTag~1");
-//        assert(!ir);
-//    }
-    
-//    Git::Ref ref = Git::Ref::Lookup(repo, "PerfComparison2");
-//    Git::Branch branch = Git::Branch::Lookup(repo, "PerfComparison2");
-//    Git::Branch branch2 = Git::Branch::Lookup(repo, "PerfComparison2");
-//    printf("branch==branch2: %d\n", branch==branch2);
-//    printf("ref==branch: %d\n", ref==branch);
-//    printf("ref.isSymbolic(): %d\n", ref.isSymbolic());
-//    printf("ref.isDirect(): %d\n", ref.isDirect());
-//    
-//    git_reference_t t = git_reference_type(ref);
-//    printf("git_reference_type: %d\n", t);
-//    
-//    printf("ref names: %s %s\n", ref.name(), ref.shorthandName());
-//    
-//    const git_oid* id1 = git_reference_target(*branch);
-//    assert(id1);
-//    printf("id1: %s\n", Git::Str(*id1).c_str());
-//    
-//    git_object* obj = nullptr;
-//    int ir = git_reference_peel(&obj, *branch, GIT_OBJECT_COMMIT);
-//    assert(!ir);
-//    
-//    const git_oid* id2 = git_object_id(obj);
-//    printf("id2: %s\n", Git::Str(*id2).c_str());
     
 //    volatile bool a = false;
 //    while (!a);
