@@ -740,6 +740,8 @@ static void _Spawn(const char*const* argv) {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
+    
     #warning TODO: fix: colors aren't restored when exiting
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
