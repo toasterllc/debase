@@ -316,7 +316,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     MEVENT mouse = mouseDownEvent;
     std::optional<_InsertionPosition> ipos;
     bool abort = false;
-    bool dragging = false;
+    bool mouseDragged = false;
     for (;;) {
         assert(!_Selection.commits.empty());
         UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
@@ -324,14 +324,14 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         const UI::Point p = {mouse.x, mouse.y};
         const int w = std::abs(mouseDownEvent.x - p.x);
         const int h = std::abs(mouseDownEvent.y - p.y);
-        // Affordance to cancel drag by moving mouse to the edge
+        // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
         const bool allow = !Empty(Intersection(innerBounds, {p, {1,1}}));
-        dragging |= w>1 || h>1;
+        mouseDragged |= w>1 || h>1;
         
         // Find insertion position
         ipos = _FindInsertionPosition(p);
         
-        if (!_Drag.titlePanel && dragging && allow) {
+        if (!_Drag.titlePanel && mouseDragged && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
             _Drag.titlePanel = MakeShared<UI::CommitPanel>(0, true, titlePanel->frame().size.x, titleCommit);
@@ -405,8 +405,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
     
     std::optional<Git::Op> gitOp;
     if (!abort) {
-        if (_Drag.titlePanel) {
-            assert(ipos);
+        if (_Drag.titlePanel && ipos) {
             Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
             gitOp = Git::Op{
                 .repo = _Repo,
@@ -423,7 +422,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         
         // If this was a mouse-down + mouse-up without dragging in between,
         // set the selection to the commit that was clicked
-        } else if (!dragging) {
+        } else if (!mouseDragged) {
             _Selection.commits = {mouseDownPanel->commit()};
             
             if (_Selection.commits.size() == 1) {
@@ -750,8 +749,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
-    
-    #warning TODO: fix assertion that gets triggered when dragging commit from read-only column
     
     // Future:
     
