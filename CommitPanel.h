@@ -16,7 +16,6 @@ public:
     _CommitPanel(const ColorPalette& colors, bool header, int width, Git::Commit commit) :
     _colors(colors) {
         _commit = commit;
-//        _idx = idx;
         _header = header;
         _id = Git::StringForId(*git_commit_id(*_commit));
         _time = Git::ShortStringForTime(git_commit_author(*_commit)->when.time);
@@ -28,11 +27,6 @@ public:
         setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
         _drawNeeded = true;
     }
-    
-//    void setVisible(bool x) {
-//        _Panel::setVisible(x);
-//        _drawNeeded = true;
-//    }
     
     void setBorderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
@@ -48,8 +42,6 @@ public:
     }
     
     void draw() {
-//        erase();
-        
         const int offY = (_header ? 1 : 0);
         
         int i = 0;
@@ -93,13 +85,6 @@ public:
     }
     
     const Git::Commit commit() const { return _commit; }
-//    const size_t idx() const { return _idx; }
-    
-//    bool operator<(const CommitPanel& x) {
-//        if (_idx != x.idx()) return _idx < x.idx();
-//        // Indices are equal; perform pointer comparison
-//        return _s.get() < x._s.get();
-//    }
     
 private:
     static constexpr size_t _LineCountMax = 2;
@@ -107,7 +92,6 @@ private:
     
     const ColorPalette& _colors;
     Git::Commit _commit;
-//    size_t _idx = 0;
     bool _header = false;
     std::string _headerLabel;
     std::string _id;

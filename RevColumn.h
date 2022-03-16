@@ -41,30 +41,6 @@ public:
             offY += panel->frame().size.y + 1;
             commit = commit.parent();
         }
-//        for (int i=0; commit && i<_PanelCount; commit=commit.parent(), i++) {
-//            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
-//            _panels.push_back(p);
-//        }
-    }
-    
-    void recreate() {
-        const int InsetY = (!_showMutability ? 2 : 3);
-        int offY = InsetY;
-        bool visible = true;
-        for (UI::CommitPanel panel : _panels) {
-            Point p = {_offsetX, offY};
-            visible &= panel->validPosition(p);
-            panel->setVisible(visible);
-//            panel->setVisible(false);
-//            panel->setVisible(true);
-            if (visible) {
-                panel->setPosition(p);
-            }
-//            if (visible) {
-//                panel->setPosition(p);
-//            }
-            offY += panel->frame().size.y + 1;
-        }
     }
     
     void draw() {
@@ -103,7 +79,6 @@ public:
     UI::CommitPanelVec& panels() { return _panels; }
     
 private:
-    static constexpr size_t _PanelCount = 30;
     const ColorPalette& _colors;
     UI::Window _win;
     Git::Rev _rev;
