@@ -59,12 +59,11 @@ struct Config : RefCounted<git_config*, git_config_free> {
     }
 };
 
-struct Commit : RefCounted<git_commit*, git_commit_free> {
-    using RefCounted::RefCounted;
-    const Id& id() const { return *git_commit_id(*get()); }
-    bool operator==(const Commit& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
-    bool operator!=(const Commit& x) const { return !(*this==x); }
-    bool operator<(const Commit& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
+struct Commit : Object {
+    using Object::Object;
+    Commit(const git_commit* x) : Object((git_object*)x) {}
+    const git_commit** get() const { return (const git_commit**)Object::get(); }
+    const git_commit*& operator*() const { return *get(); }
     
 //    operator const git_object**() const { return get(); }
 //    operator const git_commit**() const { return (const git_commit**)get(); }
@@ -76,12 +75,12 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
         return x;
     }
     
-    Object object() const {
-        git_object* x = nullptr;
-        int ir = git_object_dup(&x, (git_object*)*get());
-        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
-        return x;
-    }
+//    Object object() const {
+//        git_object* x = nullptr;
+//        int ir = git_object_dup(&x, (git_object*)*get());
+//        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
+//        return x;
+//    }
     
     Tree tree() const {
         git_tree* x = nullptr;
