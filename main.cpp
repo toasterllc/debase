@@ -83,12 +83,16 @@ static void _Draw() {
     
     // Update panels
     {
-        static bool layout = false;
-        if (!layout) {
-            for (UI::RevColumn col : _Columns) {
-                col->layout();
-            }
-            layout = true;
+//        static bool layout = false;
+//        if (!layout) {
+//            for (UI::RevColumn col : _Columns) {
+//                col->layout();
+//            }
+//            layout = true;
+//        }
+        
+        for (UI::RevColumn col : _Columns) {
+            col->layout();
         }
         
         if (_Drag.titlePanel) {
@@ -219,6 +223,7 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
         
         for (auto it=panels.begin();; it++) {
             UI::CommitPanel panel = (it!=panels.end() ? *it : nullptr);
+//            if (panel && !panel->visible()) continue; // Only consider visible panels
             const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
             const int y = (panel ? panel->frame().point.y : endY);
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);

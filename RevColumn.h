@@ -27,10 +27,9 @@ public:
         
         // Create panels for each commit
         Git::Commit commit = _rev.commit;
-        for (int i=0; commit && i<_PanelCount; i++) {
+        for (int i=0; commit && i<_PanelCount; commit=commit.parent(), i++) {
             UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
             _panels.push_back(p);
-            commit = commit.parent();
         }
     }
     
@@ -42,9 +41,14 @@ public:
             Point p = {_offsetX, offY};
             visible &= panel->validPosition(p);
             panel->setVisible(visible);
+//            panel->setVisible(false);
+//            panel->setVisible(true);
             if (visible) {
                 panel->setPosition(p);
             }
+//            if (visible) {
+//                panel->setPosition(p);
+//            }
             offY += panel->frame().size.y + 1;
         }
     }
