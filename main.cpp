@@ -1035,11 +1035,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: handle window resizing
-    
     #warning TODO: figure out strategy to handle merge commits
-    
-    #warning TODO: optimize drawing (1. currently RevColumn may set commits to visible, but then _Draw may set them to invisible again if they're being dragged)
     
 //  Future:
     
@@ -1105,6 +1101,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: don't allow double-click/return key on commits in read-only columns
 //
 //    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
+//
+//    #warning TODO: handle window resizing
     
 //    volatile bool a = false;
 //    while (!a);
