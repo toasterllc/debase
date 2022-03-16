@@ -1077,6 +1077,16 @@ int main(int argc, const char* argv[]) {
     for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
     _GitInit(revNames);
     
+//    Git::Tag MyTag1 = _Repo.tagLookup("MyTag");
+//    auto ann1 = MyTag1.annotation();
+//    if (ann1) printf("[ann1] %s <%s>: %s\n", ann1.author().name().c_str(), ann1.author().email().c_str(), ann1.message().c_str());
+//    
+//    Git::Tag MyTag2 = _Repo.tagLookup("MyTagAnn");
+//    auto ann2 = MyTag2.annotation();
+//    if (ann2) printf("[ann2] %s <%s>: %s\n", ann2.author().name().c_str(), ann2.author().email().c_str(), ann2.message().c_str());
+//    
+//    return 0;
+    
     _CursesInit();
     _EventLoop();
     _CursesDeinit();

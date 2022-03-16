@@ -31,6 +31,9 @@ struct Signature : RefCounted<git_signature*, git_signature_free> {
         if (ir) throw RuntimeError("git_signature_new failed: %s", git_error_last()->message);
         return x;
     }
+    
+    std::string name() { return (*get())->name; }
+    std::string email() { return (*get())->email; }
 };
 
 static void _BufDelete(git_buf& buf) { git_buf_dispose(&buf); }
@@ -102,9 +105,9 @@ struct Commit : Object {
     }
 };
 
-struct Tag : Object {
+struct TagAnnotation : Object {
     using Object::Object;
-    Tag(const git_tag* x) : Object((git_object*)x) {}
+    TagAnnotation(const git_tag* x) : Object((git_object*)x) {}
     const git_tag** get() const { return (const git_tag**)Object::get(); }
     const git_tag*& operator*() const { return *get(); }
     
@@ -174,12 +177,12 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return x;
     }
     
-    Tag tag() const {
-        git_tag* x = nullptr;
-        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TAG);
-        if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
-        return x;
-    }
+//    Tag tag() const {
+//        git_tag* x = nullptr;
+//        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TAG);
+//        if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
+//        return x;
+//    }
     
     Tree tree() const {
         git_tree* x = nullptr;
@@ -213,8 +216,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
 //    }
 //};
 
-
-
 struct Branch : Ref {
     using Ref::Ref;
     
@@ -246,6 +247,26 @@ struct Branch : Ref {
     void upstreamSet(Branch upstream) {
         int ir = git_branch_set_upstream(*get(), git_reference_shorthand(*upstream));
         if (ir) throw RuntimeError("git_branch_upstream_name failed: %s", git_error_last()->message);
+    }
+};
+
+struct Tag : Ref {
+    using Ref::Ref;
+    
+    static Tag FromRef(Ref ref) {
+        if (!ref.isTag()) throw RuntimeError("ref isn't a tag");
+        git_reference* x = nullptr;
+        int ir = git_reference_dup(&x, *ref);
+        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    TagAnnotation annotation() const {
+        git_tag* x = nullptr;
+        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TAG);
+        // Allow failures, since we use this method to determine whether the tag is an annotated tag or not
+        if (!ir) return x;
+        return nullptr;
     }
 };
 
@@ -428,8 +449,8 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             return branchReplace(Branch::FromRef(ref), commit);
         
         } else if (ref.isTag()) {
-            tagReplace(ref.tag(), commit);
-            return refReload(ref);
+            return tagReplace(Tag::FromRef(ref), commit);
+//            return refReload(ref);
 //            return tagReplace(ref.tag(), commit);
         
         } else {
@@ -450,8 +471,14 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     }
     
     Tag tagReplace(Tag tag, Commit commit) const {
-        return tagCreate(tag.name(), commit, tag.author(), tag.message(), true);
-        
+        if (TagAnnotation ann = tag.annotation()) {
+            return tagCreateAnnotated(tag.name(), commit, ann.author(), ann.message(), true);
+        }
+        return tagCreate(tag.name(), commit, true);
+//        } else {
+//            return tagCreate(tag.name(), commit, true);
+//        }
+//        
 //    Tag tagCreate(std::string_view name, Commit commit, Signature author, std::string_view message, bool force=false) const {
 //        return tagCreate(tag.fullName(), commit, tag.author(), tag.message(), true);
 //        git_tag_create(<#git_oid *oid#>, <#git_repository *repo#>, <#const char *tag_name#>, <#const git_object *target#>, <#const git_signature *tagger#>, <#const char *message#>, <#int force#>)
@@ -517,24 +544,22 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    Tag tagCreate(std::string_view name, Commit commit, Signature author, std::string_view message, bool force=false) const {
+    Tag tagLookup(std::string_view name) const {
+        return Tag::FromRef(refLookup(name));
+    }
+    
+    Tag tagCreate(std::string_view name, Commit commit, bool force=false) const {
+        git_oid id;
+        int ir = git_tag_create_lightweight(&id, *get(), name.data(), *(Object)commit, force);
+        if (ir) throw RuntimeError("git_tag_create failed: %s", git_error_last()->message);
+        return tagLookup(name);
+    }
+    
+    Tag tagCreateAnnotated(std::string_view name, Commit commit, Signature author, std::string_view message, bool force=false) const {
         git_oid id;
         int ir = git_tag_create(&id, *get(), name.data(), *((Object)commit), *author, message.data(), force);
         if (ir) throw RuntimeError("git_tag_create failed: %s", git_error_last()->message);
-        abort();
-        return nullptr;
-        
-//        return Tag::FromRef(<#Ref ref#>)
-//        
-//        return nullptr;
-//        git_oid id;
-//        git_tag_create(&id, *get(), name, <#const git_object *target#>, <#const git_signature *tagger#>, <#const char *message#>, <#int force#>)
-//    
-//        git_reference* x = nullptr;
-//        git_tag_create_lightweight(<#git_oid *oid#>, <#git_repository *repo#>, <#const char *tag_name#>, <#const git_object *target#>, <#int force#>)
-//        int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
-//        if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
-//        return x;
+        return tagLookup(name);
     }
     
     Config config() const {
