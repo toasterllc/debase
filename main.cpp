@@ -297,7 +297,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         mouseDownPanelFrame.point.y-mouseDownEvent.y,
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
-    const UI::Rect innerBounds = Inset(_RootWindow->bounds(), {1,1});
+    const UI::Rect innerBounds = Inset(_RootWindow->bounds(), {2,2});
     const auto doubleClickStatePrev = _DoubleClickState;
     _DoubleClickState = {};
     
@@ -1032,8 +1032,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out strategy to handle merge commits
     
-    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
-    
 //  Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
@@ -1096,6 +1094,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: handle rewriting tags
 //
 //    #warning TODO: don't allow double-click/return key on commits in read-only columns
+//
+//    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
     
 //    volatile bool a = false;
 //    while (!a);
