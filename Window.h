@@ -8,6 +8,9 @@ struct Vector {
     int x = 0;
     int y = 0;
     
+    bool operator==(const Vector& v) const { return x==v.x && y==v.y; }
+    bool operator!=(const Vector& v) const { return !(*this == v); }
+    
     Vector operator+(const Vector& v) const { return {x+v.x, y+v.y}; }
     template <typename T> Vector operator+(const T& t) const { return {x+t, y+t}; }
     

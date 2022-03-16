@@ -20,21 +20,28 @@ public:
             _name = Git::StringForId(_rev.commit.id());
         }
         
-        bool isHead = repo.head().commit() == rev.commit;
+        bool isHead = repo.head().commit() == _rev.commit;
         if (_name!="HEAD" && isHead) {
             _name = _name + " (HEAD)";
         }
         
         // Create panels for each commit
+        Git::Commit commit = _rev.commit;
+        for (int i=0; commit && i<_PanelCount; i++) {
+            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
+            _panels.push_back(p);
+        }
+    }
+    
+    void layout() {
         const int InsetY = (!_showMutability ? 2 : 3);
         int offY = InsetY;
-        Git::Commit commit = rev.commit;
-        for (int i=0; commit && i<10; i++) {
-            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
+        bool visible = true;
+        for (UI::CommitPanel p : _panels) {
+            visible = visible && 1;
             p->setPosition({_offsetX, offY});
+            p->setVisible(visible);
             offY += p->frame().size.y + 1;
-            _panels.push_back(p);
-            commit = commit.parent();
         }
     }
     
@@ -71,6 +78,7 @@ public:
     UI::CommitPanelVec& panels() { return _panels; }
     
 private:
+    static constexpr size_t _PanelCount = 30;
     const ColorPalette& _colors;
     UI::Window _win;
     Git::Rev _rev;

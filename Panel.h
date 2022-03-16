@@ -17,7 +17,9 @@ public:
     }
     
     void setPosition(const Point& p) {
+        if (_pos == p) return;
         ::move_panel(*this, p.y, p.x);
+        _pos = p;
     }
     
     bool visible() const {
@@ -43,6 +45,7 @@ public:
     
 private:
     PANEL* _panel = nullptr;
+    Point _pos;
     bool _visible = true;
 };
 

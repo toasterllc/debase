@@ -980,7 +980,7 @@ static void _EventLoop() {
         }
         
         case UI::Event::WindowResize: {
-            throw std::runtime_error("window resize");
+//            throw std::runtime_error("window resize");
             break;
         }
         
