@@ -68,22 +68,12 @@ struct Commit : Object {
     const git_commit** get() const { return (const git_commit**)Object::get(); }
     const git_commit*& operator*() const { return *get(); }
     
-//    operator const git_object**() const { return get(); }
-//    operator const git_commit**() const { return (const git_commit**)get(); }
-    
     static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
         int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
         if (ir) throw RuntimeError("git_object_peel failed: %s", git_error_last()->message);
         return x;
     }
-    
-//    Object object() const {
-//        git_object* x = nullptr;
-//        int ir = git_object_dup(&x, (git_object*)*get());
-//        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
-//        return x;
-//    }
     
     Tree tree() const {
         git_tree* x = nullptr;
@@ -127,25 +117,6 @@ struct TagAnnotation : Object {
     std::string message() const {
         return git_tag_message(*get());
     }
-    
-//    static Tag FromRef(Ref ref) {
-//        if (!ref.isTag()) return nullptr;
-//        git_reference_target_peel(<#const git_reference *ref#>)
-//        
-//        git_tag_lookup(<#git_tag **out#>, <#git_repository *repo#>, <#const git_oid *id#>)
-//        
-//        git_reference* x = nullptr;
-//        int ir = git_reference_dup(&x, *ref);
-//        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
-//        return x;
-//    }
-//    
-//    static Commit FromObject(Object obj) {
-//        git_commit* x = nullptr;
-//        int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
-//        if (ir) throw RuntimeError("git_object_peel failed: %s", git_error_last()->message);
-//        return x;
-//    }
 };
 
 struct Ref : RefCounted<git_reference*, git_reference_free> {
@@ -177,13 +148,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return x;
     }
     
-//    Tag tag() const {
-//        git_tag* x = nullptr;
-//        int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TAG);
-//        if (ir) throw RuntimeError("git_reference_peel failed: %s", git_error_last()->message);
-//        return x;
-//    }
-    
     Tree tree() const {
         git_tree* x = nullptr;
         int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TREE);
@@ -191,30 +155,6 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return x;
     }
 };
-
-//struct Tag : RefCounted<git_tag*, git_tag_free> {
-//    using RefCounted::RefCounted;
-//    const Id& id() const { return *git_object_id(*get()); }
-//    bool operator==(const Object& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
-//    bool operator!=(const Object& x) const { return !(*this==x); }
-//    bool operator<(const Object& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
-//    
-//    const char* name() const {
-//        return git_tag_name(*get());
-//    }
-//};
-
-//struct Tag : Ref {
-//    using Ref::Ref;
-//    
-//    static Tag FromRef(Ref ref) {
-//        if (!ref.isTag()) return nullptr;
-//        git_reference* x = nullptr;
-//        int ir = git_reference_dup(&x, *ref);
-//        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
-//        return x;
-//    }
-//};
 
 struct Branch : Ref {
     using Ref::Ref;
@@ -475,22 +415,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
             return tagCreateAnnotated(tag.name(), commit, ann.author(), ann.message(), true);
         }
         return tagCreate(tag.name(), commit, true);
-//        } else {
-//            return tagCreate(tag.name(), commit, true);
-//        }
-//        
-//    Tag tagCreate(std::string_view name, Commit commit, Signature author, std::string_view message, bool force=false) const {
-//        return tagCreate(tag.fullName(), commit, tag.author(), tag.message(), true);
-//        git_tag_create(<#git_oid *oid#>, <#git_repository *repo#>, <#const char *tag_name#>, <#const git_object *target#>, <#const git_signature *tagger#>, <#const char *message#>, <#int force#>)
-//        Branch upstream = branch.upstream();
-//        Branch newBranch = branchCreate(branch.name(), commit, true);
-//        Branch newBranchUpstream = newBranch.upstream();
-//        
-//        if (upstream && !newBranchUpstream) {
-//            newBranch.upstreamSet(upstream);
-//        }
-//        
-//        return newBranch;
     }
     
     Ref refLookup(std::string_view name) const {
