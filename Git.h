@@ -66,10 +66,20 @@ struct Commit : RefCounted<git_commit*, git_commit_free> {
     bool operator!=(const Commit& x) const { return !(*this==x); }
     bool operator<(const Commit& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
     
+//    operator const git_object**() const { return get(); }
+//    operator const git_commit**() const { return (const git_commit**)get(); }
+    
     static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
         int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
         if (ir) throw RuntimeError("git_object_peel failed: %s", git_error_last()->message);
+        return x;
+    }
+    
+    Object object() const {
+        git_object* x = nullptr;
+        int ir = git_object_dup(&x, (git_object*)*get());
+        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
         return x;
     }
     
@@ -130,23 +140,29 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     }
 };
 
-//struct AnnotatedCommit : RefCounted<git_annotated_commit*, git_annotated_commit_free> {
+//struct Tag : RefCounted<git_tag*, git_tag_free> {
 //    using RefCounted::RefCounted;
+//    const Id& id() const { return *git_object_id(*get()); }
+//    bool operator==(const Object& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
+//    bool operator!=(const Object& x) const { return !(*this==x); }
+//    bool operator<(const Object& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
 //    
-//    static AnnotatedCommit FromCommit(Commit commit) {
-//        git_annotated_commit* x = nullptr;
-//        int ir = git_annotated_commit_lookup(&x, git_commit_owner(*commit), &commit.id());
-//        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
-//        return x;
-//    }
-//    
-//    static AnnotatedCommit FromRef(Ref ref) {
-//        git_annotated_commit* x = nullptr;
-//        int ir = git_annotated_commit_from_ref(&x, git_reference_owner(*ref), *ref);
-//        if (ir) throw RuntimeError("git_annotated_commit_from_ref failed: %s", git_error_last()->message);
-//        return x;
+//    const char* name() const {
+//        return git_tag_name(*get());
 //    }
 //};
+
+struct Tag : Ref {
+    using Ref::Ref;
+    
+    static Tag FromRef(Ref ref) {
+        if (!ref.isTag()) return nullptr;
+        git_reference* x = nullptr;
+        int ir = git_reference_dup(&x, *ref);
+        if (ir) throw RuntimeError("git_reference_dup failed: %s", git_error_last()->message);
+        return x;
+    }
+};
 
 struct Branch : Ref {
     using Ref::Ref;
@@ -195,11 +211,6 @@ public:
         commit = ref.commit();
         assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
     }
-    
-//    AnnotatedCommit annotatedCommit() const {
-//        if (ref) return AnnotatedCommit::FromRef(ref);
-//        return AnnotatedCommit::FromCommit(commit);
-//    }
     
     operator bool() const { return (bool)commit; }
     
@@ -365,7 +376,8 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         if (Branch branch = Branch::FromRef(ref)) {
             return branchReplace(branch, commit);
         
-        } else if (false) {
+        } else if (Tag tag = Tag::FromRef(ref)) {
+            return tagReplace(tag, commit);
         
         } else {
             throw RuntimeError("unknown ref type");
@@ -382,6 +394,20 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         }
         
         return newBranch;
+    }
+    
+    Tag tagReplace(Tag tag, Commit commit) const {
+        return tag;
+//        git_tag_create(<#git_oid *oid#>, <#git_repository *repo#>, <#const char *tag_name#>, <#const git_object *target#>, <#const git_signature *tagger#>, <#const char *message#>, <#int force#>)
+//        Branch upstream = branch.upstream();
+//        Branch newBranch = branchCreate(branch.name(), commit, true);
+//        Branch newBranchUpstream = newBranch.upstream();
+//        
+//        if (upstream && !newBranchUpstream) {
+//            newBranch.upstreamSet(upstream);
+//        }
+//        
+//        return newBranch;
     }
     
     Ref refLookup(std::string_view name) const {
@@ -421,27 +447,6 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return Rev(Commit::FromObject(obj));
     }
     
-//    AnnotatedCommit annotatedCommitForRef(const Id& id) const {
-//        git_annotated_commit* x = nullptr;
-//        int ir = git_annotated_commit_lookup(&x, *get(), &id);
-//        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
-//        return x;
-//    }
-    
-//    AnnotatedCommit annotatedCommitLookup(const Id& id) const {
-//        git_annotated_commit* x = nullptr;
-//        int ir = git_annotated_commit_lookup(&x, *get(), &id);
-//        if (ir) throw RuntimeError("git_commit_lookup failed: %s", git_error_last()->message);
-//        return x;
-//    }
-//    
-//    AnnotatedCommit annotatedCommitLookup(std::string_view idStr) const {
-//        Id id;
-//        int ir = git_oid_fromstr(&id, idStr.data());
-//        if (ir) throw RuntimeError("git_oid_fromstr failed: %s", git_error_last()->message);
-//        return annotatedCommitLookup(id);
-//    }
-    
     Branch branchLookup(std::string_view name) const {
         git_reference* x = nullptr;
         int ir = git_branch_lookup(&x, *get(), name.data(), GIT_BRANCH_LOCAL);
@@ -454,6 +459,18 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
         if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
         return x;
+    }
+    
+    Tag tagCreate(std::string_view name, Commit commit, bool force=false) const {
+        return nullptr;
+//        git_oid id;
+//        git_tag_create(&id, *get(), name, <#const git_object *target#>, <#const git_signature *tagger#>, <#const char *message#>, <#int force#>)
+//    
+//        git_reference* x = nullptr;
+//        git_tag_create_lightweight(<#git_oid *oid#>, <#git_repository *repo#>, <#const char *tag_name#>, <#const git_object *target#>, <#int force#>)
+//        int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
+//        if (ir) throw RuntimeError("git_branch_create failed: %s", git_error_last()->message);
+//        return x;
     }
     
     Config config() const {
