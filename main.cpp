@@ -81,8 +81,16 @@ static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
 static void _Draw() {
     const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selectionMove);
     
-    // Update selection colors
+    // Update panels
     {
+        static bool layout = false;
+        if (!layout) {
+            for (UI::RevColumn col : _Columns) {
+                col->layout();
+            }
+            layout = true;
+        }
+        
         if (_Drag.titlePanel) {
             _Drag.titlePanel->setBorderColor(selectionColor);
             
@@ -96,6 +104,10 @@ static void _Draw() {
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
                 bool visible = false;
+                // Ignore panels that aren't visible because they're
+                // offscreen (set via col->layout() above)
+                if (!panel->visible()) continue;
+                
                 std::optional<UI::Color> borderColor;
                 _SelectState selectState = _SelectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
@@ -1031,6 +1043,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: handle window resizing
     
     #warning TODO: figure out strategy to handle merge commits
+    
+    #warning TODO: optimize drawing (1. currently RevColumn may set commits to visible, but then _Draw may set them to invisible again if they're being dragged)
     
 //  Future:
     

@@ -29,6 +29,11 @@ public:
         _drawNeeded = true;
     }
     
+//    void setVisible(bool x) {
+//        _Panel::setVisible(x);
+//        _drawNeeded = true;
+//    }
+    
     void setBorderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;

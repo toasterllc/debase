@@ -30,6 +30,7 @@ public:
         for (int i=0; commit && i<_PanelCount; i++) {
             UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
             _panels.push_back(p);
+            commit = commit.parent();
         }
     }
     
@@ -37,11 +38,14 @@ public:
         const int InsetY = (!_showMutability ? 2 : 3);
         int offY = InsetY;
         bool visible = true;
-        for (UI::CommitPanel p : _panels) {
-            visible = visible && 1;
-            p->setPosition({_offsetX, offY});
-            p->setVisible(visible);
-            offY += p->frame().size.y + 1;
+        for (UI::CommitPanel panel : _panels) {
+            Point p = {_offsetX, offY};
+            visible &= panel->validPosition(p);
+            panel->setVisible(visible);
+            if (visible) {
+                panel->setPosition(p);
+            }
+            offY += panel->frame().size.y + 1;
         }
     }
     

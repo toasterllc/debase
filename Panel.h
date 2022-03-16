@@ -16,10 +16,25 @@ public:
         _panel = nullptr;
     }
     
+    std::optional<Point> adjustedPosition(const Point& p) const {
+        int x = p.x;
+        int y = p.y;
+        int ir = ::mvwinadjpos(*this, y, x, &y, &x);
+        if (ir != OK) return std::nullopt;
+        return Point{x,y};
+    }
+    
+    bool validPosition(const Point& p) const {
+        std::optional<Point> pa = adjustedPosition(p);
+        if (!pa) return false;
+        return p == *pa;
+    }
+    
     void setPosition(const Point& p) {
-        if (_pos == p) return;
-        ::move_panel(*this, p.y, p.x);
-        _pos = p;
+        std::optional<Point> pa = adjustedPosition(p);
+        if (!pa || _pos==*pa) return;
+        ::move_panel(*this, pa->y, pa->x);
+        _pos = *pa;
     }
     
     bool visible() const {
