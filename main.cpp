@@ -426,30 +426,39 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         // If this was a mouse-down + mouse-up without dragging in between,
         // set the selection to the commit that was clicked
         } else if (!mouseDragged) {
-            _Selection.commits = {mouseDownPanel->commit()};
+            _Selection = {
+                .rev = mouseDownColumn->rev(),
+                .commits = {mouseDownPanel->commit()},
+            };
             
-            if (_Selection.commits.size() == 1) {
-                auto currentTime = std::chrono::steady_clock::now();
-                Git::Commit commit = *_Selection.commits.begin();
-                if (doubleClickStatePrev.commit && doubleClickStatePrev.commit==commit) {
-                    auto duration = currentTime-doubleClickStatePrev.mouseUpTime;
-                    if (duration < _DoubleClickThresh) {
-                        gitOp = {
-                            .repo = _Repo,
-                            .type = Git::Op::Type::Edit,
-                            .src = {
-                                .rev = _Selection.rev,
-                                .commits = _Selection.commits,
-                            },
-                        };
-                    }
-                }
+            auto currentTime = std::chrono::steady_clock::now();
+            Git::Commit commit = *_Selection.commits.begin();
+            const bool doubleClicked =
+                doubleClickStatePrev.commit &&
+                doubleClickStatePrev.commit==commit &&
+                currentTime-doubleClickStatePrev.mouseUpTime < _DoubleClickThresh;
+            const bool validTarget = _Selection.rev.isMutable();
+            
+            if (doubleClicked) {
+                if (validTarget) {
+                    gitOp = {
+                        .repo = _Repo,
+                        .type = Git::Op::Type::Edit,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
                 
-                _DoubleClickState = {
-                    .commit = *_Selection.commits.begin(),
-                    .mouseUpTime = currentTime,
-                };
+                } else {
+                    beep();
+                }
             }
+            
+            _DoubleClickState = {
+                .commit = *_Selection.commits.begin(),
+                .mouseUpTime = currentTime,
+            };
         }
     }
     
@@ -537,6 +546,11 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             .rev = mouseDownColumn->rev(),
             .commits = {mouseDownPanel->commit()},
         };
+    }
+    
+    if (!_Selection.rev.isMutable()) {
+        // No beep() because it feels too aggressive to beep in this case
+        return std::nullopt;
     }
     
     static UI::MenuButton CombineButton = {"Combine", "c"};
@@ -915,44 +929,53 @@ static void _EventLoop() {
         
         case UI::Event::KeyDelete:
         case UI::Event::KeyFnDelete: {
-            if (!_Selection.commits.empty()) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Delete,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
+            if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
+                beep();
+                continue;
             }
+            
+            gitOp = {
+                .repo = _Repo,
+                .type = Git::Op::Type::Delete,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
             break;
         }
         
         case UI::Event::KeyC: {
-            if (_Selection.commits.size() > 1) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Combine,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
+            if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
+                beep();
+                continue;
             }
+            
+            gitOp = {
+                .repo = _Repo,
+                .type = Git::Op::Type::Combine,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
             break;
         }
         
         case UI::Event::KeyReturn: {
-            if (_Selection.commits.size() == 1) {
-                gitOp = {
-                    .repo = _Repo,
-                    .type = Git::Op::Type::Edit,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
+            if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
+                beep();
+                continue;
             }
+            
+            gitOp = {
+                .repo = _Repo,
+                .type = Git::Op::Type::Edit,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
             break;
         }
         
@@ -1001,11 +1024,15 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
+    #warning TODO: if we can't speed up git operations, show a progress indicator
+    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: handle window resizing
     
     #warning TODO: figure out strategy to handle merge commits
+    
+    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
     
 //  Future:
     
@@ -1067,6 +1094,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: create special color palette for apple terminal
 //    
 //    #warning TODO: handle rewriting tags
+//
+//    #warning TODO: don't allow double-click/return key on commits in read-only columns
     
 //    volatile bool a = false;
 //    while (!a);
