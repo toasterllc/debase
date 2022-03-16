@@ -35,7 +35,9 @@ public:
         while (commit) {
             Point p = {_offsetX, offY};
             UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_colors, false, width, commit);
-            if (!panel->validPosition(p)) break;
+            UI::Rect frame = {p, panel->frame().size};
+            // Check if any part of the window would be offscreen
+            if (Intersection(_win->bounds(), frame) != frame) break;
             panel->setPosition(p);
             _panels.push_back(panel);
             offY += panel->frame().size.y + 1;

@@ -726,7 +726,6 @@ extern NCURSES_EXPORT(int) mvwgetnstr (WINDOW *, int, int, char *, int);	/* gene
 extern NCURSES_EXPORT(int) mvwgetstr (WINDOW *, int, int, char *);	/* generated */
 extern NCURSES_EXPORT(int) mvwhline (WINDOW *, int, int, chtype, int);	/* generated */
 extern NCURSES_EXPORT(int) mvwin (WINDOW *,int,int);			/* implemented */
-extern NCURSES_EXPORT(int) mvwinadjpos (WINDOW *,int,int,int*,int*);	/* implemented */
 extern NCURSES_EXPORT(chtype) mvwinch (WINDOW *, int, int);			/* generated */
 extern NCURSES_EXPORT(int) mvwinchnstr (WINDOW *, int, int, chtype *, int);	/* generated */
 extern NCURSES_EXPORT(int) mvwinchstr (WINDOW *, int, int, chtype *);		/* generated */

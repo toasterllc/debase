@@ -30,6 +30,9 @@ using Size = Vector;
 struct Rect {
     Point point;
     Size size;
+    
+    bool operator==(const Rect& x) const { return point==x.point && size==x.size; }
+    bool operator!=(const Rect& x) const { return !(*this == x); }
 };
 
 enum class Event : int {
