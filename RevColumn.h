@@ -25,6 +25,9 @@ public:
             _name = _name + " (HEAD)";
         }
         
+        // Truncate the name to our width
+        _name.erase(std::min(_name.size(), (size_t)_width));
+        
         // Create panels for each commit
         const int InsetY = (!_showMutability ? 2 : 3);
         int offY = InsetY;
@@ -65,10 +68,13 @@ public:
     }
     
     void draw() {
+        // Don't draw anything if we don't have any panels
+        if (_panels.empty()) return;
+        
         // Draw branch name
         {
             UI::Attr attr(_win, A_UNDERLINE);
-            const int offX = _offsetX + std::max(0, (_width-(int)_name.size())/2);
+            const int offX = _offsetX + (_width-(int)_name.size())/2;
             _win->drawText({offX, 0}, "%s", _name.c_str());
         }
         

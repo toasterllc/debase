@@ -213,6 +213,8 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     std::optional<int> leastDistance;
     for (UI::RevColumn col : _Columns) {
         UI::CommitPanelVec& panels = col->panels();
+        // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
+        if (panels.empty()) continue;
         const UI::Rect lastFrame = panels.back()->frame();
         const int midX = lastFrame.point.x + lastFrame.size.x/2;
         const int endY = lastFrame.point.y + lastFrame.size.y;
@@ -696,10 +698,6 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     }
 }
 
-static void _RecreateColumns() {
-    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
-}
-
 struct _SavedColor {
     short r = 0;
     short g = 0;
@@ -899,9 +897,14 @@ static void _Spawn(const char*const* argv) {
 
 static void _EventLoop() {
     _RootWindow = MakeShared<UI::Window>(::stdscr);
-    _RecreateColumns();
     
+    bool recreateCols = true;
     for (;;) {
+        if (recreateCols) {
+            _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+            recreateCols = false;
+        }
+        
         _Draw();
         UI::Event ev = _RootWindow->nextEvent();
         std::optional<Git::Op> gitOp;
@@ -997,7 +1000,7 @@ static void _EventLoop() {
         }
         
         case UI::Event::WindowResize: {
-            _RecreateColumns();
+            recreateCols = true;
             break;
         }
         
@@ -1016,7 +1019,7 @@ static void _EventLoop() {
                 
                 // Reload the UI
                 _ReloadRevs(_Repo, _Revs);
-                _RecreateColumns();
+                recreateCols = true;
                 
                 // Update the selection
                 _Selection = {
