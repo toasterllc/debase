@@ -26,14 +26,25 @@ public:
         }
         
         // Create panels for each commit
+        const int InsetY = (!_showMutability ? 2 : 3);
+        int offY = InsetY;
         Git::Commit commit = _rev.commit;
-        for (int i=0; commit && i<_PanelCount; commit=commit.parent(), i++) {
-            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
-            _panels.push_back(p);
+        while (commit) {
+            Point p = {_offsetX, offY};
+            UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_colors, false, width, commit);
+            if (!panel->validPosition(p)) break;
+            panel->setPosition(p);
+            _panels.push_back(panel);
+            offY += panel->frame().size.y + 1;
+            commit = commit.parent();
         }
+//        for (int i=0; commit && i<_PanelCount; commit=commit.parent(), i++) {
+//            UI::CommitPanel p = MakeShared<UI::CommitPanel>(_colors, i, false, width, commit);
+//            _panels.push_back(p);
+//        }
     }
     
-    void layout() {
+    void recreate() {
         const int InsetY = (!_showMutability ? 2 : 3);
         int offY = InsetY;
         bool visible = true;

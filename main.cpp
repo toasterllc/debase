@@ -91,9 +91,9 @@ static void _Draw() {
 //            layout = true;
 //        }
         
-        for (UI::RevColumn col : _Columns) {
-            col->layout();
-        }
+//        for (UI::RevColumn col : _Columns) {
+//            col->layout();
+//        }
         
         if (_Drag.titlePanel) {
             _Drag.titlePanel->setBorderColor(selectionColor);
@@ -108,10 +108,6 @@ static void _Draw() {
         for (UI::RevColumn col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
                 bool visible = false;
-                // Ignore panels that aren't visible because they're
-                // offscreen (set via col->layout() above)
-                if (!panel->visible()) continue;
-                
                 std::optional<UI::Color> borderColor;
                 _SelectState selectState = _SelectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
@@ -354,7 +350,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (!_Drag.titlePanel && mouseDragged && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanel>(_Colors, 0, true, titlePanel->frame().size.x, titleCommit);
+            _Drag.titlePanel = MakeShared<UI::CommitPanel>(_Colors, true, titlePanel->frame().size.x, titleCommit);
             
             // Create shadow panels
             UI::Size shadowSize = _Drag.titlePanel->frame().size;
@@ -700,6 +696,10 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     }
 }
 
+static void _RecreateColumns() {
+    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+}
+
 struct _SavedColor {
     short r = 0;
     short g = 0;
@@ -899,7 +899,7 @@ static void _Spawn(const char*const* argv) {
 
 static void _EventLoop() {
     _RootWindow = MakeShared<UI::Window>(::stdscr);
-    _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+    _RecreateColumns();
     
     for (;;) {
         _Draw();
@@ -997,7 +997,7 @@ static void _EventLoop() {
         }
         
         case UI::Event::WindowResize: {
-//            throw std::runtime_error("window resize");
+            _RecreateColumns();
             break;
         }
         
@@ -1016,7 +1016,7 @@ static void _EventLoop() {
                 
                 // Reload the UI
                 _ReloadRevs(_Repo, _Revs);
-                _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+                _RecreateColumns();
                 
                 // Update the selection
                 _Selection = {

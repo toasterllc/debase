@@ -13,10 +13,10 @@ namespace UI {
 // its containing branch, where the top/first CommitPanel is index 0
 class _CommitPanel : public _Panel, public std::enable_shared_from_this<_CommitPanel> {
 public:
-    _CommitPanel(const ColorPalette& colors, size_t idx, bool header, int width, Git::Commit commit) :
+    _CommitPanel(const ColorPalette& colors, bool header, int width, Git::Commit commit) :
     _colors(colors) {
         _commit = commit;
-        _idx = idx;
+//        _idx = idx;
         _header = header;
         _id = Git::StringForId(*git_commit_id(*_commit));
         _time = Git::ShortStringForTime(git_commit_author(*_commit)->when.time);
@@ -93,7 +93,7 @@ public:
     }
     
     const Git::Commit commit() const { return _commit; }
-    const size_t idx() const { return _idx; }
+//    const size_t idx() const { return _idx; }
     
 //    bool operator<(const CommitPanel& x) {
 //        if (_idx != x.idx()) return _idx < x.idx();
@@ -107,7 +107,7 @@ private:
     
     const ColorPalette& _colors;
     Git::Commit _commit;
-    size_t _idx = 0;
+//    size_t _idx = 0;
     bool _header = false;
     std::string _headerLabel;
     std::string _id;
