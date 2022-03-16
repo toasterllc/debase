@@ -997,8 +997,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
     
-    #warning TODO: handle rewriting tags
-    
     #warning TODO: handle merge conflicts
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
@@ -1067,6 +1065,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
 //
 //    #warning TODO: create special color palette for apple terminal
+//    
+//    #warning TODO: handle rewriting tags
     
 //    volatile bool a = false;
 //    while (!a);
