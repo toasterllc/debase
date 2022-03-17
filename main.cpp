@@ -1023,6 +1023,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: properly handle moving/copying merge commits
+    
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
@@ -1035,9 +1037,9 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: properly handle moving/copying merge commits
-    
-    #warning TODO: make sure repo isn't modified when no changes are made to commit message
+    #warning TODO: no-op guarantee:
+    #warning TODO:   same commit message -> no repo changes
+    #warning TODO:   dragging commits to their current location -> no repo changes
     
     #warning TODO: ensure that dragging commits to their current location is a no-op
     
