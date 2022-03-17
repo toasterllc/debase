@@ -1,5 +1,4 @@
 #pragma once
-#include "lib/ncurses/include/panel.h"
 #include "Window.h"
 
 namespace UI {

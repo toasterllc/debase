@@ -54,6 +54,224 @@ public:
             UI::Attr attr;
             if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
             drawBorder();
+            
+            if (_commit.isMerge()) {
+                UI::Rect rect = bounds();
+//                UI::Attr attr(shared_from_this(), _colors.subtitleText);
+                mvwprintw(*this, rect.ymax(), rect.xmax()-1, "𝝠");
+            }
+            
+////            UI::Rect rect = bounds();
+//            
+////            mvwprintw(*this, rect.ymax(), rect.xmax(), "m");
+////            mvwprintw(*this, rect.ymax(), rect.xmax()-2, "m");
+//            
+//            
+////            UI::Rect rect = bounds();
+////            mvwaddch(*this, rect.size.y-1, rect.size.x/2, ACS_TTEE);
+//            
+//            
+//            
+//            {
+//                UI::Rect rect = bounds();
+//                const int x1 = rect.point.x;
+//                const int y1 = rect.point.y;
+//                const int x2 = rect.point.x+rect.size.x-1;
+//                const int y2 = rect.point.y+rect.size.y-1;
+//                mvwhline(*this, y1, x1, 0, rect.size.x);
+//                mvwhline(*this, y2, x1, 0, rect.size.x);
+//                mvwvline(*this, y1, x1, 0, rect.size.y);
+//                mvwvline(*this, y1, x2, 0, rect.size.y);
+//                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+//                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+//                mvwaddch(*this, y1, x2, ACS_URCORNER);
+//                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+//                
+////                mvwaddch(*this, y2, x2-6, ACS_URCORNER);
+////                mvwprintw(*this, y2, x2-5, "Merge");
+//                
+////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+//                {
+//                    UI::Attr attr(shared_from_this(), _colors.subtitleText);
+//                    mvwprintw(*this, y2, x2-1, "𝝠");
+//                }
+////                mvwprintw(*this, y2-1, x2, "𝝠");
+//                
+////                cchar_t c = {
+////                    .chars = {L"╲M"}
+////                };
+////                
+////                
+////                mvwadd_wch(*this, y2, x2-1, &c);
+//            }
+//            
+//            
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x-2);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y-1);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                mvwprintw(*this, y2, x2-2, "𝙈");
+////            }
+//
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x-2);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y-1);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+//////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                {
+////                    UI::Attr attr(shared_from_this(), _colors.subtitleText);
+////                    mvwprintw(*this, y2, x2-1, "𝑚");
+////                }
+////            }
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x-2);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+//////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                {
+////                    UI::Attr attr(shared_from_this(), _colors.subtitleText);
+////                    mvwprintw(*this, y2, x2-1, "𝗺");
+////                }
+////            }
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+//////                mvwaddch(*this, y2-1, x2, ACS_ULCORNER);
+//////                mvwaddch(*this, y2-2, x2, ACS_LLCORNER);
+////                mvwprintw(*this, y2-1, x2, "ⅿ");
+////                
+//////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+//////                {
+//////                    UI::Attr attr(shared_from_this(), _colors.subtitleText);
+//////                    mvwprintw(*this, y2-1, x2, "𝗺");
+//////                }
+////            }
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y);
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+//////                mvwaddch(*this, y2-1, x2, ACS_ULCORNER);
+//////                mvwaddch(*this, y2-2, x2, ACS_LLCORNER);
+//////                mvwprintw(*this, y2-1, x2, "𝗺");
+////                
+//////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                {
+//////                    UI::Attr attr(shared_from_this(), _colors.menu);
+////                    mvwprintw(*this, y2-1, x2, "m");
+////                }
+////            }
+//            
+//            
+//            
+//            
+//            
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x-2);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y-1);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+//////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+//////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                mvwprintw(*this, y2, x2-1, "𝙈");
+////            }
+//            
+//            
+////            {
+////                UI::Rect rect = bounds();
+////                const int x1 = rect.point.x;
+////                const int y1 = rect.point.y;
+////                const int x2 = rect.point.x+rect.size.x-1;
+////                const int y2 = rect.point.y+rect.size.y-1;
+////                mvwhline(*this, y1, x1, 0, rect.size.x);
+////                mvwhline(*this, y2, x1, 0, rect.size.x-2);
+////                mvwvline(*this, y1, x1, 0, rect.size.y);
+////                mvwvline(*this, y1, x2, 0, rect.size.y-1);
+////                mvwaddch(*this, y1, x1, ACS_ULCORNER);
+////                mvwaddch(*this, y2, x1, ACS_LLCORNER);
+////                mvwaddch(*this, y1, x2, ACS_URCORNER);
+//////                mvwaddch(*this, y2, x2, ACS_LRCORNER);
+////                
+//////                mvwaddch(*this, y2, x2-2, ACS_URCORNER);
+////                mvwprintw(*this, y2, x2-1, "𝘔");
+////            }
+            
+            
         }
         
         {

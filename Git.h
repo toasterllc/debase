@@ -90,6 +90,10 @@ struct Commit : Object {
         return x;
     }
     
+    bool isMerge() const {
+        return git_commit_parentcount(*get()) > 1;
+    }
+    
     void printId() const {
         printf("%s\n", git_oid_tostr_s(&id()));
     }

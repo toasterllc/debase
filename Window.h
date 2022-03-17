@@ -1,4 +1,5 @@
 #pragma once
+#define NCURSES_WIDECHAR 1
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 
@@ -33,6 +34,12 @@ struct Rect {
     
     bool operator==(const Rect& x) const { return point==x.point && size==x.size; }
     bool operator!=(const Rect& x) const { return !(*this == x); }
+    
+    int xmin() const { return point.x; }
+    int xmax() const { return point.x+size.x-1; }
+    
+    int ymin() const { return point.y; }
+    int ymax() const { return point.y+size.y-1; }
 };
 
 enum class Event : int {

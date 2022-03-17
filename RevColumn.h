@@ -49,6 +49,8 @@ public:
         // Don't draw anything if we don't have any panels
         if (_panels.empty()) return;
         
+//        _win->drawLineVert({_offsetX+_width/2, 0}, _win->bounds().size.y);
+        
         // Draw branch name
         {
             UI::Attr attr(_win, A_UNDERLINE);
