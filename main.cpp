@@ -1037,13 +1037,13 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: properly handle moving/copying merge commits
     
-    #warning TODO: show some kind of indication that a commit is a merge commit
-    
     #warning TODO: make sure repo isn't modified when no changes are made to commit message
     
     #warning TODO: ensure that dragging commits to their current location is a no-op
     
     #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
+    
+    #warning TODO: support light mode
     
 //  Future:
     
@@ -1111,6 +1111,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
 //
 //    #warning TODO: handle window resizing
+//
+//    #warning TODO: show some kind of indication that a commit is a merge commit
     
 //    volatile bool a = false;
 //    while (!a);
