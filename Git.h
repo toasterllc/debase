@@ -272,7 +272,8 @@ public:
     Ref ref;       // Optional
 };
 
-struct Repo : RefCounted<git_repository*, git_repository_free> {
+class Repo : public RefCounted<git_repository*, git_repository_free> {
+public:
     using RefCounted::RefCounted;
     
     static Repo Open(std::string_view path) {
@@ -306,7 +307,14 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
         git_index* x = nullptr;
-        int ir = git_merge_trees(&x, *get(), (ancestorTree ? *ancestorTree : nullptr), *dstTree, *srcTree, &mergeOpts);
+        int ir = git_merge_trees(
+            &x,
+            *get(),
+            (ancestorTree ? *ancestorTree : nullptr),
+            (dstTree ? *dstTree : nullptr),
+            (srcTree ? *srcTree : nullptr),
+            &mergeOpts
+        );
         if (ir) throw RuntimeError("git_merge_trees failed: %s", git_error_last()->message);
         return x;
     }
@@ -640,73 +648,90 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 //    }
     
     
-    Commit commitCherryPick(Commit dst, Commit commit) const {
-        assert(dst);
+    
+    
+//    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
+//    Commit commitAttach(Commit dst, Commit src) const {
+//        Tree srcTree = src.tree();
+//        Tree newTree;
+//        // `dst` can be null if we're making `src` a root commit
+//        if (dst) {
+//            Tree dstTree = dst.tree();
+//            Commit srcParent = src.parent();
+//            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
+//            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+//            newTree = indexWrite(mergedTreesIndex);
+//        } else {
+//            newTree = src.tree();
+//        }
+//        
+//        return commitAttach(dst, newTree, src);
+//    }
+    
+    // commitParentSet(): commit.parent[0] = parent
+    Commit commitParentSet(Commit commit, Commit parent) const {
         assert(commit);
         
         Index index;
-        {
-            unsigned int mainline = (commit.isMerge() ? 1 : 0);
-            git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
-            opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
-            
-            git_index* x = nullptr;
-            int ir = git_cherrypick_commit(&x, *get(), *commit, *dst, mainline, &opts);
-            if (ir) throw RuntimeError("git_cherrypick_commit failed: %s", git_error_last()->message);
-            index = x;
+        if (parent) {
+            index = _cherryPick(parent, commit);
+        } else {
+            Commit oldParent = commit.parent();
+            Tree oldParentTree = (oldParent ? oldParent.tree() : nullptr);
+            index = treesMerge(oldParentTree, nullptr, commit.tree());
         }
         
         Tree tree = indexWrite(index);
         
         std::vector<Commit> parents = commit.parents();
         if (!parents.empty()) parents.erase(parents.begin());
-        parents.insert(parents.begin(), dst);
+        if (parent) parents.insert(parents.begin(), parent);
         
         return commitAmend(commit, parents, tree);
     }
     
-    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
-        std::vector<Commit> oldParents = commit.parents();
-        
-        // Get common ancestor for all oldParents
-        Tree ancestorTree;
-        if (!oldParents.empty()) {
-            Commit ancestor = oldParents[0];
-            ancestorTree = ancestor.tree();
-        }
-        
-        Tree tree = commit.tree();
-        Tree newParentTree = newParents[0].tree();
-        Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
-        
-        
-        
-        
-        
-        if (git_index_has_conflicts(*mergedTreesIndex)) {
-            git_index_conflict_iterator* iter = nullptr;
-            git_index_conflict_iterator_new(&iter, *mergedTreesIndex);
-            
-            for (;;) {
-                const git_index_entry* ancestor_out;
-                const git_index_entry* our_out;
-                const git_index_entry* their_out;
-                int ir = git_index_conflict_next(&ancestor_out, &our_out, &their_out, iter);
-                if (ir == GIT_ITEROVER) break;
-                assert(ir == GIT_OK);
-                ir = git_index_remove(*mergedTreesIndex, our_out->path, 0);
-//                ir = git_index_add(*mergedTreesIndex, ancestor_out);
-                assert(ir == GIT_OK);
-                ir = git_index_conflict_add(*mergedTreesIndex, nullptr, our_out, nullptr);
-                assert(ir == GIT_OK);
-            }
-            git_index_conflict_cleanup(*mergedTreesIndex);
-        }
-        
-        tree = indexWrite(mergedTreesIndex);
-        
-        return commitAmend(commit, newParents, tree);
-    }
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        std::vector<Commit> oldParents = commit.parents();
+//        
+//        // Get common ancestor for all oldParents
+//        Tree ancestorTree;
+//        if (!oldParents.empty()) {
+//            Commit ancestor = oldParents[0];
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        Tree newParentTree = newParents[0].tree();
+//        Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//        
+//        
+//        
+//        
+//        
+//        if (git_index_has_conflicts(*mergedTreesIndex)) {
+//            git_index_conflict_iterator* iter = nullptr;
+//            git_index_conflict_iterator_new(&iter, *mergedTreesIndex);
+//            
+//            for (;;) {
+//                const git_index_entry* ancestor_out;
+//                const git_index_entry* our_out;
+//                const git_index_entry* their_out;
+//                int ir = git_index_conflict_next(&ancestor_out, &our_out, &their_out, iter);
+//                if (ir == GIT_ITEROVER) break;
+//                assert(ir == GIT_OK);
+//                ir = git_index_remove(*mergedTreesIndex, our_out->path, 0);
+////                ir = git_index_add(*mergedTreesIndex, ancestor_out);
+//                assert(ir == GIT_OK);
+//                ir = git_index_conflict_add(*mergedTreesIndex, nullptr, our_out, nullptr);
+//                assert(ir == GIT_OK);
+//            }
+//            git_index_conflict_cleanup(*mergedTreesIndex);
+//        }
+//        
+//        tree = indexWrite(mergedTreesIndex);
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
     
     
     
@@ -886,6 +911,18 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         git_config* x = nullptr;
         int ir = git_repository_config(&x, *get());
         if (ir) throw RuntimeError("git_repository_config failed: %s", git_error_last()->message);
+        return x;
+    }
+
+private:
+    Index _cherryPick(Commit dst, Commit commit) const {
+        unsigned int mainline = (commit.isMerge() ? 1 : 0);
+        git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+        opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
+        
+        git_index* x = nullptr;
+        int ir = git_cherrypick_commit(&x, *get(), *commit, *dst, mainline, &opts);
+        if (ir) throw RuntimeError("git_cherrypick_commit failed: %s", git_error_last()->message);
         return x;
     }
 };
