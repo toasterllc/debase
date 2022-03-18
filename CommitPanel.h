@@ -56,9 +56,9 @@ public:
             drawBorder();
             
             if (_commit.isMerge()) {
-                UI::Rect rect = bounds();
+//                UI::Rect rect = bounds();
 //                UI::Attr attr(shared_from_this(), _colors.subtitleText);
-                mvwprintw(*this, rect.ymax(), rect.xmax()-1, "𝝠");
+                mvwprintw(*this, 1, 0, "𝝠");
             }
             
 ////            UI::Rect rect = bounds();
