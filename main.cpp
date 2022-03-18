@@ -1056,6 +1056,99 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add column scrolling
     
     
+    
+    Git::Commit a;
+    if (a) {
+        a.idStr();
+    }
+    
+//    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
+//    Commit commitAttach(Commit dst, Commit src) const {
+//        Tree srcTree = src.tree();
+//        Tree newTree;
+//        // `dst` can be null if we're making `src` a root commit
+//        if (dst) {
+//            Tree dstTree = dst.tree();
+//            Commit srcParent = src.parent();
+//            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
+//            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+//            newTree = indexWrite(mergedTreesIndex);
+//        } else {
+//            newTree = src.tree();
+//        }
+//        
+//        return commitAttach(dst, newTree, src);
+//    }
+    
+    
+    
+    
+    
+    
+//    // Works to cherry-pick across a merge: 5e2992dae -> 19b7633ac -> 25d6fdfea
+//    {
+//        git_libgit2_init();
+//        
+//        _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
+//        
+//        Git::Ref masterRef = _Repo.refLookup("master");
+//        Git::Commit commit_19b7633ac = _Repo.commitLookup("19b7633aca6335bfdf79ab1fd71f99060f6e04ca");
+//        Git::Commit commit_25d6fdfea = _Repo.commitLookup("25d6fdfea7b40de852e00df405f018723b98b6f1");
+//        Git::Commit commit_5e2992dae = _Repo.commitLookup("5e2992dae2e2e858e40afbe8556b376708bf3974");
+//        Git::Commit commit_f5c20b828 = _Repo.commitLookup("f5c20b8286c5e302d65d5aaedb53441f498f5bc2");
+//        
+//        Git::Commit head = _Repo.commitParentsSet(commit_19b7633ac, {commit_5e2992dae});
+//        head = _Repo.commitParentsSet(commit_25d6fdfea, {head, commit_f5c20b828});
+//        
+//        Git::Ref ref = _Repo.refReplace(masterRef, head);
+//    }
+    
+    
+    
+    
+//    // Works to cherry-pick across a merge: 5e2992dae -> 19b7633ac -> 25d6fdfea
+//    {
+//        git_libgit2_init();
+//        
+//        _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
+//        
+//        Git::Ref masterRef = _Repo.refLookup("master");
+//        Git::Commit commit_19b7633ac = _Repo.commitLookup("19b7633aca6335bfdf79ab1fd71f99060f6e04ca");
+//        Git::Commit commit_25d6fdfea = _Repo.commitLookup("25d6fdfea7b40de852e00df405f018723b98b6f1");
+//        Git::Commit commit_5e2992dae = _Repo.commitLookup("5e2992dae2e2e858e40afbe8556b376708bf3974");
+//        Git::Commit commit_f5c20b828 = _Repo.commitLookup("f5c20b8286c5e302d65d5aaedb53441f498f5bc2");
+//        
+//        
+//        Git::Commit head = _Repo.commitParentsSet(commit_19b7633ac, {commit_5e2992dae});
+//        
+//        {
+//            Git::Commit src = commit_25d6fdfea;
+//            Git::Commit dst = head;
+//            Git::Tree srcTree = src.tree();
+//            Git::Tree dstTree = dst.tree();
+//            Git::Tree ancestorTree = src.parent().tree();
+//            Git::Index mergedTreesIndex = _Repo.treesMerge(ancestorTree, dstTree, srcTree);
+//            Git::Tree newTree = _Repo.indexWrite(mergedTreesIndex);
+//            
+//            head = _Repo.commitAmend(commit_25d6fdfea, {head, commit_f5c20b828}, newTree);
+//        }
+//        
+//        
+//        Git::Ref ref = _Repo.refReplace(masterRef, head);
+//    }
+
+    
+    
+    
+//    commit_25d6fdfea
+//    
+//    commit_25d6fdfea
+//    commit_19b7633ac
+    
+    
+    
+    
+    
 //  DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
 //    

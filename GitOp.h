@@ -103,7 +103,7 @@ inline _AddRemoveResult _AddRemoveCommits(
             // c==null iteration and have a problem.
             assert(c);
             if (!r.erase(c)) combined.push_front(c);
-            c = c.parent();
+            c = c.parent(); // TODO:MERGE
         }
         assert(!adding || foundAddPoint);
         assert(r.empty());
@@ -114,7 +114,13 @@ inline _AddRemoveResult _AddRemoveCommits(
     // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
     for (Commit commit : combined) {
-        head = repo.commitAttach(head, commit);
+        // TODO:MERGE
+        std::vector<Commit> parents = commit.parents();
+        // Remove the commit's original parent[0]
+        if (!parents.empty()) parents.erase(parents.begin());
+        // Set the commit's parent[0] to head, if head!=nullptr
+        if (head) parents.insert(parents.begin(), head);
+        head = repo.commitParentsSet(commit, parents);
         if (add.find(commit) != add.end()) {
             added.insert(head);
         }
@@ -264,7 +270,7 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
             if (rem.empty()) break;
             if (erased) integrate.push_front(head);
             else        attach.push_front(head);
-            head = head.parent();
+            head = head.parent(); // TODO:MERGE
         }
     }
     
@@ -278,7 +284,8 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     
     // Attach every commit in `attach` to `head`
     for (Commit commit : attach) {
-        head = op.repo.commitAttach(head, commit);
+        // TODO:MERGE
+        head = op.repo.commitParentsSet(commit, {head});
     }
     
     // Replace the source branch/tag

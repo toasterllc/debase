@@ -82,21 +82,33 @@ struct Commit : Object {
         return x;
     }
     
-    Commit parent(unsigned int n=0) const {
+    Commit parent(size_t n=0) const {
         git_commit* x = nullptr;
-        int ir = git_commit_parent(&x, *get(), n);
+        int ir = git_commit_parent(&x, *get(), (unsigned int)n);
         if (ir == GIT_ENOTFOUND) return nullptr; // `this` is the root commit -> no parent exists
         if (ir) throw RuntimeError("git_commit_tree failed: %s", git_error_last()->message);
         return x;
+    }
+    
+    std::vector<Commit> parents() const {
+        std::vector<Commit> p;
+        size_t n = git_commit_parentcount(*get());
+        for (size_t i=0; i<n; i++) p.push_back(parent(i));
+        return p;
     }
     
     bool isMerge() const {
         return git_commit_parentcount(*get()) > 1;
     }
     
-    void printId() const {
-        printf("%s\n", git_oid_tostr_s(&id()));
+    const char* idStr() const {
+        return git_oid_tostr_s(&id());
+//        fprintf(stderr, "%s\n", git_oid_tostr_s(&id()));
     }
+    
+//    void printId() const {
+//        fprintf(stderr, "%s\n", git_oid_tostr_s(&id()));
+//    }
 };
 
 struct TagAnnotation : Object {
@@ -306,51 +318,376 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return x;
     }
     
-    // Creates a new child commit of `parent` with the tree `tree`, using the metadata from `metadata`
-    Commit commitAttach(Commit parent, Tree tree, Commit metadata) const {
-        git_oid id;
-        // `parent` can be null if we're creating a root commit
-        const git_commit* parents[] = {(parent ? *parent : nullptr)};
-        const size_t parentsLen = (parent ? 1 : 0);
-        int ir = git_commit_create(
-            &id,
-            *get(),
-            nullptr,
-            git_commit_author(*metadata),
-            git_commit_committer(*metadata),
-            git_commit_message_encoding(*metadata),
-            git_commit_message(*metadata),
-            *tree,
-            parentsLen,
-            parents
-        );
-        if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
-        return commitLookup(id);
-    }
     
-    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
-    Commit commitAttach(Commit dst, Commit src) const {
-        Tree srcTree = src.tree();
-        Tree newTree;
-        // `dst` can be null if we're making `src` a root commit
-        if (dst) {
-            Tree dstTree = dst.tree();
-            Commit srcParent = src.parent();
-            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
-            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
-            newTree = indexWrite(mergedTreesIndex);
-        } else {
-            newTree = src.tree();
+    
+    
+//    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
+//    Commit commitAttach(Commit dst, Commit src) const {
+//        Tree srcTree = src.tree();
+//        Tree newTree;
+//        // `dst` can be null if we're making `src` a root commit
+//        if (dst) {
+//            Tree dstTree = dst.tree();
+//            Commit srcParent = src.parent();
+//            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
+//            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+//            newTree = indexWrite(mergedTreesIndex);
+//        } else {
+//            newTree = src.tree();
+//        }
+//        
+//        return commitAttach(dst, newTree, src);
+//    }
+    
+    
+    
+    
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        // Collect unique parents
+//        std::set<Commit> parents;
+//        {
+//            std::vector<Commit> oldParents = commit.parents();
+//            parents.insert(oldParents.begin(), oldParents.end());
+//            parents.insert(newParents.begin(), newParents.end());
+//        }
+//        
+//        // Collect parent ids
+//        git_oid parentIds[parents.size()];
+//        {
+//            assert(parents.size() <= 4);
+//            size_t i = 0;
+//            for (auto it=parents.begin(); it!=parents.end(); it++, i++) {
+//                parentIds[i] = (*it).id();
+//            }
+//        }
+//        
+//        // Get common ancesor for all parents
+//        Commit ancestor;
+//        Tree ancestorTree;
+//        if (parents.size() == 0) {
+//            // Do nothing
+//        
+//        } else if (parents.size() == 1) {
+//            ancestor = *parents.begin();
+//            ancestorTree = ancestor.tree();
+//        
+//        } else if (parents.size() > 1) {
+//            git_oid ancestorId;
+//            int ir = git_merge_base_many(&ancestorId, *get(), parents.size(), parentIds);
+//            if (ir) throw RuntimeError("git_merge_base_many failed: %s", git_error_last()->message);
+//            ancestor = commitLookup(ancestorId);
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        for (Commit newParent : newParents) {
+//            Tree newParentTree = newParent.tree();
+//            Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//            tree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+    
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        // Collect unique parents
+//        std::set<Commit> parents;
+//        std::vector<Commit> oldParents = commit.parents();
+//        {
+//            parents.insert(oldParents.begin(), oldParents.end());
+//            parents.insert(newParents.begin(), newParents.end());
+//        }
+//
+//        // Get common ancestor for all oldParents
+//        Commit ancestor;
+//        Tree ancestorTree;
+//        if (oldParents.size() == 1) {
+//            ancestor = *oldParents.begin();
+//            ancestorTree = ancestor.tree();
+//        
+//        } else if (oldParents.size() > 1) {
+//            // Collect parent ids
+//            git_oid oldParentIds[oldParents.size()];
+//            {
+//                assert(oldParents.size() <= 4);
+//                size_t i = 0;
+//                for (auto it=oldParents.begin(); it!=oldParents.end(); it++, i++) {
+//                    oldParentIds[i] = (*it).id();
+//                }
+//            }
+//            
+//            git_oid ancestorId;
+//            int ir = git_merge_base_many(&ancestorId, *get(), oldParents.size(), oldParentIds);
+//            if (ir) throw RuntimeError("git_merge_base_many failed: %s", git_error_last()->message);
+//            ancestor = commitLookup(ancestorId);
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        for (Commit newParent : newParents) {
+//            Tree newParentTree = newParent.tree();
+//            Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//            tree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        // Collect unique parents
+//        std::set<Commit> parents;
+//        std::vector<Commit> oldParents = commit.parents();
+//        {
+//            parents.insert(oldParents.begin(), oldParents.end());
+//            parents.insert(newParents.begin(), newParents.end());
+//        }
+//        
+//        // Get common ancestor for all oldParents
+//        Commit ancestor;
+//        Tree ancestorTree;
+//        if (!oldParents.empty()) {
+//            ancestor = oldParents[0];
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        for (Commit newParent : newParents) {
+//            Tree newParentTree = newParent.tree();
+//            Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//            tree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    // Seems to work when moving a regular commit around merges
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        // Collect unique parents
+//        std::set<Commit> parents;
+//        std::vector<Commit> oldParents = commit.parents();
+//        {
+//            parents.insert(oldParents.begin(), oldParents.end());
+//            parents.insert(newParents.begin(), newParents.end());
+//        }
+//        
+//        // Get common ancestor for all oldParents
+//        Commit ancestor;
+//        Tree ancestorTree;
+//        if (!oldParents.empty()) {
+//            ancestor = oldParents[0];
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        Tree newParentTree = newParents[0].tree();
+//        Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//        tree = indexWrite(mergedTreesIndex);
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        std::vector<Commit> oldParents = commit.parents();
+//        
+//        // Get common ancestor for all oldParents
+//        Tree ancestorTree;
+////        if (oldParents.size() == 1) {
+//            Commit ancestor = *oldParents.begin();
+//            ancestorTree = ancestor.tree();
+//        
+////        } else if (oldParents.size() > 1) {
+////            // Collect parent ids
+////            git_oid oldParentIds[oldParents.size()];
+////            {
+////                assert(oldParents.size() <= 4);
+////                size_t i = 0;
+////                for (auto it=oldParents.begin(); it!=oldParents.end(); it++, i++) {
+////                    oldParentIds[i] = (*it).id();
+////                }
+////            }
+////            
+////            git_oid ancestorId;
+////            int ir = git_merge_base_many(&ancestorId, *get(), oldParents.size(), oldParentIds);
+////            if (ir) throw RuntimeError("git_merge_base_many failed: %s", git_error_last()->message);
+////            Commit ancestor = commitLookup(ancestorId);
+////            ancestorTree = ancestor.tree();
+////        }
+//        
+//        std::set<Commit> addParents;
+//        std::set_difference(
+//            newParents.begin(), newParents.end(),
+//            oldParents.begin(), oldParents.end(),
+//            std::inserter(addParents, addParents.end())
+//        );
+//        
+//        Tree tree = commit.tree();
+//        for (Commit addParent : addParents) {
+//            Tree addParentTree = addParent.tree();
+//            Index mergedTreesIndex = treesMerge(ancestorTree, addParentTree, tree);
+//            
+//            if (git_index_has_conflicts(*mergedTreesIndex)) {
+//                git_index_conflict_iterator* iter = nullptr;
+//                git_index_conflict_iterator_new(&iter, *mergedTreesIndex);
+//                
+//                for (;;) {
+//                    const git_index_entry* ancestor_out;
+//                    const git_index_entry* our_out;
+//                    const git_index_entry* their_out;
+//                    int ir = git_index_conflict_next(&ancestor_out, &our_out, &their_out, iter);
+//                    if (ir == GIT_ITEROVER) break;
+//                    assert(ir == GIT_OK);
+//                }
+//            }
+//            
+//            tree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        std::vector<Commit> oldParents = commit.parents();
+//        
+//        // Get common ancestor for all oldParents
+//        Tree ancestorTree;
+//        Commit ancestor = *oldParents.begin();
+//        ancestorTree = ancestor.tree();
+//        
+//        std::set<Commit> addParents;
+//        std::set_difference(
+//            newParents.begin(), newParents.end(),
+//            oldParents.begin(), oldParents.end(),
+//            std::inserter(addParents, addParents.end())
+//        );
+//        
+//        Tree tree = commit.tree();
+//        for (Commit newParent : addParents) {
+//            Tree addParentTree = addParent.tree();
+//            Index mergedTreesIndex = treesMerge(ancestorTree, addParentTree, tree);
+//            
+//            tree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+    
+    
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        Tree tree = commit.tree();
+//        
+//        std::vector<Commit> oldParents = commit.parents();
+//        
+//        for (Commit parent : newParents) {
+//            Tree parentTree = parent.tree();
+//            Commit commitParent = commit.parent(idx); // TODO:MERGE
+//            Tree ancestorTree = commitParent ? commitParent.tree() : nullptr;
+//            Index mergedTreesIndex = treesMerge(ancestorTree, parentTree, tree);
+//            newTree = indexWrite(mergedTreesIndex);
+//        }
+//        
+//        std::vector<Commit> parents = commit.parents();
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+//    // commitParentSet: sets commit.parent[idx] = parent
+//    Commit commitParentSet(Commit commit, size_t idx, Commit parent) const {
+//        Tree commitTree = commit.tree();
+//        Tree newTree;
+//        // `parent` can be null if we're making `commit` a root commit
+//        if (parent) {
+//            Tree parentTree = parent.tree();
+//            Commit commitParent = commit.parent(idx); // TODO:MERGE
+//            Tree ancestorTree = commitParent ? commitParent.tree() : nullptr;
+//            Index mergedTreesIndex = treesMerge(ancestorTree, parentTree, commitTree);
+//            newTree = indexWrite(mergedTreesIndex);
+//        } else {
+//            newTree = commit.tree();
+//        }
+//        
+//        std::vector<Commit> parents = commit.parents();
+//        return commitAmend(commit, parents, newTree);
+//    }
+    
+    
+//    // Seems to work when moving a regular commit around merges
+//    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+//        std::vector<Commit> oldParents = commit.parents();
+//        
+//        // Get common ancestor for all oldParents
+//        Tree ancestorTree;
+//        if (!oldParents.empty()) {
+//            Commit ancestor = oldParents[0];
+//            ancestorTree = ancestor.tree();
+//        }
+//        
+//        Tree tree = commit.tree();
+//        Tree newParentTree = newParents[0].tree();
+//        Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+//        tree = indexWrite(mergedTreesIndex);
+//        
+//        return commitAmend(commit, newParents, tree);
+//    }
+    
+    
+    
+    Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
+        std::vector<Commit> oldParents = commit.parents();
+        
+        // Get common ancestor for all oldParents
+        Tree ancestorTree;
+        if (!oldParents.empty()) {
+            Commit ancestor = oldParents[0];
+            ancestorTree = ancestor.tree();
         }
         
-        return commitAttach(dst, newTree, src);
+        Tree tree = commit.tree();
+        Tree newParentTree = newParents[0].tree();
+        Index mergedTreesIndex = treesMerge(ancestorTree, newParentTree, tree);
+        
+        
+        
+        
+        
+        if (git_index_has_conflicts(*mergedTreesIndex)) {
+            git_index_conflict_iterator* iter = nullptr;
+            git_index_conflict_iterator_new(&iter, *mergedTreesIndex);
+            
+            for (;;) {
+                const git_index_entry* ancestor_out;
+                const git_index_entry* our_out;
+                const git_index_entry* their_out;
+                int ir = git_index_conflict_next(&ancestor_out, &our_out, &their_out, iter);
+                if (ir == GIT_ITEROVER) break;
+                assert(ir == GIT_OK);
+                ir = git_index_remove(*mergedTreesIndex, our_out->path, 0);
+//                ir = git_index_add(*mergedTreesIndex, ancestor_out);
+                assert(ir == GIT_OK);
+                ir = git_index_conflict_add(*mergedTreesIndex, nullptr, our_out, nullptr);
+                assert(ir == GIT_OK);
+            }
+            git_index_conflict_cleanup(*mergedTreesIndex);
+        }
+        
+        tree = indexWrite(mergedTreesIndex);
+        
+        return commitAmend(commit, newParents, tree);
     }
+    
+    
+    
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
     Commit commitIntegrate(Commit dst, Commit src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
-        Tree ancestorTree = src.parent().tree();
+        Tree ancestorTree = src.parent().tree(); // TODO:MERGE
         Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
         Tree newTree = indexWrite(mergedTreesIndex);
         
@@ -366,6 +703,33 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
         return commitLookup(id);
     }
     
+    // commitAmend(): change parents/tree of a commit
+    Commit commitAmend(Commit commit, std::vector<Commit> parents, Tree tree) const {
+        git_oid id;
+        
+        assert(parents.size() <= 4); // Protect stack-allocated array from being too large
+        const git_commit* stackParents[parents.size()];
+        for (size_t i=0; i<parents.size(); i++) {
+            stackParents[i] = *parents[i];
+        }
+        
+        int ir = git_commit_create(
+            &id,
+            *get(),
+            nullptr,
+            git_commit_author(*commit),
+            git_commit_committer(*commit),
+            git_commit_message_encoding(*commit),
+            git_commit_message(*commit),
+            *tree,
+            parents.size(),
+            stackParents
+        );
+        if (ir) throw RuntimeError("git_commit_create failed: %s", git_error_last()->message);
+        return commitLookup(id);
+    }
+    
+    // commitAmend(): change the author/message of a commit
     Commit commitAmend(Commit commit, Signature author, std::string_view msg) const {
         git_oid id;
         int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
