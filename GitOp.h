@@ -72,6 +72,15 @@ inline _AddRemoveResult _AddRemoveCommits(
     Commit addPosition, // In `dst`
     const std::set<Commit>& remove
 ) {
+    // CommitAdded: wraps a Commit with an additional `added` flag, which tracks whether
+    // this is one of the added commits, so that we can put the commit in our returned
+    // _AddRemoveResult.added set
+    struct CommitAdded {
+        CommitAdded(Commit c) : commit(c) {}
+        Commit commit;
+        bool added = false;
+    };
+    
     assert(dst);
     
     std::vector<Commit> addv = _Sorted(addSrc, add);
@@ -79,7 +88,7 @@ inline _AddRemoveResult _AddRemoveCommits(
     // Construct `combined` and find `head`
     // `head` is the earliest commit from `dst` that we'll apply the commits on top of.
     // `combined` is the ordered set of commits that need to be applied on top of `head`.
-    std::deque<Commit> combined;
+    std::deque<CommitAdded> combined;
     Commit head;
     {
         const bool adding = !addv.empty();
@@ -90,6 +99,7 @@ inline _AddRemoveResult _AddRemoveCommits(
             if (adding && c==addPosition) {
                 assert(!foundAddPoint);
                 combined.insert(combined.begin(), addv.begin(), addv.end());
+                for (size_t i=0; i<addv.size(); i++) combined[i].added = true;
                 foundAddPoint = true;
             }
             
@@ -113,9 +123,9 @@ inline _AddRemoveResult _AddRemoveCommits(
     
     // Apply `combined` on top of `head`, and keep track of the added commits
     std::set<Commit> added;
-    for (Commit commit : combined) {
+    for (const CommitAdded& commit : combined) {
         // TODO:MERGE
-        head = repo.commitCherryPick(head, commit);
+        head = repo.commitParentSet(commit.commit, head);
         
 //        std::vector<Commit> parents = commit.parents();
 //        // Remove the commit's original parent[0]
@@ -124,7 +134,7 @@ inline _AddRemoveResult _AddRemoveCommits(
 //        if (head) parents.insert(parents.begin(), head);
 //        head = repo.commitParentsSet(commit, parents);
         
-        if (add.find(commit) != add.end()) {
+        if (commit.added) {
             added.insert(head);
         }
     }
@@ -288,7 +298,7 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     // Attach every commit in `attach` to `head`
     for (Commit commit : attach) {
         // TODO:MERGE
-        head = op.repo.commitCherryPick(head, commit);
+        head = op.repo.commitParentSet(commit, head);
     }
     
     // Replace the source branch/tag
