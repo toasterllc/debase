@@ -641,6 +641,9 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
     
     
     Commit commitCherryPick(Commit dst, Commit commit) const {
+        assert(dst);
+        assert(commit);
+        
         Index index;
         {
             unsigned int mainline = (commit.isMerge() ? 1 : 0);

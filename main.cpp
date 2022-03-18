@@ -1025,6 +1025,10 @@ static void _EventLoop() {
 int main(int argc, const char* argv[]) {
     #warning TODO: properly handle moving/copying merge commits
     
+    #warning TODO: make sure moving/deleting commits near the root commit still works
+    
+    #warning TODO: rigorously test copying/moving merge commits
+    
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     #warning TODO: set_escdelay: not sure if we're going to encounter issues?
