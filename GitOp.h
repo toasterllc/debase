@@ -115,12 +115,15 @@ inline _AddRemoveResult _AddRemoveCommits(
     std::set<Commit> added;
     for (Commit commit : combined) {
         // TODO:MERGE
-        std::vector<Commit> parents = commit.parents();
-        // Remove the commit's original parent[0]
-        if (!parents.empty()) parents.erase(parents.begin());
-        // Set the commit's parent[0] to head, if head!=nullptr
-        if (head) parents.insert(parents.begin(), head);
-        head = repo.commitParentsSet(commit, parents);
+        head = repo.commitCherryPick(head, commit);
+        
+//        std::vector<Commit> parents = commit.parents();
+//        // Remove the commit's original parent[0]
+//        if (!parents.empty()) parents.erase(parents.begin());
+//        // Set the commit's parent[0] to head, if head!=nullptr
+//        if (head) parents.insert(parents.begin(), head);
+//        head = repo.commitParentsSet(commit, parents);
+        
         if (add.find(commit) != add.end()) {
             added.insert(head);
         }
@@ -285,7 +288,7 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     // Attach every commit in `attach` to `head`
     for (Commit commit : attach) {
         // TODO:MERGE
-        head = op.repo.commitParentsSet(commit, {head});
+        head = op.repo.commitCherryPick(head, commit);
     }
     
     // Replace the source branch/tag

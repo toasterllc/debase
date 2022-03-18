@@ -65,6 +65,10 @@ struct Config : RefCounted<git_config*, git_config_free> {
 struct Commit : Object {
     using Object::Object;
     Commit(const git_commit* x) : Object((git_object*)x) {}
+    
+    git_commit** get() { return (git_commit**)Object::get(); }
+    git_commit*& operator*() { return *get(); }
+    
     const git_commit** get() const { return (const git_commit**)Object::get(); }
     const git_commit*& operator*() const { return *get(); }
     
@@ -636,6 +640,27 @@ struct Repo : RefCounted<git_repository*, git_repository_free> {
 //    }
     
     
+    Commit commitCherryPick(Commit dst, Commit commit) const {
+        Index index;
+        {
+            unsigned int mainline = (commit.isMerge() ? 1 : 0);
+            git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+            opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
+            
+            git_index* x = nullptr;
+            int ir = git_cherrypick_commit(&x, *get(), *commit, *dst, mainline, &opts);
+            if (ir) throw RuntimeError("git_cherrypick_commit failed: %s", git_error_last()->message);
+            index = x;
+        }
+        
+        Tree tree = indexWrite(index);
+        
+        std::vector<Commit> parents = commit.parents();
+        if (!parents.empty()) parents.erase(parents.begin());
+        parents.insert(parents.begin(), dst);
+        
+        return commitAmend(commit, parents, tree);
+    }
     
     Commit commitParentsSet(Commit commit, std::vector<Commit> newParents) const {
         std::vector<Commit> oldParents = commit.parents();
