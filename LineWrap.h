@@ -31,11 +31,38 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         std::string& msgline = lines.emplace_back();
         
         while (!lineInput.empty()) {
-            const std::string& word = lineInput.front();
-            const std::string add = (msgline.empty() ? "" : " ") + word;
-            if (msgline.size()+add.size() > lineLenMax) break; // Line filled, next line
-            msgline += add;
-            lineInput.pop_front();
+            // Add the space between words
+            if (!msgline.empty()) {
+                const size_t rem = lineLenMax-msgline.size();
+                // No more space -> next line
+                if (!rem) break;
+                // Add the space between words
+                msgline += " ";
+            }
+            
+            // Add the current word
+            {
+                const std::string& word = lineInput.front();
+                const size_t rem = lineLenMax-msgline.size();
+                // No more space -> next line
+                if (!rem) break;
+                // Check if the line would overflow with `word`
+                if (word.size() > rem) {
+                    // The word would fit by itself on a line -> next line
+                    if (word.size() <= lineLenMax) break;
+                    // The word wouldn't fit by itself on a line -> split word
+                    std::string head = word.substr(0, rem);
+                    std::string tail = word.substr(rem, word.size()-rem);
+                    
+                    msgline += head;
+                    lineInput.pop_front();
+                    lineInput.push_front(tail);
+                    continue;
+                }
+                
+                msgline += word;
+                lineInput.pop_front();
+            }
         }
         
 //            if (words.empty()) break; // No more words -> done
