@@ -1023,9 +1023,7 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: properly handle moving/copying merge commits
-    
-    #warning TODO: make sure moving/deleting commits near the root commit still works
+    #warning TODO: don't allow combine when a merge commit is selected
     
     #warning TODO: rigorously test copying/moving merge commits
     
@@ -1045,9 +1043,9 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   same commit message -> no repo changes
     #warning TODO:   dragging commits to their current location -> no repo changes
     
-    #warning TODO: ensure that dragging commits to their current location is a no-op
-    
     #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
+    
+    #warning TODO: support undo/redo
     
     #warning TODO: support light mode
     
@@ -1055,9 +1053,71 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
-    #warning TODO: an undo/redo button
-    
     #warning TODO: add column scrolling
+    
+//  DONE:
+//    #warning TODO: when copying commmits, don't hide the source commits
+//    
+//    #warning TODO: allow escape key to abort a drag
+//    
+//    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
+//    #warning       to do so, we'll need to implement operator< on Rev so we can put them in a set
+//    
+//    #warning TODO: show similar commits to the selected commit using a lighter color
+//    
+//    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
+//    
+//    #warning TODO: create concept of revs being mutable. if they're not mutable, don't allow moves from them (only copies), moves to them, deletes, etc
+//    
+//    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
+//
+//    #warning TODO: implement CombineCommits
+//
+//    #warning TODO: add affordance to cancel current drag by moving mouse to edge of terminal
+//
+//    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
+//
+//    #warning TODO: fix commit message rendering when there are newlines
+//    
+//    #warning TODO: configure tty before/after calling out to a new editor
+//    
+//    #warning TODO: allow editing author/date of commit
+//
+//    #warning TODO: implement EditCommit
+//
+//    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
+//
+//    #warning TODO: show indication in the UI that a column is immutable
+//
+//    #warning TODO: implement key combos for combine/edit
+//
+//    #warning TODO: implement double-click to edit
+//
+//    #warning TODO: double-click broken: click commit, wait, then double-click
+//
+//    #warning TODO: implement error messages
+//
+//    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
+//
+//    #warning TODO: fix: colors aren't restored when exiting
+//
+//    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
+//
+//    #warning TODO: create special color palette for apple terminal
+//    
+//    #warning TODO: handle rewriting tags
+//
+//    #warning TODO: don't allow double-click/return key on commits in read-only columns
+//
+//    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
+//
+//    #warning TODO: handle window resizing
+//
+//    #warning TODO: show some kind of indication that a commit is a merge commit
+//
+//    #warning TODO: properly handle moving/copying merge commits
+//
+//    #warning TODO: make sure moving/deleting commits near the root commit still works
     
     
     
@@ -1140,78 +1200,6 @@ int main(int argc, const char* argv[]) {
 //        
 //        Git::Ref ref = _Repo.refReplace(masterRef, head);
 //    }
-
-    
-    
-    
-//    commit_25d6fdfea
-//    
-//    commit_25d6fdfea
-//    commit_19b7633ac
-    
-    
-    
-    
-    
-//  DONE:
-//    #warning TODO: when copying commmits, don't hide the source commits
-//    
-//    #warning TODO: allow escape key to abort a drag
-//    
-//    #warning TODO: we need to unique-ify the supplied revs, since we assume that each column has a unique rev
-//    #warning       to do so, we'll need to implement operator< on Rev so we can put them in a set
-//    
-//    #warning TODO: show similar commits to the selected commit using a lighter color
-//    
-//    #warning TODO: don't allow remote branches to be modified (eg 'origin/master')
-//    
-//    #warning TODO: create concept of revs being mutable. if they're not mutable, don't allow moves from them (only copies), moves to them, deletes, etc
-//    
-//    #warning TODO: draw "Move/Copy" text immediately above the dragged commits, instead of at the insertion point
-//
-//    #warning TODO: implement CombineCommits
-//
-//    #warning TODO: add affordance to cancel current drag by moving mouse to edge of terminal
-//
-//    #warning TODO: improve panel dragging along edges. currently the shadow panels get a little messed up
-//
-//    #warning TODO: fix commit message rendering when there are newlines
-//    
-//    #warning TODO: configure tty before/after calling out to a new editor
-//    
-//    #warning TODO: allow editing author/date of commit
-//
-//    #warning TODO: implement EditCommit
-//
-//    #warning TODO: special-case opening `mate` when editing commit, to not call CursesDeinit/CursesInit
-//
-//    #warning TODO: show indication in the UI that a column is immutable
-//
-//    #warning TODO: implement key combos for combine/edit
-//
-//    #warning TODO: implement double-click to edit
-//
-//    #warning TODO: double-click broken: click commit, wait, then double-click
-//
-//    #warning TODO: implement error messages
-//
-//    #warning TODO: figure out whether/where/when to call git_libgit2_shutdown()
-//
-//    #warning TODO: fix: colors aren't restored when exiting
-//
-//    #warning TODO: if can_change_color() returns false, use default color palette (COLOR_RED, etc)
-//
-//    #warning TODO: create special color palette for apple terminal
-//    
-//    #warning TODO: handle rewriting tags
-//
-//    #warning TODO: don't allow double-click/return key on commits in read-only columns
-//
-//    #warning TODO: re-evaluate size of drag-cancel affordance since it's not as reliable in iTerm
-//
-//    #warning TODO: handle window resizing
-//
-//    #warning TODO: show some kind of indication that a commit is a merge commit
     
 //    volatile bool a = false;
 //    while (!a);
