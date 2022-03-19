@@ -1026,10 +1026,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
-    #warning TODO: set_escdelay: not sure if we're going to encounter issues?
-    
-    #warning TODO: handle merge conflicts
-    
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
     #warning TODO: backup all supplied revs before doing anything
@@ -1121,6 +1117,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: always show the same contextual menu, but gray-out the disabled options
 //
 //    #warning TODO: don't allow combine when a merge commit is selected
+//
+//    #warning TODO: set_escdelay: not sure if we're going to encounter issues?
+//
+//    #warning TODO: handle merge conflicts
     
     
     
