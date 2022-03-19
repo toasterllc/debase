@@ -51,7 +51,7 @@ public:
 //    }
     
 //    ButtonPtr updateMousePosition(std::optional<Point> p) {
-//        ButtonPtr highlightButton = nullptr;
+//        ButtonPtr mouseOverButton = nullptr;
 //        
 //        if (p) {
 //            Rect frame = rect();
@@ -60,16 +60,16 @@ public:
 //            
 //            if (!Empty(Intersection(bounds, {off, {1,1}}))) {
 //                size_t idx = std::clamp((size_t)0, _buttons.size()-1, (size_t)(off.y / RowHeight));
-//                highlightButton = _buttons[idx];
+//                mouseOverButton = _buttons[idx];
 //            }
 //        }
 //        
-//        if (_highlightButton != highlightButton) {
-//            _highlightButton = highlightButton;
+//        if (_mouseOverButton != mouseOverButton) {
+//            _mouseOverButton = mouseOverButton;
 //            _drawNeeded = true;
 //        }
 //        
-//        return _highlightButton;
+//        return _mouseOverButton;
 //    }
     
     const MenuButton* updateMousePosition(const Point& p) {
@@ -78,20 +78,20 @@ public:
         Rect innerBounds = Inset({{}, frame.size}, inset);
         Point off = p-frame.point;
         
-        const MenuButton* highlightButton = nullptr;
+        const MenuButton* mouseOverButton = nullptr;
         if (!Empty(Intersection(innerBounds, {off, {1,1}}))) {
             off -= innerBounds.point;
             size_t idx = std::min(_buttons.size()-1, (size_t)(off.y / RowHeight));
             MenuButton& button = _buttons[idx];
-            highlightButton = (button.enabled ? &button : nullptr);
+            mouseOverButton = &button;
         }
         
-        if (_highlightButton != highlightButton) {
-            _highlightButton = highlightButton;
+        if (_mouseOverButton != mouseOverButton) {
+            _mouseOverButton = mouseOverButton;
             _drawNeeded = true;
         }
         
-        return _highlightButton;
+        return _mouseOverButton;
     }
     
     void draw() {
@@ -104,7 +104,7 @@ public:
 //            ::wmove(*this, p.y, p.x);
 //            ::vw_printw(*this, fmt, args);
             
-//            UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? A_UNDERLINE : A_NORMAL);
+//            UI::Attr attr(shared_from_this(), _buttons[i]==_mouseOverButton ? A_UNDERLINE : A_NORMAL);
             
             int y = 1 + (int)idx*RowHeight;
             
@@ -113,7 +113,7 @@ public:
 //                UI::Attr attr(shared_from_this(), _colors.menu);
                 UI::Attr attr;
                 
-                if (&button == _highlightButton) {
+                if (&button==_mouseOverButton && button.enabled) {
                     attr = UI::Attr(shared_from_this(), _colors.menu|A_BOLD);
                 
                 } else if (!button.enabled) {
@@ -145,7 +145,7 @@ public:
                 drawLineHoriz({0,y+1}, w);
             }
             
-//            if (_buttons[i] == _highlightButton) {
+//            if (_buttons[i] == _mouseOverButton) {
 //                drawLineHoriz({0,y}, 10);
 //            }
             
@@ -174,7 +174,7 @@ private:
     static constexpr int RowHeight  = 2;
     const ColorPalette& _colors;
     std::vector<MenuButton> _buttons;
-    const MenuButton* _highlightButton = nullptr;
+    const MenuButton* _mouseOverButton = nullptr;
     bool _drawNeeded = false;
 };
 

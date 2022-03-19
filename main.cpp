@@ -601,7 +601,13 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 // Right mouse up, but menu stays open
                 // Now start tracking both left+right mouse down
             } else {
-                break;
+                // Close the menu only if clicking outside of the menu, or clicking on an
+                // enabled menu button.
+                // In other words, don't close the menu when clicking on a disabled menu
+                // button.
+                if (!menuButton || menuButton->enabled) {
+                    break;
+                }
             }
         }
         
@@ -609,7 +615,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     // Handle the clicked button
-    std::string menuButtonName = (menuButton ? menuButton->name : "");
+    std::string menuButtonName = (menuButton && menuButton->enabled ? menuButton->name : "");
     std::optional<Git::Op> gitOp;
     if (menuButtonName == combineButton.name) {
         gitOp = Git::Op{
@@ -1026,8 +1032,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
-    #warning TODO: figure out why moving/copying commits is slow sometimes
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: no-op guarantee:
@@ -1049,6 +1053,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add column scrolling
     
     #warning TODO: if we can't speed up git operations, show a progress indicator
+    
+    #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
