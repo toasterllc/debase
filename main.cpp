@@ -557,7 +557,15 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     
     assert(!_Selection.commits.empty());
     
-    bool combineEnabled = _Selection.commits.size() > 1;
+    bool selectionContainsMerge = false;
+    for (Git::Commit commit : _Selection.commits) {
+        if (commit.isMerge()) {
+            selectionContainsMerge = true;
+            break;
+        }
+    }
+    
+    bool combineEnabled = _Selection.commits.size()>1 && !selectionContainsMerge;
     bool editEnabled = _Selection.commits.size() == 1;
     bool deleteEnabled = true;
     UI::MenuButton combineButton = { .name="Combine", .key="c",   .enabled=combineEnabled };
@@ -1014,8 +1022,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: don't allow combine when a merge commit is selected
-    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
@@ -1113,6 +1119,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: make sure moving/deleting commits near the root commit still works
 //    
 //    #warning TODO: always show the same contextual menu, but gray-out the disabled options
+//
+//    #warning TODO: don't allow combine when a merge commit is selected
     
     
     
