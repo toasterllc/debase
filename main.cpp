@@ -555,27 +555,17 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         return std::nullopt;
     }
     
-    static UI::MenuButton CombineButton = {"Combine", "c"};
-    static UI::MenuButton EditButton    = {"Edit",    "ret"};
-    static UI::MenuButton DeleteButton  = {"Delete",  "del"};
-    
     assert(!_Selection.commits.empty());
     
-    if (_Selection.commits.size() > 1) {
-        static const UI::MenuButton* Buttons[] = {
-            &CombineButton,
-            &DeleteButton,
-        };
-        _Menu = MakeShared<UI::Menu>(_Colors, Buttons);
+    bool combineEnabled = _Selection.commits.size() > 1;
+    bool editEnabled = _Selection.commits.size() == 1;
+    bool deleteEnabled = true;
+    UI::MenuButton combineButton = { .name="Combine", .key="c",   .enabled=combineEnabled };
+    UI::MenuButton editButton    = { .name="Edit",    .key="ret", .enabled=editEnabled    };
+    UI::MenuButton deleteButton  = { .name="Delete",  .key="del", .enabled=deleteEnabled  };
+    std::vector<UI::MenuButton> buttons = { combineButton, editButton, deleteButton };
     
-    } else {
-        static const UI::MenuButton* Buttons[] = {
-            &EditButton,
-            &DeleteButton,
-        };
-        _Menu = MakeShared<UI::Menu>(_Colors, Buttons);
-    }
-    
+    _Menu = MakeShared<UI::Menu>(_Colors, buttons);
     _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
     const UI::MenuButton* menuButton = nullptr;
@@ -611,8 +601,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     // Handle the clicked button
+    std::string menuButtonName = (menuButton ? menuButton->name : "");
     std::optional<Git::Op> gitOp;
-    if (menuButton == &CombineButton) {
+    if (menuButtonName == combineButton.name) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Combine,
@@ -622,7 +613,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             },
         };
     
-    } else if (menuButton == &EditButton) {
+    } else if (menuButtonName == editButton.name) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Edit,
@@ -632,7 +623,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             },
         };
     
-    } else if (menuButton == &DeleteButton) {
+    } else if (menuButtonName == deleteButton.name) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Delete,
@@ -1120,6 +1111,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: properly handle moving/copying merge commits
 //
 //    #warning TODO: make sure moving/deleting commits near the root commit still works
+//    
+//    #warning TODO: always show the same contextual menu, but gray-out the disabled options
     
     
     

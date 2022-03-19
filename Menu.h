@@ -7,24 +7,23 @@ namespace UI {
 struct MenuButton {
     std::string name;
     std::string key;
+    bool enabled = false;
 };
 
 class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
-    template<size_t T_ButtonCount>
-    _Menu(const ColorPalette& colors, const MenuButton*(&buttons)[T_ButtonCount]) :
-    _colors(colors), _buttons(buttons), _buttonCount(T_ButtonCount) {
-        static_assert(T_ButtonCount>0, "Must have at least 1 button");
+    _Menu(const ColorPalette& colors, std::vector<MenuButton> buttons) : _colors(colors), _buttons(buttons) {
+        _buttons = buttons;
         
         // Find the longest button to set our width
         int width = 0;
-        for (size_t i=0; i<_buttonCount; i++) {
-            int w = (int)_buttons[i]->name.size() + (int)_buttons[i]->key.size();
+        for (const MenuButton& button : _buttons) {
+            int w = (int)button.name.size() + (int)button.key.size();
             width = std::max(width, w);
         }
         
         int w = width + KeySpacing + 2*(BorderSize+InsetX);
-        int h = (RowHeight*(int)_buttonCount)-1 + 2;
+        int h = (RowHeight*(int)buttons.size())-1 + 2;
         setSize({w, h});
         _drawNeeded = true;
     }
@@ -82,8 +81,9 @@ public:
         const MenuButton* highlightButton = nullptr;
         if (!Empty(Intersection(innerBounds, {off, {1,1}}))) {
             off -= innerBounds.point;
-            size_t idx = std::min(_buttonCount-1, (size_t)(off.y / RowHeight));
-            highlightButton = _buttons[idx];
+            size_t idx = std::min(_buttons.size()-1, (size_t)(off.y / RowHeight));
+            MenuButton& button = _buttons[idx];
+            highlightButton = (button.enabled ? &button : nullptr);
         }
         
         if (_highlightButton != highlightButton) {
@@ -99,7 +99,8 @@ public:
         
         const int w = bounds().size.x;
         size_t idx = 0;
-        for (size_t i=0; i<_buttonCount; i++) {
+        for (const MenuButton& button : _buttons) {
+//        for (size_t i=0; i<_buttonCount; i++) {
 //            ::wmove(*this, p.y, p.x);
 //            ::vw_printw(*this, fmt, args);
             
@@ -110,8 +111,19 @@ public:
             // Draw button name
             {
 //                UI::Attr attr(shared_from_this(), _colors.menu);
-                UI::Attr attr(shared_from_this(), _buttons[i]==_highlightButton ? _colors.menu|A_BOLD : A_NORMAL);
-                drawText({BorderSize+InsetX, y}, "%s", _buttons[i]->name.c_str());
+                UI::Attr attr;
+                
+                if (&button == _highlightButton) {
+                    attr = UI::Attr(shared_from_this(), _colors.menu|A_BOLD);
+                
+                } else if (!button.enabled) {
+                    attr = UI::Attr(shared_from_this(), _colors.subtitleText);
+                
+                } else {
+                    attr = UI::Attr(shared_from_this(), A_NORMAL);
+                }
+                
+                drawText({BorderSize+InsetX, y}, "%s", button.name.c_str());
             }
             
 //            wchar_t str[] = L"⌫";
@@ -123,11 +135,12 @@ public:
             // Draw button key
             {
                 UI::Attr attr(shared_from_this(), _colors.subtitleText);
-                drawText({w-BorderSize-InsetX-(int)_buttons[i]->key.size(), y}, "%s", _buttons[i]->key.c_str());
+                drawText({w-BorderSize-InsetX-(int)button.key.size(), y}, "%s", button.key.c_str());
             }
             
             // Draw separator
-            if (i != _buttonCount-1) {
+            
+            if (&button != &_buttons.back()) {
                 UI::Attr attr(shared_from_this(), _colors.menu);
                 drawLineHoriz({0,y+1}, w);
             }
@@ -160,8 +173,7 @@ private:
     static constexpr int KeySpacing = 2;
     static constexpr int RowHeight  = 2;
     const ColorPalette& _colors;
-    const MenuButton**const _buttons = nullptr;
-    const size_t _buttonCount = 0;
+    std::vector<MenuButton> _buttons;
     const MenuButton* _highlightButton = nullptr;
     bool _drawNeeded = false;
 };
