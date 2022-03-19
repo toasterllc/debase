@@ -1035,8 +1035,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
-    #warning TODO: if we can't speed up git operations, show a progress indicator
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: no-op guarantee:
@@ -1044,6 +1042,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   dragging commits to their current location -> no repo changes
     
     #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
+    
+    #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
     
     #warning TODO: support undo/redo
     
@@ -1054,6 +1054,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
     #warning TODO: add column scrolling
+    
+    #warning TODO: if we can't speed up git operations, show a progress indicator
     
 //  DONE:
 //    #warning TODO: when copying commmits, don't hide the source commits
