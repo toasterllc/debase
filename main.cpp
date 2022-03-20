@@ -1053,8 +1053,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
-    
     #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
     
     #warning TODO: support undo/redo
@@ -1152,6 +1150,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO:   dragging commits to their current location -> no repo changes
 //
 //    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
+//
+//    #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
     
     
     {
