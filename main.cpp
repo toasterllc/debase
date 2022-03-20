@@ -1005,7 +1005,10 @@ static void _EventLoop() {
             break;
         }}
         
+        constexpr int ErrorPanelWidth = 35;
+        const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
         if (gitOp) {
+            std::string errorMsg;
             try {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
                 
@@ -1019,9 +1022,25 @@ static void _EventLoop() {
                     .commits = opResult.dst.commits,
                 };
             
+            } catch (const Git::Error& e) {
+                switch (e.error) {
+                case GIT_EUNMERGED:
+                case GIT_EMERGECONFLICT:
+                    errorMsg = "a merge conflict occurred";
+                    break;
+                
+                default:
+                    errorMsg = e.what();
+                    break;
+                }
+            
             } catch (const std::exception& e) {
-                const int width = std::min(35, _RootWindow->bounds().size.x);
-                _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, width, "Error", e.what());
+                errorMsg = e.what();
+            }
+            
+            if (!errorMsg.empty()) {
+                errorMsg[0] = toupper(errorMsg[0]);
+                _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
             }
         }
     }

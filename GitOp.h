@@ -306,6 +306,10 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
         op.src.commits      // remove:      std::set<Commit>
     );
     
+    if (!srcResult.commit) {
+        throw RuntimeError("the last commit can't be deleted");
+    }
+    
     // Replace the source branch/tag
     Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
     return {
@@ -625,7 +629,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
                 .rev = op.src.rev,
             },
             .dst = {
-                .rev = op.dst.rev,
+                .rev = op.src.rev,
                 .commits = op.src.commits,
             },
         };
