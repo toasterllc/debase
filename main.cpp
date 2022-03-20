@@ -830,31 +830,6 @@ static void _CursesDeinit() {
     ::endwin();
 }
 
-static void _GitInit(const std::vector<std::string>& revNames) {
-    git_libgit2_init();
-    
-    _Repo = Git::Repo::Open(".");
-    
-    if (revNames.empty()) {
-        _Revs.push_back(_Repo.head());
-    
-    } else {
-        // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
-        std::set<Git::Rev> unique;
-        for (const std::string& revName : revNames) {
-            Git::Rev rev = _Repo.revLookup(revName);
-            if (unique.find(rev) == unique.end()) {
-                _Revs.push_back(rev);
-                unique.insert(rev);
-            }
-        }
-    }
-}
-
-static void _GitDeinit() {
-    git_libgit2_shutdown();
-}
-
 extern "C" {
     extern char** environ;
 };
@@ -1048,7 +1023,7 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: improve error messages when we can't lookup supplied refs
+    #warning TODO: fix wrong column being selected after moving commit in master^
     
     #warning TODO: rigorously test copying/moving merge commits
     
@@ -1153,6 +1128,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
 //
 //    #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
+//
+//    #warning TODO: improve error messages when we can't lookup supplied refs
     
     
     {
@@ -1237,16 +1214,13 @@ int main(int argc, const char* argv[]) {
 //        Git::Ref ref = _Repo.refReplace(masterRef, head);
 //    }
     
-    {
-        volatile bool a = false;
-        while (!a);
-    }
+//    {
+//        volatile bool a = false;
+//        while (!a);
+//    }
     
     try {
         setlocale(LC_ALL, "");
-        
-//        git_libgit2_init();
-//        Defer(git_libgit2_shutdown());
         
         std::vector<std::string> revNames;
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
@@ -1260,19 +1234,18 @@ int main(int argc, const char* argv[]) {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
             std::set<Git::Rev> unique;
             for (const std::string& revName : revNames) {
-                Git::Rev rev = _Repo.revLookup(revName);
+                Git::Rev rev;
+                try {
+                    rev = _Repo.revLookup(revName);
+                } catch (...) {
+                    throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
+                }
+                
                 if (unique.find(rev) == unique.end()) {
                     _Revs.push_back(rev);
                     unique.insert(rev);
                 }
             }
-        }
-        
-        {
-            _Selection = {};
-            _Revs = {};
-            _DoubleClickState = {};
-            _Repo = nullptr;
         }
         
         _CursesInit();
@@ -1281,7 +1254,7 @@ int main(int argc, const char* argv[]) {
         _EventLoop();
     
     } catch (const std::exception& e) {
-        fprintf(stderr, "Error: %s\n", e.what());
+        fprintf(stderr, "Error: %s\n\n", e.what());
         return 1;
     }
     
