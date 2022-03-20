@@ -1028,10 +1028,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: bring back _CommitTime so we don't need to worry about the 'sign' field of git_time
-    
-    #warning TODO: make sure we can round-trip with the same date/time. especially test commits with negative UTC offsets!
-    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit
@@ -1131,6 +1127,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: set_escdelay: not sure if we're going to encounter issues?
 //
 //    #warning TODO: handle merge conflicts
+//
+//    #warning TODO: bring back _CommitTime so we don't need to worry about the 'sign' field of git_time
+//    
+//    #warning TODO: make sure we can round-trip with the same date/time. especially test commits with negative UTC offsets!
     
     
     
