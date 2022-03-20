@@ -1049,8 +1049,6 @@ static void _EventLoop() {
 int main(int argc, const char* argv[]) {
     #warning TODO: rigorously test copying/moving merge commits
     
-    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
-    
     #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
@@ -1150,6 +1148,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: no-op guarantee:
 //    #warning TODO:   same commit message -> no repo changes
 //    #warning TODO:   dragging commits to their current location -> no repo changes
+//
+//    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     
     
