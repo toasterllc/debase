@@ -1028,6 +1028,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: bring back _CommitTime so we don't need to worry about the 'sign' field of git_time
+    
     #warning TODO: make sure we can round-trip with the same date/time. especially test commits with negative UTC offsets!
     
     #warning TODO: rigorously test copying/moving merge commits
