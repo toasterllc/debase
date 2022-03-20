@@ -392,7 +392,7 @@ struct _CommitAuthor {
 
 struct _CommitTime {
     git_time_t time = 0;
-    int offset = 0;
+    int offset = 0; // timezone offset, in minutes (same as git_time.offset)
 };
 
 struct _CommitMessage {
@@ -421,8 +421,8 @@ inline std::optional<_CommitAuthor> _CommitAuthorParse(std::string_view str) {
 }
 
 inline std::optional<_CommitTime> _CommitTimeParse(std::string_view str) {
-    int offset = 0;
     time_t time = 0;
+    int offset = 0;
     try {
         time = TimeFromString(str, &offset);
     } catch (...) {
@@ -463,19 +463,51 @@ inline std::optional<_CommitTime> _CommitTimeParse(std::string_view str) {
 constexpr const char _AuthorPrefix[] = "Author:";
 constexpr const char _TimePrefix[]   = "Date:";
 
-inline void _CommitMessageWrite(Commit commit, const std::filesystem::path& path) {
+
+
+//inline void _CommitMessageWrite(_CommitMessage commitMessage, const std::filesystem::path& path) {
+//    assert(commitMessage.author);
+//    assert(commitMessage.time);
+//    
+//    const git_signature* sig = git_commit_author(*commit);
+//    std::string timeStr = StringFromTime(sig->when.time);
+//    const char* msg = git_commit_message(*commit);
+//    
+//    commitMessage.time
+//    
+//    std::ofstream f;
+//    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+//    f.open(path);
+//    
+//    f << _AuthorPrefix << " " << commitMessage.author->name << " <" << commitMessage.author->email << ">" << '\n';
+//    f << _TimePrefix << "   " << timeStr << '\n';
+//    f << '\n';
+//    f << msg;
+//}
+
+inline _CommitMessage _CommitMessageForCommit(Commit commit) {
     const git_signature* sig = git_commit_author(*commit);
-    std::string timeStr = StringFromTime(sig->when.time);
-    const char* msg = git_commit_message(*commit);
+    return _CommitMessage{
+        .author  = _CommitAuthor{sig->name, sig->email},
+        .time    = _CommitTime{sig->when.time, sig->when.offset},
+        .message = git_commit_message(*commit),
+    };
+}
+
+inline void _CommitMessageWrite(_CommitMessage msg, const std::filesystem::path& path) {
+    assert(msg.author);
+    assert(msg.time);
+    
+    std::string timeStr = StringFromTime(msg.time->time);
     
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     f.open(path);
     
-    f << _AuthorPrefix << " " << sig->name << " <" << sig->email << ">" << '\n';
+    f << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
     f << _TimePrefix << "   " << timeStr << '\n';
     f << '\n';
-    f << msg;
+    f << msg.message;
 }
 
 inline _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
@@ -577,22 +609,23 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     // Write the commit message to the file
     Commit origCommit = *op.src.commits.begin();
     const git_signature* origAuthor = git_commit_author(*origCommit);
-    _CommitMessageWrite(origCommit, tmpFilePath);
+    _CommitMessage origMsg = _CommitMessageForCommit(origCommit);
+    _CommitMessageWrite(origMsg, tmpFilePath);
     
     // Spawn text editor
     _Argv argv = _CreateArgv(op.repo, tmpFilePath);
     T_SpawnFn(argv.argv.data());
     
     // Read back the edited commit message
-    _CommitMessage newMessage = _CommitMessageRead(tmpFilePath);
+    _CommitMessage newMsg = _CommitMessageRead(tmpFilePath);
     
     // Construct a new signature, using the original signature values if a new value didn't exist
-    const char* newName = newMessage.author ? newMessage.author->name.c_str() : origAuthor->name;
-    const char* newEmail = newMessage.author ? newMessage.author->email.c_str() : origAuthor->email;
-    time_t newTime = newMessage.time ? newMessage.time->time : origAuthor->when.time;
-    int newOffset = newMessage.time ? newMessage.time->offset : origAuthor->when.offset;
+    const char* newName = newMsg.author ? newMsg.author->name.c_str() : origAuthor->name;
+    const char* newEmail = newMsg.author ? newMsg.author->email.c_str() : origAuthor->email;
+    time_t newTime = newMsg.time ? newMsg.time->time : origAuthor->when.time;
+    int newOffset = newMsg.time ? newMsg.time->offset : origAuthor->when.offset;
     Signature newAuthor = Signature::Create(newName, newEmail, newTime, newOffset);
-    Commit newCommit = op.repo.commitAmend(origCommit, newAuthor, newMessage.message);
+    Commit newCommit = op.repo.commitAmend(origCommit, newAuthor, newMsg.message);
     
     // Rewrite the rev
     // Add and remove commits
