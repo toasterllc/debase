@@ -42,21 +42,26 @@ struct OpResult {
 };
 
 // _Sorted: sorts a set of commits according to the order that they appear via `c`
-inline std::vector<Commit> _Sorted(Commit c, const std::set<Commit>& s) {
-    std::vector<Commit> r;
-    std::set<Commit> tmp = s;
-    while (r.size() != s.size()) {
-        if (tmp.erase(c)) r.push_back(c);
-        c = c.parent();
+inline std::vector<Commit> _Sorted(Commit head, const std::set<Commit>& commits) {
+    std::vector<Commit> sorted;
+    std::set<Commit> rem = commits;
+    while (!rem.empty()) {
+        if (rem.erase(head)) sorted.push_back(head);
+        head = head.parent();
     }
     
-    // Confirm that we found all the commits in `s`
-    if (r.size() != s.size()) {
-        throw RuntimeError("failed to sort commits");
+    std::reverse(sorted.begin(), sorted.end());
+    return sorted;
+}
+
+inline Commit _FindEarliestCommit(Commit head, const std::set<Commit>& commits) {
+    assert(!commits.empty());
+    std::set<Commit> rem = commits;
+    while (rem.size() > 1) {
+        rem.erase(head);
+        head = head.parent();
     }
-    
-    std::reverse(r.begin(), r.end());
-    return r;
+    return *rem.begin();
 }
 
 struct _AddRemoveResult {
@@ -145,11 +150,58 @@ inline _AddRemoveResult _AddRemoveCommits(
     };
 }
 
+inline bool _CommitsHasGap(Git::Commit head, const std::set<Commit>& commits) {
+    std::set<Commit> rem = commits;
+    bool started = false;
+    while (head && !rem.empty()) {
+        bool found = rem.erase(head);
+        if (started && !found) return true;
+        started |= found;
+        head = head.parent();
+    }
+    // If `rem` still has elements, then it's because `commits` contains
+    // elements that don't exist in the `head` tree
+    assert(rem.empty());
+    return false;
+}
+
+inline bool _InsertionIsNop(Commit head, Commit position, const std::set<Commit>& commits) {
+    std::set<Commit> positions = commits;
+    Commit tail = _FindEarliestCommit(head, positions);
+    // tail.parent()==nullptr is OK and desired, because it represents insertion as the root commit
+    positions.insert(tail.parent());
+    return positions.find(position) != positions.end();
+}
+
+inline bool _MoveIsNop(const Op& op) {
+    assert(op.src.rev.ref);
+    assert(op.dst.rev.ref);
+    
+    // Not a nop if the source and destination are different
+    if (op.src.rev.ref != op.dst.rev.ref) return false;
+    // If there's a gap in the commits that are being moved, then it's
+    // never a nop, because moving them would remove the gap
+    if (_CommitsHasGap(op.src.rev.commit, op.src.commits)) return false;
+    return _InsertionIsNop(op.src.rev.commit, op.dst.position, op.src.commits);
+}
+
 inline OpResult _Exec_MoveCommits(const Op& op) {
     // When moving commits, the source and destination must be references (branches
     // or tags) since we're modifying both
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
+    
+    if (_MoveIsNop(op)) {
+        return {
+            .src = {
+                .rev = op.src.rev,
+            },
+            .dst = {
+                .rev = op.dst.rev,
+                .commits = op.src.commits,
+            },
+        };
+    }
     
     // Move commits within the same ref (branch/tag)
     if (op.src.rev.ref == op.dst.rev.ref) {
