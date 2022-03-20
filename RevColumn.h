@@ -28,26 +28,37 @@ public:
         // Truncate the name to our width
         _name.erase(std::min(_name.size(), (size_t)_width));
         
-        // Create panels for each commit
-        const int InsetY = (!_showMutability ? 2 : 3);
-        int offY = InsetY;
-        Git::Commit commit = _rev.commit;
-        while (commit) {
-            Point p = {_offsetX, offY};
-            UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_colors, false, width, commit);
-            UI::Rect frame = {p, panel->frame().size};
-            // Check if any part of the window would be offscreen
-            if (Intersection(_win->bounds(), frame) != frame) break;
-            panel->setPosition(p);
-            _panels.push_back(panel);
-            offY += panel->frame().size.y + 1;
-            commit = commit.parent();
+        UI::Rect nameFrame = {{_offsetX,0}, {_width, 1}};
+        _truncated = Intersection(_win->bounds(), nameFrame) != nameFrame;
+        if (!_truncated) {
+            // Create panels for each commit
+            const int InsetY = (!_showMutability ? 2 : 3);
+            int offY = InsetY;
+            Git::Commit commit = _rev.commit;
+            size_t skip = _rev.skip;
+            while (commit) {
+                if (!skip) {
+                    Point p = {_offsetX, offY};
+                    UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_colors, false, _width, commit);
+                    UI::Rect frame = {p, panel->frame().size};
+                    // Check if any part of the window would be offscreen
+                    if (Intersection(_win->bounds(), frame) != frame) break;
+                    panel->setPosition(p);
+                    _panels.push_back(panel);
+                    offY += panel->frame().size.y + 1;
+                
+                } else {
+                    skip--;
+                }
+                
+                commit = commit.parent();
+            }
         }
     }
     
     void draw() {
-        // Don't draw anything if we don't have any panels
-        if (_panels.empty()) return;
+        // Don't draw anything if our column is truncated
+        if (_truncated) return;
         
 //        _win->drawLineVert({_offsetX+_width/2, 0}, _win->bounds().size.y);
         
@@ -90,6 +101,7 @@ private:
     int _offsetX = 0;
     int _width = 0;
     bool _showMutability = false;
+    bool _truncated = false;
     UI::CommitPanelVec _panels;
 };
 

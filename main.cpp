@@ -663,7 +663,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 static void _ReloadRevs(Git::Repo repo, std::vector<Git::Rev>& revs) {
     for (Git::Rev& rev : revs) {
         if (rev.ref) {
-            rev = Git::Rev(repo.refReload(rev.ref));
+            rev = Git::Rev(repo.refReload(rev.ref), rev.skip);
         }
     }
 }
@@ -1047,6 +1047,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: improve error messages when we can't lookup supplied refs
+    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: backup all supplied revs before doing anything
@@ -1152,10 +1154,11 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: improve error messages: merge conflicts, deleting last branch commit
     
     
-    
-    Git::Commit a;
-    if (a) {
-        a.idStr();
+    {
+        Git::Commit a;
+        if (a) {
+            a.idStr();
+        }
     }
     
 //    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
@@ -1233,8 +1236,10 @@ int main(int argc, const char* argv[]) {
 //        Git::Ref ref = _Repo.refReplace(masterRef, head);
 //    }
     
-//    volatile bool a = false;
-//    while (!a);
+//    {
+//        volatile bool a = false;
+//        while (!a);
+//    }
     
     setlocale(LC_ALL, "");
     

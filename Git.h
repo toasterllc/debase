@@ -249,7 +249,7 @@ public:
     
     Rev(Commit c) : commit(c) {}
     
-    Rev(Ref r) : ref(r) {
+    Rev(Ref r, size_t skip=0) : ref(r), skip(skip) {
         commit = ref.commit();
         assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
     }
@@ -259,6 +259,7 @@ public:
     bool operator==(const Rev& x) const {
         if (commit != x.commit) return false;
         if (ref != x.ref) return false;
+        if (skip != x.skip) return false;
         return true;
     }
     
@@ -267,8 +268,10 @@ public:
     bool operator<(const Rev& x) const {
         // Stage 1: compare commits
         if (commit != x.commit) return commit<x.commit;
-        // Stage 2: commits are the same; compare the refs
-        return ref < x.ref;
+        // Stage 2: compare refs
+        if (ref != x.ref) return ref<x.ref;
+        // Stage 3: compare skips
+        return skip<x.skip;
     }
     
     inline bool isMutable() const {
@@ -278,8 +281,9 @@ public:
         return ref.isBranch() || ref.isTag();
     }
     
-    Commit commit; // Mandatory
-    Ref ref;       // Optional
+    Commit commit;   // Mandatory
+    Ref ref;         // Optional
+    size_t skip = 0; // Number of commits to skip
 };
 
 class Repo : public RefCounted<git_repository*, git_repository_free> {
@@ -483,7 +487,7 @@ public:
         return refFullNameLookup(ref.fullName());
     }
     
-    Rev revLookup(std::string_view str) {
+    Rev _revLookup(std::string_view str) {
         Object obj;
         Ref ref;
         
@@ -497,9 +501,47 @@ public:
             ref = pr;
         }
         
-        // If we have a ref, construct this Rev as a ref
         if (ref) return Rev(ref);
         return Rev(Commit::FromObject(obj));
+    }
+    
+    Rev revLookup(std::string_view str) {
+        Rev origRev = _revLookup(str);
+        if (origRev.ref) return origRev;
+        
+        // Try to get a ref-backed rev (with a skip parameter) by removing the ^ or ~ suffix from `str`
+        Rev skipRev;
+        if (!skipRev.ref) {
+            std::string name(str);
+            size_t pos = name.find("^");
+            if (pos != std::string::npos) {
+                name.erase(pos);
+                skipRev = _revLookup(name);
+            }
+        }
+        
+        if (!skipRev.ref) {
+            std::string name(str);
+            size_t pos = name.find("~");
+            if (pos != std::string::npos) {
+                name.erase(pos);
+                skipRev = _revLookup(name);
+            }
+        }
+        
+        // If we found a `skipRev` by removing the ^~ suffix, calculate the `skip` value
+        if (skipRev.ref) {
+            size_t skip = 0;
+            Commit head = skipRev.commit;
+            while (head && head!=origRev.commit) {
+                head = head.parent();
+                skip++;
+            }
+            
+            if (head) return Rev(skipRev.ref, skip);
+        }
+        
+        return origRev;
     }
     
     Branch branchLookup(std::string_view name) const {
