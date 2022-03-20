@@ -547,7 +547,23 @@ inline std::string StringForId(const git_oid& oid) {
 static const char* _Weekdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", };
 static const char* _Months[]   = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", };
 
-inline std::string ShortStringForTime(git_time t) {
+struct Time {
+    time_t time = 0;
+    int offset = 0;
+    
+    bool operator==(const Time& x) const {
+        return time==x.time && offset==x.offset;
+    }
+};
+
+inline Time TimeForGitTime(const git_time& t) {
+    return {
+        .time = t.time,
+        .offset = t.offset,
+    };
+}
+
+inline std::string ShortStringForTime(const Time& t) {
     time_t tmp = t.time + t.offset*60;
     
     struct tm tm = {};
@@ -560,7 +576,7 @@ inline std::string ShortStringForTime(git_time t) {
     return buf;
 }
 
-inline std::string StringFromTime(git_time t) {
+inline std::string StringFromTime(const Time& t) {
     time_t tmp = t.time + t.offset*60;
     
     struct tm tm = {};
@@ -591,16 +607,20 @@ inline int _MonthParse(std::string_view str) {
     throw RuntimeError("failed to parse weekday: %s", str);
 }
 
-inline git_time TimeFromString(std::string_view str) {
+inline Time TimeFromString(std::string_view str) {
     struct tm tm = {};
     
-    char weekday[4];
-    char month[4];
+    char weekday[16];
+    char month[16];
     int offset = 0;
-    int ir = sscanf(str.data(), "%3s %3s %d %d:%d:%d %d %d",
+    int ir = sscanf(str.data(), "%15s %15s %d %d:%d:%d %d %d",
         weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
     );
     if (ir != 8) throw RuntimeError("sscanf failed");
+    
+    // Cap string fields to 3 characters
+    weekday[3] = 0;
+    month[3] = 0;
     
     tm.tm_wday = _WeekdayParse(weekday);
     tm.tm_mon = _MonthParse(month);

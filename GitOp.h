@@ -388,12 +388,21 @@ inline bool _StartsWith(std::string_view prefix, std::string_view str) {
 struct _CommitAuthor {
     std::string name;
     std::string email;
+    bool operator==(const _CommitAuthor& x) const {
+        return name==x.name && email==x.email;
+    }
 };
 
 struct _CommitMessage {
     std::optional<_CommitAuthor> author;
-    std::optional<git_time> time;
+    std::optional<Time> time;
     std::string message;
+    
+    bool operator==(const _CommitMessage& x) const {
+        return author==x.author &&
+               time==x.time &&
+               message==x.message;
+    }
 };
 
 inline std::optional<_CommitAuthor> _CommitAuthorParse(std::string_view str) {
@@ -415,14 +424,12 @@ inline std::optional<_CommitAuthor> _CommitAuthorParse(std::string_view str) {
     };
 }
 
-inline std::optional<git_time> _CommitTimeParse(std::string_view str) {
-    git_time t;
+inline std::optional<Time> _CommitTimeParse(std::string_view str) {
     try {
-        t = TimeFromString(str);
+        return TimeFromString(str);
     } catch (...) {
         return std::nullopt;
     }
-    return t;
 }
 
 
@@ -480,7 +487,7 @@ inline _CommitMessage _CommitMessageForCommit(Commit commit) {
     const git_signature* sig = git_commit_author(*commit);
     return _CommitMessage{
         .author  = _CommitAuthor{sig->name, sig->email},
-        .time    = sig->when,
+        .time    = TimeForGitTime(sig->when),
         .message = git_commit_message(*commit),
     };
 }
@@ -508,7 +515,10 @@ inline _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
         f.open(path);
         
         std::string line;
-        while (std::getline(f, line)) lines.push_back(line);
+        do {
+            std::getline(f, line);
+            lines.push_back(line);
+        } while (!f.eof());
     }
     
     auto iter = lines.begin();
@@ -542,11 +552,11 @@ inline _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
     // Re-compose message after skipping author+time+whitspace
     std::string msg;
     for (; iter!=lines.end(); iter++) {
-        msg += *iter + '\n';
+        msg += (msg.empty() ? *iter : "\n" + *iter);
     }
     
     std::optional<_CommitAuthor> author;
-    std::optional<git_time> time;
+    std::optional<Time> time;
     
     if (authorStr) author = _CommitAuthorParse(*authorStr);
     if (timeStr) time = _CommitTimeParse(*timeStr);
@@ -607,6 +617,20 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     
     // Read back the edited commit message
     _CommitMessage newMsg = _CommitMessageRead(tmpFilePath);
+    
+    // Nop if the message wasn't changed
+    if (origMsg == newMsg) {
+        throw RuntimeError("nop");
+        return {
+            .src = {
+                .rev = op.src.rev,
+            },
+            .dst = {
+                .rev = op.dst.rev,
+                .commits = op.src.commits,
+            },
+        };
+    }
     
     // Construct a new signature, using the original signature values if a new value didn't exist
     const char* newName = newMsg.author ? newMsg.author->name.c_str() : origAuthor->name;
