@@ -620,7 +620,6 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     
     // Nop if the message wasn't changed
     if (origMsg == newMsg) {
-        throw RuntimeError("nop");
         return {
             .src = {
                 .rev = op.src.rev,

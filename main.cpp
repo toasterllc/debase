@@ -1034,10 +1034,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: backup all supplied revs before doing anything
     
-    #warning TODO: no-op guarantee:
-    #warning TODO:   same commit message -> no repo changes
-    #warning TODO:   dragging commits to their current location -> no repo changes
-    
     #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
     
     #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
@@ -1131,6 +1127,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: bring back _CommitTime so we don't need to worry about the 'sign' field of git_time
 //    
 //    #warning TODO: make sure we can round-trip with the same date/time. especially test commits with negative UTC offsets!
+//
+//    #warning TODO: no-op guarantee:
+//    #warning TODO:   same commit message -> no repo changes
+//    #warning TODO:   dragging commits to their current location -> no repo changes
     
     
     
