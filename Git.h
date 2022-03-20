@@ -407,16 +407,42 @@ public:
     size_t skip = 0; // Number of commits to skip
 };
 
-class Repo : public RefCounted<git_repository*, git_repository_free> {
+inline void _RepoFree(git_repository* repo) {
+    printf("MyFree()");
+    git_repository_free(repo);
+}
+
+class Repo : public RefCounted<git_repository*, _RepoFree> {
 public:
     using RefCounted::RefCounted;
     
     static Repo Open(std::string_view path) {
+        // This git_libgit2_init/git_libgit2_shutdown scheme is a little crazy,
+        // but it seems to be the most elegant solution.
+        // The problem: we want the lifetime of the `Repo` instance to manage
+        // the calls to _init/_shutdown, but _init must be called before
+        // git_repository_open. So we call _init ourself to allow us to call
+        // git_repository_open, create the Repo instance (which calls _init
+        // itself), and finally call _shutdown ourself (via Defer). Then, when
+        // ~Repo is called, the final _shutdown will be called.
+        git_libgit2_init();
+        Defer(git_libgit2_shutdown());
+        
         git_repository* x = nullptr;
         int ir = git_repository_open(&x, path.data());
         if (ir) throw Error(ir, "git_repository_open failed");
         return x;
     }
+    
+//    Repo(git_repository* x) : RefCounted(x) {
+//        printf("Repo(%p)\n", *get());
+//        git_libgit2_init();
+//    }
+//    
+//    ~Repo() {
+//        printf("~Repo(%p)\n", *get());
+//        git_libgit2_shutdown();
+//    }
     
     Ref head() const {
         git_reference* x = nullptr;

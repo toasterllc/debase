@@ -11,6 +11,7 @@
 #include <map>
 #include <spawn.h>
 #include "lib/Toastbox/RuntimeError.h"
+#include "lib/Toastbox/Defer.h"
 #include "Git.h"
 #include "Window.h"
 #include "Panel.h"
@@ -1236,22 +1237,53 @@ int main(int argc, const char* argv[]) {
 //        Git::Ref ref = _Repo.refReplace(masterRef, head);
 //    }
     
-//    {
-//        volatile bool a = false;
-//        while (!a);
-//    }
+    {
+        volatile bool a = false;
+        while (!a);
+    }
     
-    setlocale(LC_ALL, "");
+    try {
+        setlocale(LC_ALL, "");
+        
+//        git_libgit2_init();
+//        Defer(git_libgit2_shutdown());
+        
+        std::vector<std::string> revNames;
+        for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
+        
+        _Repo = Git::Repo::Open(".");
+        
+        if (revNames.empty()) {
+            _Revs.push_back(_Repo.head());
+        
+        } else {
+            // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
+            std::set<Git::Rev> unique;
+            for (const std::string& revName : revNames) {
+                Git::Rev rev = _Repo.revLookup(revName);
+                if (unique.find(rev) == unique.end()) {
+                    _Revs.push_back(rev);
+                    unique.insert(rev);
+                }
+            }
+        }
+        
+        {
+            _Selection = {};
+            _Revs = {};
+            _DoubleClickState = {};
+            _Repo = nullptr;
+        }
+        
+        _CursesInit();
+        Defer(_CursesDeinit());
+        
+        _EventLoop();
     
-    std::vector<std::string> revNames;
-    for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
-    _GitInit(revNames);
-    
-    _CursesInit();
-    _EventLoop();
-    _CursesDeinit();
-    
-    _GitDeinit();
+    } catch (const std::exception& e) {
+        fprintf(stderr, "Error: %s\n", e.what());
+        return 1;
+    }
     
     return 0;
 }
