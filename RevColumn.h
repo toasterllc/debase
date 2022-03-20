@@ -13,20 +13,18 @@ class _RevColumn {
 public:
     _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
     _colors(colors), _win(win), _rev(rev), _offsetX(offsetX), _width(width), _showMutability(showMutability) {
-        
-        if (_rev.ref) {
-            _name = _rev.ref.name();
-        } else {
-            _name = Git::StringForId(_rev.commit.id());
+        // Set our column name
+        {
+            _name = _rev.name();
+            
+            bool isHead = repo.head().commit() == _rev.head();
+            if (_name!="HEAD" && isHead) {
+                _name = _name + " (HEAD)";
+            }
+            
+            // Truncate the name to our width
+            _name.erase(std::min(_name.size(), (size_t)_width));
         }
-        
-        bool isHead = repo.head().commit() == _rev.commit;
-        if (_name!="HEAD" && isHead) {
-            _name = _name + " (HEAD)";
-        }
-        
-        // Truncate the name to our width
-        _name.erase(std::min(_name.size(), (size_t)_width));
         
         UI::Rect nameFrame = {{_offsetX,0}, {_width, 1}};
         _truncated = Intersection(_win->bounds(), nameFrame) != nameFrame;

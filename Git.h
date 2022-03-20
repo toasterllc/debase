@@ -19,6 +19,109 @@ using namespace Toastbox;
     r;                                      \
 })
 
+inline std::string StringForId(const git_oid& oid) {
+    char str[8];
+    git_oid_tostr(str, sizeof(str), &oid);
+    return str;
+}
+
+static const char* _Weekdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", };
+static const char* _Months[]   = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", };
+
+struct Time {
+    time_t time = 0;
+    int offset = 0;
+    
+    bool operator==(const Time& x) const {
+        return time==x.time && offset==x.offset;
+    }
+};
+
+inline Time TimeForGitTime(const git_time& t) {
+    return {
+        .time = t.time,
+        .offset = t.offset,
+    };
+}
+
+inline std::string ShortStringForTime(const Time& t) {
+    time_t tmp = t.time + t.offset*60;
+    
+    struct tm tm = {};
+    struct tm* tr = gmtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
+    
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s %s %u %02u:%02u",
+        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min);
+    return buf;
+}
+
+inline std::string StringFromTime(const Time& t) {
+    time_t tmp = t.time + t.offset*60;
+    
+    struct tm tm = {};
+    struct tm* tr = gmtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
+    
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s %s %d %02d:%02d:%02d %04d %+03d%02d",
+        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_year+1900, t.offset/60, t.offset%60);
+    return buf;
+}
+
+inline int _WeekdayParse(std::string_view str) {
+    for (size_t i=0; i<std::size(_Weekdays); i++) {
+        if (str == _Weekdays[i]) {
+            return (int)i;
+        }
+    }
+    throw RuntimeError("failed to parse weekday: %s", str);
+}
+
+inline int _MonthParse(std::string_view str) {
+    for (size_t i=0; i<std::size(_Months); i++) {
+        if (str == _Months[i]) {
+            return (int)i;
+        }
+    }
+    throw RuntimeError("failed to parse weekday: %s", str);
+}
+
+inline Time TimeFromString(std::string_view str) {
+    struct tm tm = {};
+    
+    char weekday[16];
+    char month[16];
+    int offset = 0;
+    int ir = sscanf(str.data(), "%15s %15s %d %d:%d:%d %d %d",
+        weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
+    );
+    if (ir != 8) throw RuntimeError("sscanf failed");
+    
+    // Cap string fields to 3 characters
+    weekday[3] = 0;
+    month[3] = 0;
+    
+    tm.tm_wday = _WeekdayParse(weekday);
+    tm.tm_mon = _MonthParse(month);
+    tm.tm_year -= 1900;
+    
+    int offs = (offset >= 0 ? 1 : -1);
+    int offh = std::abs(offset)/100;
+    int offm = std::abs(offset)%100;
+    offset = offs * offh*60 + offm;
+    
+    time_t t = timegm(&tm);
+    if (t == -1) throw RuntimeError("timegm failed");
+    t -= offset*60;
+    
+    return {
+        .time = t,
+        .offset = offset,
+    };
+}
+
 class Error : public std::runtime_error {
 public:
     Error(int error, const char* msg) :
@@ -274,11 +377,29 @@ public:
         return skip<x.skip;
     }
     
-    inline bool isMutable() const {
+    std::string name() const {
+        if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
+        return StringForId(commit.id());
+    }
+    
+    bool isMutable() const {
         assert(*this);
         // Only ref-backed revs are mutable
         if (!ref) return false;
         return ref.isBranch() || ref.isTag();
+    }
+    
+    // head(): returns the head commit considering `skip`
+    // skip==0 -> return `commit`
+    // skip>0  -> returns the `skip` parent of `commit`
+    Commit head() const {
+        Commit c = commit;
+        size_t s = skip;
+        while (c && s) {
+            c = c.parent();
+            s--;
+        }
+        return c;
     }
     
     Commit commit;   // Mandatory
@@ -487,24 +608,6 @@ public:
         return refFullNameLookup(ref.fullName());
     }
     
-    Rev _revLookup(std::string_view str) {
-        Object obj;
-        Ref ref;
-        
-        // Determine whether `str` is a ref or commit
-        {
-            git_object* po = nullptr;
-            git_reference* pr = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
-            if (ir) throw Error(ir, "git_revparse_ext failed");
-            obj = po;
-            ref = pr;
-        }
-        
-        if (ref) return Rev(ref);
-        return Rev(Commit::FromObject(obj));
-    }
-    
     Rev revLookup(std::string_view str) {
         Rev origRev = _revLookup(str);
         if (origRev.ref) return origRev;
@@ -584,6 +687,24 @@ public:
     }
 
 private:
+    Rev _revLookup(std::string_view str) const {
+        Object obj;
+        Ref ref;
+        
+        // Determine whether `str` is a ref or commit
+        {
+            git_object* po = nullptr;
+            git_reference* pr = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
+            if (ir) throw Error(ir, "git_revparse_ext failed");
+            obj = po;
+            ref = pr;
+        }
+        
+        if (ref) return Rev(ref);
+        return Rev(Commit::FromObject(obj));
+    }
+    
     Index _cherryPick(Commit dst, Commit commit) const {
         unsigned int mainline = (commit.isMerge() ? 1 : 0);
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
@@ -595,130 +716,6 @@ private:
         return x;
     }
 };
-
-inline std::string StringForId(const git_oid& oid) {
-    char str[8];
-    git_oid_tostr(str, sizeof(str), &oid);
-    return str;
-}
-
-static const char* _Weekdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", };
-static const char* _Months[]   = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", };
-
-struct Time {
-    time_t time = 0;
-    int offset = 0;
-    
-    bool operator==(const Time& x) const {
-        return time==x.time && offset==x.offset;
-    }
-};
-
-inline Time TimeForGitTime(const git_time& t) {
-    return {
-        .time = t.time,
-        .offset = t.offset,
-    };
-}
-
-inline std::string ShortStringForTime(const Time& t) {
-    time_t tmp = t.time + t.offset*60;
-    
-    struct tm tm = {};
-    struct tm* tr = gmtime_r(&tmp, &tm);
-    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
-    
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%s %s %u %02u:%02u",
-        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min);
-    return buf;
-}
-
-inline std::string StringFromTime(const Time& t) {
-    time_t tmp = t.time + t.offset*60;
-    
-    struct tm tm = {};
-    struct tm* tr = gmtime_r(&tmp, &tm);
-    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
-    
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%s %s %d %02d:%02d:%02d %04d %+03d%02d",
-        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_year+1900, t.offset/60, t.offset%60);
-    return buf;
-}
-
-inline int _WeekdayParse(std::string_view str) {
-    for (size_t i=0; i<std::size(_Weekdays); i++) {
-        if (str == _Weekdays[i]) {
-            return (int)i;
-        }
-    }
-    throw RuntimeError("failed to parse weekday: %s", str);
-}
-
-inline int _MonthParse(std::string_view str) {
-    for (size_t i=0; i<std::size(_Months); i++) {
-        if (str == _Months[i]) {
-            return (int)i;
-        }
-    }
-    throw RuntimeError("failed to parse weekday: %s", str);
-}
-
-inline Time TimeFromString(std::string_view str) {
-    struct tm tm = {};
-    
-    char weekday[16];
-    char month[16];
-    int offset = 0;
-    int ir = sscanf(str.data(), "%15s %15s %d %d:%d:%d %d %d",
-        weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
-    );
-    if (ir != 8) throw RuntimeError("sscanf failed");
-    
-    // Cap string fields to 3 characters
-    weekday[3] = 0;
-    month[3] = 0;
-    
-    tm.tm_wday = _WeekdayParse(weekday);
-    tm.tm_mon = _MonthParse(month);
-    tm.tm_year -= 1900;
-    
-    int offs = (offset >= 0 ? 1 : -1);
-    int offh = std::abs(offset)/100;
-    int offm = std::abs(offset)%100;
-    offset = offs * offh*60 + offm;
-    
-    time_t t = timegm(&tm);
-    if (t == -1) throw RuntimeError("timegm failed");
-    t -= offset*60;
-    
-    return {
-        .time = t,
-        .offset = offset,
-    };
-    
-//    time_t tmp = t.time + t.offset*60;
-//    
-//    time_t tmp = t.time + t.offset*60;
-//    
-//    struct tm tm = {};
-//    struct tm* tr = gmtime_r(&tmp, &tm);
-//    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
-//    
-//    
-//    
-//    char* cr = strptime(str.data(), "%a %b %d %T %Y %z", &tm);
-//    if (!cr) throw RuntimeError("strptime failed");
-//    
-//    time_t t = mktime(&tm);
-//    if (t == -1) throw RuntimeError("mktime failed");
-//    
-//    return {
-//        .time = t,
-//        .offset = (int)(tm.tm_gmtoff/60),
-//    };
-}
 
 #undef _Equal
 #undef _Less

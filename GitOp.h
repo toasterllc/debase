@@ -307,7 +307,7 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
     );
     
     if (!srcResult.commit) {
-        throw RuntimeError("the last commit can't be deleted");
+        throw RuntimeError("can't delete last commit");
     }
     
     // Replace the source branch/tag
