@@ -390,14 +390,9 @@ struct _CommitAuthor {
     std::string email;
 };
 
-struct _CommitTime {
-    git_time_t time = 0;
-    int offset = 0; // timezone offset, in minutes (same as git_time.offset)
-};
-
 struct _CommitMessage {
     std::optional<_CommitAuthor> author;
-    std::optional<_CommitTime> time;
+    std::optional<git_time> time;
     std::string message;
 };
 
@@ -420,18 +415,14 @@ inline std::optional<_CommitAuthor> _CommitAuthorParse(std::string_view str) {
     };
 }
 
-inline std::optional<_CommitTime> _CommitTimeParse(std::string_view str) {
-    time_t time = 0;
-    int offset = 0;
+inline std::optional<git_time> _CommitTimeParse(std::string_view str) {
+    git_time t;
     try {
-        time = TimeFromString(str, &offset);
+        t = TimeFromString(str);
     } catch (...) {
         return std::nullopt;
     }
-    return _CommitTime{
-        .time = time,
-        .offset = offset,
-    };
+    return t;
 }
 
 
@@ -489,7 +480,7 @@ inline _CommitMessage _CommitMessageForCommit(Commit commit) {
     const git_signature* sig = git_commit_author(*commit);
     return _CommitMessage{
         .author  = _CommitAuthor{sig->name, sig->email},
-        .time    = _CommitTime{sig->when.time, sig->when.offset},
+        .time    = sig->when,
         .message = git_commit_message(*commit),
     };
 }
@@ -498,14 +489,12 @@ inline void _CommitMessageWrite(_CommitMessage msg, const std::filesystem::path&
     assert(msg.author);
     assert(msg.time);
     
-    std::string timeStr = StringFromTime(msg.time->time);
-    
     std::ofstream f;
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     f.open(path);
     
     f << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
-    f << _TimePrefix << "   " << timeStr << '\n';
+    f << _TimePrefix << "   " << StringFromTime(*msg.time) << '\n';
     f << '\n';
     f << msg.message;
 }
@@ -557,7 +546,7 @@ inline _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
     }
     
     std::optional<_CommitAuthor> author;
-    std::optional<_CommitTime> time;
+    std::optional<git_time> time;
     
     if (authorStr) author = _CommitAuthorParse(*authorStr);
     if (timeStr) time = _CommitTimeParse(*timeStr);

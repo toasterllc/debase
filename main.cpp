@@ -1028,6 +1028,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: make sure we can round-trip with the same date/time. especially test commits with negative UTC offsets!
+    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: improve error messages: merge conflicts, deleting last branch commit

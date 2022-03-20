@@ -544,40 +544,102 @@ inline std::string StringForId(const git_oid& oid) {
     return str;
 }
 
-inline std::string ShortStringForTime(git_time_t t) {
-    time_t tmp = t;
+static const char* _Weekdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", };
+static const char* _Months[]   = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", };
+
+inline std::string ShortStringForTime(git_time t) {
+    time_t tmp = t.time + t.offset*60;
+    
     struct tm tm = {};
-    struct tm* tr = localtime_r(&tmp, &tm);
-    if (!tr) throw RuntimeError("localtime_r failed: %s", strerror(errno));
+    struct tm* tr = gmtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
     
     char buf[64];
-    size_t sr = strftime(buf, sizeof(buf), "%a %b %d %R", &tm);
-    if (!sr) throw RuntimeError("strftime failed");
+    snprintf(buf, sizeof(buf), "%s %s %u %02u:%02u",
+        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min);
     return buf;
 }
 
-inline std::string StringFromTime(git_time_t t) {
-    time_t tmp = t;
+inline std::string StringFromTime(git_time t) {
+    time_t tmp = t.time + t.offset*60;
+    
     struct tm tm = {};
-    struct tm* tr = localtime_r(&tmp, &tm);
-    if (!tr) throw RuntimeError("localtime_r failed: %s", strerror(errno));
+    struct tm* tr = gmtime_r(&tmp, &tm);
+    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
     
     char buf[64];
-    size_t sr = strftime(buf, sizeof(buf), "%a %b %d %T %Y %z", &tm);
-    if (!sr) throw RuntimeError("strftime failed");
+    snprintf(buf, sizeof(buf), "%s %s %d %02d:%02d:%02d %04d %+03d%02d",
+        _Weekdays[tm.tm_wday], _Months[tm.tm_mon], tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_year+1900, t.offset/60, t.offset%60);
     return buf;
 }
 
-inline git_time_t TimeFromString(std::string_view str, int* offset=nullptr) {
+inline int _WeekdayParse(std::string_view str) {
+    for (size_t i=0; i<std::size(_Weekdays); i++) {
+        if (str == _Weekdays[i]) {
+            return (int)i;
+        }
+    }
+    throw RuntimeError("failed to parse weekday: %s", str);
+}
+
+inline int _MonthParse(std::string_view str) {
+    for (size_t i=0; i<std::size(_Months); i++) {
+        if (str == _Months[i]) {
+            return (int)i;
+        }
+    }
+    throw RuntimeError("failed to parse weekday: %s", str);
+}
+
+inline git_time TimeFromString(std::string_view str) {
     struct tm tm = {};
-    char* cr = strptime(str.data(), "%a %b %d %T %Y %z", &tm);
-    if (!cr) throw RuntimeError("strptime failed");
     
-    if (offset) *offset = (int)(tm.tm_gmtoff/60);
+    char weekday[4];
+    char month[4];
+    int offset = 0;
+    int ir = sscanf(str.data(), "%3s %3s %d %d:%d:%d %d %d",
+        weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
+    );
+    if (ir != 8) throw RuntimeError("sscanf failed");
     
-    time_t t = mktime(&tm);
-    if (t == -1) throw RuntimeError("mktime failed");
-    return t;
+    tm.tm_wday = _WeekdayParse(weekday);
+    tm.tm_mon = _MonthParse(month);
+    tm.tm_year -= 1900;
+    
+    int offs = (offset >= 0 ? 1 : -1);
+    int offh = std::abs(offset)/100;
+    int offm = std::abs(offset)%100;
+    offset = offs * offh*60 + offm;
+    
+    time_t t = timegm(&tm);
+    if (t == -1) throw RuntimeError("timegm failed");
+    t -= offset*60;
+    
+    return {
+        .time = t,
+        .offset = offset,
+    };
+    
+//    time_t tmp = t.time + t.offset*60;
+//    
+//    time_t tmp = t.time + t.offset*60;
+//    
+//    struct tm tm = {};
+//    struct tm* tr = gmtime_r(&tmp, &tm);
+//    if (!tr) throw RuntimeError("gmtime_r failed: %s", strerror(errno));
+//    
+//    
+//    
+//    char* cr = strptime(str.data(), "%a %b %d %T %Y %z", &tm);
+//    if (!cr) throw RuntimeError("strptime failed");
+//    
+//    time_t t = mktime(&tm);
+//    if (t == -1) throw RuntimeError("mktime failed");
+//    
+//    return {
+//        .time = t,
+//        .offset = (int)(tm.tm_gmtoff/60),
+//    };
 }
 
 #undef _Equal
