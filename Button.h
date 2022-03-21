@@ -9,6 +9,7 @@ struct ButtonOptions {
     std::string label;
     std::string key;
     bool enabled = false;
+    bool center = false;
     std::optional<Color> borderColor;
     int insetX = 0;
     Rect frame;
@@ -16,10 +17,9 @@ struct ButtonOptions {
 
 class Button {
 public:
-    Button(const ButtonOptions& opts) :
-    _opts(opts) {
-        _drawNeeded = true;
-    }
+    Button() {}
+    
+    Button(const ButtonOptions& opts) : _opts(opts) {}
     
 //    void setHighlight(bool highlight) {
 //        if (highlight == _highlight) return;
@@ -28,11 +28,7 @@ public:
 //    }
     
     bool updateMousePosition(const Point& p) {
-        bool highlight = !Empty(Intersection(_opts.frame, {p, {1,1}}));
-        if (_highlight != highlight) {
-            _highlight = highlight;
-            _drawNeeded = true;
-        }
+        _highlight = !Empty(Intersection(_opts.frame, {p, {1,1}}));
         return _highlight;
     }
     
@@ -42,36 +38,36 @@ public:
             win->drawRect(_opts.frame);
         }
         
+        int offY = (_opts.frame.size.y-1)/2;
+        
         // Draw button name
+        Point plabel;
+        Point pkey;
+        if (_opts.center) {
+            int textWidth = (int)_opts.label.size() + (int)_opts.key.size() + (!_opts.key.empty() ? KeySpacing : 0);
+            int leftX = _opts.insetX + ((_opts.frame.size.x-2*_opts.insetX)-textWidth)/2;
+            int rightX = _opts.frame.size.x-leftX;
+            
+            plabel = _opts.frame.point + Size{leftX, offY};
+            pkey = _opts.frame.point + Size{rightX-(int)_opts.key.size(), offY};
+        
+        } else {
+            plabel = _opts.frame.point + Size{_opts.insetX, offY};
+            pkey = _opts.frame.point + Size{_opts.frame.size.x-(int)_opts.key.size()-_opts.insetX, offY};
+        }
+        
         {
             UI::Attr attr;
-            
-            if (_highlight && _opts.enabled) {
-                attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
-            
-            } else if (!_opts.enabled) {
-                attr = UI::Attr(win, _opts.colors.subtitleText);
-            
-            } else {
-                attr = UI::Attr(win, A_NORMAL);
-            }
-            
-            win->drawText(_opts.frame.point+Size{_opts.insetX,0}, "%s", _opts.label.c_str());
+            if (_highlight && _opts.enabled) attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
+            else if (!_opts.enabled)         attr = UI::Attr(win, _opts.colors.subtitleText);
+            else                             attr = UI::Attr(win, A_NORMAL);
+            win->drawText(plabel, "%s", _opts.label.c_str());
         }
         
         // Draw button key
         {
             UI::Attr attr(win, _opts.colors.subtitleText);
-            Point p = _opts.frame.point+Size{_opts.frame.size.x-(int)_opts.key.size()-_opts.insetX,0};
-            win->drawText(p, "%s", _opts.key.c_str());
-        }
-        
-        _drawNeeded = false;
-    }
-    
-    void drawIfNeeded(Window win) {
-        if (_drawNeeded) {
-            draw(win);
+            win->drawText(pkey, "%s", _opts.key.c_str());
         }
     }
     
@@ -84,9 +80,9 @@ public:
     }
     
 private:
+    static constexpr int KeySpacing = 2;
     ButtonOptions _opts;
     bool _highlight = false;
-    bool _drawNeeded = false;
 };
 
 } // namespace UI

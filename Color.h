@@ -2,26 +2,35 @@
 
 namespace UI {
 
-struct Color {
+class Color {
+public:
+    Color() : Color(COLOR_BLACK) {}
+    Color(int idx) : idx(idx) {}
+    Color(int idx, NCURSES_COLOR_T r, NCURSES_COLOR_T g, NCURSES_COLOR_T b) :
+    idx(idx), r(r), g(g), b(b), custom(true) {}
+    
     int idx = 0;
     NCURSES_COLOR_T r = 0;
     NCURSES_COLOR_T g = 0;
     NCURSES_COLOR_T b = 0;
+    bool custom = false;
     
     operator int() const { return COLOR_PAIR(idx); }
     bool operator ==(const Color& x) const { return !memcmp(this, &x, sizeof(Color)); }
 };
 
 struct ColorPalette {
-    Color selectionMove;
-    Color selectionCopy;
-    Color selectionSimilar;
-    Color subtitleText;
-    Color menu;
-    Color error;
+    Color normal            = COLOR_BLACK;
+    Color selectionMove     = COLOR_BLUE;
+    Color selectionCopy     = COLOR_GREEN;
+    Color selectionSimilar  = COLOR_BLACK;
+    Color subtitleText      = COLOR_BLACK;
+    Color menu              = COLOR_RED;
+    Color error             = COLOR_RED;
     
     std::vector<std::reference_wrapper<Color>> all() {
         return {
+            normal,
             selectionMove,
             selectionCopy,
             selectionSimilar,

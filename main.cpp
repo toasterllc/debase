@@ -660,13 +660,13 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     constexpr int ColumnWidth = 32;
     constexpr int ColumnSpacing = 6;
     
-    bool showMutability = false;
-    for (const Git::Rev& rev : revs) {
-        if (!rev.isMutable()) {
-            showMutability = true;
-            break;
-        }
-    }
+//    bool showMutability = false;
+//    for (const Git::Rev& rev : revs) {
+//        if (!rev.isMutable()) {
+//            showMutability = true;
+//            break;
+//        }
+//    }
     
     columns.clear();
     int OffsetX = InsetX;
@@ -679,7 +679,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
             .head           = (rev.displayHead() == _Head.commit),
             .offsetX        = OffsetX,
             .width          = ColumnWidth,
-            .showMutability = showMutability,
+//            .showMutability = showMutability,
         };
         columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
@@ -692,14 +692,14 @@ struct _SavedColor {
     short b = 0;
 };
 
-static std::optional<UI::ColorPalette> _ColorsSet(const UI::ColorPalette& colors, bool custom) {
+static UI::ColorPalette _ColorsSet(const UI::ColorPalette& colors) {
     UI::ColorPalette colorsPrev;
     auto colorsAll = colors.all();
     auto colorsPrevAll = colorsPrev.all();
     for (auto i=colorsAll.begin(), ip=colorsPrevAll.begin(); i!=colorsAll.end(); i++, ip++) {
-        UI::Color& c     = i->get();
+        UI::Color& c = i->get();
         
-        if (custom) {
+        if (c.custom) {
             UI::Color& cprev = ip->get();
             cprev.idx = c.idx;
             color_content(cprev.idx, &cprev.r, &cprev.g, &cprev.b);
@@ -709,8 +709,7 @@ static std::optional<UI::ColorPalette> _ColorsSet(const UI::ColorPalette& colors
         ::init_pair(c.idx, c.idx, -1);
     }
     
-    if (custom) return colorsPrev;
-    return std::nullopt;
+    return colorsPrev;
 }
 
 static UI::ColorPalette _ColorsCreate() {
@@ -729,35 +728,26 @@ static UI::ColorPalette _ColorsCreate() {
         // There's no simple relation between these numbers and the resulting colors because Apple's
         // Terminal.app applies some kind of filtering on top of these numbers. These values were
         // manually chosen based on their appearance.
-        colors.selectionMove    = UI::Color{Idx0+0,    0,    0, 1000};
-        colors.selectionCopy    = UI::Color{Idx0+1,    0, 1000,    0};
-        colors.selectionSimilar = UI::Color{Idx0+2,  550,  550, 1000};
-        colors.subtitleText     = UI::Color{Idx0+3,  300,  300,  300};
-        colors.menu             = UI::Color{Idx0+4,  800,  300,  300};
-        colors.error            = UI::Color{Idx0+5, 1000,    0,    0};
+        colors.normal           = COLOR_BLACK;
+        colors.selectionMove    = UI::Color(Idx0+0,    0,    0, 1000);
+        colors.selectionCopy    = UI::Color(Idx0+1,    0, 1000,    0);
+        colors.selectionSimilar = UI::Color(Idx0+2,  550,  550, 1000);
+        colors.subtitleText     = UI::Color(Idx0+3,  300,  300,  300);
+        colors.menu             = UI::Color(Idx0+4,  800,  300,  300);
+        colors.error            = UI::Color(Idx0+5, 1000,    0,    0);
     
     } else {
         // Colorspace: sRGB
         // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
-        colors.selectionMove    = UI::Color{Idx0+0,  463,  271, 1000};
-        colors.selectionCopy    = UI::Color{Idx0+1,  165, 1000,  114};
-        colors.selectionSimilar = UI::Color{Idx0+2,  671,  667, 1000};
-        colors.subtitleText     = UI::Color{Idx0+3,  486,  486,  486};
-        colors.menu             = UI::Color{Idx0+4,  969,  447,  431};
-        colors.error            = UI::Color{Idx0+5, 1000,  298,  153};
+        colors.normal           = COLOR_BLACK;
+        colors.selectionMove    = UI::Color(Idx0+0,  463,  271, 1000);
+        colors.selectionCopy    = UI::Color(Idx0+1,  165, 1000,  114);
+        colors.selectionSimilar = UI::Color(Idx0+2,  671,  667, 1000);
+        colors.subtitleText     = UI::Color(Idx0+3,  486,  486,  486);
+        colors.menu             = UI::Color(Idx0+4,  969,  447,  431);
+        colors.error            = UI::Color(Idx0+5, 1000,  298,  153);
     }
     
-    return colors;
-}
-
-static UI::ColorPalette _ColorsDefaultCreate() {
-    UI::ColorPalette colors;
-    colors.selectionMove    = UI::Color{COLOR_BLUE};
-    colors.selectionCopy    = UI::Color{COLOR_GREEN};
-    colors.selectionSimilar = UI::Color{COLOR_BLACK};
-    colors.subtitleText     = UI::Color{COLOR_BLACK};
-    colors.menu             = UI::Color{COLOR_RED};
-    colors.error            = UI::Color{COLOR_RED};
     return colors;
 }
 
@@ -800,10 +790,11 @@ static void _CursesInit() {
     ::use_default_colors();
     ::start_color();
     
-    const bool customColors = can_change_color();
 //    const bool customColors = false;
-    _Colors = (customColors ? _ColorsCreate() : _ColorsDefaultCreate());
-    _ColorsPrev = _ColorsSet(_Colors, customColors);
+    if (can_change_color()) {
+        _Colors = _ColorsCreate();
+        _ColorsPrev = _ColorsSet(_Colors);
+    }
     
     // Hide cursor
     ::curs_set(0);
@@ -818,7 +809,7 @@ static void _CursesDeinit() {
 //    ::mousemask(0, NULL);
     
     if (_ColorsPrev) {
-        _ColorsSet(*_ColorsPrev, true);
+        _ColorsSet(*_ColorsPrev);
         _ColorsPrev = std::nullopt;
     }
     
