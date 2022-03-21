@@ -10,7 +10,7 @@ struct ButtonOptions {
     std::string key;
     bool enabled = false;
     bool center = false;
-    std::optional<Color> borderColor;
+    bool drawBorder = false;
     int insetX = 0;
     Rect frame;
 };
@@ -33,8 +33,8 @@ public:
     }
     
     void draw(Window win) {
-        if (_opts.borderColor) {
-            UI::Attr attr(win, *_opts.borderColor);
+        if (_opts.drawBorder) {
+            UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.subtitleText));
             win->drawRect(_opts.frame);
         }
         

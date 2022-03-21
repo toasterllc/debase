@@ -13,7 +13,7 @@ struct RevColumnOptions {
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
-    int offsetX = 0;
+    Point offset;
     int width = 0;
 };
 
@@ -35,16 +35,16 @@ public:
         }
         
         // Create our CommitPanels
-        UI::Rect nameFrame = {{_opts.offsetX,0}, {_opts.width, 1}};
+        UI::Rect nameFrame = {_opts.offset, {_opts.width, 1}};
         _truncated = Intersection(_opts.win->bounds(), nameFrame) != nameFrame;
         if (!_truncated) {
             // Create panels for each commit
-            int offY = CommitsInsetY;
+            int offY = _CommitsInsetY;
             Git::Commit commit = _opts.rev.commit;
             size_t skip = _opts.rev.skip;
             while (commit) {
                 if (!skip) {
-                    Point p = {_opts.offsetX, offY};
+                    Point p = _opts.offset + Size{0,offY};
                     UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_opts.colors, false, _opts.width, commit);
                     UI::Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
@@ -63,17 +63,15 @@ public:
         
         // Create our undo/redo buttons
         {
-            int buttonWidth = 8;
-            int w2 = _opts.width/2;
-            Rect leftFrame = Inset({{_opts.offsetX, ButtonsInsetY}, {w2,3}}, {4, 0});
-            Rect rightFrame = Inset({{_opts.offsetX+w2, ButtonsInsetY}, {w2,3}}, {4, 0});
+            Rect leftFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {_ButtonWidth,3}};
+            Rect rightFrame = {_opts.offset+Size{_opts.width-_ButtonWidth, _ButtonsInsetY}, {_ButtonWidth,3}};
             UI::ButtonOptions undoOpts = {
                 .colors = _opts.colors,
                 .label = "Undo",
 //                .key = "z",
-                .enabled = true,
+                .enabled = false,
                 .center = true,
-                .borderColor = _opts.colors.subtitleText,
+                .drawBorder = true,
                 .insetX = 1,
                 .frame = leftFrame,
             };
@@ -83,9 +81,9 @@ public:
                 .colors = _opts.colors,
                 .label = "Redo",
 //                .key = "Z",
-                .enabled = true,
+                .enabled = false,
                 .center = true,
-                .borderColor = _opts.colors.subtitleText,
+                .drawBorder = true,
                 .insetX = 1,
                 .frame = rightFrame,
             };
@@ -102,18 +100,16 @@ public:
         // Draw branch name
         {
             UI::Attr attr(_opts.win, A_UNDERLINE);
-            const int offX = _opts.offsetX + (_opts.width-(int)_name.size())/2;
-            _opts.win->drawText({offX, TitleInsetY}, "%s", _name.c_str());
+            const Point p = _opts.offset + Size{(_opts.width-(int)_name.size())/2, _TitleInsetY};
+            _opts.win->drawText(p, "%s", _name.c_str());
         }
         
-//        if (_opts.showMutability) {
-//            UI::Attr attr(_opts.win, _opts.colors.error);
-//            const char immutableText[] = "read-only";
-//            const int offX = _opts.offsetX + std::max(0, (_opts.width-(int)(std::size(immutableText)-1))/2);
-//            if (!_opts.rev.isMutable()) {
-//                _opts.win->drawText({offX, 2}, "%s", immutableText);
-//            }
-//        }
+        if (!_opts.rev.isMutable()) {
+            UI::Attr attr(_opts.win, _opts.colors.error);
+            const char immutableText[] = "read-only";
+            const Point p = _opts.offset + Size{std::max(0, (_opts.width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+            _opts.win->drawText(p, "%s", immutableText);
+        }
         
         for (UI::CommitPanel p : _panels) {
             p->drawIfNeeded();
@@ -134,9 +130,11 @@ public:
     UI::CommitPanelVec& panels() { return _panels; }
     
 private:
-    static constexpr int ButtonsInsetY = 0;
-    static constexpr int TitleInsetY   = 3;
-    static constexpr int CommitsInsetY = 5;
+    static constexpr int _ButtonsInsetY  = 0;
+    static constexpr int _ReadonlyInsetY = 1;
+    static constexpr int _TitleInsetY    = 3;
+    static constexpr int _CommitsInsetY  = 5;
+    static constexpr int _ButtonWidth    = 8;
     RevColumnOptions _opts;
     std::string _name;
     bool _truncated = false;

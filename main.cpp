@@ -677,7 +677,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
             .repo           = repo,
             .rev            = rev,
             .head           = (rev.displayHead() == _Head.commit),
-            .offsetX        = OffsetX,
+            .offset         = UI::Size{OffsetX, 0},
             .width          = ColumnWidth,
 //            .showMutability = showMutability,
         };
