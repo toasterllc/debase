@@ -24,8 +24,9 @@ public:
             int x = BorderSize;
             int y = BorderSize + (int)idx*RowHeight;
             opts.insetX = InsetX;
-            Rect frame = {{x,y}, {2*InsetX+buttonWidth,1}};
-            _buttons.emplace_back(opts, _colors, frame);
+            opts.colors = colors;
+            opts.frame = {{x,y}, {2*InsetX+buttonWidth,1}};
+            _buttons.emplace_back(opts);
             idx++;
         }
         

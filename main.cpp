@@ -671,8 +671,17 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
-        bool head = (rev.displayHead() == _Head.commit);
-        columns.push_back(MakeShared<UI::RevColumn>(_Colors, win, repo, head, rev, OffsetX, ColumnWidth, showMutability));
+        UI::RevColumnOptions opts = {
+            .win            = win,
+            .colors         = _Colors,
+            .repo           = repo,
+            .rev            = rev,
+            .head           = (rev.displayHead() == _Head.commit),
+            .offsetX        = OffsetX,
+            .width          = ColumnWidth,
+            .showMutability = showMutability,
+        };
+        columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
