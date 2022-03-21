@@ -1227,8 +1227,13 @@ int main(int argc, const char* argv[]) {
         
         _Repo = Git::Repo::Open(".");
         
+        // We have to detach the head, otherwise we'll get an error if we try
+        // to replace the current branch
+        Git::Ref head = _Repo.head();
+        std::string headFullName = head.fullName();
+        
         if (revNames.empty()) {
-            _Revs.emplace_back(_Repo.head(), 0);
+            _Revs.emplace_back(head, 0);
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
@@ -1247,6 +1252,14 @@ int main(int argc, const char* argv[]) {
                 }
             }
         }
+        
+        _Repo.headDetach();
+        Defer(
+            // Restore previous head on exit
+            if (!headFullName.empty()) {
+                _Repo.checkout(headFullName);
+            }
+        );
         
         _CursesInit();
         Defer(_CursesDeinit());

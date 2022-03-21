@@ -669,11 +669,6 @@ inline OpResult _Exec_EditCommit(const Op& op) {
 
 template <auto T_SpawnFn>
 inline OpResult Exec(const Op& op) {
-    // We have to detach the head, otherwise we'll get an error if we try
-    // to replace the current branch
-    std::string headPrev = op.repo.head().fullName();
-    op.repo.headDetach();
-    
     OpResult r;
     std::exception_ptr err;
     try {
@@ -687,11 +682,6 @@ inline OpResult Exec(const Op& op) {
         }
     } catch (const std::exception& e) {
         err = std::current_exception();
-    }
-    
-    // Restore previous head
-    if (!headPrev.empty()) {
-        op.repo.checkout(headPrev);
     }
     
     if (err) std::rethrow_exception(err);
