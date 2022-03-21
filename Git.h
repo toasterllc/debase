@@ -352,7 +352,12 @@ public:
     
     Rev(Commit c) : commit(c) {}
     
-    Rev(Ref r, size_t skip=0) : ref(r), skip(skip) {
+    Rev(Ref r, size_t s) : ref(r), refSkip(s) {
+        commit = ref.commit();
+        assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
+    }
+    
+    Rev(Ref r) : ref(r) {
         commit = ref.commit();
         assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
     }
@@ -362,7 +367,7 @@ public:
     bool operator==(const Rev& x) const {
         if (commit != x.commit) return false;
         if (ref != x.ref) return false;
-        if (skip != x.skip) return false;
+        if (refSkip != x.refSkip) return false;
         return true;
     }
     
@@ -373,12 +378,12 @@ public:
         if (commit != x.commit) return commit<x.commit;
         // Stage 2: compare refs
         if (ref != x.ref) return ref<x.ref;
-        // Stage 3: compare skips
-        return skip<x.skip;
+        // Stage 3: compare refSkips
+        return refSkip<x.refSkip;
     }
     
     std::string name() const {
-        if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
+        if (ref) return ref.name() + (refSkip ? "~" + std::to_string(refSkip) : "");
         return StringForId(commit.id());
     }
     
@@ -389,12 +394,12 @@ public:
         return ref.isBranch() || ref.isTag();
     }
     
-    // head(): returns the head commit considering `skip`
-    // skip==0 -> return `commit`
-    // skip>0  -> returns the `skip` parent of `commit`
+    // head(): returns the head commit considering `refSkip`
+    // refSkip==0 -> return `commit`
+    // refSkip>0  -> returns the `refSkip` parent of `commit`
     Commit head() const {
         Commit c = commit;
-        size_t s = skip;
+        size_t s = refSkip;
         while (c && s) {
             c = c.parent();
             s--;
@@ -402,9 +407,9 @@ public:
         return c;
     }
     
-    Commit commit;   // Mandatory
-    Ref ref;         // Optional
-    size_t skip = 0; // Number of commits to skip
+    Commit commit;      // Mandatory
+    Ref ref;            // Optional
+    size_t refSkip = 0; // Optional (number of `ref` commits to skip)
 };
 
 inline void _RepoFree(git_repository* repo) {
@@ -583,13 +588,16 @@ public:
         
         } else if (ref.isTag()) {
             return tagReplace(Tag::FromRef(ref), commit);
-//            return refReload(ref);
-//            return tagReplace(ref.tag(), commit);
         
         } else {
             // Unknown ref type
             abort();
         }
+    }
+    
+    Rev revReplace(Rev rev, Commit commit) const {
+        assert(rev.isMutable());
+        return Rev(refReplace(rev.ref, commit), rev.refSkip);
     }
     
     Branch branchReplace(Branch branch, Commit commit) const {
@@ -630,42 +638,45 @@ public:
     }
     
     Rev revLookup(std::string_view str) {
-        Rev origRev = _revLookup(str);
-        if (origRev.ref) return origRev;
+        auto [ref, commit] = _refLookup(str);
+        if (ref) return Rev(ref, 0);
         
         // Try to get a ref-backed rev (with a skip parameter) by removing the ^ or ~ suffix from `str`
-        Rev skipRev;
-        if (!skipRev.ref) {
+        Ref skipRef;
+        Commit skipCommit;
+        if (!skipRef) {
             std::string name(str);
             size_t pos = name.find("^");
             if (pos != std::string::npos) {
                 name.erase(pos);
-                skipRev = _revLookup(name);
+                std::tie(skipRef, skipCommit) = _refLookup(name);
             }
         }
         
-        if (!skipRev.ref) {
+        if (!skipRef) {
             std::string name(str);
             size_t pos = name.find("~");
             if (pos != std::string::npos) {
                 name.erase(pos);
-                skipRev = _revLookup(name);
+                std::tie(skipRef, skipCommit) = _refLookup(name);
             }
         }
         
-        // If we found a `skipRev` by removing the ^~ suffix, calculate the `skip` value
-        if (skipRev.ref) {
+        // If we found a `skipRef` by removing the ^~ suffix, calculate the `skip` value
+        if (skipRef) {
             size_t skip = 0;
-            Commit head = skipRev.commit;
-            while (head && head!=origRev.commit) {
+            Commit head = skipCommit;
+            while (head && head!=commit) {
                 head = head.parent();
                 skip++;
             }
             
-            if (head) return Rev(skipRev.ref, skip);
+            if (head) return Rev(skipRef, skip);
         }
         
-        return origRev;
+        // We couldn't parse `str` directly as a ref, nor could we parse it as "ref+skip" (ie rev^ / rev~X).
+        // So just return the commit itself.
+        return commit;
     }
     
     Branch branchLookup(std::string_view name) const {
@@ -708,22 +719,20 @@ public:
     }
 
 private:
-    Rev _revLookup(std::string_view str) const {
-        Object obj;
+    std::tuple<Ref,Commit> _refLookup(std::string_view str) const {
         Ref ref;
-        
+        Object obj;
         // Determine whether `str` is a ref or commit
         {
-            git_object* po = nullptr;
             git_reference* pr = nullptr;
+            git_object* po = nullptr;
             int ir = git_revparse_ext(&po, &pr, *get(), str.data());
             if (ir) throw Error(ir, "git_revparse_ext failed");
             obj = po;
             ref = pr;
         }
         
-        if (ref) return Rev(ref);
-        return Rev(Commit::FromObject(obj));
+        return std::make_tuple(ref, Commit::FromObject(obj));
     }
     
     Index _cherryPick(Commit dst, Commit commit) const {

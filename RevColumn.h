@@ -33,7 +33,7 @@ public:
             const int InsetY = (!_showMutability ? 2 : 3);
             int offY = InsetY;
             Git::Commit commit = _rev.commit;
-            size_t skip = _rev.skip;
+            size_t skip = _rev.refSkip;
             while (commit) {
                 if (!skip) {
                     Point p = {_offsetX, offY};

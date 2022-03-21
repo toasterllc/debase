@@ -664,7 +664,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 static void _ReloadRevs(Git::Repo repo, std::vector<Git::Rev>& revs) {
     for (Git::Rev& rev : revs) {
         if (rev.ref) {
-            rev = Git::Rev(repo.refReload(rev.ref), rev.skip);
+            rev = Git::Rev(repo.refReload(rev.ref), rev.refSkip);
         }
     }
 }
@@ -1023,8 +1023,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: fix wrong column being selected after moving commit in master^
-    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: backup all supplied revs before doing anything
@@ -1130,6 +1128,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: when supplying refs on the command line in the form ref^ or ref~N, can we use a ref-backed rev (instead of using a commit-backed rev), and just offset the RevColumn, so that the rev is mutable?
 //
 //    #warning TODO: improve error messages when we can't lookup supplied refs
+//
+//    #warning TODO: fix wrong column being selected after moving commit in master^
     
     
     {
@@ -1228,7 +1228,7 @@ int main(int argc, const char* argv[]) {
         _Repo = Git::Repo::Open(".");
         
         if (revNames.empty()) {
-            _Revs.push_back(_Repo.head());
+            _Revs.emplace_back(_Repo.head(), 0);
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
