@@ -17,7 +17,7 @@ public:
         {
             _name = _rev.displayName();
             
-            if (head) {
+            if (head && _name!="HEAD") {
                 _name = _name + " (HEAD)";
             }
             
