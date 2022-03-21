@@ -1,4 +1,4 @@
-NAME=CursesTest
+NAME=debase
 OBJECTS=main.o
 
 CXX      = g++
