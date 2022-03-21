@@ -1017,10 +1017,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: make sure debase still works when running on a detached HEAD
-    
-    #warning TODO: make "(HEAD)" suffix persist across branch modifications
-    
     #warning TODO: support undo/redo
     
     #warning TODO: rigorously test copying/moving merge commits
@@ -1128,6 +1124,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: improve error messages when we can't lookup supplied refs
 //
 //    #warning TODO: fix wrong column being selected after moving commit in master^
+//
+//    #warning TODO: make sure debase still works when running on a detached HEAD
+//    
+//    #warning TODO: make "(HEAD)" suffix persist across branch modifications
     
     
     {
