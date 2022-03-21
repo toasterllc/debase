@@ -11,7 +11,7 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class _RevColumn {
 public:
-    _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, bool head, Git::RevSkip rev, int offsetX, int width, bool showMutability=false) :
+    _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, bool head, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
     _colors(colors), _win(win), _rev(rev), _offsetX(offsetX), _width(width), _showMutability(showMutability) {
         // Set our column name
         {
@@ -87,13 +87,13 @@ public:
         return {};
     }
     
-    Git::RevSkip rev() { return _rev; }
+    Git::Rev rev() { return _rev; }
     UI::CommitPanelVec& panels() { return _panels; }
     
 private:
     const ColorPalette& _colors;
     UI::Window _win;
-    Git::RevSkip _rev;
+    Git::Rev _rev;
     std::string _name;
     int _offsetX = 0;
     int _width = 0;

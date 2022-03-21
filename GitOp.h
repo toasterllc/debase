@@ -219,7 +219,7 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
         );
         
         // Replace the source branch/tag
-        Rev srcDstRev = op.repo.refReplace(op.src.rev.ref, srcDstResult.commit);
+        Rev srcDstRev = op.repo.revReplace(op.src.rev, srcDstResult.commit);
         return {
             .src = {
                 .rev = srcDstRev,
@@ -253,8 +253,8 @@ inline OpResult _Exec_MoveCommits(const Op& op) {
         );
         
         // Replace the source and destination branches/tags
-        Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
-        Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
+        Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
+        Rev dstRev = op.repo.revReplace(op.dst.rev, dstResult.commit);
         return {
             .src = {
                 .rev = srcRev,
@@ -281,7 +281,7 @@ inline OpResult _Exec_CopyCommits(const Op& op) {
     );
     
     // Replace the destination branch/tag
-    Rev dstRev = op.repo.refReplace(op.dst.rev.ref, dstResult.commit);
+    Rev dstRev = op.repo.revReplace(op.dst.rev, dstResult.commit);
     return {
         .src = {
             .rev = op.src.rev,
@@ -311,7 +311,7 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
     }
     
     // Replace the source branch/tag
-    Rev srcRev = op.repo.refReplace(op.src.rev.ref, srcResult.commit);
+    Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
     return {
         .src = {
             .rev = srcRev,
@@ -358,7 +358,7 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     }
     
     // Replace the source branch/tag
-    Rev srcRev = op.repo.refReplace(op.src.rev.ref, head);
+    Rev srcRev = op.repo.revReplace(op.src.rev, head);
     return {
         .src = {
             .rev = srcRev,
@@ -655,7 +655,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     );
     
     // Replace the source branch/tag
-    Rev srcDstRev = op.repo.refReplace(op.src.rev.ref, srcDstResult.commit);
+    Rev srcDstRev = op.repo.revReplace(op.src.rev, srcDstResult.commit);
     return {
         .src = {
             .rev = srcDstRev,
