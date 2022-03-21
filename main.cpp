@@ -26,7 +26,7 @@
 #include "ErrorPanel.h"
 
 struct _Selection {
-    Git::Rev rev;
+    Git::RevSkip rev;
     std::set<Git::Commit> commits;
 };
 
@@ -34,7 +34,7 @@ static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
 static Git::Repo _Repo;
-static std::vector<Git::Rev> _Revs;
+static std::vector<Git::RevSkip> _Revs;
 
 static UI::Window _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
@@ -654,7 +654,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::RevColumn>& columns, std::vector<Git::Rev>& revs) {
+static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::RevColumn>& columns, std::vector<Git::RevSkip>& revs) {
     // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
     constexpr int ColumnWidth = 32;
@@ -670,7 +670,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     
     columns.clear();
     int OffsetX = InsetX;
-    for (const Git::Rev& rev : revs) {
+    for (const Git::RevSkip& rev : revs) {
         bool head = (rev.head() == _Head.commit);
         columns.push_back(MakeShared<UI::RevColumn>(_Colors, win, repo, head, rev, OffsetX, ColumnWidth, showMutability));
         OffsetX += ColumnWidth+ColumnSpacing;
@@ -975,9 +975,14 @@ static void _EventLoop() {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
                 
                 // Reload the UI
-                _Head = _Repo.revReload(_Head);
+                if (_Head.ref) {
+                    _Head = _Repo.refReload(_Head.ref);
+                }
+                
                 for (Git::Rev& rev : _Revs) {
-                    rev = _Repo.revReload(rev);
+                    if (rev.ref) {
+                        rev = _Repo.refReload(rev.ref);
+                    }
                 }
                 recreateCols = true;
                 
@@ -1248,9 +1253,9 @@ int main(int argc, const char* argv[]) {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
             std::set<Git::Rev> unique;
             for (const std::string& revName : revNames) {
-                Git::Rev rev;
+                Git::RevSkip rev;
                 try {
-                    rev = _Repo.revLookup(revName);
+                    rev = _Repo.revSkipLookup(revName);
                 } catch (...) {
                     throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
                 }
@@ -1268,7 +1273,7 @@ int main(int argc, const char* argv[]) {
         Defer(
             if (_Head.ref) {
                 // Restore previous head on exit
-                std::cout << "Restoring HEAD to " << _Head.displayName() << std::endl;
+                std::cout << "Restoring HEAD to " << _Head.ref.name() << std::endl;
                 _Repo.checkout(_Head.ref);
                 std::cout << "Done" << std::endl;
             }
