@@ -1257,7 +1257,9 @@ int main(int argc, const char* argv[]) {
         Defer(
             // Restore previous head on exit
             if (!headFullName.empty()) {
+                std::cout << "Restoring HEAD..." << std::endl;
                 _Repo.checkout(headFullName);
+                std::cout << "Done" << std::endl;
             }
         );
         
