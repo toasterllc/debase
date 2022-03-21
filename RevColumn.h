@@ -11,14 +11,13 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class _RevColumn {
 public:
-    _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
+    _RevColumn(const ColorPalette& colors, UI::Window win, Git::Repo repo, bool head, Git::Rev rev, int offsetX, int width, bool showMutability=false) :
     _colors(colors), _win(win), _rev(rev), _offsetX(offsetX), _width(width), _showMutability(showMutability) {
         // Set our column name
         {
-            _name = _rev.name();
+            _name = _rev.displayName();
             
-            bool isHead = repo.head().commit() == _rev.head();
-            if (_name!="HEAD" && isHead) {
+            if (head) {
                 _name = _name + " (HEAD)";
             }
             

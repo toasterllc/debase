@@ -20,6 +20,10 @@ using namespace Toastbox;
 })
 
 inline std::string StringForId(const git_oid& oid) {
+    return git_oid_tostr_s(&oid);
+}
+
+inline std::string DisplayStringForId(const git_oid& oid) {
     char str[8];
     git_oid_tostr(str, sizeof(str), &oid);
     return str;
@@ -382,8 +386,13 @@ public:
         return refSkip<x.refSkip;
     }
     
-    std::string name() const {
+    std::string displayName() const {
         if (ref) return ref.name() + (refSkip ? "~" + std::to_string(refSkip) : "");
+        return DisplayStringForId(commit.id());
+    }
+    
+    std::string fullName() const {
+        if (ref) return ref.fullName();
         return StringForId(commit.id());
     }
     
@@ -444,26 +453,54 @@ public:
 //        git_libgit2_shutdown();
 //    }
     
-    Ref head() const {
-        git_reference* x = nullptr;
-        int ir = git_repository_head(&x, *get());
-        if (ir) throw Error(ir, "git_repository_head failed");
-        return x;
+//    Ref head() const {
+//        git_reference* x = nullptr;
+//        int ir = git_repository_head(&x, *get());
+//        if (ir) throw Error(ir, "git_repository_head failed");
+//        return x;
+//    }
+    
+    Rev head() const {
+        Ref ref;
+        {
+            git_reference* x = nullptr;
+            int ir = git_repository_head(&x, *get());
+            if (ir) throw Error(ir, "git_repository_head failed");
+            ref = x;
+        }
+        
+        if (ref.isBranch()) return revLookup(ref.fullName());
+        return ref.commit();
     }
+    
     
     void headDetach() const {
         int ir = git_repository_detach_head(*get());
         if (ir) throw Error(ir, "git_repository_detach_head failed");
     }
     
-    void checkout(std::string_view name) const {
-        Ref ref = refFullNameLookup(name);
+    void checkout(Ref ref) const {
+        std::string fullName = ref.fullName();
         const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
         int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
         if (ir) throw Error(ir, "git_checkout_tree failed");
-        ir = git_repository_set_head(*get(), name.data());
+        ir = git_repository_set_head(*get(), fullName.c_str());
         if (ir) throw Error(ir, "git_repository_set_head failed");
     }
+    
+    
+//    void checkout(Ref ref) const {
+//        std::string fullName = ref.fullName();
+//        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+//        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
+//        if (ir) throw Error(ir, "git_checkout_tree failed");
+//        ir = git_repository_set_head(*get(), fullName.c_str());
+//        if (ir) throw Error(ir, "git_repository_set_head failed");
+//    }
+    
+//    void checkout(std::string_view name) const {
+//        checkout(refFullNameLookup(name));
+//    }
     
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
@@ -637,7 +674,12 @@ public:
         return refFullNameLookup(ref.fullName());
     }
     
-    Rev revLookup(std::string_view str) {
+    Rev revReload(Rev rev) const {
+        if (rev.ref) return Rev(refReload(rev.ref), rev.refSkip);
+        return rev;
+    }
+    
+    Rev revLookup(std::string_view str) const {
         auto [ref, commit] = _refLookup(str);
         if (ref) return Rev(ref, 0);
         

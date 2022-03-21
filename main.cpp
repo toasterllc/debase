@@ -61,6 +61,8 @@ static UI::Menu _Menu;
 
 static UI::ErrorPanel _ErrorPanel;
 
+static Git::Rev _Head;
+
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
 enum class _SelectState {
@@ -561,9 +563,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         }
     }
     
-    bool combineEnabled = _Selection.commits.size()>1 && !selectionContainsMerge;
-    bool editEnabled = _Selection.commits.size() == 1;
-    bool deleteEnabled = true;
+    bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
+    bool editEnabled = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
+    bool deleteEnabled = _Selection.rev.isMutable();
     UI::ButtonOptions combineButton = { .label="Combine", .key="c",   .enabled=combineEnabled };
     UI::ButtonOptions editButton    = { .label="Edit",    .key="ret", .enabled=editEnabled    };
     UI::ButtonOptions deleteButton  = { .label="Delete",  .key="del", .enabled=deleteEnabled  };
@@ -652,18 +654,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-// _ReloadRevs: re-create the revs backed by refs. This is necessary because after modifying a branch,
-// the pre-existing git_reference's for that branch are stale (ie git_reference_target() doesn't
-// reflect the changed branch). To get updated revs, we have to to re-lookup the refs (via
-// Repo::refReload()), and recreate the rev from the new ref.
-static void _ReloadRevs(Git::Repo repo, std::vector<Git::Rev>& revs) {
-    for (Git::Rev& rev : revs) {
-        if (rev.ref) {
-            rev = Git::Rev(repo.refReload(rev.ref), rev.refSkip);
-        }
-    }
-}
-
 static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::RevColumn>& columns, std::vector<Git::Rev>& revs) {
     // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
@@ -681,7 +671,8 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
-        columns.push_back(MakeShared<UI::RevColumn>(_Colors, win, repo, rev, OffsetX, ColumnWidth, showMutability));
+        bool head = (rev.head() == _Head.commit);
+        columns.push_back(MakeShared<UI::RevColumn>(_Colors, win, repo, head, rev, OffsetX, ColumnWidth, showMutability));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
@@ -984,7 +975,10 @@ static void _EventLoop() {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
                 
                 // Reload the UI
-                _ReloadRevs(_Repo, _Revs);
+                _Head = _Repo.revReload(_Head);
+                for (Git::Rev& rev : _Revs) {
+                    rev = _Repo.revReload(rev);
+                }
                 recreateCols = true;
                 
                 // Update the selection
@@ -1018,15 +1012,17 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: make sure debase still works when running on a detached HEAD
+    
     #warning TODO: make "(HEAD)" suffix persist across branch modifications
+    
+    #warning TODO: support undo/redo
     
     #warning TODO: rigorously test copying/moving merge commits
     
-    #warning TODO: backup all supplied revs before doing anything
-    
     #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
     
-    #warning TODO: support undo/redo
+    #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: support light mode
     
@@ -1223,14 +1219,30 @@ int main(int argc, const char* argv[]) {
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
         
         _Repo = Git::Repo::Open(".");
+        _Head = _Repo.head();
         
-        // We have to detach the head, otherwise we'll get an error if we try
-        // to replace the current branch
-        Git::Ref head = _Repo.head();
-        std::string headFullName = head.fullName();
+//        {
+//            int ir = 0;
+//            const char* name = nullptr;
+//            
+//            name = git_reference_name(*_Repo.head());
+//            
+//            name = git_reference_shorthand(*_Repo.head());
+////            ir = git_branch_name(&name, *_Repo.head());
+////            assert(!ir);
+//            
+//            git_reference* ref = nullptr;
+//            ir = git_reference_resolve(&ref, *_Repo.head());
+//            
+//            name = git_reference_name(ref);
+//            name = git_reference_shorthand(ref);
+//            ir = git_branch_name(&name, ref);
+//            assert(!ir);
+//        }
+        
         
         if (revNames.empty()) {
-            _Revs.emplace_back(head, 0);
+            _Revs.emplace_back(_Head);
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
@@ -1250,12 +1262,14 @@ int main(int argc, const char* argv[]) {
             }
         }
         
-        _Repo.headDetach();
+        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
+        // we try to replace that ref.
+        if (_Head.ref) _Repo.headDetach();
         Defer(
-            // Restore previous head on exit
-            if (!headFullName.empty()) {
-                std::cout << "Restoring HEAD..." << std::endl;
-                _Repo.checkout(headFullName);
+            if (_Head.ref) {
+                // Restore previous head on exit
+                std::cout << "Restoring HEAD to " << _Head.displayName() << std::endl;
+                _Repo.checkout(_Head.ref);
                 std::cout << "Done" << std::endl;
             }
         );
