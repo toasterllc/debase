@@ -551,11 +551,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         };
     }
     
-    if (!_Selection.rev.isMutable()) {
-        // No beep() because it feels too aggressive to beep in this case
-        return std::nullopt;
-    }
-    
     assert(!_Selection.commits.empty());
     
     bool selectionContainsMerge = false;
@@ -569,15 +564,15 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     bool combineEnabled = _Selection.commits.size()>1 && !selectionContainsMerge;
     bool editEnabled = _Selection.commits.size() == 1;
     bool deleteEnabled = true;
-    UI::MenuButton combineButton = { .name="Combine", .key="c",   .enabled=combineEnabled };
-    UI::MenuButton editButton    = { .name="Edit",    .key="ret", .enabled=editEnabled    };
-    UI::MenuButton deleteButton  = { .name="Delete",  .key="del", .enabled=deleteEnabled  };
-    std::vector<UI::MenuButton> buttons = { combineButton, editButton, deleteButton };
+    UI::ButtonOptions combineButton = { .label="Combine", .key="c",   .enabled=combineEnabled };
+    UI::ButtonOptions editButton    = { .label="Edit",    .key="ret", .enabled=editEnabled    };
+    UI::ButtonOptions deleteButton  = { .label="Delete",  .key="del", .enabled=deleteEnabled  };
+    std::vector<UI::ButtonOptions> buttons = { combineButton, editButton, deleteButton };
     
     _Menu = MakeShared<UI::Menu>(_Colors, buttons);
     _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
-    const UI::MenuButton* menuButton = nullptr;
+    const UI::Button* menuButton = nullptr;
     MouseButtons mouseUpButtons = MouseButtons::Right;
     for (;;) {
         _Draw();
@@ -606,7 +601,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 // enabled menu button.
                 // In other words, don't close the menu when clicking on a disabled menu
                 // button.
-                if (!menuButton || menuButton->enabled) {
+                if (!menuButton || menuButton->opts().enabled) {
                     break;
                 }
             }
@@ -616,9 +611,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     // Handle the clicked button
-    std::string menuButtonName = (menuButton && menuButton->enabled ? menuButton->name : "");
+    std::string menuButtonLabel = (menuButton && menuButton->opts().enabled ? menuButton->opts().label : "");
     std::optional<Git::Op> gitOp;
-    if (menuButtonName == combineButton.name) {
+    if (menuButtonLabel == combineButton.label) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Combine,
@@ -628,7 +623,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             },
         };
     
-    } else if (menuButtonName == editButton.name) {
+    } else if (menuButtonLabel == editButton.label) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Edit,
@@ -638,7 +633,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             },
         };
     
-    } else if (menuButtonName == deleteButton.name) {
+    } else if (menuButtonLabel == deleteButton.label) {
         gitOp = Git::Op{
             .repo = _Repo,
             .type = Git::Op::Type::Delete,
@@ -1023,6 +1018,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: make "(HEAD)" suffix persist across branch modifications
+    
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: backup all supplied revs before doing anything
