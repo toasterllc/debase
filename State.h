@@ -8,13 +8,9 @@
 using UndoState = T_UndoState<Git::Commit>;
 
 struct RepoState {
-    Git::Repo repo;
-    std::map<Git::Ref,UndoState> undoStates;
-};
-
-struct State {
     static constexpr uint32_t Version = 0;
-    std::map<std::filesystem::path,RepoState> repoStates;
+//    std::filesystem::path repo;
+    std::map<Git::Ref,UndoState> undoStates;
 };
 
 // MARK: - Commit Serialization
@@ -38,10 +34,6 @@ inline void from_json(const nlohmann::json& j, std::deque<Git::Commit>& x, Git::
 }
 
 // MARK: - Ref Serialization
-inline void to_json(nlohmann::json& j, const Git::Ref& x) {
-    j = x.fullName();
-}
-
 inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo) {
     std::string name;
     j.get_to(name);
@@ -63,23 +55,26 @@ inline void from_json(const nlohmann::json& j, UndoState& x, Git::Repo repo) {
     ::from_json(j.at("current"), x._current, repo);
 }
 
-// MARK: - Repo Serialization
-inline void to_json(nlohmann::json& j, const Git::Repo& x) {
-    j = std::filesystem::canonical(x.path()).string();
-}
-
-inline void from_json(const nlohmann::json& j, Git::Repo& x) {
-    std::filesystem::path path;
-    j.get_to(path);
-    x = Git::Repo::Open(path);
-}
+//// MARK: - Repo Serialization
+//inline void to_json(nlohmann::json& j, const Git::Repo& x) {
+//    j = std::filesystem::canonical(x.path()).string();
+//}
+//
+//inline void from_json(const nlohmann::json& j, Git::Repo& x) {
+//    std::filesystem::path path;
+//    j.get_to(path);
+//    x = Git::Repo::Open(path);
+//}
 
 // MARK: - RepoState Serialization
 inline void to_json(nlohmann::json& j, const RepoState& x) {
     j = {
-        {"repo", x.repo},
+//        {"repo", x.repo},
+        {"version", RepoState::Version},
         {"undoStates", x.undoStates},
     };
+    
+    printf("%s\n", j.dump().c_str());
 }
 
 inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, Git::Repo repo) {
@@ -95,26 +90,33 @@ inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, 
     }
 }
 
-inline void from_json(const nlohmann::json& j, RepoState& x) {
-    j.at("repo").get_to(x.repo);
-    ::from_json(j.at("undoStates"), x.undoStates, x.repo);
-}
-
-// MARK: - State Serialization
-inline void to_json(nlohmann::json& j, const State& x) {
-    j = {
-        {"version", State::Version},
-        {"repoStates", x.repoStates},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, State& x) {
+inline void from_json(const nlohmann::json& j, RepoState& x, Git::Repo repo) {
+//    j.at("repo").get_to(x.repo);
     uint32_t version = 0;
     j.at("version").get_to(version);
-    if (version != State::Version) {
+    if (version != RepoState::Version) {
         throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
-        (uintmax_t)State::Version, (uintmax_t)version);
+        (uintmax_t)RepoState::Version, (uintmax_t)version);
     }
     
-    j.at("repoStates").get_to(x.repoStates);
+    ::from_json(j.at("undoStates"), x.undoStates, repo);
 }
+
+//// MARK: - State Serialization
+//inline void to_json(nlohmann::json& j, const State& x) {
+//    j = {
+//        {"version", State::Version},
+//        {"repoStates", x.repoStates},
+//    };
+//}
+//
+//inline void from_json(const nlohmann::json& j, State& x) {
+//    uint32_t version = 0;
+//    j.at("version").get_to(version);
+//    if (version != State::Version) {
+//        throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
+//        (uintmax_t)State::Version, (uintmax_t)version);
+//    }
+//    
+//    j.at("repoStates").get_to(x.repoStates);
+//}

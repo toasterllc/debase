@@ -9,7 +9,10 @@ public:
     }
     
     void set(const T& x) {
+        if (_current == x) return;
         _current = x;
+        _undo.clear();
+        _redo.clear();
     }
     
     void push(const T& x) {
@@ -36,7 +39,7 @@ public:
     bool canRedo() const { return !_redo.empty(); }
     
 //private:
+    T _current = {};
     std::deque<T> _undo;
     std::deque<T> _redo;
-    T _current = {};
 };

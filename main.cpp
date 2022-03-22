@@ -9,6 +9,7 @@
 #include <deque>
 #include <set>
 #include <map>
+#include <filesystem>
 #include <spawn.h>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/Toastbox/Defer.h"
@@ -26,6 +27,8 @@
 #include "ErrorPanel.h"
 #include "State.h"
 
+namespace fs = std::filesystem;
+
 struct _Selection {
     Git::Rev rev;
     std::set<Git::Commit> commits;
@@ -35,6 +38,8 @@ static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
 static Git::Repo _Repo;
+static RepoState _RepoState;
+static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
 
 static UI::Window _RootWindow;
@@ -61,8 +66,6 @@ static std::optional<UI::Rect> _SelectionRect;
 static UI::Menu _Menu;
 
 static UI::ErrorPanel _ErrorPanel;
-
-static Git::Rev _Head;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
@@ -675,6 +678,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
+        UndoState* us = (rev.ref ? &_RepoState.undoStates.at(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = win,
             .colors         = _Colors,
@@ -683,6 +687,9 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
             .head           = (rev.displayHead() == _Head.commit),
             .offset         = UI::Size{OffsetX, 0},
             .width          = ColumnWidth,
+            .undoEnabled    = (us ? us->canUndo() : false),
+            .redoEnabled    = (us ? us->canRedo() : false),
+            
 //            .showMutability = showMutability,
         };
         columns.push_back(MakeShared<UI::RevColumn>(opts));
@@ -853,14 +860,22 @@ static void _Spawn(const char*const* argv) {
     if (!preserveTerminal) _CursesInit();
 }
 
+static void _UndoRedo(Git::Ref ref, bool undo) {
+    assert(ref);
+    UndoState& us = _RepoState.undoStates[ref];
+    if (undo) us.undo();
+    else      us.redo();
+    _Repo.refReplace(ref, us.get());
+}
+
 static void _EventLoop() {
     _RootWindow = MakeShared<UI::Window>(::stdscr);
     
-    bool recreateCols = true;
+    bool reload = true;
     for (;;) {
-        if (recreateCols) {
+        if (reload) {
             _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
-            recreateCols = false;
+            reload = false;
         }
         
         _Draw();
@@ -891,12 +906,14 @@ static void _EventLoop() {
                     
                     } else if (hit.undoButton) {
                         if (hit.undoButton->opts().enabled) {
-                            abort();
+                            _UndoRedo(hitTest->column->rev().ref, true);
+                            reload = true;
                         }
                     
                     } else if (hit.redoButton) {
                         if (hit.redoButton->opts().enabled) {
-                            abort();
+                            _UndoRedo(hitTest->column->rev().ref, false);
+                            reload = true;
                         }
                     }
                 
@@ -975,7 +992,7 @@ static void _EventLoop() {
         }
         
         case UI::Event::WindowResize: {
-            recreateCols = true;
+            reload = true;
             break;
         }
         
@@ -994,18 +1011,40 @@ static void _EventLoop() {
             std::string errorMsg;
             try {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
+                Git::Rev srcOld = gitOp->src.rev;
+                Git::Rev dstOld = gitOp->dst.rev;
+                Git::Rev srcNew = opResult.src.rev;
+                Git::Rev dstNew = opResult.dst.rev;
                 
-                // Reload the UI
-                if (_Head.ref) {
-                    _Head = _Repo.revReload(_Head);
-                }
+                // We're using a set 
+                assert((bool)srcNew.ref == (bool)srcOld.ref);
+                assert((bool)dstNew.ref == (bool)dstOld.ref);
+                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
+                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
+                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
                 
-                for (Git::Rev& rev : _Revs) {
-                    if (rev.ref) {
-                        rev = _Repo.revReload(rev);
+                // Remember changes in our undo history
+                for (const auto& i : oldNewRevs) {
+                    const auto& [oldRev, newRev] = i;
+                    if (newRev != oldRev) {
+                        UndoState& us = _RepoState.undoStates[newRev.ref];
+                        us.push(newRev.commit);
                     }
                 }
-                recreateCols = true;
+                
+//                {
+//                    if (srcNew.ref && srcNew!=srcOld) {
+//                        UndoState& us = _RepoState.undoStates[srcNew.ref];
+//                        us.push(srcNew.commit);
+//                    }
+//                    
+//                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
+//                        UndoState& us = _RepoState.undoStates[dstNew.ref];
+//                        us.push(dstNew.commit);
+//                    }
+//                }
+                
+                reload = true;
                 
                 // Update the selection
                 _Selection = {
@@ -1034,27 +1073,85 @@ static void _EventLoop() {
                 _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
             }
         }
+        
+        if (reload) {
+            // Reload the UI
+            if (_Head.ref) {
+                _Head = _Repo.revReload(_Head);
+            }
+            
+            for (Git::Rev& rev : _Revs) {
+                if (rev.ref) {
+                    rev = _Repo.revReload(rev);
+                }
+            }
+        }
     }
 }
 
-//"/Users/dave/Desktop/state.json"
-
-static void _StateRead(const std::filesystem::path& path, State& state) {
-    std::ifstream f(path);
-    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-    nlohmann::json j;
-    f >> j;
-    j.get_to(state);
+static fs::path _ConfigDir() {
+    return "/Users/dave/Desktop/toaster.debase";
 }
 
-static void _StateWrite(const std::filesystem::path& path, const State& state) {
-    std::ofstream f(path);
+static fs::path _RepoStateDir(const fs::path& configDir) {
+    return configDir / "RepoState";
+}
+
+static fs::path _RepoStateFileName(const fs::path& repo) {
+    std::string repoStr = fs::canonical(repo);
+    std::replace(repoStr.begin(), repoStr.end(), '/', '-'); // Replace / with -
+    return repoStr;
+}
+
+static void _RepoStateRead(const fs::path& configDir, Git::Repo repo, RepoState& state) {
+    try {
+        fs::path fdir = _RepoStateDir(configDir);
+        fs::path fpath = fdir / _RepoStateFileName(repo.path());
+        std::ifstream f(fpath);
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        nlohmann::json j;
+        f >> j;
+        RepoState tmp;
+        ::from_json(j, tmp, repo);
+        state = tmp;
+    
+    // Ignore errors (eg file not existing)
+    } catch (...) {}
+}
+
+static void _RepoStateWrite(const fs::path& configDir, Git::Repo repo, const RepoState& state) {
+    fs::path fdir = _RepoStateDir(configDir);
+    fs::create_directories(fdir);
+    fs::path fpath = fdir / _RepoStateFileName(repo.path());
+    std::ofstream f(fpath);
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     nlohmann::json j = state;
     f << j;
 }
 
 int main(int argc, const char* argv[]) {
+//    std::map<Git::Ref,UndoState> map;
+//    
+////    std::map<std::string,int> map;
+////    map["hello"] = 1;
+////    map["goodbye"] = 2;
+//    
+//    nlohmann::json j = {
+//        {"version", 0},
+//        {"undoStates", map},
+//    };
+//    
+//    printf("%s\n", j.dump().c_str());
+//    exit(0);
+    
+    #warning TODO: undo: remember selection as a part of the undo state
+    
+    #warning TODO: undo: fix UndoState deserialization
+    
+    #warning TODO: when deserializing, if a ref doesn't exist, don't throw an exception, just prune the entry
+    
+    #warning TODO: implement _ConfigDir() for real
+    
     #warning TODO: writing state needs to implement mutual exclusion, and should ensure that it doesn't clobber the state of repos that weren't being accessed
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1262,21 +1359,20 @@ int main(int argc, const char* argv[]) {
     try {
         setlocale(LC_ALL, "");
         
-        State state;
-        _StateWrite("/Users/dave/Desktop/state.json", state);
+//        State state;
+//        _StateWrite("/Users/dave/Desktop/state.json", state);
         
 //        State state = _StateRead("/Users/dave/Desktop/state.json");
-        
-        Git::Repo yosys1 = Git::Repo::Open("/Users/dave/Desktop/yosys");
-        Git::Repo yosys2 = Git::Repo::Open("/Users/dave/Desktop/yosys");
-        printf("yosys1: %p\n", *yosys1);
-        printf("yosys2: %p\n", *yosys2);
+//        
+//        Git::Repo yosys1 = Git::Repo::Open("/Users/dave/Desktop/yosys");
+//        Git::Repo yosys2 = Git::Repo::Open("/Users/dave/Desktop/yosys");
+//        printf("yosys1: %p\n", *yosys1);
+//        printf("yosys2: %p\n", *yosys2);
         
         std::vector<std::string> revNames;
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
         
         _Repo = Git::Repo::Open(".");
-        printf("%s\n", _Repo.path().native().data());
         _Head = _Repo.head();
         
 //        {
@@ -1320,6 +1416,37 @@ int main(int argc, const char* argv[]) {
             }
         }
         
+        _RepoStateRead(_ConfigDir(), _Repo, _RepoState);
+        
+        // Set the current commit of each ref's UndoState.
+        // If an UndoState didn't already exist, one will be created.
+        // If an UndoState did exist, but the new commit differs from
+        // the recorded commit (loaded from the RepoState file on disk),
+        // UndoState will clear its undo/redo history because it's stale.
+        for (Git::Rev& rev : _Revs) {
+            if (rev.ref) {
+                UndoState& us = _RepoState.undoStates[rev.ref];
+                us.set(rev.ref.commit());
+            }
+        }
+        
+//        state the new state is different than the for each ref if it doesn't already exist, and 
+//        // Set the current state of each UndoState
+//        for (auto& i : _RepoState.undoStates) {
+//            const Git::Ref& ref = i.first;
+//            UndoState& us = i.second;
+//            us.set(ref.commit());
+//        }
+        
+        
+//        // Remove _RepoState.undoStates entries for refs that don't match
+//        {
+//            std::set<Git::Ref> del;
+//            for (const auto& i : _RepoState.undoStates) {
+//                
+//            }
+//        }
+        
         // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
         // we try to replace that ref.
         if (_Head.ref) _Repo.headDetach();
@@ -1336,6 +1463,8 @@ int main(int argc, const char* argv[]) {
         Defer(_CursesDeinit());
         
         _EventLoop();
+        
+        _RepoStateWrite(_ConfigDir(), _Repo, _RepoState);
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n\n", e.what());

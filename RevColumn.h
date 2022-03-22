@@ -15,6 +15,8 @@ struct RevColumnOptions {
     bool head = false;
     Point offset;
     int width = 0;
+    bool undoEnabled = false;
+    bool redoEnabled = false;
 };
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
@@ -69,7 +71,7 @@ public:
                 .colors = _opts.colors,
                 .label = "Undo",
 //                .key = "z",
-                .enabled = true,
+                .enabled = _opts.undoEnabled,
                 .center = true,
                 .drawBorder = true,
                 .insetX = 1,
@@ -81,7 +83,7 @@ public:
                 .colors = _opts.colors,
                 .label = "Redo",
 //                .key = "Z",
-                .enabled = false,
+                .enabled = _opts.redoEnabled,
                 .center = true,
                 .drawBorder = true,
                 .insetX = 1,

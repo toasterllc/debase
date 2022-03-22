@@ -292,6 +292,11 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         if (ir) throw Error(ir, "git_reference_peel failed");
         return x;
     }
+    
+    // To allow json serialization
+    operator std::string() const {
+        return fullName();
+    }
 };
 
 struct Branch : Ref {
