@@ -7,10 +7,10 @@ namespace UI {
 
 class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
-    _Menu(const ColorPalette& colors, const std::vector<ButtonOptions>& buttonOpts) : _colors(colors) {
+    _Menu(const ColorPalette& colors, const std::vector<ButtonOptions>& bopts) : _colors(colors) {
         // Find the longest button to set our width
         int buttonWidth = 0;
-        for (const ButtonOptions& opts : buttonOpts) {
+        for (const ButtonOptions& opts : bopts) {
             int w = (int)opts.label.size() + (int)opts.key.size();
             buttonWidth = std::max(buttonWidth, w);
         }
@@ -20,7 +20,7 @@ public:
 //        const ButtonOptions& opts, const ColorPalette& colors, Window win, Rect frame
         
         size_t idx = 0;
-        for (ButtonOptions opts : buttonOpts) {
+        for (ButtonOptions opts : bopts) {
             int x = BorderSize;
             int y = BorderSize + (int)idx*RowHeight;
             opts.insetX = InsetX;
@@ -31,7 +31,7 @@ public:
         }
         
         int w = buttonWidth + 2*(BorderSize+InsetX);
-        int h = (RowHeight*(int)buttonOpts.size())-1 + 2;
+        int h = (RowHeight*(int)bopts.size())-1 + 2;
         setSize({w, h});
         _drawNeeded = true;
 //        
@@ -82,13 +82,13 @@ public:
 //        return _mouseOverButton;
 //    }
     
-    const Button* updateMousePosition(const Point& p) {
+    const Button* updateMouse(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
         
         Button* mouseOverButton = nullptr;
         for (Button& button : _buttons) {
-            bool hit = button.updateMousePosition(off);
+            bool hit = button.updateMouse(off);
             if (hit) mouseOverButton = &button;
         }
         

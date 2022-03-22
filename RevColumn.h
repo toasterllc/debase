@@ -69,7 +69,7 @@ public:
                 .colors = _opts.colors,
                 .label = "Undo",
 //                .key = "z",
-                .enabled = false,
+                .enabled = true,
                 .center = true,
                 .drawBorder = true,
                 .insetX = 1,
@@ -81,7 +81,7 @@ public:
                 .colors = _opts.colors,
                 .label = "Redo",
 //                .key = "Z",
-                .enabled = false,
+                .enabled = true,
                 .center = true,
                 .drawBorder = true,
                 .insetX = 1,
@@ -119,11 +119,25 @@ public:
         _redoButton.draw(_opts.win);
     }
     
-    UI::CommitPanel hitTest(const UI::Point& p) {
+    void updateMouse(const Point& p) {
+        _undoButton.updateMouse(p);
+        _redoButton.updateMouse(p);
+    }
+    
+    struct HitTestResult {
+        CommitPanel panel;
+        Button* undoButton = nullptr;
+        Button* redoButton = nullptr;
+    };
+    
+    std::optional<HitTestResult> hitTest(const UI::Point& p) {
         for (UI::CommitPanel panel : _panels) {
-            if (panel->hitTest(p)) return panel;
+            if (panel->hitTest(p)) return HitTestResult{ .panel = panel };
         }
-        return {};
+        
+        if (_undoButton.updateMouse(p)) return HitTestResult{ .undoButton = &_undoButton };
+        if (_redoButton.updateMouse(p)) return HitTestResult{ .redoButton = &_redoButton };
+        return std::nullopt;
     }
     
     Git::Rev rev() { return _opts.rev; }

@@ -181,13 +181,16 @@ static void _Draw() {
 
 struct _HitTestResult {
     UI::RevColumn column;
-    UI::CommitPanel panel;
+    UI::_RevColumn::HitTestResult hitTest;
 };
 
 static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
     for (UI::RevColumn col : _Columns) {
-        if (UI::CommitPanel panel = col->hitTest(p)) {
-            return _HitTestResult{col, panel};
+        if (auto hitTest = col->hitTest(p)) {
+            return _HitTestResult{
+                .column = col,
+                .hitTest = *hitTest,
+            };
         }
     }
     return std::nullopt;
@@ -609,7 +612,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
             }
         }
         
-        menuButton = _Menu->updateMousePosition({mouse.x, mouse.y});
+        menuButton = _Menu->updateMouse({mouse.x, mouse.y});
     }
     
     // Handle the clicked button
@@ -880,8 +883,18 @@ static void _EventLoop() {
             if (mouse.bstate & BUTTON1_PRESSED) {
                 const bool shift = (mouse.bstate & _SelectionShiftKeys);
                 if (hitTest && !shift) {
-                    // Mouse down inside of a CommitPanel, without shift key
-                    gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hitTest->panel);
+                    auto& hit = hitTest->hitTest;
+                    if (hit.panel) {
+                        // Mouse down inside of a CommitPanel, without shift key
+                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hit.panel);
+                    
+                    } else if (hit.undoButton) {
+                        
+                    
+                    } else if (hit.redoButton) {
+                        
+                    }
+                
                 } else {
                     // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
                     _TrackMouseOutsideCommitPanel(mouse);
@@ -889,7 +902,10 @@ static void _EventLoop() {
             
             } else if (mouse.bstate & BUTTON3_PRESSED) {
                 if (hitTest) {
-                    gitOp = _TrackRightMouse(mouse, hitTest->column, hitTest->panel);
+                    auto& hit = hitTest->hitTest;
+                    if (hit.panel) {
+                        gitOp = _TrackRightMouse(mouse, hitTest->column, hit.panel);
+                    }
                 }
             }
             break;
@@ -1017,6 +1033,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
+    
     #warning TODO: support undo/redo
     
     #warning TODO: rigorously test copying/moving merge commits

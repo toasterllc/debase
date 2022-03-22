@@ -27,8 +27,12 @@ public:
 //        _drawNeeded = true;
 //    }
     
-    bool updateMousePosition(const Point& p) {
-        _highlight = !Empty(Intersection(_opts.frame, {p, {1,1}}));
+    bool hitTest(const UI::Point& p) const {
+        return !Empty(Intersection(_opts.frame, {p, {1,1}}));
+    }
+    
+    bool updateMouse(const Point& p) {
+        _highlight = hitTest(p);
         return _highlight;
     }
     
