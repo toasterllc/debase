@@ -84,7 +84,12 @@ inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, 
     for (const auto& i : map) {
         Git::Ref ref;
         UndoState s;
-        ::from_json(i.first, ref, repo);
+        try {
+            ::from_json(i.first, ref, repo);
+        } catch (...) {
+            // If we fail to deserialize a ref, ignore this UndoState entry
+            continue;
+        }
         ::from_json(i.second, s, repo);
         x[ref] = s;
     }

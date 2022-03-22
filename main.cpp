@@ -1146,17 +1146,9 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: undo: remember selection as a part of the undo state
     
-    #warning TODO: undo: fix UndoState deserialization
-    
-    #warning TODO: when deserializing, if a ref doesn't exist, don't throw an exception, just prune the entry
-    
     #warning TODO: implement _ConfigDir() for real
     
-    #warning TODO: writing state needs to implement mutual exclusion, and should ensure that it doesn't clobber the state of repos that weren't being accessed
-    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
-    
-    #warning TODO: support undo/redo
     
     #warning TODO: rigorously test copying/moving merge commits
     
@@ -1267,6 +1259,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: make sure debase still works when running on a detached HEAD
 //    
 //    #warning TODO: make "(HEAD)" suffix persist across branch modifications
+//
+//    #warning TODO: undo: fix UndoState deserialization
+//    
+//    #warning TODO: when deserializing, if a ref doesn't exist, don't throw an exception, just prune the entry
+//
+//    #warning TODO: support undo/redo
     
     
     {
