@@ -24,6 +24,7 @@
 #include "MakeShared.h"
 #include "Bitfield.h"
 #include "ErrorPanel.h"
+#include "State.h"
 
 struct _Selection {
     Git::Rev rev;
