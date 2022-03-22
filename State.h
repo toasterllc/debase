@@ -2,52 +2,45 @@
 #include <deque>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/nlohmann/json.h"
+#include "UndoState.h"
+#include "Git.h"
 
-struct UndoHistory {
-    using History = std::deque<int>;
-    using Iter = History::const_iterator;
-    using RIter = History::const_reverse_iterator;
-    History history;
-    Iter position = history.begin();
-    
-    void undo() {
-        assert(canUndo());
-        position++;
-    }
-    
-    void redo() {
-        assert(canRedo());
-        position--;
-    }
-    
-    Iter undoIter() const { return position; }
-    RIter redoIter() const { return std::make_reverse_iterator(position); }
-    
-    Iter undoEnd() const { return history.end(); }
-    RIter redoEnd() const { return history.rend(); }
-    
-    bool canUndo() const { return undoIter()!=undoEnd(); }
-    bool canRedo() const { return redoIter()!=redoEnd(); }
-};
+using UndoState = T_UndoState<Git::Commit>;
 
-inline void to_json(nlohmann::json& j, const UndoHistory& x) {
+inline void to_json(nlohmann::json& j, const UndoState& x) {
     using namespace nlohmann;
 }
 
-inline void from_json(const nlohmann::json& j, UndoHistory& x) {
+inline void from_json(const nlohmann::json& j, UndoState& x) {
     using namespace nlohmann;
 }
 
 struct RepoState {
-    std::map<Git::Ref,UndoHistory> undoHistorys;
+    std::map<Git::Ref,UndoState> undoStates;
 };
+
+inline void to_json(nlohmann::json& j, const Git::Ref& x) {
+    using namespace nlohmann;
+    j = {
+        {"id", x.fullName()},
+    };
+}
+
+inline void from_json(const nlohmann::json& j, Git::Ref& x) {
+    using namespace nlohmann;
+//    j.at("id").get_to(x.undoStates);
+}
 
 inline void to_json(nlohmann::json& j, const RepoState& x) {
     using namespace nlohmann;
+    j = {
+        {"undoStates", x.undoStates},
+    };
 }
 
 inline void from_json(const nlohmann::json& j, RepoState& x) {
     using namespace nlohmann;
+    j.at("undoStates").get_to(x.undoStates);
 }
 
 struct State {
@@ -117,7 +110,6 @@ struct State {
 
 inline void to_json(nlohmann::json& j, const State& x) {
     using namespace nlohmann;
-    json repoStates;
     j = {
         {"version", State::Version},
         {"repoStates", x.repoStates},
