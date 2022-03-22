@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include "RefCounted.h"
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/libgit2/include/git2.h"
@@ -466,17 +467,22 @@ class Repo : public RefCounted<git_repository*, _RepoFree> {
 public:
     using RefCounted::RefCounted;
     
-    static Repo Open(std::string_view path) {
+    static Repo Open(const std::filesystem::path& path) {
         git_libgit2_init();
         
         git_repository* x = nullptr;
-        int ir = git_repository_open(&x, path.data());
+        int ir = git_repository_open(&x, path.native().data());
         if (ir) {
             git_libgit2_shutdown();
             throw Error(ir, "git_repository_open failed");
         }
         
         return x;
+    }
+    
+    std::filesystem::path path() const {
+        return git_repository_workdir(*get());
+//        return std::filesystem::canonical(git_repository_workdir(*get()));
     }
     
 //    Repo(git_repository* x) : RefCounted(x) {

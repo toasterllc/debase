@@ -7,41 +7,31 @@
 
 using UndoState = T_UndoState<Git::Commit>;
 
-inline void to_json(nlohmann::json& j, const UndoState& x) {
-    using namespace nlohmann;
-}
-
-inline void from_json(const nlohmann::json& j, UndoState& x) {
-    using namespace nlohmann;
-}
-
 struct RepoState {
+    Git::Repo repo;
     std::map<Git::Ref,UndoState> undoStates;
+    
+//    Json serialize() const {
+//        return {
+//            {"repo", repo},
+//            {"undoStates", undoStates},
+//        };
+//    }
+//    
+//    void deserialize(const Json& j) {
+//        j.at("repo").get_to(repo);
+//        
+//        std::map<Json,Json> us;
+//        j.at("undoStates").get_to(us);
+//        for (const auto& i : us) {
+//            Git::Ref ref;
+//            UndoState s;
+//            from_json(i.first, ref);
+//            from_json(i.second, s, repo);
+//            undoStates[ref] = s;
+//        }
+//    }
 };
-
-inline void to_json(nlohmann::json& j, const Git::Ref& x) {
-    using namespace nlohmann;
-    j = {
-        {"id", x.fullName()},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, Git::Ref& x) {
-    using namespace nlohmann;
-//    j.at("id").get_to(x.undoStates);
-}
-
-inline void to_json(nlohmann::json& j, const RepoState& x) {
-    using namespace nlohmann;
-    j = {
-        {"undoStates", x.undoStates},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, RepoState& x) {
-    using namespace nlohmann;
-    j.at("undoStates").get_to(x.undoStates);
-}
 
 struct State {
     static constexpr uint32_t Version = 0;
@@ -108,6 +98,137 @@ struct State {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// MARK: - Commit Serialization
+inline void to_json(nlohmann::json& j, const Git::Commit& x) {
+    using namespace nlohmann;
+    j = Git::StringForId(x.id());
+}
+
+inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo) {
+    using namespace nlohmann;
+    std::string id;
+    j.get_to(id);
+    x = repo.commitLookup(id);
+}
+
+inline void from_json(const nlohmann::json& j, std::deque<Git::Commit>& x, Git::Repo repo) {
+    using namespace nlohmann;
+    std::vector<json> commits;
+    j.get_to(commits);
+    for (const json& j : commits) {
+        ::from_json(j, x.emplace_back(), repo);
+    }
+}
+
+// MARK: - Ref Serialization
+inline void to_json(nlohmann::json& j, const Git::Ref& x) {
+    using namespace nlohmann;
+    j = x.fullName();
+}
+
+inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo) {
+    using namespace nlohmann;
+    std::string name;
+    j.get_to(name);
+    x = repo.refLookup(name);
+}
+
+// MARK: - UndoState Serialization
+inline void to_json(nlohmann::json& j, const UndoState& x) {
+    using namespace nlohmann;
+    j = {
+        {"undo", x._undo},
+        {"redo", x._redo},
+        {"current", x._current},
+    };
+}
+
+inline void from_json(const nlohmann::json& j, UndoState& x, Git::Repo repo) {
+    using namespace nlohmann;
+    ::from_json(j.at("undo"), x._undo, repo);
+    ::from_json(j.at("redo"), x._redo, repo);
+    ::from_json(j.at("current"), x._current, repo);
+}
+
+// MARK: - Repo Serialization
+inline void to_json(nlohmann::json& j, const Git::Repo& x) {
+    using namespace nlohmann;
+    j = std::filesystem::canonical(x.path()).string();
+}
+
+inline void from_json(const nlohmann::json& j, Git::Repo& x) {
+    using namespace nlohmann;
+    std::filesystem::path path;
+    j.get_to(path);
+    x = Git::Repo::Open(path);
+}
+
+// MARK: - RepoState Serialization
+inline void to_json(nlohmann::json& j, const RepoState& x) {
+    using namespace nlohmann;
+    j = {
+        {"repo", x.repo},
+        {"undoStates", x.undoStates},
+    };
+    
+//    json undoStates;
+//    for (const auto& keyval : x.undoStates) {
+//        std::string refName = keyval.first.fullName();
+//        undoStates[refName] = 1;
+//    }
+//    
+//    j = {
+//        {"repo", std::filesystem::canonical(x.repo.path())},
+//        {"undoStates", undoStates},
+//    };
+}
+
+inline void from_json(const nlohmann::json& j, RepoState& x) {
+    using namespace nlohmann;
+    
+    j.at("repo").get_to(x.repo);
+    
+    std::map<json,json> us;
+    j.at("undoStates").get_to(us);
+    for (const auto& i : us) {
+        Git::Ref ref;
+        UndoState s;
+        ::from_json(i.first, ref, x.repo);
+        ::from_json(i.second, s, x.repo);
+        x.undoStates[ref] = s;
+    }
+    
+//    std::filesystem::path repoPath;
+//    j.at("repo").get_to(repoPath);
+//    x.repo = Git::Repo::Open(repoPath);
+//    
+//    const json& undoStates = j.at("undoStates");
+//    if (undoStates.type() != json::value_t::object) {
+//        throw Toastbox::RuntimeError("undoStates isn't an object");
+//    }
+//    
+//    for (const auto& keyval : undoStates) {
+//        keyval
+//    }
+//    
+//    j.at("undoStates").get_to(x.undoStates);
+}
+
+// MARK: - State Serialization
 inline void to_json(nlohmann::json& j, const State& x) {
     using namespace nlohmann;
     j = {

@@ -1038,6 +1038,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: writing state needs to implement mutual exclusion, and should ensure that it doesn't clobber the state of repos that weren't being accessed
+    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: support undo/redo
@@ -1247,6 +1249,7 @@ int main(int argc, const char* argv[]) {
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
         
         _Repo = Git::Repo::Open(".");
+        printf("%s\n", _Repo.path().native().data());
         _Head = _Repo.head();
         
 //        {
