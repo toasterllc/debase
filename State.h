@@ -10,107 +10,12 @@ using UndoState = T_UndoState<Git::Commit>;
 struct RepoState {
     Git::Repo repo;
     std::map<Git::Ref,UndoState> undoStates;
-    
-//    Json serialize() const {
-//        return {
-//            {"repo", repo},
-//            {"undoStates", undoStates},
-//        };
-//    }
-//    
-//    void deserialize(const Json& j) {
-//        j.at("repo").get_to(repo);
-//        
-//        std::map<Json,Json> us;
-//        j.at("undoStates").get_to(us);
-//        for (const auto& i : us) {
-//            Git::Ref ref;
-//            UndoState s;
-//            from_json(i.first, ref);
-//            from_json(i.second, s, repo);
-//            undoStates[ref] = s;
-//        }
-//    }
 };
 
 struct State {
     static constexpr uint32_t Version = 0;
     std::map<std::filesystem::path,RepoState> repoStates;
-    
-//    Json serialize() const {
-//        Json data;
-//        data["version"] = _Version;
-//        data["repoStates"] = 0;
-//        return data;
-//    }
-//    
-//    void deserialize(const Json& data) {
-//        
-//    }
-    
-//    void write(std::ofstream& f) const {
-//        f.write((char*)&_Version, sizeof(_Version));
-//        assert(repoState.size() <= UINT32_MAX);
-//        
-//        uint32_t count = (uint32_t)repoState.size();
-//        f.write((char*)&count, sizeof(count));
-//        
-//        for (const auto& keyval : repoState) {
-//            const std::string_view path = keyval.first.native();
-//            const RepoState& repoState = keyval.second;
-//            assert(path.size() <= UINT32_MAX);
-//            uint32_t len = (uint32_t)path.size();
-//            f.write((char*)&len, sizeof(len));
-//            f.write(path.data(), len);
-//            repoState.write(f);
-//        }
-//    }
-//    
-//    void read(std::ifstream& f) {
-//        uint32_t version = 0;
-//        f.read((char*)&version, sizeof(version));
-//        if (version != _Version)
-//            throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
-//            (uintmax_t)_Version, (uintmax_t)version);
-//        
-//        uint32_t count = 0;
-//        f.read(&count, sizeof(count));
-//        
-//        for (uint32_t i=0; i<count; i++) {
-//            uint32_t len = 0;
-//            f.read(&len, sizeof(len));
-//            
-//            std::string str;
-//            str.reserve();
-//            f.read
-//        }
-//        
-//        for (const auto& keyval : repoState) {
-//            const std::string_view path = keyval.first.native();
-//            const RepoState& repoState = keyval.second;
-//            assert(path.size() <= UINT32_MAX);
-//            uint32_t len = (uint32_t)path.size();
-//            f.write((char*)&len, sizeof(len));
-//            f.write(path.data(), len);
-//            repoState.write(f);
-//        }
-//    }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // MARK: - Commit Serialization
 inline void to_json(nlohmann::json& j, const Git::Commit& x) {
@@ -184,48 +89,25 @@ inline void to_json(nlohmann::json& j, const RepoState& x) {
         {"repo", x.repo},
         {"undoStates", x.undoStates},
     };
-    
-//    json undoStates;
-//    for (const auto& keyval : x.undoStates) {
-//        std::string refName = keyval.first.fullName();
-//        undoStates[refName] = 1;
-//    }
-//    
-//    j = {
-//        {"repo", std::filesystem::canonical(x.repo.path())},
-//        {"undoStates", undoStates},
-//    };
+}
+
+inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, Git::Repo repo) {
+    using namespace nlohmann;
+    std::map<json,json> map;
+    j.get_to(map);
+    for (const auto& i : map) {
+        Git::Ref ref;
+        UndoState s;
+        ::from_json(i.first, ref, repo);
+        ::from_json(i.second, s, repo);
+        x[ref] = s;
+    }
 }
 
 inline void from_json(const nlohmann::json& j, RepoState& x) {
     using namespace nlohmann;
-    
     j.at("repo").get_to(x.repo);
-    
-    std::map<json,json> us;
-    j.at("undoStates").get_to(us);
-    for (const auto& i : us) {
-        Git::Ref ref;
-        UndoState s;
-        ::from_json(i.first, ref, x.repo);
-        ::from_json(i.second, s, x.repo);
-        x.undoStates[ref] = s;
-    }
-    
-//    std::filesystem::path repoPath;
-//    j.at("repo").get_to(repoPath);
-//    x.repo = Git::Repo::Open(repoPath);
-//    
-//    const json& undoStates = j.at("undoStates");
-//    if (undoStates.type() != json::value_t::object) {
-//        throw Toastbox::RuntimeError("undoStates isn't an object");
-//    }
-//    
-//    for (const auto& keyval : undoStates) {
-//        keyval
-//    }
-//    
-//    j.at("undoStates").get_to(x.undoStates);
+    ::from_json(j.at("undoStates"), x.undoStates, x.repo);
 }
 
 // MARK: - State Serialization
