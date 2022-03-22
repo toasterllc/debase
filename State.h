@@ -19,12 +19,10 @@ struct State {
 
 // MARK: - Commit Serialization
 inline void to_json(nlohmann::json& j, const Git::Commit& x) {
-    using namespace nlohmann;
     j = Git::StringForId(x.id());
 }
 
 inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo) {
-    using namespace nlohmann;
     std::string id;
     j.get_to(id);
     x = repo.commitLookup(id);
@@ -41,12 +39,10 @@ inline void from_json(const nlohmann::json& j, std::deque<Git::Commit>& x, Git::
 
 // MARK: - Ref Serialization
 inline void to_json(nlohmann::json& j, const Git::Ref& x) {
-    using namespace nlohmann;
     j = x.fullName();
 }
 
 inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo) {
-    using namespace nlohmann;
     std::string name;
     j.get_to(name);
     x = repo.refLookup(name);
@@ -54,7 +50,6 @@ inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo) {
 
 // MARK: - UndoState Serialization
 inline void to_json(nlohmann::json& j, const UndoState& x) {
-    using namespace nlohmann;
     j = {
         {"undo", x._undo},
         {"redo", x._redo},
@@ -63,7 +58,6 @@ inline void to_json(nlohmann::json& j, const UndoState& x) {
 }
 
 inline void from_json(const nlohmann::json& j, UndoState& x, Git::Repo repo) {
-    using namespace nlohmann;
     ::from_json(j.at("undo"), x._undo, repo);
     ::from_json(j.at("redo"), x._redo, repo);
     ::from_json(j.at("current"), x._current, repo);
@@ -71,12 +65,10 @@ inline void from_json(const nlohmann::json& j, UndoState& x, Git::Repo repo) {
 
 // MARK: - Repo Serialization
 inline void to_json(nlohmann::json& j, const Git::Repo& x) {
-    using namespace nlohmann;
     j = std::filesystem::canonical(x.path()).string();
 }
 
 inline void from_json(const nlohmann::json& j, Git::Repo& x) {
-    using namespace nlohmann;
     std::filesystem::path path;
     j.get_to(path);
     x = Git::Repo::Open(path);
@@ -84,7 +76,6 @@ inline void from_json(const nlohmann::json& j, Git::Repo& x) {
 
 // MARK: - RepoState Serialization
 inline void to_json(nlohmann::json& j, const RepoState& x) {
-    using namespace nlohmann;
     j = {
         {"repo", x.repo},
         {"undoStates", x.undoStates},
@@ -105,14 +96,12 @@ inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, 
 }
 
 inline void from_json(const nlohmann::json& j, RepoState& x) {
-    using namespace nlohmann;
     j.at("repo").get_to(x.repo);
     ::from_json(j.at("undoStates"), x.undoStates, x.repo);
 }
 
 // MARK: - State Serialization
 inline void to_json(nlohmann::json& j, const State& x) {
-    using namespace nlohmann;
     j = {
         {"version", State::Version},
         {"repoStates", x.repoStates},

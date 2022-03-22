@@ -1037,6 +1037,23 @@ static void _EventLoop() {
     }
 }
 
+//"/Users/dave/Desktop/state.json"
+
+static void _StateRead(const std::filesystem::path& path, State& state) {
+    std::ifstream f(path);
+    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    nlohmann::json j;
+    f >> j;
+    j.get_to(state);
+}
+
+static void _StateWrite(const std::filesystem::path& path, const State& state) {
+    std::ofstream f(path);
+    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    nlohmann::json j = state;
+    f << j;
+}
+
 int main(int argc, const char* argv[]) {
     #warning TODO: writing state needs to implement mutual exclusion, and should ensure that it doesn't clobber the state of repos that weren't being accessed
     
@@ -1244,6 +1261,16 @@ int main(int argc, const char* argv[]) {
     
     try {
         setlocale(LC_ALL, "");
+        
+        State state;
+        _StateWrite("/Users/dave/Desktop/state.json", state);
+        
+//        State state = _StateRead("/Users/dave/Desktop/state.json");
+        
+        Git::Repo yosys1 = Git::Repo::Open("/Users/dave/Desktop/yosys");
+        Git::Repo yosys2 = Git::Repo::Open("/Users/dave/Desktop/yosys");
+        printf("yosys1: %p\n", *yosys1);
+        printf("yosys2: %p\n", *yosys2);
         
         std::vector<std::string> revNames;
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
