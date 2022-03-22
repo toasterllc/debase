@@ -62,7 +62,7 @@ public:
         }
         
         // Create our undo/redo buttons
-        {
+        if (_opts.rev.isMutable()) {
             Rect leftFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {_ButtonWidth,3}};
             Rect rightFrame = {_opts.offset+Size{_opts.width-_ButtonWidth, _ButtonsInsetY}, {_ButtonWidth,3}};
             UI::ButtonOptions undoOpts = {
@@ -81,7 +81,7 @@ public:
                 .colors = _opts.colors,
                 .label = "Redo",
 //                .key = "Z",
-                .enabled = true,
+                .enabled = false,
                 .center = true,
                 .drawBorder = true,
                 .insetX = 1,
@@ -115,13 +115,13 @@ public:
             p->drawIfNeeded();
         }
         
-        _undoButton.draw(_opts.win);
-        _redoButton.draw(_opts.win);
+        if (_undoButton) _undoButton->draw(_opts.win);
+        if (_redoButton) _redoButton->draw(_opts.win);
     }
     
     void updateMouse(const Point& p) {
-        _undoButton.updateMouse(p);
-        _redoButton.updateMouse(p);
+        if (_undoButton) _undoButton->updateMouse(p);
+        if (_redoButton) _redoButton->updateMouse(p);
     }
     
     struct HitTestResult {
@@ -135,8 +135,8 @@ public:
             if (panel->hitTest(p)) return HitTestResult{ .panel = panel };
         }
         
-        if (_undoButton.updateMouse(p)) return HitTestResult{ .undoButton = &_undoButton };
-        if (_redoButton.updateMouse(p)) return HitTestResult{ .redoButton = &_redoButton };
+        if (_undoButton && _undoButton->updateMouse(p)) return HitTestResult{ .undoButton = &*_undoButton };
+        if (_redoButton && _redoButton->updateMouse(p)) return HitTestResult{ .redoButton = &*_redoButton };
         return std::nullopt;
     }
     
@@ -153,8 +153,8 @@ private:
     std::string _name;
     bool _truncated = false;
     UI::CommitPanelVec _panels;
-    UI::Button _undoButton;
-    UI::Button _redoButton;
+    std::optional<UI::Button> _undoButton;
+    std::optional<UI::Button> _redoButton;
 };
 
 using RevColumn = std::shared_ptr<_RevColumn>;

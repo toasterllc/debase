@@ -889,10 +889,14 @@ static void _EventLoop() {
                         gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hit.panel);
                     
                     } else if (hit.undoButton) {
-                        
+                        if (hit.undoButton->opts().enabled) {
+                            abort();
+                        }
                     
                     } else if (hit.redoButton) {
-                        
+                        if (hit.redoButton->opts().enabled) {
+                            abort();
+                        }
                     }
                 
                 } else {

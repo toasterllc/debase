@@ -17,8 +17,6 @@ struct ButtonOptions {
 
 class Button {
 public:
-    Button() {}
-    
     Button(const ButtonOptions& opts) : _opts(opts) {}
     
 //    void setHighlight(bool highlight) {
