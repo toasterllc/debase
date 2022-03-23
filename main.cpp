@@ -873,14 +873,26 @@ static void _Spawn(const char*const* argv) {
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
     UndoHistory& uh = _RepoState.undoStates[rev.ref];
+    
+    RefState refStatePrev = uh.get();
     if (undo) uh.undo();
     else      uh.redo();
+    RefState refState = uh.get();
     
     rev = _Repo.revReplace(rev, uh.get().head);
-    _Selection = {
-        .rev = rev,
-        .commits = uh.get().selection,
-    };
+    
+    if (undo) {
+        _Selection = {
+            .rev = rev,
+            .commits = refStatePrev.selection,
+        };
+    
+    } else {
+        _Selection = {
+            .rev = rev,
+            .commits = uh.get().selection,
+        };
+    }
 }
 
 static void _EventLoop() {
@@ -1035,34 +1047,39 @@ static void _EventLoop() {
 //                Git::Ref srcRef = srcOld.ref;
 //                Git::Ref dstRef = dstOld.ref;
                 
-                if (srcRev) {
+                if (srcRev && srcRev.commit!=srcRevPrev.commit) {
                     UndoHistory& uh = _RepoState.undoStates[srcRev.ref];
+                    
                     uh.push({
-                        .head = srcRevPrev.commit,
-                        .selection = gitOp->src.commits,
+                        .head = srcRev.commit,
+                        .selection = opResult.dst.commits,
                     });
                     
-                    uh.set({
-                        .head = srcRev.commit,
-//                        .selection = ,
-                    });
+//                    uh.push({
+//                        .head = srcRevPrev.commit,
+//                        .selection = gitOp->src.commits,
+//                    });
+                    
+//                    uh.set({
+//                        .head = srcRev.commit,
+////                        .selection = ,
+//                    });
                 }
                 
-                if (dstRev) {
+                if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
                     UndoHistory& uh = _RepoState.undoStates[dstRev.ref];
                     
-                    if (dstRev != srcRev) {
-                        uh.push({
-                            .head = dstRevPrev.commit,
-//                            .selection = gitOp->src.commits,
-                        });
-                    }
-                    
-                    uh.set({
+                    uh.push({
                         .head = dstRev.commit,
                         .selection = opResult.dst.commits,
-//                        .selection = dstRe,
+//                            .selection = gitOp->src.commits,
                     });
+                    
+//                    uh.set({
+//                        .head = dstRev.commit,
+//                        .selection = opResult.dst.commits,
+////                        .selection = dstRe,
+//                    });
                 }
                 
                 
@@ -1180,7 +1197,7 @@ static void _RepoStateWrite(const fs::path& configDir, Git::Repo repo, const Rep
     std::ofstream f(fpath);
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     nlohmann::json j = state;
-    f << j;
+    f << std::setw(4) << j;
 }
 
 int main(int argc, const char* argv[]) {

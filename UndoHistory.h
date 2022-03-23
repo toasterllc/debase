@@ -19,7 +19,8 @@ public:
     
     void push(const T& x) {
         _redo = {};
-        _undo.push_front(x);
+        _undo.push_front(_current);
+        _current = x;
     }
     
     void undo() {
