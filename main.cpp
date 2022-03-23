@@ -1171,23 +1171,15 @@ static void _EventLoop() {
     }
 }
 
-static fs::path _ConfigDir() {
-    return "/Users/dave/Desktop/toaster.debase";
-}
-
-static fs::path _RepoStateDir(const fs::path& configDir) {
-    return configDir / "RepoState";
-}
-
 static fs::path _RepoStateFileName(const fs::path& repo) {
     std::string repoStr = fs::canonical(repo);
     std::replace(repoStr.begin(), repoStr.end(), '/', '-'); // Replace / with -
     return repoStr;
 }
 
-static void _RepoStateRead(const fs::path& configDir, Git::Repo repo, RepoState& state) {
+static void _RepoStateRead(Git::Repo repo, RepoState& state) {
     try {
-        fs::path fdir = _RepoStateDir(configDir);
+        fs::path fdir = RepoStateDir();
         fs::path fpath = fdir / _RepoStateFileName(repo.path());
         std::ifstream f(fpath);
         f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -1201,8 +1193,8 @@ static void _RepoStateRead(const fs::path& configDir, Git::Repo repo, RepoState&
     } catch (...) {}
 }
 
-static void _RepoStateWrite(const fs::path& configDir, Git::Repo repo, const RepoState& state) {
-    fs::path fdir = _RepoStateDir(configDir);
+static void _RepoStateWrite(Git::Repo repo, const RepoState& state) {
+    fs::path fdir = RepoStateDir();
     fs::create_directories(fdir);
     fs::path fpath = fdir / _RepoStateFileName(repo.path());
     std::ofstream f(fpath);
@@ -1225,8 +1217,6 @@ int main(int argc, const char* argv[]) {
 //    
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
-    
-    #warning TODO: implement _ConfigDir() for real
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
@@ -1351,6 +1341,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: fix: (1) copy a commit to col A, (2) swap elements 1 & 2 of col A. note how the copied commit doesn't get selected when performing undo/redo
 //    
 //    #warning TODO: undo: remember selection as a part of the undo state
+//
+//    #warning TODO: implement _ConfigDir() for real
     
     
     {
@@ -1500,7 +1492,7 @@ int main(int argc, const char* argv[]) {
             }
         }
         
-        _RepoStateRead(_ConfigDir(), _Repo, _RepoState);
+        _RepoStateRead(_Repo, _RepoState);
         
         // Set the current commit of each ref's UndoHistory.
         // If an UndoHistory didn't already exist, one will be created.
@@ -1556,7 +1548,7 @@ int main(int argc, const char* argv[]) {
         
         _EventLoop();
         
-        _RepoStateWrite(_ConfigDir(), _Repo, _RepoState);
+        _RepoStateWrite(_Repo, _RepoState);
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n\n", e.what());

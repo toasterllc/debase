@@ -1,9 +1,11 @@
 #pragma once
-#include <deque>
+#include <set>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/nlohmann/json.h"
 #include "UndoHistory.h"
 #include "Git.h"
+
+//namespace State {
 
 struct RefState {
     Git::Commit head;
@@ -164,3 +166,12 @@ inline void from_json(const nlohmann::json& j, RepoState& x, Git::Repo repo) {
 //    
 //    j.at("repoStates").get_to(x.repoStates);
 //}
+
+
+std::filesystem::path ConfigDir();
+
+inline std::filesystem::path RepoStateDir() {
+    return ConfigDir() / "RepoState";
+}
+
+//} // namespace State
