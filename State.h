@@ -2,16 +2,34 @@
 #include <deque>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/nlohmann/json.h"
-#include "UndoState.h"
+#include "UndoHistory.h"
 #include "Git.h"
 
-using UndoState = T_UndoState<Git::Commit>;
+struct RefState {
+    Git::Commit head;
+    std::set<Git::Commit> selection;
+};
+
+using UndoHistory = T_UndoHistory<RefState>;
 
 struct RepoState {
     static constexpr uint32_t Version = 0;
 //    std::filesystem::path repo;
-    std::map<Git::Ref,UndoState> undoStates;
+    std::map<Git::Ref,UndoHistory> undoStates;
 };
+
+template <typename T>
+inline void from_json(const nlohmann::json& j, T& container, Git::Repo repo) {
+    using namespace nlohmann;
+    std::vector<json> elms;
+    j.get_to(elms);
+    for (const json& j : elms) {
+//        auto it = container.insert({});
+//        ::from_json(j, *it, repo);
+    }
+}
+
+#warning TODO: reconsider from_json arg ordering; should the thing being set always be the last argument?
 
 // MARK: - Commit Serialization
 inline void to_json(nlohmann::json& j, const Git::Commit& x) {
@@ -24,13 +42,26 @@ inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo) {
     x = repo.commitLookup(id);
 }
 
-inline void from_json(const nlohmann::json& j, std::deque<Git::Commit>& x, Git::Repo repo) {
-    using namespace nlohmann;
-    std::vector<json> commits;
-    j.get_to(commits);
-    for (const json& j : commits) {
-        ::from_json(j, x.emplace_back(), repo);
-    }
+//inline void from_json(const nlohmann::json& j, std::deque<Git::Commit>& x, Git::Repo repo) {
+//    using namespace nlohmann;
+//    std::vector<json> commits;
+//    j.get_to(commits);
+//    for (const json& j : commits) {
+//        ::from_json(j, x.emplace_back(), repo);
+//    }
+//}
+
+// MARK: - RefState Serialization
+inline void to_json(nlohmann::json& j, const RefState& x) {
+    j = {
+        {"head", x.head},
+        {"selection", x.selection},
+    };
+}
+
+inline void from_json(const nlohmann::json& j, RefState& x, Git::Repo repo) {
+    ::from_json(j.at("head"), x.head, repo);
+//    ::from_json(j.at("selection"), x.selection, repo);
 }
 
 // MARK: - Ref Serialization
@@ -40,8 +71,8 @@ inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo) {
     x = repo.refLookup(name);
 }
 
-// MARK: - UndoState Serialization
-inline void to_json(nlohmann::json& j, const UndoState& x) {
+// MARK: - UndoHistory Serialization
+inline void to_json(nlohmann::json& j, const UndoHistory& x) {
     j = {
         {"undo", x._undo},
         {"redo", x._redo},
@@ -49,7 +80,7 @@ inline void to_json(nlohmann::json& j, const UndoState& x) {
     };
 }
 
-inline void from_json(const nlohmann::json& j, UndoState& x, Git::Repo repo) {
+inline void from_json(const nlohmann::json& j, UndoHistory& x, Git::Repo repo) {
     ::from_json(j.at("undo"), x._undo, repo);
     ::from_json(j.at("redo"), x._redo, repo);
     ::from_json(j.at("current"), x._current, repo);
@@ -74,20 +105,20 @@ inline void to_json(nlohmann::json& j, const RepoState& x) {
         {"undoStates", x.undoStates},
     };
     
-    printf("%s\n", j.dump().c_str());
+//    printf("%s\n", j.dump().c_str());
 }
 
-inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoState>& x, Git::Repo repo) {
+inline void from_json(const nlohmann::json& j, std::map<Git::Ref,UndoHistory>& x, Git::Repo repo) {
     using namespace nlohmann;
     std::map<json,json> map;
     j.get_to(map);
     for (const auto& i : map) {
         Git::Ref ref;
-        UndoState s;
+        UndoHistory s;
         try {
             ::from_json(i.first, ref, repo);
         } catch (...) {
-            // If we fail to deserialize a ref, ignore this UndoState entry
+            // If we fail to deserialize a ref, ignore this UndoHistory entry
             continue;
         }
         ::from_json(i.second, s, repo);

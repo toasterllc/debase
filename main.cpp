@@ -678,7 +678,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
     columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : revs) {
-        UndoState* us = (rev.ref ? &_RepoState.undoStates.at(rev.ref) : nullptr);
+        UndoHistory* us = (rev.ref ? &_RepoState.undoStates.at(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = win,
             .colors         = _Colors,
@@ -862,7 +862,7 @@ static void _Spawn(const char*const* argv) {
 
 static void _UndoRedo(Git::Ref ref, bool undo) {
     assert(ref);
-    UndoState& us = _RepoState.undoStates[ref];
+    UndoHistory& us = _RepoState.undoStates[ref];
     if (undo) us.undo();
     else      us.redo();
     _Repo.refReplace(ref, us.get());
@@ -1027,19 +1027,22 @@ static void _EventLoop() {
                 for (const auto& i : oldNewRevs) {
                     const auto& [oldRev, newRev] = i;
                     if (newRev != oldRev) {
-                        UndoState& us = _RepoState.undoStates[newRev.ref];
+                        UndoHistory& us = _RepoState.undoStates[newRev.ref];
+                        RefState s = {
+                            .head = 
+                        };
                         us.push(newRev.commit);
                     }
                 }
                 
 //                {
 //                    if (srcNew.ref && srcNew!=srcOld) {
-//                        UndoState& us = _RepoState.undoStates[srcNew.ref];
+//                        UndoHistory& us = _RepoState.undoStates[srcNew.ref];
 //                        us.push(srcNew.commit);
 //                    }
 //                    
 //                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
-//                        UndoState& us = _RepoState.undoStates[dstNew.ref];
+//                        UndoHistory& us = _RepoState.undoStates[dstNew.ref];
 //                        us.push(dstNew.commit);
 //                    }
 //                }
@@ -1130,7 +1133,7 @@ static void _RepoStateWrite(const fs::path& configDir, Git::Repo repo, const Rep
 }
 
 int main(int argc, const char* argv[]) {
-//    std::map<Git::Ref,UndoState> map;
+//    std::map<Git::Ref,UndoHistory> map;
 //    
 ////    std::map<std::string,int> map;
 ////    map["hello"] = 1;
@@ -1260,7 +1263,7 @@ int main(int argc, const char* argv[]) {
 //    
 //    #warning TODO: make "(HEAD)" suffix persist across branch modifications
 //
-//    #warning TODO: undo: fix UndoState deserialization
+//    #warning TODO: undo: fix UndoHistory deserialization
 //    
 //    #warning TODO: when deserializing, if a ref doesn't exist, don't throw an exception, just prune the entry
 //
@@ -1416,23 +1419,23 @@ int main(int argc, const char* argv[]) {
         
         _RepoStateRead(_ConfigDir(), _Repo, _RepoState);
         
-        // Set the current commit of each ref's UndoState.
-        // If an UndoState didn't already exist, one will be created.
-        // If an UndoState did exist, but the new commit differs from
+        // Set the current commit of each ref's UndoHistory.
+        // If an UndoHistory didn't already exist, one will be created.
+        // If an UndoHistory did exist, but the new commit differs from
         // the recorded commit (loaded from the RepoState file on disk),
-        // UndoState will clear its undo/redo history because it's stale.
+        // UndoHistory will clear its undo/redo history because it's stale.
         for (Git::Rev& rev : _Revs) {
             if (rev.ref) {
-                UndoState& us = _RepoState.undoStates[rev.ref];
+                UndoHistory& us = _RepoState.undoStates[rev.ref];
                 us.set(rev.ref.commit());
             }
         }
         
 //        state the new state is different than the for each ref if it doesn't already exist, and 
-//        // Set the current state of each UndoState
+//        // Set the current state of each UndoHistory
 //        for (auto& i : _RepoState.undoStates) {
 //            const Git::Ref& ref = i.first;
-//            UndoState& us = i.second;
+//            UndoHistory& us = i.second;
 //            us.set(ref.commit());
 //        }
         

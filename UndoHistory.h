@@ -2,17 +2,14 @@
 #include <deque>
 
 template <typename T>
-class T_UndoState {
+class T_UndoHistory {
 public:
     const T& get() const {
         return _current;
     }
     
     void set(const T& x) {
-        if (_current == x) return;
         _current = x;
-        _undo.clear();
-        _redo.clear();
     }
     
     void push(const T& x) {
