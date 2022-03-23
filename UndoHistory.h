@@ -12,10 +12,14 @@ public:
         _current = x;
     }
     
+    void clear() {
+        _undo.clear();
+        _redo.clear();
+    }
+    
     void push(const T& x) {
         _redo = {};
-        _undo.push_front(_current);
-        _current = x;
+        _undo.push_front(x);
     }
     
     void undo() {

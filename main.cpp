@@ -661,7 +661,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::RevColumn>& columns, std::vector<Git::Rev>& revs) {
+static void _Reload() {
     // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
     constexpr int ColumnWidth = 32;
@@ -675,14 +675,24 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
 //        }
 //    }
     
-    columns.clear();
+    if (_Head.ref) {
+        _Head = _Repo.revReload(_Head);
+    }
+    
+    for (Git::Rev& rev : _Revs) {
+        if (rev.ref) {
+            rev = _Repo.revReload(rev);
+        }
+    }
+    
+    _Columns.clear();
     int OffsetX = InsetX;
-    for (const Git::Rev& rev : revs) {
+    for (const Git::Rev& rev : _Revs) {
         UndoHistory* us = (rev.ref ? &_RepoState.undoStates.at(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
-            .win            = win,
+            .win            = _RootWindow,
             .colors         = _Colors,
-            .repo           = repo,
+            .repo           = _Repo,
             .rev            = rev,
             .head           = (rev.displayHead() == _Head.commit),
             .offset         = UI::Size{OffsetX, 0},
@@ -692,7 +702,7 @@ static void _RecreateColumns(UI::Window win, Git::Repo repo, std::vector<UI::Rev
             
 //            .showMutability = showMutability,
         };
-        columns.push_back(MakeShared<UI::RevColumn>(opts));
+        _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
@@ -860,12 +870,17 @@ static void _Spawn(const char*const* argv) {
     if (!preserveTerminal) _CursesInit();
 }
 
-static void _UndoRedo(Git::Ref ref, bool undo) {
-    assert(ref);
-    UndoHistory& us = _RepoState.undoStates[ref];
-    if (undo) us.undo();
-    else      us.redo();
-    _Repo.refReplace(ref, us.get());
+static void _UndoRedo(UI::RevColumn col, bool undo) {
+    Git::Rev rev = col->rev();
+    UndoHistory& uh = _RepoState.undoStates[rev.ref];
+    if (undo) uh.undo();
+    else      uh.redo();
+    
+    rev = _Repo.revReplace(rev, uh.get().head);
+    _Selection = {
+        .rev = rev,
+        .commits = uh.get().selection,
+    };
 }
 
 static void _EventLoop() {
@@ -874,7 +889,7 @@ static void _EventLoop() {
     bool reload = true;
     for (;;) {
         if (reload) {
-            _RecreateColumns(_RootWindow, _Repo, _Columns, _Revs);
+            _Reload();
             reload = false;
         }
         
@@ -906,13 +921,13 @@ static void _EventLoop() {
                     
                     } else if (hit.undoButton) {
                         if (hit.undoButton->opts().enabled) {
-                            _UndoRedo(hitTest->column->rev().ref, true);
+                            _UndoRedo(hitTest->column, true);
                             reload = true;
                         }
                     
                     } else if (hit.redoButton) {
                         if (hit.redoButton->opts().enabled) {
-                            _UndoRedo(hitTest->column->rev().ref, false);
+                            _UndoRedo(hitTest->column, false);
                             reload = true;
                         }
                     }
@@ -1011,38 +1026,74 @@ static void _EventLoop() {
             std::string errorMsg;
             try {
                 Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
-                Git::Rev srcOld = gitOp->src.rev;
-                Git::Rev dstOld = gitOp->dst.rev;
-                Git::Rev srcNew = opResult.src.rev;
-                Git::Rev dstNew = opResult.dst.rev;
+                Git::Rev srcRevPrev = gitOp->src.rev;
+                Git::Rev dstRevPrev = gitOp->dst.rev;
+                Git::Rev srcRev = opResult.src.rev;
+                Git::Rev dstRev = opResult.dst.rev;
+                assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
+                assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
+//                Git::Ref srcRef = srcOld.ref;
+//                Git::Ref dstRef = dstOld.ref;
                 
-                // We're using a set 
-                assert((bool)srcNew.ref == (bool)srcOld.ref);
-                assert((bool)dstNew.ref == (bool)dstOld.ref);
-                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
-                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
-                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
-                
-                // Remember changes in our undo history
-                for (const auto& i : oldNewRevs) {
-                    const auto& [oldRev, newRev] = i;
-                    if (newRev != oldRev) {
-                        UndoHistory& us = _RepoState.undoStates[newRev.ref];
-                        RefState s = {
-                            .head = 
-                        };
-                        us.push(newRev.commit);
-                    }
+                if (srcRev) {
+                    UndoHistory& uh = _RepoState.undoStates[srcRev.ref];
+                    uh.push({
+                        .head = srcRevPrev.commit,
+                        .selection = gitOp->src.commits,
+                    });
+                    
+                    uh.set({
+                        .head = srcRev.commit,
+//                        .selection = ,
+                    });
                 }
+                
+                if (dstRev) {
+                    UndoHistory& uh = _RepoState.undoStates[dstRev.ref];
+                    
+                    if (dstRev != srcRev) {
+                        uh.push({
+                            .head = dstRevPrev.commit,
+//                            .selection = gitOp->src.commits,
+                        });
+                    }
+                    
+                    uh.set({
+                        .head = dstRev.commit,
+                        .selection = opResult.dst.commits,
+//                        .selection = dstRe,
+                    });
+                }
+                
+                
+//                // We're using a set 
+//                assert((bool)srcNew.ref == (bool)srcOld.ref);
+//                assert((bool)dstNew.ref == (bool)dstOld.ref);
+//                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
+//                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
+//                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
+//                
+//                // Remember changes in our undo history
+//                for (const auto& i : oldNewRevs) {
+//                    const auto& [oldRev, newRev] = i;
+//                    if (newRev != oldRev) {
+//                        UndoHistory& uh = _RepoState.undoStates[newRev.ref];
+//                        RefState s = {
+//                            .head = ,
+//                            .selection = ,
+//                        };
+//                        us.push(newRev.commit);
+//                    }
+//                }
                 
 //                {
 //                    if (srcNew.ref && srcNew!=srcOld) {
-//                        UndoHistory& us = _RepoState.undoStates[srcNew.ref];
+//                        UndoHistory& uh = _RepoState.undoStates[srcNew.ref];
 //                        us.push(srcNew.commit);
 //                    }
 //                    
 //                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
-//                        UndoHistory& us = _RepoState.undoStates[dstNew.ref];
+//                        UndoHistory& uh = _RepoState.undoStates[dstNew.ref];
 //                        us.push(dstNew.commit);
 //                    }
 //                }
@@ -1077,18 +1128,18 @@ static void _EventLoop() {
             }
         }
         
-        if (reload) {
-            // Reload the UI
-            if (_Head.ref) {
-                _Head = _Repo.revReload(_Head);
-            }
-            
-            for (Git::Rev& rev : _Revs) {
-                if (rev.ref) {
-                    rev = _Repo.revReload(rev);
-                }
-            }
-        }
+//        if (reload) {
+//            // Reload the UI
+//            if (_Head.ref) {
+//                _Head = _Repo.revReload(_Head);
+//            }
+//            
+//            for (Git::Rev& rev : _Revs) {
+//                if (rev.ref) {
+//                    rev = _Repo.revReload(rev);
+//                }
+//            }
+//        }
     }
 }
 
@@ -1146,6 +1197,10 @@ int main(int argc, const char* argv[]) {
 //    
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
+    
+    #warning TODO: fix: copying a commit from a column shouldn't affect column's undo state (but it does)
+    
+    #warning TODO: fix: (1) copy a commit to col A, (2) swap elements 1 & 2 of col A. note how the copied commit doesn't get selected when performing undo/redo
     
     #warning TODO: undo: remember selection as a part of the undo state
     
@@ -1423,11 +1478,19 @@ int main(int argc, const char* argv[]) {
         // If an UndoHistory didn't already exist, one will be created.
         // If an UndoHistory did exist, but the new commit differs from
         // the recorded commit (loaded from the RepoState file on disk),
-        // UndoHistory will clear its undo/redo history because it's stale.
+        // we'll clear its undo/redo history because it's stale.
         for (Git::Rev& rev : _Revs) {
             if (rev.ref) {
-                UndoHistory& us = _RepoState.undoStates[rev.ref];
-                us.set(rev.ref.commit());
+                UndoHistory& uh = _RepoState.undoStates[rev.ref];
+                Git::Commit refCommit = rev.ref.commit();
+                // If rev.ref points to a different commit than is stored in the UndoHistory,
+                // clear the undo/redo history because it's stale.
+                if (refCommit != uh.get().head) {
+                    uh.clear();
+                    uh.set(RefState{
+                        .head = refCommit,
+                    });
+                }
             }
         }
         
@@ -1435,7 +1498,7 @@ int main(int argc, const char* argv[]) {
 //        // Set the current state of each UndoHistory
 //        for (auto& i : _RepoState.undoStates) {
 //            const Git::Ref& ref = i.first;
-//            UndoHistory& us = i.second;
+//            UndoHistory& uh = i.second;
 //            us.set(ref.commit());
 //        }
         

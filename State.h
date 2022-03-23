@@ -18,18 +18,23 @@ struct RepoState {
     std::map<Git::Ref,UndoHistory> undoStates;
 };
 
+#warning TODO: reconsider from_json arg ordering; should the thing being set always be the last argument?
+
+inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo);
+inline void from_json(const nlohmann::json& j, RefState& x, Git::Repo repo);
+
 template <typename T>
-inline void from_json(const nlohmann::json& j, T& container, Git::Repo repo) {
+inline void from_json_container(const nlohmann::json& j, T& container, Git::Repo repo) {
     using namespace nlohmann;
+    using T_Elm = typename T::value_type;
     std::vector<json> elms;
     j.get_to(elms);
     for (const json& j : elms) {
-//        auto it = container.insert({});
-//        ::from_json(j, *it, repo);
+        T_Elm x;
+        ::from_json(j, x, repo);
+        container.insert(container.end(), x);
     }
 }
-
-#warning TODO: reconsider from_json arg ordering; should the thing being set always be the last argument?
 
 // MARK: - Commit Serialization
 inline void to_json(nlohmann::json& j, const Git::Commit& x) {
@@ -61,7 +66,7 @@ inline void to_json(nlohmann::json& j, const RefState& x) {
 
 inline void from_json(const nlohmann::json& j, RefState& x, Git::Repo repo) {
     ::from_json(j.at("head"), x.head, repo);
-//    ::from_json(j.at("selection"), x.selection, repo);
+    ::from_json_container(j.at("selection"), x.selection, repo);
 }
 
 // MARK: - Ref Serialization
@@ -81,8 +86,8 @@ inline void to_json(nlohmann::json& j, const UndoHistory& x) {
 }
 
 inline void from_json(const nlohmann::json& j, UndoHistory& x, Git::Repo repo) {
-    ::from_json(j.at("undo"), x._undo, repo);
-    ::from_json(j.at("redo"), x._redo, repo);
+    ::from_json_container(j.at("undo"), x._undo, repo);
+    ::from_json_container(j.at("redo"), x._redo, repo);
     ::from_json(j.at("current"), x._current, repo);
 }
 
