@@ -883,7 +883,7 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
     
     _Selection = {
         .rev = rev,
-        .commits = (undo ? refStatePrev.selectionUndo : refState.selectionRedo),
+        .commits = (!undo ? refState.selection : refStatePrev.selectionPrev),
     };
 }
 
@@ -907,8 +907,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
             
             uh.push({
                 .head = srcRev.commit,
-                .selectionUndo = opResult->src.selectionPrev,
-                .selectionRedo = opResult->src.selection,
+                .selection = opResult->src.selection,
+                .selectionPrev = opResult->src.selectionPrev,
             });
             
 //                    uh.push({
@@ -927,8 +927,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
             
             uh.push({
                 .head = dstRev.commit,
-                .selectionUndo = opResult->dst.selectionPrev,
-                .selectionRedo = opResult->dst.selection,
+                .selection = opResult->dst.selection,
+                .selectionPrev = opResult->dst.selectionPrev,
 //                            .selection = gitOp->src.commits,
             });
             

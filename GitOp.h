@@ -34,8 +34,8 @@ struct OpResult {
     struct Res {
         Rev rev;
 //        std::set<Commit> commits;
-        std::set<Commit> selectionPrev;
         std::set<Commit> selection;
+        std::set<Commit> selectionPrev;
     };
     
     Res src;
@@ -214,13 +214,13 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         return OpResult{
             .src = {
                 .rev = srcDstRev,
-                .selectionPrev = op.src.commits,
                 .selection = srcDstResult.added,
+                .selectionPrev = op.src.commits,
             },
             .dst = {
                 .rev = srcDstRev,
-                .selectionPrev = op.src.commits,
                 .selection = srcDstResult.added,
+                .selectionPrev = op.src.commits,
 //                .commits = srcDstResult.added,
             },
         };
@@ -253,14 +253,14 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         return OpResult{
             .src = {
                 .rev = srcRev,
-                .selectionPrev = op.src.commits,
                 .selection = {},
+                .selectionPrev = op.src.commits,
             },
             .dst = {
                 .rev = dstRev,
 //                .commits = dstResult.added,
-                .selectionPrev = {},
                 .selection = dstResult.added,
+                .selectionPrev = {},
             },
         };
     }
@@ -287,8 +287,8 @@ inline std::optional<OpResult> _Exec_CopyCommits(const Op& op) {
         },
         .dst = {
             .rev = dstRev,
-            .selectionPrev = {},
             .selection = dstResult.added,
+            .selectionPrev = {},
             
 //            .commits = dstResult.added,
         },
@@ -317,8 +317,8 @@ inline std::optional<OpResult> _Exec_DeleteCommits(const Op& op) {
     return OpResult{
         .src = {
             .rev = srcRev,
-            .selectionPrev = op.src.commits,
             .selection = {},
+            .selectionPrev = op.src.commits,
         },
     };
 }
@@ -362,8 +362,8 @@ inline std::optional<OpResult> _Exec_CombineCommits(const Op& op) {
     return OpResult{
         .src = {
             .rev = srcRev,
-            .selectionPrev = op.src.commits,
             .selection = {integrated},
+            .selectionPrev = op.src.commits,
         },
     };
 }
@@ -647,8 +647,8 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
     return OpResult{
         .src = {
             .rev = srcRev,
-            .selectionPrev = op.src.commits,
             .selection = srcResult.added,
+            .selectionPrev = op.src.commits,
         },
     };
 }
