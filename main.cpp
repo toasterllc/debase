@@ -1226,12 +1226,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
     
-    #warning TODO: fix: copying a commit from a column shouldn't affect column's undo state (but it does)
-    
-    #warning TODO: fix: (1) copy a commit to col A, (2) swap elements 1 & 2 of col A. note how the copied commit doesn't get selected when performing undo/redo
-    
-    #warning TODO: undo: remember selection as a part of the undo state
-    
     #warning TODO: implement _ConfigDir() for real
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1351,6 +1345,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: when deserializing, if a ref doesn't exist, don't throw an exception, just prune the entry
 //
 //    #warning TODO: support undo/redo
+//
+//    #warning TODO: fix: copying a commit from a column shouldn't affect column's undo state (but it does)
+//    
+//    #warning TODO: fix: (1) copy a commit to col A, (2) swap elements 1 & 2 of col A. note how the copied commit doesn't get selected when performing undo/redo
+//    
+//    #warning TODO: undo: remember selection as a part of the undo state
     
     
     {
