@@ -881,18 +881,10 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
     
     rev = _Repo.revReplace(rev, uh.get().head);
     
-    if (undo) {
-        _Selection = {
-            .rev = rev,
-            .commits = refStatePrev.selection,
-        };
-    
-    } else {
-        _Selection = {
-            .rev = rev,
-            .commits = uh.get().selection,
-        };
-    }
+    _Selection = {
+        .rev = rev,
+        .commits = (undo ? refStatePrev.selectionUndo : refState.selectionRedo),
+    };
 }
 
 static void _EventLoop() {
@@ -1052,7 +1044,8 @@ static void _EventLoop() {
                     
                     uh.push({
                         .head = srcRev.commit,
-                        .selection = opResult.dst.commits,
+                        .selectionUndo = gitOp->src.commits,
+                        .selectionRedo = opResult.src.commits,
                     });
                     
 //                    uh.push({
@@ -1071,7 +1064,8 @@ static void _EventLoop() {
                     
                     uh.push({
                         .head = dstRev.commit,
-                        .selection = opResult.dst.commits,
+                        .selectionUndo = {},
+                        .selectionRedo = opResult.dst.commits,
 //                            .selection = gitOp->src.commits,
                     });
                     
@@ -1118,10 +1112,18 @@ static void _EventLoop() {
                 reload = true;
                 
                 // Update the selection
-                _Selection = {
-                    .rev = opResult.dst.rev,
-                    .commits = opResult.dst.commits,
-                };
+                if (opResult.dst.rev) {
+                    _Selection = {
+                        .rev = opResult.dst.rev,
+                        .commits = opResult.dst.commits,
+                    };
+                
+                } else {
+                    _Selection = {
+                        .rev = opResult.src.rev,
+                        .commits = opResult.src.commits,
+                    };
+                }
             
             } catch (const Git::Error& e) {
                 switch (e.error) {

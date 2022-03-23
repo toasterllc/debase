@@ -33,11 +33,12 @@ struct Op {
 struct OpResult {
     struct {
         Rev rev;
+        std::set<Commit> commits;
     } src;
     
     struct {
         Rev rev;
-        std::set<Commit> commits; // The commits that were added
+        std::set<Commit> commits;
     } dst;
 };
 
@@ -316,10 +317,6 @@ inline OpResult _Exec_DeleteCommits(const Op& op) {
         .src = {
             .rev = srcRev,
         },
-        .dst = {
-            .rev = op.dst.rev,
-            .commits = {},
-        },
     };
 }
 
@@ -361,9 +358,6 @@ inline OpResult _Exec_CombineCommits(const Op& op) {
     Rev srcRev = op.repo.revReplace(op.src.rev, head);
     return {
         .src = {
-            .rev = srcRev,
-        },
-        .dst = {
             .rev = srcRev,
             .commits = {integrated},
         },
@@ -627,9 +621,6 @@ inline OpResult _Exec_EditCommit(const Op& op) {
         return {
             .src = {
                 .rev = op.src.rev,
-            },
-            .dst = {
-                .rev = op.src.rev,
                 .commits = op.src.commits,
             },
         };
@@ -645,7 +636,7 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     
     // Rewrite the rev
     // Add and remove commits
-    _AddRemoveResult srcDstResult = _AddRemoveCommits(
+    _AddRemoveResult srcResult = _AddRemoveCommits(
         op.repo,            // repo:        Repo
         op.src.rev.commit,  // dst:         Commit
         {newCommit},        // add:         std::set<Commit>
@@ -655,14 +646,11 @@ inline OpResult _Exec_EditCommit(const Op& op) {
     );
     
     // Replace the source branch/tag
-    Rev srcDstRev = op.repo.revReplace(op.src.rev, srcDstResult.commit);
+    Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
     return {
         .src = {
-            .rev = srcDstRev,
-        },
-        .dst = {
-            .rev = srcDstRev,
-            .commits = srcDstResult.added,
+            .rev = srcRev,
+            .commits = srcResult.added,
         },
     };
 }

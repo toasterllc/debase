@@ -7,7 +7,8 @@
 
 struct RefState {
     Git::Commit head;
-    std::set<Git::Commit> selection;
+    std::set<Git::Commit> selectionUndo;
+    std::set<Git::Commit> selectionRedo;
 };
 
 using UndoHistory = T_UndoHistory<RefState>;
@@ -60,13 +61,15 @@ inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo) {
 inline void to_json(nlohmann::json& j, const RefState& x) {
     j = {
         {"head", x.head},
-        {"selection", x.selection},
+        {"selectionUndo", x.selectionUndo},
+        {"selectionRedo", x.selectionRedo},
     };
 }
 
 inline void from_json(const nlohmann::json& j, RefState& x, Git::Repo repo) {
     ::from_json(j.at("head"), x.head, repo);
-    ::from_json_container(j.at("selection"), x.selection, repo);
+    ::from_json_container(j.at("selectionUndo"), x.selectionUndo, repo);
+    ::from_json_container(j.at("selectionRedo"), x.selectionRedo, repo);
 }
 
 // MARK: - Ref Serialization
