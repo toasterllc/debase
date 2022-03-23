@@ -887,6 +887,134 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
     };
 }
 
+static bool _ExecGitOp(const Git::Op& gitOp) {
+    std::string errorMsg;
+    try {
+        std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(gitOp);
+        if (!opResult) return false;
+        
+        Git::Rev srcRevPrev = gitOp.src.rev;
+        Git::Rev dstRevPrev = gitOp.dst.rev;
+        Git::Rev srcRev = opResult->src.rev;
+        Git::Rev dstRev = opResult->dst.rev;
+        assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
+        assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
+//                Git::Ref srcRef = srcOld.ref;
+//                Git::Ref dstRef = dstOld.ref;
+        
+        if (srcRev && srcRev.commit!=srcRevPrev.commit) {
+            UndoHistory& uh = _RepoState.undoStates[srcRev.ref];
+            
+            uh.push({
+                .head = srcRev.commit,
+                .selectionUndo = opResult->src.selectionPrev,
+                .selectionRedo = opResult->src.selection,
+            });
+            
+//                    uh.push({
+//                        .head = srcRevPrev.commit,
+//                        .selection = gitOp->src.commits,
+//                    });
+            
+//                    uh.set({
+//                        .head = srcRev.commit,
+////                        .selection = ,
+//                    });
+        }
+        
+        if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
+            UndoHistory& uh = _RepoState.undoStates[dstRev.ref];
+            
+            uh.push({
+                .head = dstRev.commit,
+                .selectionUndo = opResult->dst.selectionPrev,
+                .selectionRedo = opResult->dst.selection,
+//                            .selection = gitOp->src.commits,
+            });
+            
+//                    uh.set({
+//                        .head = dstRev.commit,
+//                        .selection = opResult->dst.commits,
+////                        .selection = dstRe,
+//                    });
+        }
+        
+        
+//                // We're using a set 
+//                assert((bool)srcNew.ref == (bool)srcOld.ref);
+//                assert((bool)dstNew.ref == (bool)dstOld.ref);
+//                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
+//                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
+//                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
+//                
+//                // Remember changes in our undo history
+//                for (const auto& i : oldNewRevs) {
+//                    const auto& [oldRev, newRev] = i;
+//                    if (newRev != oldRev) {
+//                        UndoHistory& uh = _RepoState.undoStates[newRev.ref];
+//                        RefState s = {
+//                            .head = ,
+//                            .selection = ,
+//                        };
+//                        us.push(newRev.commit);
+//                    }
+//                }
+        
+//                {
+//                    if (srcNew.ref && srcNew!=srcOld) {
+//                        UndoHistory& uh = _RepoState.undoStates[srcNew.ref];
+//                        us.push(srcNew.commit);
+//                    }
+//                    
+//                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
+//                        UndoHistory& uh = _RepoState.undoStates[dstNew.ref];
+//                        us.push(dstNew.commit);
+//                    }
+//                }
+        
+        // Update the selection
+        if (opResult->dst.rev) {
+            _Selection = {
+                .rev = opResult->dst.rev,
+                .commits = opResult->dst.selection,
+            };
+        
+        } else {
+            _Selection = {
+                .rev = opResult->src.rev,
+                .commits = opResult->src.selection,
+            };
+        }
+        
+        return true;
+    
+    } catch (const Git::Error& e) {
+        switch (e.error) {
+        case GIT_EUNMERGED:
+        case GIT_EMERGECONFLICT:
+            errorMsg = "a merge conflict occurred";
+            break;
+        
+        default:
+            errorMsg = e.what();
+            break;
+        }
+    
+    } catch (const std::exception& e) {
+        errorMsg = e.what();
+    }
+    
+    if (!errorMsg.empty()) {
+        constexpr int ErrorPanelWidth = 35;
+        const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
+        
+        errorMsg[0] = toupper(errorMsg[0]);
+        _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
+    }
+    
+    return false;
+}
+
 static void _EventLoop() {
     _RootWindow = MakeShared<UI::Window>(::stdscr);
     
@@ -1024,127 +1152,8 @@ static void _EventLoop() {
             break;
         }}
         
-        constexpr int ErrorPanelWidth = 35;
-        const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
         if (gitOp) {
-            std::string errorMsg;
-            try {
-                Git::OpResult opResult = Git::Exec<_Spawn>(*gitOp);
-                Git::Rev srcRevPrev = gitOp->src.rev;
-                Git::Rev dstRevPrev = gitOp->dst.rev;
-                Git::Rev srcRev = opResult.src.rev;
-                Git::Rev dstRev = opResult.dst.rev;
-                assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
-                assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
-//                Git::Ref srcRef = srcOld.ref;
-//                Git::Ref dstRef = dstOld.ref;
-                
-                if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-                    UndoHistory& uh = _RepoState.undoStates[srcRev.ref];
-                    
-                    uh.push({
-                        .head = srcRev.commit,
-                        .selectionUndo = gitOp->src.commits,
-                        .selectionRedo = opResult.src.commits,
-                    });
-                    
-//                    uh.push({
-//                        .head = srcRevPrev.commit,
-//                        .selection = gitOp->src.commits,
-//                    });
-                    
-//                    uh.set({
-//                        .head = srcRev.commit,
-////                        .selection = ,
-//                    });
-                }
-                
-                if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-                    UndoHistory& uh = _RepoState.undoStates[dstRev.ref];
-                    
-                    uh.push({
-                        .head = dstRev.commit,
-                        .selectionUndo = {},
-                        .selectionRedo = opResult.dst.commits,
-//                            .selection = gitOp->src.commits,
-                    });
-                    
-//                    uh.set({
-//                        .head = dstRev.commit,
-//                        .selection = opResult.dst.commits,
-////                        .selection = dstRe,
-//                    });
-                }
-                
-                
-//                // We're using a set 
-//                assert((bool)srcNew.ref == (bool)srcOld.ref);
-//                assert((bool)dstNew.ref == (bool)dstOld.ref);
-//                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
-//                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
-//                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
-//                
-//                // Remember changes in our undo history
-//                for (const auto& i : oldNewRevs) {
-//                    const auto& [oldRev, newRev] = i;
-//                    if (newRev != oldRev) {
-//                        UndoHistory& uh = _RepoState.undoStates[newRev.ref];
-//                        RefState s = {
-//                            .head = ,
-//                            .selection = ,
-//                        };
-//                        us.push(newRev.commit);
-//                    }
-//                }
-                
-//                {
-//                    if (srcNew.ref && srcNew!=srcOld) {
-//                        UndoHistory& uh = _RepoState.undoStates[srcNew.ref];
-//                        us.push(srcNew.commit);
-//                    }
-//                    
-//                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
-//                        UndoHistory& uh = _RepoState.undoStates[dstNew.ref];
-//                        us.push(dstNew.commit);
-//                    }
-//                }
-                
-                reload = true;
-                
-                // Update the selection
-                if (opResult.dst.rev) {
-                    _Selection = {
-                        .rev = opResult.dst.rev,
-                        .commits = opResult.dst.commits,
-                    };
-                
-                } else {
-                    _Selection = {
-                        .rev = opResult.src.rev,
-                        .commits = opResult.src.commits,
-                    };
-                }
-            
-            } catch (const Git::Error& e) {
-                switch (e.error) {
-                case GIT_EUNMERGED:
-                case GIT_EMERGECONFLICT:
-                    errorMsg = "a merge conflict occurred";
-                    break;
-                
-                default:
-                    errorMsg = e.what();
-                    break;
-                }
-            
-            } catch (const std::exception& e) {
-                errorMsg = e.what();
-            }
-            
-            if (!errorMsg.empty()) {
-                errorMsg[0] = toupper(errorMsg[0]);
-                _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
-            }
+            reload = _ExecGitOp(*gitOp);
         }
         
 //        if (reload) {
