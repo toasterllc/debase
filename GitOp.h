@@ -655,23 +655,14 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
 
 template <auto T_SpawnFn>
 inline std::optional<OpResult> Exec(const Op& op) {
-    std::optional<OpResult> r;
-    std::exception_ptr err;
-    try {
-        switch (op.type) {
-        case Op::Type::None:    r = std::nullopt; break;
-        case Op::Type::Move:    r = _Exec_MoveCommits(op); break;
-        case Op::Type::Copy:    r = _Exec_CopyCommits(op); break;
-        case Op::Type::Delete:  r = _Exec_DeleteCommits(op); break;
-        case Op::Type::Combine: r = _Exec_CombineCommits(op); break;
-        case Op::Type::Edit:    r = _Exec_EditCommit<T_SpawnFn>(op); break;
-        }
-    } catch (const std::exception& e) {
-        err = std::current_exception();
+    switch (op.type) {
+    case Op::Type::None:    return std::nullopt;
+    case Op::Type::Move:    return _Exec_MoveCommits(op);
+    case Op::Type::Copy:    return _Exec_CopyCommits(op);
+    case Op::Type::Delete:  return _Exec_DeleteCommits(op);
+    case Op::Type::Combine: return _Exec_CombineCommits(op);
+    case Op::Type::Edit:    return _Exec_EditCommit<T_SpawnFn>(op);
     }
-    
-    if (err) std::rethrow_exception(err);
-    return r;
 }
 
 } // namespace Op

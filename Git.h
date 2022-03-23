@@ -146,6 +146,14 @@ using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 using Index = RefCounted<git_index*, git_index_free>;
 
+struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
+    using RefCounted::RefCounted;
+    
+    const git_status_entry* operator[](size_t i) {
+        return git_status_byindex(*get(), i);
+    }
+};
+
 struct Signature : RefCounted<git_signature*, git_signature_free> {
     using RefCounted::RefCounted;
     static Signature Create(std::string_view name, std::string_view email, git_time_t time, int offset) {
@@ -816,6 +824,29 @@ public:
         int ir = git_repository_config(&x, *get());
         if (ir) throw Error(ir, "git_repository_config failed");
         return x;
+    }
+    
+    StatusList status() const {
+        git_status_list* x = nullptr;
+        
+        const git_status_options opts = GIT_STATUS_OPTIONS_INIT;
+        int ir = git_status_list_new(&x, *get(), &opts);
+        if (ir) throw Error(ir, "git_status_list_new failed");
+        
+        return x;
+    }
+    
+    bool dirty() const {
+        StatusList s = status();
+        for (size_t i=0;; i++) {
+            const git_status_entry* e = s[i];
+            if (!e) break;
+            if (e->status==GIT_STATUS_WT_MODIFIED ||
+                e->status==GIT_STATUS_INDEX_MODIFIED) {
+                return true;
+            }
+        }
+        return false;
     }
 
 private:

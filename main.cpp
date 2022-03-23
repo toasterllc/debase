@@ -1204,6 +1204,21 @@ static void _RepoStateWrite(Git::Repo repo, const RepoState& state) {
 }
 
 int main(int argc, const char* argv[]) {
+//    _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
+//    git_status_list* status = nullptr;
+//    
+//    git_status_options opts = GIT_STATUS_OPTIONS_INIT;
+//    int ir = git_status_list_new(&status, *_Repo, &opts);
+//    assert(!ir);
+//    
+//	size_t count = git_status_list_entrycount(status);
+//	for (size_t i=0; i<count; i++) {
+//        const git_status_entry* entry = git_status_byindex(status, i);
+//        printf("%s\n", entry->index_to_workdir->old_file.path);
+//    }
+//    
+//    return 0;
+    
 //    std::map<Git::Ref,UndoHistory> map;
 //    
 ////    std::map<std::string,int> map;
@@ -1217,6 +1232,17 @@ int main(int argc, const char* argv[]) {
 //    
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
+    
+    #warning TODO: perf: if we aren't modifying the current checked-out branch, don't detach head
+    
+    #warning TODO: refuse to run if there are uncomitted changes and we're 
+    
+    #warning TODO: what if we have active file changes and we run debase?
+//        "Commit your current changes before running debase on rev 'master'"
+    
+    #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
+    
+    #warning TODO: what if there's an uncommited file that will be overwritten by a change made by debase?
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
@@ -1531,11 +1557,20 @@ int main(int argc, const char* argv[]) {
 //            }
 //        }
         
+        // Determine if we need to detach head.
+        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _Revs.
+        // In other words, we need to detach head when whatever is checked-out may be modified.
+        bool detachHead = _Head.ref && std::find(_Revs.begin(), _Revs.end(), _Head)!=_Revs.end();
+        
+        if (detachHead && _Repo.dirty()) {
+            throw Toastbox::RuntimeError("please commit or stash your outstanding changes before running debase on '%s'", _Head.displayName().c_str());
+        }
+        
         // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
         // we try to replace that ref.
-        if (_Head.ref) _Repo.headDetach();
+        if (detachHead) _Repo.headDetach();
         Defer(
-            if (_Head.ref) {
+            if (detachHead) {
                 // Restore previous head on exit
                 std::cout << "Restoring HEAD to " << _Head.ref.name() << std::endl;
                 _Repo.checkout(_Head.ref);
@@ -1554,6 +1589,32 @@ int main(int argc, const char* argv[]) {
         fprintf(stderr, "Error: %s\n\n", e.what());
         return 1;
     }
+    
+    
+    
+    
+    
+    
+    
+//    std::optional<OpResult> r;
+//    std::exception_ptr err;
+//    try {
+//        switch (op.type) {
+//        case Op::Type::None:    r = std::nullopt; break;
+//        case Op::Type::Move:    r = _Exec_MoveCommits(op); break;
+//        case Op::Type::Copy:    r = _Exec_CopyCommits(op); break;
+//        case Op::Type::Delete:  r = _Exec_DeleteCommits(op); break;
+//        case Op::Type::Combine: r = _Exec_CombineCommits(op); break;
+//        case Op::Type::Edit:    r = _Exec_EditCommit<T_SpawnFn>(op); break;
+//        }
+//    } catch (const std::exception& e) {
+//        err = std::current_exception();
+//    }
+//    
+//    if (err) std::rethrow_exception(err);
+//    return r;
+    
+    
     
     return 0;
 }
