@@ -36,6 +36,17 @@ struct RefState {
     Git::Commit head;
     std::set<Git::Commit> selection;
     std::set<Git::Commit> selectionPrev;
+    
+    bool operator==(const RefState& x) const {
+        if (head != x.head) return false;
+        if (selection != x.selection) return false;
+        if (selectionPrev != x.selectionPrev) return false;
+        return true;
+    }
+    
+    bool operator!=(const RefState& x) const {
+        return !(*this==x);
+    }
 };
 
 using RefHistory = T_History<RefState>;
@@ -98,7 +109,7 @@ class RepoState {
 public:
     RepoState() {}
     RepoState(Git::Repo repo, const std::set<Git::Ref>& refs) : _repo(repo) {
-        std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistory;
+        std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
         try {
             _Path fpath = RepoStateDir(_repo) / "RefHistory";
             std::ifstream f(fpath);
@@ -106,7 +117,7 @@ public:
             nlohmann::json j;
             f >> j;
             
-            ::from_json(j, refHistory, _repo);
+            ::from_json(j, refHistorys, _repo);
         
         // Ignore deserialization errors (eg file not existing)
         } catch (...) {}
@@ -134,9 +145,9 @@ public:
         // the state file would grow indefinitely.)
         for (const Git::Ref& ref : refs) {
             Git::Commit refCommit = ref.commit();
-            std::map<Git::Commit,RefHistory>& hs = refHistory[ref];
+            std::map<Git::Commit,RefHistory>& hs = refHistorys[ref];
 //                RefHistorys hs = _refHistorys[rev.ref];
-            RefHistory& h = _refHistory[ref];
+            RefHistory& h = _refHistorys[ref];
             if (auto find=hs.find(refCommit); find!=hs.end()) {
                 h = find->second;
             } else {
@@ -146,7 +157,7 @@ public:
                 });
             }
             
-            _refCommitsPrev[ref] = refCommit;
+            _refHistorysPrev[ref] = h;
         }
         
 //        try {
@@ -178,27 +189,28 @@ public:
         // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
         // If we had strong typing, and we couldn't construct the Ref, we'd throw out the
         // entry and the data would be lost when we write the json file below.
-        std::map<_Json,std::map<_Json,_Json>> refHistory;
+        std::map<_Json,std::map<_Json,_Json>> refHistorysJson;
         try {
             std::ifstream f(fpath);
             f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
             nlohmann::json j;
             f >> j;
-            j.get_to(refHistory);
+            j.get_to(refHistorysJson);
         
         // Ignore deserialization errors (eg file not existing)
         } catch (...) {}
         
-        for (const auto& i : _refCommitsPrev) {
+        for (const auto& i : _refHistorysPrev) {
             Git::Ref ref = _repo.refReload(i.first);
-            Git::Commit commitPrev = i.second;
+            const RefHistory& refHistory = _refHistorys.at(ref);
+            const RefHistory& refHistoryPrev = i.second;
             Git::Commit commit = ref.commit();
-            // Ignore refs that didn't change
-            if (commit == commitPrev) continue;
+            // Ignore entries that didn't change
+            if (refHistory == refHistoryPrev) continue;
             // The ref was modified, so erase the old Commit->RefHistory entry, and insert the new one.
-            std::map<_Json,_Json>& hs = refHistory[ref];
-            hs.erase(commitPrev);
-            hs[commit] = _refHistory.at(ref);
+            std::map<_Json,_Json>& refHistoryJson = refHistorysJson[ref];
+            refHistoryJson.erase(refHistoryPrev.get().head);
+            refHistoryJson[commit] = _refHistorys.at(ref);
         }
         
         
@@ -211,7 +223,7 @@ public:
 //        nlohmann::json j = _refHistorys.at(ref);
 //        std::map<_Json,int> a;
 //        f << std::setw(4) << a;
-        f << std::setw(4) << refHistory;
+        f << std::setw(4) << refHistorysJson;
         
         
         
@@ -242,7 +254,7 @@ public:
     }
     
     RefHistory& refHistory(Git::Ref ref) {
-        return _refHistory.at(ref);
+        return _refHistorys.at(ref);
     }
     
 //    CommitHistoryMap commitHistoryMap(Git::Ref ref) {
@@ -292,8 +304,8 @@ private:
     using _Path = std::filesystem::path;
     static constexpr uint32_t _Version = 0;
     Git::Repo _repo;
-    std::map<Git::Ref,Git::Commit> _refCommitsPrev;
-    std::map<Git::Ref,RefHistory> _refHistory;
+    std::map<Git::Ref,RefHistory> _refHistorysPrev;
+    std::map<Git::Ref,RefHistory> _refHistorys;
 };
 
 // MARK: - Ref Serialization
