@@ -61,8 +61,6 @@ inline void from_json_vector(const nlohmann::json& j, T& v, Git::Repo repo) {
     }
 }
 
-#include <iostream>
-
 template <typename T>
 inline void from_json_map(const nlohmann::json& j, T& m, Git::Repo repo) {
     using namespace nlohmann;
@@ -107,18 +105,16 @@ public:
         for (const Git::Rev& rev : revs) {
             if (rev.ref) {
                 RefHistorys& hs = _refHistorys[rev.ref];
-                RefHistory h = hs[rev.commit];
-                
-                // If rev.ref points to a different commit than is stored in the RefHistory,
-                // clear the undo/redo history because it's stale.
-                if (rev.commit != h.get().head) {
+                RefHistory& h = _refHistory[rev.ref];
+                if (auto find=hs.find(rev.commit); find!=hs.end()) {
+                    h = find->second;
+                } else {
                     h.clear();
                     h.set(RefState{
                         .head = rev.commit,
                     });
                 }
                 
-                _refHistory[rev.ref] = h;
                 hs.erase(rev.commit);
             }
         }
@@ -147,7 +143,7 @@ public:
     void write() {
         // Update _refHistorys from _refHistory
         for (const auto& i : _refHistory) {
-            const Git::Ref& ref = i.first;
+            Git::Ref ref = _repo.refReload(i.first);
             const RefHistory& h = i.second;
             _refHistorys[ref][ref.commit()] = h;
         }
@@ -160,7 +156,7 @@ public:
             std::ofstream f(fpath);
             f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
             
-            nlohmann::json j = _refHistorys[ref];
+            nlohmann::json j = _refHistorys.at(ref);
             f << std::setw(4) << j;
         }
         
