@@ -16,7 +16,7 @@ inline std::filesystem::path RepoStateDir() {
 
 static std::filesystem::path RepoStateFileName(const std::filesystem::path& repo) {
     std::string repoStr = std::filesystem::canonical(repo);
-    std::replace(repoStr.begin(), repoStr.end(), '/', '-'); // Replace / with -
+    std::replace(repoStr.begin(), repoStr.end(), '/', '~'); // Replace / with ~
     return repoStr;
 }
 
@@ -27,8 +27,6 @@ struct RefState {
 };
 
 using RefHistory = T_History<RefState>;
-using CommitHistoryMap = std::map<Git::Commit,RefHistory>;
-using RefCommitHistoryMap = std::map<Git::Ref,CommitHistoryMap>;
 
 inline void to_json(nlohmann::json& j, const Git::Commit& x);
 inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo);
@@ -74,7 +72,8 @@ inline void from_json_map(const nlohmann::json& j, T& m, Git::Repo repo) {
 
 class RepoState {
 public:
-    RepoState(Git::Repo repo) : _repo(repo) {
+    RepoState() {}
+    RepoState(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo) {
         try {
             _Path fdir = RepoStateDir();
             _Path fpath = fdir / RepoStateFileName(_repo.path());
@@ -90,13 +89,52 @@ public:
                 (uintmax_t)_Version, (uintmax_t)version);
             }
             
-            j.at("history").get_to(_history);
+            j.at("history").get_to(_historyRaw);
         
-        // Ignore errors (eg file not existing)
+        // Ignore deserialization errors (eg file not existing)
         } catch (...) {}
+        
+        // Populate _refHistory by looking up the RefHistory for each ref,
+        // by looking at its current commit.
+        // We also delete the matching commit->RevHistory entry after copying it
+        // into `_refHistory`, because during this session we may modify the
+        // ref, and so that entry will be stale (and if we didn't prune them,
+        // the state file would grow indefinitely.)
+        for (const Git::Rev& rev : revs) {
+            if (rev.ref) {
+                std::map<Git::Commit,RefHistory>& m = _history[rev.ref];
+                auto find = _historyRaw.find(rev.ref.fullName());
+                if (find != _historyRaw.end()) {
+                    ::from_json_map(find->second, m, _repo);
+                }
+                
+                RefHistory h = m[rev.commit];
+                // If rev.ref points to a different commit than is stored in the RefHistory,
+                // clear the undo/redo history because it's stale.
+                if (rev.commit != h.get().head) {
+                    h.clear();
+                    h.set(RefState{
+                        .head = rev.commit,
+                    });
+                }
+                
+                _refHistory[rev.ref] = h;
+                m.erase(rev.commit);
+            }
+        }
     }
     
     void write() {
+        for (const auto& i : _refHistory) {
+            const Git::Ref& ref = i.first;
+            const RefHistory& h = i.second;
+            _history[ref][ref.commit()] = h;
+        }
+        
+        for (const auto& i : _history) {
+            _historyRaw[i.first] = i.second;
+        }
+        
         _Path fdir = RepoStateDir();
         std::filesystem::create_directories(fdir);
         _Path fpath = fdir / RepoStateFileName(_repo.path());
@@ -105,24 +143,28 @@ public:
         
         nlohmann::json j = {
             {"version", _Version},
-            {"history", _history},
+            {"history", _historyRaw},
         };;
         f << std::setw(4) << j;
     }
     
-    CommitHistoryMap commitHistoryMap(Git::Ref ref) {
-        CommitHistoryMap x;
-        auto find = _history.find(ref.fullName());
-        if (find != _history.end()) {
-            ::from_json_map(find->second, x, _repo);
-        }
-        return x;
+    RefHistory& refHistory(Git::Ref ref) {
+        return _refHistory.at(ref);
     }
     
-    void setCommitHistoryMap(Git::Ref ref, const CommitHistoryMap& x) {
-        _Json j = x;
-        _history[ref.fullName()] = j;
-    }
+//    CommitHistoryMap commitHistoryMap(Git::Ref ref) {
+//        CommitHistoryMap x;
+//        auto find = _history.find(ref.fullName());
+//        if (find != _history.end()) {
+//            ::from_json_map(find->second, x, _repo);
+//        }
+//        return x;
+//    }
+//    
+//    void setCommitHistoryMap(Git::Ref ref, const CommitHistoryMap& x) {
+//        _Json j = x;
+//        _history[ref.fullName()] = j;
+//    }
     
     Git::Repo repo() const {
         return _repo;
@@ -156,7 +198,9 @@ private:
     using _Path = std::filesystem::path;
     static constexpr uint32_t _Version = 0;
     Git::Repo _repo;
-    std::map<_Json,_Json> _history;
+    std::map<_Json,_Json> _historyRaw;
+    std::map<Git::Ref,std::map<Git::Commit,RefHistory>> _history;
+    std::map<Git::Ref,RefHistory> _refHistory;
 };
 
 // MARK: - Commit Serialization

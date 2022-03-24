@@ -38,9 +38,10 @@ static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
 static Git::Repo _Repo;
+static RepoState _RepoState;
 static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
-static std::map<Git::Ref,RefHistory> _RefHistory;
+//static std::map<Git::Ref,RefHistory> _RefHistory;
 
 static UI::Window _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
@@ -696,7 +697,7 @@ static void _Reload() {
     _Columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : _Revs) {
-        RefHistory* h = (rev.ref ? &_RefHistory.at(rev.ref) : nullptr);
+        RefHistory* h = (rev.ref ? &_RepoState.refHistory(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = _RootWindow,
             .colors         = _Colors,
@@ -880,7 +881,7 @@ static void _Spawn(const char*const* argv) {
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
-    RefHistory& h = _RefHistory.at(col->rev().ref);
+    RefHistory& h = _RepoState.refHistory(col->rev().ref);
     
     RefState refStatePrev = h.get();
     if (undo) h.prev();
@@ -911,7 +912,7 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
 //                Git::Ref dstRef = dstOld.ref;
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            RefHistory& h = _RefHistory.at(srcRev.ref);
+            RefHistory& h = _RepoState.refHistory(srcRev.ref);
             h.push({
                 .head = srcRev.commit,
                 .selection = opResult->src.selection,
@@ -930,7 +931,7 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            RefHistory& h = _RefHistory.at(dstRev.ref);
+            RefHistory& h = _RepoState.refHistory(dstRev.ref);
             
             h.push({
                 .head = dstRev.commit,
@@ -1210,6 +1211,8 @@ int main(int argc, const char* argv[]) {
 //    
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
+    
+    #warning: TODO: test a commit stored in the undo history not existing
     
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
@@ -1496,37 +1499,37 @@ int main(int argc, const char* argv[]) {
             }
         }
         
-        RepoState repoState(_Repo);
+        _RepoState = RepoState(_Repo, _Revs);
         
-        for (Git::Rev& rev : _Revs) {
-            if (rev.ref) {
-                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
-                RefHistory rh = chm[rev.commit];
-                _RefHistory[rev.ref] = rh;
-                
-                chm.erase(rev.commit);
-                repoState.setCommitHistoryMap(rev.ref, chm);
-            }
-        }
+//        for (Git::Rev& rev : _Revs) {
+//            if (rev.ref) {
+//                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
+//                RefHistory rh = chm[rev.commit];
+//                _RefHistory[rev.ref] = rh;
+//                
+//                chm.erase(rev.commit);
+//                repoState.setCommitHistoryMap(rev.ref, chm);
+//            }
+//        }
         
-        // Set the current commit of each ref's UndoHistory.
-        // If an UndoHistory didn't already exist, one will be created.
-        // If an UndoHistory did exist, but the new commit differs from
-        // the recorded commit (loaded from the RepoState file on disk),
-        // we'll clear its undo/redo history because it's stale.
-        for (Git::Rev& rev : _Revs) {
-            if (rev.ref) {
-                RefHistory& h = _RefHistory.at(rev.ref);
-                // If rev.ref points to a different commit than is stored in the UndoHistory,
-                // clear the undo/redo history because it's stale.
-                if (rev.commit != h.get().head) {
-                    h.clear();
-                    h.set(RefState{
-                        .head = rev.commit,
-                    });
-                }
-            }
-        }
+//        // Set the current commit of each ref's UndoHistory.
+//        // If an UndoHistory didn't already exist, one will be created.
+//        // If an UndoHistory did exist, but the new commit differs from
+//        // the recorded commit (loaded from the RepoState file on disk),
+//        // we'll clear its undo/redo history because it's stale.
+//        for (Git::Rev& rev : _Revs) {
+//            if (rev.ref) {
+//                RefHistory& h = _RefHistory.at(rev.ref);
+//                // If rev.ref points to a different commit than is stored in the UndoHistory,
+//                // clear the undo/redo history because it's stale.
+//                if (rev.commit != h.get().head) {
+//                    h.clear();
+//                    h.set(RefState{
+//                        .head = rev.commit,
+//                    });
+//                }
+//            }
+//        }
         
 //        // Set the current commit of each ref's UndoHistory.
 //        // If an UndoHistory didn't already exist, one will be created.
@@ -1603,15 +1606,7 @@ int main(int argc, const char* argv[]) {
         );
         
         _EventLoop();
-        
-        for (Git::Rev& rev : _Revs) {
-            if (rev.ref) {
-                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
-                chm[rev.commit] = _RefHistory.at(rev.ref);
-                repoState.setCommitHistoryMap(rev.ref, chm);
-            }
-        }
-        repoState.write();
+        _RepoState.write();
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n", e.what());
