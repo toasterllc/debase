@@ -1501,7 +1501,11 @@ int main(int argc, const char* argv[]) {
             }
         }
         
-        _RepoState = RepoState(_Repo, _Revs);
+        std::set<Git::Ref> refs;
+        for (Git::Rev rev : _Revs) {
+            if (rev.ref) refs.insert(rev.ref);
+        }
+        _RepoState = RepoState(_Repo, refs);
         
 //        for (Git::Rev& rev : _Revs) {
 //            if (rev.ref) {
