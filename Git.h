@@ -129,17 +129,25 @@ inline Time TimeFromString(std::string_view str) {
 
 class Error : public std::runtime_error {
 public:
-    Error(int error, const char* msg) :
+    Error(int error, const char* msg=nullptr) :
     error((git_error_code)error), std::runtime_error(_ErrorMsg(msg)) {}
     
     git_error_code error = GIT_OK;
     
-private:
+protected:
     static std::string _ErrorMsg(const char* msg) {
+        if (!msg) return git_error_last()->message;
+        
         char buf[256];
         snprintf(buf, sizeof(buf), "%s: %s", msg, git_error_last()->message);
         return buf;
     }
+};
+
+class ConflictError : public Error {
+public:
+    ConflictError(int error, const std::vector<std::filesystem::path>& paths) : Error(error), paths(paths) {}
+    std::vector<std::filesystem::path> paths;
 };
 
 using Id = git_oid;
@@ -535,9 +543,36 @@ public:
     
     void checkout(Ref ref) const {
         std::string fullName = ref.fullName();
-        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        struct Ctx {
+            std::vector<std::filesystem::path> conflicts;
+        };
+        Ctx ctx;
+        
+        git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        opts.notify_flags |= GIT_CHECKOUT_NOTIFY_CONFLICT;
+        opts.notify_payload = &ctx;
+        opts.notify_cb = [] (
+            git_checkout_notify_t why,
+            const char* path,
+            const git_diff_file* baseline,
+            const git_diff_file* target,
+            const git_diff_file* workdir,
+            void* ctxp
+        ) -> int {
+            Ctx& ctx = *(Ctx*)ctxp;
+            if (why == GIT_CHECKOUT_NOTIFY_CONFLICT) {
+                ctx.conflicts.push_back(workdir->path);
+            }
+//            conflicts.push_back("hello");
+//            std::vector<std::string> conflicts = 
+//            printf("hello\n");
+            return 0;
+        };
+        
         int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
-        if (ir) throw Error(ir, "git_checkout_tree failed");
+        if (ir == GIT_ECONFLICT) throw ConflictError(ir, ctx.conflicts);
+        else if (ir)             throw Error(ir, "git_checkout_tree failed");
+        
         ir = git_repository_set_head(*get(), fullName.c_str());
         if (ir) throw Error(ir, "git_repository_set_head failed");
     }
@@ -841,8 +876,8 @@ public:
         for (size_t i=0;; i++) {
             const git_status_entry* e = s[i];
             if (!e) break;
-            if (e->status==GIT_STATUS_WT_MODIFIED ||
-                e->status==GIT_STATUS_INDEX_MODIFIED) {
+            if (e->status==GIT_STATUS_WT_MODIFIED ||    // Tracked filed, not added (red in `git status`)
+                e->status==GIT_STATUS_INDEX_MODIFIED) { // Tracked filed, added but not committed (green in `git status`)
                 return true;
             }
         }

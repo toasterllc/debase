@@ -790,7 +790,7 @@ static UI::ColorPalette _ColorsCreate() {
 //    }
 //}
 
-static void _CursesInit() {
+static void _CursesInit() noexcept {
     // Default linux installs may not contain the /usr/share/terminfo database,
     // so provide a fallback terminfo that usually works.
     nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
@@ -826,7 +826,7 @@ static void _CursesInit() {
     ::set_escdelay(0);
 }
 
-static void _CursesDeinit() {
+static void _CursesDeinit() noexcept {
 //    ::mousemask(0, NULL);
     
     if (_ColorsPrev) {
@@ -1016,6 +1016,9 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
 }
 
 static void _EventLoop() {
+    _CursesInit();
+    Defer(_CursesDeinit());
+    
     _RootWindow = MakeShared<UI::Window>(::stdscr);
     
     bool reload = true;
@@ -1233,16 +1236,7 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
     
-    #warning TODO: perf: if we aren't modifying the current checked-out branch, don't detach head
-    
-    #warning TODO: refuse to run if there are uncomitted changes and we're 
-    
-    #warning TODO: what if we have active file changes and we run debase?
-//        "Commit your current changes before running debase on rev 'master'"
-    
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
-    
-    #warning TODO: what if there's an uncommited file that will be overwritten by a change made by debase?
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
@@ -1369,6 +1363,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: undo: remember selection as a part of the undo state
 //
 //    #warning TODO: implement _ConfigDir() for real
+//
+//    #warning TODO: perf: if we aren't modifying the current checked-out branch, don't detach head
+//
+//    #warning TODO: refuse to run if there are uncomitted changes and we're detaching head
+//
+//    #warning TODO: show detailed error message if we fail to restore head due to conflicts
     
     
     {
@@ -1563,7 +1563,7 @@ int main(int argc, const char* argv[]) {
         bool detachHead = _Head.ref && std::find(_Revs.begin(), _Revs.end(), _Head)!=_Revs.end();
         
         if (detachHead && _Repo.dirty()) {
-            throw Toastbox::RuntimeError("please commit or stash your outstanding changes before running debase on '%s'", _Head.displayName().c_str());
+            throw Toastbox::RuntimeError("please commit or stash your outstanding changes before running debase on %s", _Head.displayName().c_str());
         }
         
         // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
@@ -1573,23 +1573,70 @@ int main(int argc, const char* argv[]) {
             if (detachHead) {
                 // Restore previous head on exit
                 std::cout << "Restoring HEAD to " << _Head.ref.name() << std::endl;
-                _Repo.checkout(_Head.ref);
-                std::cout << "Done" << std::endl;
+                std::string err;
+                try {
+                    _Repo.checkout(_Head.ref);
+                } catch (const Git::ConflictError& e) {
+                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
+                    for (const fs::path& path : e.paths) {
+                        err += "  " + std::string(path) + "\n";
+                    }
+                    
+                    err += "\n";
+                    err += "Please move or remove them and run:\n";
+                    err += "  git checkout " + _Head.ref.name() + "\n";
+                
+                } catch (const std::exception& e) {
+                    err = std::string("Error: ") + e.what();
+                }
+                
+                std::cout << (!err.empty() ? err : "Done") << std::endl;
             }
         );
         
-        _CursesInit();
-        Defer(_CursesDeinit());
-        
         _EventLoop();
-        
         _RepoStateWrite(_Repo, _RepoState);
     
     } catch (const std::exception& e) {
-        fprintf(stderr, "Error: %s\n\n", e.what());
+        fprintf(stderr, "Error: %s\n", e.what());
         return 1;
     }
     
+//    try {
+//        _EventLoop();
+//        _RepoStateWrite(_Repo, _RepoState);
+//    } catch (const std::exception& e) {
+//        fprintf(stderr, "Error: %s\n\n", e.what());
+//    }
+//    
+//    {
+//        std::string err;
+//        Defer();
+//        
+//        _CursesInit();
+//        Defer(_CursesDeinit());
+//        
+//        std::string err;
+//        try {
+//            _EventLoop();
+//            _RepoStateWrite(_Repo, _RepoState);
+//        } catch (const std::exception& e) {
+//            fprintf(stderr, "Error: %s\n\n", e.what());
+//        }
+//        
+//        Defer();
+//        
+//        _CursesDeinit();
+//        
+//        fprintf(stderr, "Error: %s\n\n", e.what());
+//    }
+    
+//    if (detachHead) {
+//        // Restore previous head on exit
+//        std::cout << "Restoring HEAD to " << _Head.ref.name() << std::endl;
+//        _Repo.checkout(_Head.ref);
+//        std::cout << "Done" << std::endl;
+//    }
     
     
     
