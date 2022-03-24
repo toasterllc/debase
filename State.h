@@ -8,16 +8,24 @@
 
 //namespace State {
 
-std::filesystem::path ConfigDir();
+std::filesystem::path StateDir();
 
-inline std::filesystem::path RepoStateDir() {
-    return ConfigDir() / "RepoState";
+inline std::string _Sub(std::string x) {
+    std::replace(x.begin(), x.end(), '/', '~'); // Replace / with ~
+    return x;
 }
 
-static std::filesystem::path RepoStateFileName(const std::filesystem::path& repo) {
-    std::string repoStr = std::filesystem::canonical(repo);
-    std::replace(repoStr.begin(), repoStr.end(), '/', '~'); // Replace / with ~
-    return repoStr;
+inline std::filesystem::path RepoStateDir(Git::Repo repo) {
+    std::string name = _Sub(std::filesystem::canonical(repo.path()));
+    return StateDir() / "Repo" / name;
+}
+
+inline std::filesystem::path RefHistoryStateDir(Git::Repo repo) {
+    return RepoStateDir(repo) / "RefHistory";
+}
+
+inline std::filesystem::path RefHistoryStateName(Git::Ref ref) {
+    return _Sub(ref.fullName());
 }
 
 struct RefState {
@@ -27,6 +35,7 @@ struct RefState {
 };
 
 using RefHistory = T_History<RefState>;
+using RefHistorys = std::map<Git::Commit,RefHistory>;
 
 inline void to_json(nlohmann::json& j, const Git::Commit& x);
 inline void from_json(const nlohmann::json& j, Git::Commit& x, Git::Repo repo);
@@ -74,25 +83,20 @@ class RepoState {
 public:
     RepoState() {}
     RepoState(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo) {
-        try {
-            _Path fdir = RepoStateDir();
-            _Path fpath = fdir / RepoStateFileName(_repo.path());
-            std::ifstream f(fpath);
-            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-            nlohmann::json j;
-            f >> j;
+        for (const Git::Rev& rev : revs) {
+            try {
+                _Path fpath = RefHistoryStateDir(_repo) / RefHistoryStateName(rev.ref);
+                std::ifstream f(fpath);
+                f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+                nlohmann::json j;
+                f >> j;
+                
+                RefHistorys& hs = _refHistorys[rev.ref];
+                ::from_json_map(j, hs, repo);
             
-            uint32_t version = 0;
-            j.at("version").get_to(version);
-            if (version != _Version) {
-                throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
-                (uintmax_t)_Version, (uintmax_t)version);
-            }
-            
-            j.at("history").get_to(_historyRaw);
-        
-        // Ignore deserialization errors (eg file not existing)
-        } catch (...) {}
+            // Ignore deserialization errors (eg file not existing)
+            } catch (...) {}
+        }
         
         // Populate _refHistory by looking up the RefHistory for each ref,
         // by looking at its current commit.
@@ -102,13 +106,9 @@ public:
         // the state file would grow indefinitely.)
         for (const Git::Rev& rev : revs) {
             if (rev.ref) {
-                std::map<Git::Commit,RefHistory>& m = _history[rev.ref];
-                auto find = _historyRaw.find(rev.ref.fullName());
-                if (find != _historyRaw.end()) {
-                    ::from_json_map(find->second, m, _repo);
-                }
+                RefHistorys& hs = _refHistorys[rev.ref];
+                RefHistory h = hs[rev.commit];
                 
-                RefHistory h = m[rev.commit];
                 // If rev.ref points to a different commit than is stored in the RefHistory,
                 // clear the undo/redo history because it's stale.
                 if (rev.commit != h.get().head) {
@@ -119,33 +119,55 @@ public:
                 }
                 
                 _refHistory[rev.ref] = h;
-                m.erase(rev.commit);
+                hs.erase(rev.commit);
             }
         }
+        
+//        try {
+//            _Path fdir = RepoStateDir();
+//            _Path fpath = fdir / RepoStateFileName(_repo.path());
+//            std::ifstream f(fpath);
+//            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+//            nlohmann::json j;
+//            f >> j;
+//            
+//            uint32_t version = 0;
+//            j.at("version").get_to(version);
+//            if (version != _Version) {
+//                throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
+//                (uintmax_t)_Version, (uintmax_t)version);
+//            }
+//            
+//            j.at("history").get_to(_historyRaw);
+//        
+//        // Ignore deserialization errors (eg file not existing)
+//        } catch (...) {}
     }
     
     void write() {
+        // Update _refHistorys from _refHistory
         for (const auto& i : _refHistory) {
             const Git::Ref& ref = i.first;
             const RefHistory& h = i.second;
-            _history[ref][ref.commit()] = h;
+            _refHistorys[ref][ref.commit()] = h;
         }
         
-        for (const auto& i : _history) {
-            _historyRaw[i.first] = i.second;
+        for (const auto& i : _refHistorys) {
+            const Git::Ref& ref = i.first;
+            _Path fdir = RefHistoryStateDir(_repo);
+            _Path fpath = fdir / RefHistoryStateName(ref);
+            std::filesystem::create_directories(fdir);
+            std::ofstream f(fpath);
+            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+            
+            nlohmann::json j = _refHistorys[ref];
+            f << std::setw(4) << j;
         }
         
-        _Path fdir = RepoStateDir();
-        std::filesystem::create_directories(fdir);
-        _Path fpath = fdir / RepoStateFileName(_repo.path());
-        std::ofstream f(fpath);
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
         
-        nlohmann::json j = {
-            {"version", _Version},
-            {"history", _historyRaw},
-        };;
-        f << std::setw(4) << j;
+//        for (const auto& i : _refHistory) {
+//            _historyRaw[i.first] = i.second;
+//        }
     }
     
     RefHistory& refHistory(Git::Ref ref) {
@@ -198,8 +220,7 @@ private:
     using _Path = std::filesystem::path;
     static constexpr uint32_t _Version = 0;
     Git::Repo _repo;
-    std::map<_Json,_Json> _historyRaw;
-    std::map<Git::Ref,std::map<Git::Commit,RefHistory>> _history;
+    std::map<Git::Ref,RefHistorys> _refHistorys;
     std::map<Git::Ref,RefHistory> _refHistory;
 };
 

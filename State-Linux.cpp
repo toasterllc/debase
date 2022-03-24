@@ -2,7 +2,7 @@
 #import "Debase.h"
 #import <filesystem>
 
-std::filesystem::path ConfigDir() {
+std::filesystem::path StateDir() {
     std::filesystem::path configDir = getenv("XDG_CONFIG_HOME");
     if (path.empty()) {
         std::filesystem::path home = getenv("HOME");
