@@ -1,11 +1,24 @@
 #pragma once
 #include <set>
+#include <fstream>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/nlohmann/json.h"
 #include "History.h"
 #include "Git.h"
 
 //namespace State {
+
+std::filesystem::path ConfigDir();
+
+inline std::filesystem::path RepoStateDir() {
+    return ConfigDir() / "RepoState";
+}
+
+static std::filesystem::path RepoStateFileName(const std::filesystem::path& repo) {
+    std::string repoStr = std::filesystem::canonical(repo);
+    std::replace(repoStr.begin(), repoStr.end(), '/', '-'); // Replace / with -
+    return repoStr;
+}
 
 struct RefState {
     Git::Commit head;
@@ -61,7 +74,41 @@ inline void from_json_map(const nlohmann::json& j, T& m, Git::Repo repo) {
 
 class RepoState {
 public:
-    RepoState(Git::Repo repo) : _repo(repo) {}
+    RepoState(Git::Repo repo) : _repo(repo) {
+        try {
+            _Path fdir = RepoStateDir();
+            _Path fpath = fdir / RepoStateFileName(_repo.path());
+            std::ifstream f(fpath);
+            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+            nlohmann::json j;
+            f >> j;
+            
+            uint32_t version = 0;
+            j.at("version").get_to(version);
+            if (version != _Version) {
+                throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
+                (uintmax_t)_Version, (uintmax_t)version);
+            }
+            
+            j.at("history").get_to(_history);
+        
+        // Ignore errors (eg file not existing)
+        } catch (...) {}
+    }
+    
+    void write() {
+        _Path fdir = RepoStateDir();
+        std::filesystem::create_directories(fdir);
+        _Path fpath = fdir / RepoStateFileName(_repo.path());
+        std::ofstream f(fpath);
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        
+        nlohmann::json j = {
+            {"version", _Version},
+            {"history", _history},
+        };;
+        f << std::setw(4) << j;
+    }
     
     CommitHistoryMap commitHistoryMap(Git::Ref ref) {
         CommitHistoryMap x;
@@ -81,8 +128,32 @@ public:
         return _repo;
     }
     
-//private:
+//    void _RepoStateRead(RepoState& state) {
+//        try {
+//            fs::path fdir = RepoStateDir();
+//            fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
+//            std::ifstream f(fpath);
+//            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+//            nlohmann::json j;
+//            f >> j;
+//            ::from_json(j, state, state.repo());
+//        
+//        // Ignore errors (eg file not existing)
+//        } catch (...) {}
+//    }
+
+//    static void _RepoStateWrite(const RepoState& state) {
+//        fs::path fdir = RepoStateDir();
+//        fs::create_directories(fdir);
+//        fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
+//        std::ofstream f(fpath);
+//        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+//        nlohmann::json j = state;
+//        f << std::setw(4) << j;
+//    }
+private:
     using _Json = nlohmann::json;
+    using _Path = std::filesystem::path;
     static constexpr uint32_t _Version = 0;
     Git::Repo _repo;
     std::map<_Json,_Json> _history;
@@ -156,30 +227,30 @@ inline void from_json(const nlohmann::json& j, RefHistory& x, Git::Repo repo) {
 //    x = Git::Repo::Open(path);
 //}
 
-// MARK: - RepoState Serialization
-inline void to_json(nlohmann::json& j, const RepoState& x) {
-    j = {
-//        {"repo", x.repo},
-        {"version", RepoState::_Version},
-        {"history", x._history},
-    };
-    
-//    printf("%s\n", j.dump().c_str());
-}
+//// MARK: - RepoState Serialization
+//inline void to_json(nlohmann::json& j, const RepoState& x) {
+//    j = {
+////        {"repo", x.repo},
+//        {"version", RepoState::_Version},
+//        {"history", x._history},
+//    };
+//    
+////    printf("%s\n", j.dump().c_str());
+//}
 
-inline void from_json(const nlohmann::json& j, RepoState& x, Git::Repo repo) {
-//    j.at("repo").get_to(x.repo);
-    uint32_t version = 0;
-    j.at("version").get_to(version);
-    if (version != RepoState::_Version) {
-        throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
-        (uintmax_t)RepoState::_Version, (uintmax_t)version);
-    }
-    
-    j.at("history").get_to(x._history);
-    
-//    ::from_json(j.at("history"), x._history);
-}
+//inline void from_json(const nlohmann::json& j, RepoState& x, Git::Repo repo) {
+////    j.at("repo").get_to(x.repo);
+//    uint32_t version = 0;
+//    j.at("version").get_to(version);
+//    if (version != RepoState::_Version) {
+//        throw Toastbox::RuntimeError("invalid version (expected %ju, got %ju)",
+//        (uintmax_t)RepoState::_Version, (uintmax_t)version);
+//    }
+//    
+//    j.at("history").get_to(x._history);
+//    
+////    ::from_json(j.at("history"), x._history);
+//}
 
 
 
@@ -220,12 +291,5 @@ inline void from_json(const nlohmann::json& j, RepoState& x, Git::Repo repo) {
 //    
 //    j.at("repoStates").get_to(x.repoStates);
 //}
-
-
-std::filesystem::path ConfigDir();
-
-inline std::filesystem::path RepoStateDir() {
-    return ConfigDir() / "RepoState";
-}
 
 //} // namespace State

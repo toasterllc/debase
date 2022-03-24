@@ -1181,36 +1181,6 @@ static void _EventLoop() {
     }
 }
 
-static fs::path _RepoStateFileName(const fs::path& repo) {
-    std::string repoStr = fs::canonical(repo);
-    std::replace(repoStr.begin(), repoStr.end(), '/', '-'); // Replace / with -
-    return repoStr;
-}
-
-static void _RepoStateRead(RepoState& state) {
-    try {
-        fs::path fdir = RepoStateDir();
-        fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
-        std::ifstream f(fpath);
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        nlohmann::json j;
-        f >> j;
-        ::from_json(j, state, state.repo());
-    
-    // Ignore errors (eg file not existing)
-    } catch (...) {}
-}
-
-static void _RepoStateWrite(const RepoState& state) {
-    fs::path fdir = RepoStateDir();
-    fs::create_directories(fdir);
-    fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
-    std::ofstream f(fpath);
-    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-    nlohmann::json j = state;
-    f << std::setw(4) << j;
-}
-
 int main(int argc, const char* argv[]) {
 //    _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
 //    git_status_list* status = nullptr;
@@ -1527,7 +1497,6 @@ int main(int argc, const char* argv[]) {
         }
         
         RepoState repoState(_Repo);
-        _RepoStateRead(repoState);
         
         for (Git::Rev& rev : _Revs) {
             if (rev.ref) {
@@ -1642,7 +1611,7 @@ int main(int argc, const char* argv[]) {
                 repoState.setCommitHistoryMap(rev.ref, chm);
             }
         }
-        _RepoStateWrite(repoState);
+        repoState.write();
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n", e.what());
