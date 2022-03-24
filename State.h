@@ -14,7 +14,6 @@ struct RefState {
 };
 
 using RefHistory = T_History<RefState>;
-using RefHistoryMap = std::map<Git::Ref,RefHistory>;
 using CommitHistoryMap = std::map<Git::Commit,RefHistory>;
 using RefCommitHistoryMap = std::map<Git::Ref,CommitHistoryMap>;
 
@@ -51,12 +50,6 @@ inline void from_json_map(const nlohmann::json& j, T& m, Git::Repo repo) {
     using T_Val = typename T::mapped_type;
     std::map<json,json> elms;
     j.get_to(elms);
-//    try {
-//        j.get_to(elms);
-//    } catch (...) {
-//        std::cout << j.dump() << std::endl;
-//        for (;;);
-//    }
     for (const auto& i : elms) {
         T_Key key;
         T_Val val;

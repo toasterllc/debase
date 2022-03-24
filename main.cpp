@@ -40,7 +40,7 @@ static std::optional<UI::ColorPalette> _ColorsPrev;
 static Git::Repo _Repo;
 static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
-static RefHistoryMap _RefHistory;
+static std::map<Git::Ref,RefHistory> _RefHistory;
 
 static UI::Window _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
@@ -1241,9 +1241,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
     
-    #warning TODO: don't lose the UndoHistory when: debase is run and a ref points to a different commit than we last observed
-    #warning TODO: don't lose the UndoHistory when: a ref no longer exists that we previously observed
-    
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1377,6 +1374,9 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: refuse to run if there are uncomitted changes and we're detaching head
 //
 //    #warning TODO: show detailed error message if we fail to restore head due to conflicts
+//
+//    #warning TODO: don't lose the UndoHistory when: debase is run and a ref points to a different commit than we last observed
+//    #warning TODO: don't lose the UndoHistory when: a ref no longer exists that we previously observed
     
     
     {
