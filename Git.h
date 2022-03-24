@@ -244,8 +244,13 @@ struct Commit : Object {
         return git_commit_parentcount(*get()) > 1;
     }
     
-    const char* idStr() const {
+    std::string idStr() const {
         return git_oid_tostr_s(&id());
+    }
+    
+    // To allow json serialization
+    operator std::string() const {
+        return idStr();
     }
 };
 

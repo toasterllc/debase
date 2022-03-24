@@ -38,9 +38,9 @@ static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
 static Git::Repo _Repo;
-static RepoState _RepoState;
 static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
+static RefHistoryMap _RefHistory;
 
 static UI::Window _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
@@ -84,6 +84,14 @@ static _SelectState _SelectStateGet(UI::RevColumn col, UI::CommitPanel panel) {
 static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
     return _SelectStateGet(col, panel) == _SelectState::True;
 }
+
+//static RefHistory& _RefHistory(Git::Ref ref) {
+//    return _RefHistoryMap.at(ref);
+//}
+//
+//static RefHistory& _RefHistoryX(Git::Ref ref) {
+//    return _RefCommitHistoryMap[ref][ref.commit()];
+//}
 
 static void _Draw() {
     const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selectionMove);
@@ -688,7 +696,7 @@ static void _Reload() {
     _Columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : _Revs) {
-        UndoHistory* us = (rev.ref ? &_RepoState.undoStates.at(rev.ref) : nullptr);
+        RefHistory* h = (rev.ref ? &_RefHistory.at(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = _RootWindow,
             .colors         = _Colors,
@@ -697,8 +705,8 @@ static void _Reload() {
             .head           = (rev.displayHead() == _Head.commit),
             .offset         = UI::Size{OffsetX, 0},
             .width          = ColumnWidth,
-            .undoEnabled    = (us ? us->canUndo() : false),
-            .redoEnabled    = (us ? us->canRedo() : false),
+            .undoEnabled    = (h ? !h->begin() : false),
+            .redoEnabled    = (h ? !h->end() : false),
             
 //            .showMutability = showMutability,
         };
@@ -872,14 +880,14 @@ static void _Spawn(const char*const* argv) {
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
-    UndoHistory& uh = _RepoState.undoStates[rev.ref];
+    RefHistory& h = _RefHistory.at(col->rev().ref);
     
-    RefState refStatePrev = uh.get();
-    if (undo) uh.undo();
-    else      uh.redo();
-    RefState refState = uh.get();
+    RefState refStatePrev = h.get();
+    if (undo) h.prev();
+    else      h.next();
+    RefState refState = h.get();
     
-    rev = _Repo.revReplace(rev, uh.get().head);
+    rev = _Repo.revReplace(rev, h.get().head);
     
     _Selection = {
         .rev = rev,
@@ -903,9 +911,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
 //                Git::Ref dstRef = dstOld.ref;
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            UndoHistory& uh = _RepoState.undoStates[srcRev.ref];
-            
-            uh.push({
+            RefHistory& h = _RefHistory.at(srcRev.ref);
+            h.push({
                 .head = srcRev.commit,
                 .selection = opResult->src.selection,
                 .selectionPrev = opResult->src.selectionPrev,
@@ -923,9 +930,9 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            UndoHistory& uh = _RepoState.undoStates[dstRev.ref];
+            RefHistory& h = _RefHistory.at(dstRev.ref);
             
-            uh.push({
+            h.push({
                 .head = dstRev.commit,
                 .selection = opResult->dst.selection,
                 .selectionPrev = opResult->dst.selectionPrev,
@@ -1180,26 +1187,24 @@ static fs::path _RepoStateFileName(const fs::path& repo) {
     return repoStr;
 }
 
-static void _RepoStateRead(Git::Repo repo, RepoState& state) {
+static void _RepoStateRead(RepoState& state) {
     try {
         fs::path fdir = RepoStateDir();
-        fs::path fpath = fdir / _RepoStateFileName(repo.path());
+        fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
         std::ifstream f(fpath);
         f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
         nlohmann::json j;
         f >> j;
-        RepoState tmp;
-        ::from_json(j, tmp, repo);
-        state = tmp;
+        ::from_json(j, state, state.repo());
     
     // Ignore errors (eg file not existing)
     } catch (...) {}
 }
 
-static void _RepoStateWrite(Git::Repo repo, const RepoState& state) {
+static void _RepoStateWrite(const RepoState& state) {
     fs::path fdir = RepoStateDir();
     fs::create_directories(fdir);
-    fs::path fpath = fdir / _RepoStateFileName(repo.path());
+    fs::path fpath = fdir / _RepoStateFileName(state.repo().path());
     std::ofstream f(fpath);
     f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     nlohmann::json j = state;
@@ -1236,7 +1241,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
     
-    #warning TODO: track a set of UndoHistory for each ref, mapping between commit -> UndoHistory, so that the UndoHistory isn't lost if debase is run while a ref points to a different commit
+    #warning TODO: don't lose the UndoHistory when: debase is run and a ref points to a different commit than we last observed
+    #warning TODO: don't lose the UndoHistory when: a ref no longer exists that we previously observed
     
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
@@ -1520,7 +1526,19 @@ int main(int argc, const char* argv[]) {
             }
         }
         
-        _RepoStateRead(_Repo, _RepoState);
+        RepoState repoState(_Repo);
+        _RepoStateRead(repoState);
+        
+        for (Git::Rev& rev : _Revs) {
+            if (rev.ref) {
+                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
+                RefHistory rh = chm[rev.commit];
+                _RefHistory[rev.ref] = rh;
+                
+                chm.erase(rev.commit);
+                repoState.setCommitHistoryMap(rev.ref, chm);
+            }
+        }
         
         // Set the current commit of each ref's UndoHistory.
         // If an UndoHistory didn't already exist, one will be created.
@@ -1529,18 +1547,37 @@ int main(int argc, const char* argv[]) {
         // we'll clear its undo/redo history because it's stale.
         for (Git::Rev& rev : _Revs) {
             if (rev.ref) {
-                UndoHistory& uh = _RepoState.undoStates[rev.ref];
-                Git::Commit refCommit = rev.ref.commit();
+                RefHistory& h = _RefHistory.at(rev.ref);
                 // If rev.ref points to a different commit than is stored in the UndoHistory,
                 // clear the undo/redo history because it's stale.
-                if (refCommit != uh.get().head) {
-                    uh.clear();
-                    uh.set(RefState{
-                        .head = refCommit,
+                if (rev.commit != h.get().head) {
+                    h.clear();
+                    h.set(RefState{
+                        .head = rev.commit,
                     });
                 }
             }
         }
+        
+//        // Set the current commit of each ref's UndoHistory.
+//        // If an UndoHistory didn't already exist, one will be created.
+//        // If an UndoHistory did exist, but the new commit differs from
+//        // the recorded commit (loaded from the RepoState file on disk),
+//        // we'll clear its undo/redo history because it's stale.
+//        for (Git::Rev& rev : _Revs) {
+//            if (rev.ref) {
+//                RefHistory& h = _RefHistory(rev.ref);
+//                Git::Commit refCommit = rev.ref.commit();
+//                // If rev.ref points to a different commit than is stored in the UndoHistory,
+//                // clear the undo/redo history because it's stale.
+//                if (refCommit != h.get().head) {
+//                    h.clear();
+//                    h.set(RefState{
+//                        .head = refCommit,
+//                    });
+//                }
+//            }
+//        }
         
 //        state the new state is different than the for each ref if it doesn't already exist, and 
 //        // Set the current state of each UndoHistory
@@ -1597,7 +1634,15 @@ int main(int argc, const char* argv[]) {
         );
         
         _EventLoop();
-        _RepoStateWrite(_Repo, _RepoState);
+        
+        for (Git::Rev& rev : _Revs) {
+            if (rev.ref) {
+                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
+                chm[rev.commit] = _RefHistory.at(rev.ref);
+                repoState.setCommitHistoryMap(rev.ref, chm);
+            }
+        }
+        _RepoStateWrite(repoState);
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n", e.what());
