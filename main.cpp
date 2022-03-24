@@ -1236,6 +1236,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", j.dump().c_str());
 //    exit(0);
     
+    #warning TODO: track a set of UndoHistory for each ref, mapping between commit -> UndoHistory, so that the UndoHistory isn't lost if debase is run while a ref points to a different commit
+    
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
