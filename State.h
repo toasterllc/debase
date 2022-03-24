@@ -50,7 +50,6 @@ struct RefState {
 };
 
 using RefHistory = T_History<RefState>;
-using RefHistorys = std::map<Git::Commit,RefHistory>;
 
 inline void from_json(const nlohmann::json& j, Git::Ref& x, Git::Repo repo);
 
@@ -145,19 +144,18 @@ public:
         // the state file would grow indefinitely.)
         for (const Git::Ref& ref : refs) {
             Git::Commit refCommit = ref.commit();
-            std::map<Git::Commit,RefHistory>& hs = refHistorys[ref];
-//                RefHistorys hs = _refHistorys[rev.ref];
-            RefHistory& h = _refHistorys[ref];
-            if (auto find=hs.find(refCommit); find!=hs.end()) {
-                h = find->second;
+            std::map<Git::Commit,RefHistory>& refHistoryMap = refHistorys[ref];
+            RefHistory& refHistory = _refHistorys[ref];
+            if (auto find=refHistoryMap.find(refCommit); find!=refHistoryMap.end()) {
+                refHistory = find->second;
             } else {
-                h.clear();
-                h.set(RefState{
+                refHistory.clear();
+                refHistory.set(RefState{
                     .head = refCommit,
                 });
             }
             
-            _refHistorysPrev[ref] = h;
+            _refHistorysPrev[ref] = refHistory;
         }
         
 //        try {
