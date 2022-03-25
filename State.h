@@ -1,7 +1,11 @@
 #pragma once
 #include <set>
 #include <fstream>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "lib/Toastbox/RuntimeError.h"
+#include "lib/Toastbox/FileDescriptor.h"
+#include "lib/Toastbox/FDStream.h"
 #include "lib/nlohmann/json.h"
 #include "History.h"
 #include "Git.h"
@@ -131,7 +135,7 @@ private:
     std::map<Git::Ref,RefHistory> _refHistorysPrev;
     std::map<Git::Ref,RefHistory> _refHistorys;
     
-    static _Path _VersionFilePath(_Path dir) {
+    static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
     }
     
@@ -141,48 +145,100 @@ private:
         return dir / "Repo" / name;
     }
     
-    static std::optional<uint32_t> _VersionRead(_Path dir) {
-        _Path p = _VersionFilePath(dir);
-        if (!std::filesystem::exists(p)) return std::nullopt;
-        
-        std::ifstream f(_VersionFilePath(dir));
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    static uint32_t _VersionRead(std::istream& stream) {
         nlohmann::json j;
-        f >> j;
-        uint32_t version = 0;
-        version = j;
-        return version;
+        stream >> j;
+        return j;
     }
     
-    static void _VersionWrite(_Path dir, uint32_t version) {
-        std::filesystem::create_directories(dir);
-        std::ofstream f(_VersionFilePath(dir));
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    static void _VersionWrite(std::ostream& stream, uint32_t version) {
         nlohmann::json j = version;
-        f << j;
+        stream << j;
     }
+    
+    static Toastbox::FDStreamInOut _VersionLockFileOpen(_Path path, bool create) {
+        constexpr mode_t Mode = (S_IRUSR|S_IWUSR) | S_IRGRP | S_IROTH;
+        const int opts = (O_RDWR|O_EXLOCK) | (create ? (O_CREAT|O_EXCL) : 0);
+        int ir = -1;
+        do ir = open(path.c_str(), opts, Mode);
+        while (errno==EINTR);
+        if (ir < 0) return Toastbox::FDStreamInOut();
+        Toastbox::FDStreamInOut f(ir);
+        f.exceptions(std::ios::failbit | std::ios::badbit);
+        return f;
+    }
+    
+    void _migrate(uint32_t versionPrev) {
+        // Stub until we have a new version
+    }
+    
+    void _checkVersionAndMigrate(std::istream& stream, bool migrate) {
+        uint32_t version = _VersionRead(stream);
+        if (version > _Version) {
+            throw Toastbox::RuntimeError(
+                "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
+                "please use a newer version of debase, or delete:\n"
+                "  %s", (uintmax_t)version, (uintmax_t)_Version, _stateDir.c_str());
+        
+        } else if (version < _Version) {
+            if (migrate) {
+                _migrate(version);
+            
+            } else {
+                throw Toastbox::RuntimeError(
+                    "invalid version of debase state on disk (expected v%ju, got v%ju)",
+                    (uintmax_t)_Version, (uintmax_t)version);
+            }
+        }
+    }
+    
+//    static Toastbox::FileDescriptor _VersionLockFileOpen(_Path dir) {
+//        int ir = -1;
+//        do ir = open(_VersionLockFilePath(dir).c_str(), (O_RDONLY|O_EXLOCK));
+//        while (errno==EINTR);
+//        if (ir < 0) return {};
+//        return ir;
+//    }
     
 public:
     RepoState() {}
     RepoState(_Path stateDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
     _stateDir(stateDir), _repoStateDir(_RepoStateDirPath(_stateDir, repo)), _repo(repo) {
-        std::optional<uint32_t> version = _VersionRead(_stateDir);
-        if (version && *version!=_Version)
-            throw Toastbox::RuntimeError(
-            "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
-            "please use a newer version of debase, or remove:\n"
-            "  %s", (uintmax_t)*version, (uintmax_t)_Version, _stateDir.c_str());
+        // Create the state directory
+        std::filesystem::create_directories(_stateDir);
         
-        // Delete the state directory to ensure we start with a clean slate
-        if (!version) {
-            // Sanity check to ensure we never delete anything that doesn't contain the string 'debase'.
-            // This is mainly a safeguard against situations where we might accidentally pass a truncated
-            // path to this function, like "/" or /Users/dave/Library.
-            assert(_stateDir.filename().string().find("debase") != std::string::npos);
-            std::filesystem::remove_all(_stateDir);
+        // Try to create the version lock file
+        _Path versionLockFilePath = _VersionLockFilePath(_stateDir);
+        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(versionLockFilePath, true);
+        if (versionLockFile) {
+            // We created the version lock file
+            // Write our version number
+            _VersionWrite(versionLockFile, _Version);
+        
+        } else {
+            // We weren't able to create the version lock file, presumably because it already exists.
+            // Try just opening it instead.
+            versionLockFile = _VersionLockFileOpen(versionLockFilePath, false);
+            _checkVersionAndMigrate(versionLockFile, true);
         }
         
-        _VersionWrite(_stateDir, _Version);
+//        std::optional<uint32_t> version = _VersionRead(_stateDir);
+//        if (version && *version!=_Version)
+//            throw Toastbox::RuntimeError(
+//            "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
+//            "please use a newer version of debase, or remove:\n"
+//            "  %s", (uintmax_t)*version, (uintmax_t)_Version, _stateDir.c_str());
+//        
+//        // Delete the state directory to ensure we start with a clean slate
+//        if (!version) {
+//            // Sanity check to ensure we never delete anything that doesn't contain the string 'debase'.
+//            // This is mainly a safeguard against situations where we might accidentally pass a truncated
+//            // path to this function, like "/" or /Users/dave/Library.
+//            assert(_stateDir.filename().string().find("debase") != std::string::npos);
+//            std::filesystem::remove_all(_stateDir);
+//        }
+//        
+//        _VersionWrite(_stateDir, _Version);
         
         std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
         try {
@@ -222,6 +278,10 @@ public:
     
     void write() {
         _Path fpath = _repoStateDir / "RefHistory";
+        
+        // Lock the state dir via the version lock
+        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(_VersionLockFilePath(_stateDir), false);
+        _checkVersionAndMigrate(versionLockFile, false);
         
         // refHistory: intentional loose '_Json' typing because we want to maintain all
         // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
