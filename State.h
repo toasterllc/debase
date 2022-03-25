@@ -87,11 +87,9 @@ inline void from_json_vector(const nlohmann::json& j, Git::Repo repo, T& out) {
     std::vector<json> elms;
     j.get_to(elms);
     for (const json& j : elms) {
-        try {
-            T_Elm elm;
-            ::from_json(j, repo, elm);
-            out.insert(out.end(), elm);
-        } catch (...) {}
+        T_Elm elm;
+        ::from_json(j, repo, elm);
+        out.insert(out.end(), elm);
     }
 }
 
@@ -111,13 +109,11 @@ inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_
     std::map<json,json> elms;
     j.get_to(elms);
     for (const auto& i : elms) {
-        try {
-            T_Key key;
-            T_Val val;
-            ::from_json(i.first, repo, key);
-            ::from_json(i.second, repo, val);
-            out[key] = val;
-        } catch (...) {}
+        T_Key key;
+        T_Val val;
+        ::from_json(i.first, repo, key);
+        ::from_json(i.second, repo, val);
+        out[key] = val;
     }
 }
 
@@ -214,18 +210,45 @@ public:
             _checkVersionAndMigrate(versionLockFile, true);
         }
         
+        // Manually decode refHistorys
+        // We want to do this manually because we want to implement exception
+        // handling at specific points in the ref->commit->RefHistory graph
+        // decoding: if we failed to deserialize the current ref, we still
+        // want to try to deserialize the next ref; if we failed to
+        // deserialize a commit/RefHistory entry, we still want to try to
+        // deserialize the next entry.
         std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
+        nlohmann::json refHistorysJson;
         try {
             _Path fpath = _repoStateDir / "RefHistory";
             std::ifstream f(fpath);
             f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-            nlohmann::json j;
-            f >> j;
-            
-            ::from_json(j, _repo, refHistorys);
-        
-        // Ignore deserialization errors (eg file not existing)
+            f >> refHistorysJson;
+        // Ignore file errors (eg file not existing)
         } catch (...) {}
+            
+        std::map<_Json,std::map<_Json,_Json>> refHistorysJsonMap;
+        refHistorysJson.get_to(refHistorysJsonMap);
+        
+        for (const auto& i : refHistorysJsonMap) {
+            const std::map<_Json,_Json>& map = i.second; // Commit -> RefHistory
+            Git::Ref ref;
+            try {
+                ::from_json(i.first, _repo, ref);
+            } catch (...) { continue; }
+            
+            for (const auto& i : map) {
+                Git::Commit commit;
+                RefHistory refHistory;
+                
+                try {
+                    ::from_json(i.first, _repo, commit);
+                    ::from_json(i.second, _repo, refHistory);
+                } catch (...) { continue; }
+                
+                refHistorys[ref][commit] = refHistory;
+            }
+        }
         
         // Populate _refHistory by looking up the RefHistory for each ref,
         // by looking at its current commit.
