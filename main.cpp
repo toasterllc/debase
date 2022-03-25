@@ -856,11 +856,13 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
     else      h.next();
     State::RefState refState = h.get();
     
-    rev = _Repo.revReplace(rev, h.get().head);
+    Git::Commit commit = State::Convert(_Repo, h.get().head);
+    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
     
+    rev = _Repo.revReplace(rev, commit);
     _Selection = {
         .rev = rev,
-        .commits = (!undo ? refState.selection : refStatePrev.selectionPrev),
+        .commits = selection,
     };
 }
 
@@ -880,9 +882,9 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
             State::RefHistory& h = _RepoState.refHistory(srcRev.ref);
             h.push({
-                .head = srcRev.commit,
-                .selection = opResult->src.selection,
-                .selectionPrev = opResult->src.selectionPrev,
+                .head = State::Convert(srcRev.commit),
+                .selection = State::Convert(opResult->src.selection),
+                .selectionPrev = State::Convert(opResult->src.selectionPrev),
             });
         }
         
@@ -890,9 +892,9 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
             State::RefHistory& h = _RepoState.refHistory(dstRev.ref);
             
             h.push({
-                .head = dstRev.commit,
-                .selection = opResult->dst.selection,
-                .selectionPrev = opResult->dst.selectionPrev,
+                .head = State::Convert(dstRev.commit),
+                .selection = State::Convert(opResult->dst.selection),
+                .selectionPrev = State::Convert(opResult->dst.selectionPrev),
             });
         }
         
