@@ -228,7 +228,9 @@ public:
         } catch (...) {}
             
         std::map<_Json,std::map<_Json,_Json>> refHistorysJsonMap;
-        refHistorysJson.get_to(refHistorysJsonMap);
+        if (!refHistorysJson.empty()) {
+            refHistorysJson.get_to(refHistorysJsonMap);
+        }
         
         for (const auto& i : refHistorysJsonMap) {
             const std::map<_Json,_Json>& map = i.second; // Commit -> RefHistory
