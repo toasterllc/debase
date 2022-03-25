@@ -11,6 +11,8 @@
 #include "Git.h"
 #include "GitOp.h"
 
+namespace State {
+
 template <typename T>
 inline void from_json(const nlohmann::json& j, Git::Repo repo, std::deque<T>& out);
 template <typename T>
@@ -61,9 +63,9 @@ inline void to_json(nlohmann::json& j, const RefState& out) {
 }
 
 inline void from_json(const nlohmann::json& j, Git::Repo repo, RefState& out) {
-    ::from_json(j.at("head"), repo, out.head);
-    ::from_json(j.at("selection"), repo, out.selection);
-    ::from_json(j.at("selectionPrev"), repo, out.selectionPrev);
+    from_json(j.at("head"), repo, out.head);
+    from_json(j.at("selection"), repo, out.selection);
+    from_json(j.at("selectionPrev"), repo, out.selectionPrev);
 }
 
 // MARK: - RefHistory Serialization
@@ -76,9 +78,9 @@ inline void to_json(nlohmann::json& j, const RefHistory& out) {
 }
 
 inline void from_json(const nlohmann::json& j, Git::Repo repo, RefHistory& out) {
-    ::from_json(j.at("prev"), repo, out._prev);
-    ::from_json(j.at("next"), repo, out._next);
-    ::from_json(j.at("current"), repo, out._current);
+    from_json(j.at("prev"), repo, out._prev);
+    from_json(j.at("next"), repo, out._next);
+    from_json(j.at("current"), repo, out._current);
 }
 
 template <typename T>
@@ -89,7 +91,7 @@ inline void from_json_vector(const nlohmann::json& j, Git::Repo repo, T& out) {
     j.get_to(elms);
     for (const json& j : elms) {
         T_Elm elm;
-        ::from_json(j, repo, elm);
+        from_json(j, repo, elm);
         out.insert(out.end(), elm);
     }
 }
@@ -112,8 +114,8 @@ inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_
     for (const auto& i : elms) {
         T_Key key;
         T_Val val;
-        ::from_json(i.first, repo, key);
-        ::from_json(i.second, repo, val);
+        from_json(i.first, repo, key);
+        from_json(i.second, repo, val);
         out[key] = val;
     }
 }
@@ -237,7 +239,7 @@ public:
             const std::map<_Json,_Json>& map = i.second; // Commit -> RefHistory
             Git::Ref ref;
             try {
-                ::from_json(i.first, _repo, ref);
+                from_json(i.first, _repo, ref);
             } catch (...) { continue; }
             
             for (const auto& i : map) {
@@ -245,8 +247,8 @@ public:
                 RefHistory refHistory;
                 
                 try {
-                    ::from_json(i.first, _repo, commit);
-                    ::from_json(i.second, _repo, refHistory);
+                    from_json(i.first, _repo, commit);
+                    from_json(i.second, _repo, refHistory);
                 } catch (...) { continue; }
                 
                 refHistorys[ref][commit] = refHistory;
@@ -325,3 +327,5 @@ public:
         return _repo;
     }
 };
+
+} // namespace State

@@ -39,7 +39,7 @@ static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
 static Git::Repo _Repo;
-static RepoState _RepoState;
+static State::RepoState _RepoState;
 static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
 //static std::map<Git::Ref,RefHistory> _RefHistory;
@@ -685,7 +685,7 @@ static void _Reload() {
     _Columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : _Revs) {
-        RefHistory* h = (rev.ref ? &_RepoState.refHistory(rev.ref) : nullptr);
+        State::RefHistory* h = (rev.ref ? &_RepoState.refHistory(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = _RootWindow,
             .colors         = _Colors,
@@ -849,12 +849,12 @@ static void _Spawn(const char*const* argv) {
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
-    RefHistory& h = _RepoState.refHistory(col->rev().ref);
+    State::RefHistory& h = _RepoState.refHistory(col->rev().ref);
     
-    RefState refStatePrev = h.get();
+    State::RefState refStatePrev = h.get();
     if (undo) h.prev();
     else      h.next();
-    RefState refState = h.get();
+    State::RefState refState = h.get();
     
     rev = _Repo.revReplace(rev, h.get().head);
     
@@ -878,7 +878,7 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            RefHistory& h = _RepoState.refHistory(srcRev.ref);
+            State::RefHistory& h = _RepoState.refHistory(srcRev.ref);
             h.push({
                 .head = srcRev.commit,
                 .selection = opResult->src.selection,
@@ -887,7 +887,7 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            RefHistory& h = _RepoState.refHistory(dstRev.ref);
+            State::RefHistory& h = _RepoState.refHistory(dstRev.ref);
             
             h.push({
                 .head = dstRev.commit,
@@ -1273,7 +1273,7 @@ int main(int argc, const char* argv[]) {
         for (Git::Rev rev : _Revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
-        _RepoState = RepoState(StateDir(), _Repo, refs);
+        _RepoState = State::RepoState(StateDir(), _Repo, refs);
         
         // Determine if we need to detach head.
         // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _Revs.
