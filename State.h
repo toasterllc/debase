@@ -6,19 +6,12 @@
 #include "History.h"
 #include "Git.h"
 
-//namespace State {
-
-std::filesystem::path StateDir();
-
-inline std::string _Sub(std::string x) {
-    std::replace(x.begin(), x.end(), '/', '-'); // Replace / with ~
-    return x;
-}
-
-inline std::filesystem::path RepoStateDir(Git::Repo repo) {
-    std::string name = _Sub(std::filesystem::canonical(repo.path()));
-    return StateDir() / "Repo" / name;
-}
+template <typename T>
+inline void from_json(const nlohmann::json& j, Git::Repo repo, std::deque<T>& out);
+template <typename T>
+inline void from_json(const nlohmann::json& j, Git::Repo repo, std::set<T>& out);
+template <typename T_Key, typename T_Val>
+inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_Val>& out);
 
 struct RefState {
     Git::Commit head;
@@ -38,13 +31,6 @@ struct RefState {
 };
 
 using RefHistory = T_History<RefState>;
-
-template <typename T>
-inline void from_json(const nlohmann::json& j, Git::Repo repo, std::deque<T>& out);
-template <typename T>
-inline void from_json(const nlohmann::json& j, Git::Repo repo, std::set<T>& out);
-template <typename T_Key, typename T_Val>
-inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_Val>& out);
 
 // MARK: - Ref Serialization
 inline void from_json(const nlohmann::json& j, Git::Repo repo, Git::Ref& out) {
@@ -132,12 +118,21 @@ inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_
 }
 
 class RepoState {
+private:
+    using _Path = std::filesystem::path;
+    using _Json = nlohmann::json;
+    _Path _dir;
+    Git::Repo _repo;
+    
+    std::map<Git::Ref,RefHistory> _refHistorysPrev;
+    std::map<Git::Ref,RefHistory> _refHistorys;
+    
 public:
     RepoState() {}
-    RepoState(Git::Repo repo, const std::set<Git::Ref>& refs) : _repo(repo) {
+    RepoState(_Path dir, Git::Repo repo, const std::set<Git::Ref>& refs) : _dir(dir), _repo(repo) {
         std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
         try {
-            _Path fpath = RepoStateDir(_repo) / "RefHistory";
+            _Path fpath = _dir / "RefHistory";
             std::ifstream f(fpath);
             f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
             nlohmann::json j;
@@ -172,8 +167,7 @@ public:
     }
     
     void write() {
-        _Path fdir = RepoStateDir(_repo);
-        _Path fpath = fdir / "RefHistory";
+        _Path fpath = _dir / "RefHistory";
         
         // refHistory: intentional loose '_Json' typing because we want to maintain all
         // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
@@ -203,8 +197,7 @@ public:
             refHistoryJson[commit] = _refHistorys.at(ref);
         }
         
-        
-        std::filesystem::create_directories(fdir);
+        std::filesystem::create_directories(_dir);
         std::ofstream f(fpath);
         f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
         f << std::setw(4) << refHistorysJson;
@@ -217,13 +210,82 @@ public:
     Git::Repo repo() const {
         return _repo;
     }
-    
-private:
-    using _Json = nlohmann::json;
-    using _Path = std::filesystem::path;
-    Git::Repo _repo;
-    std::map<Git::Ref,RefHistory> _refHistorysPrev;
-    std::map<Git::Ref,RefHistory> _refHistorys;
 };
 
-//} // namespace State
+class State {
+private:
+    using _Path = std::filesystem::path;
+    static constexpr uint32_t _Version = 0;
+    _Path _dir;
+    
+//        static constexpr uint32_t _Version = 0;
+//        static uint32_t _StoredStateVersion() {
+//            try {
+//                _Path fpath = RepoStateDir(_repo) / "RefHistory";
+//                std::ifstream f(fpath);
+//                f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+//                nlohmann::json j;
+//                f >> j;
+//                
+//                ::from_json(j, _repo, refHistorys);
+//            
+//            // Ignore deserialization errors (eg file not existing)
+//            } catch (...) {}
+//        }
+    
+    static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
+        std::string name = std::filesystem::canonical(repo.path());
+        std::replace(name.begin(), name.end(), '/', '-'); // Replace / with ~
+        return dir / "Repo" / name;
+    }
+    
+    static _Path _VersionFilePath(_Path dir) {
+        return dir / "Version";
+    }
+    
+    static std::optional<uint32_t> _VersionRead(_Path dir) {
+        _Path p = _VersionFilePath(dir);
+        if (!std::filesystem::exists(p)) return std::nullopt;
+        
+        std::ifstream f(_VersionFilePath(dir));
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        nlohmann::json j;
+        f >> j;
+        uint32_t version = 0;
+        version = j;
+        return version;
+    }
+    
+    static void _VersionWrite(_Path dir, uint32_t version) {
+        std::filesystem::create_directories(dir);
+        std::ofstream f(_VersionFilePath(dir));
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        nlohmann::json j = version;
+        f << j;
+    }
+    
+public:
+    State(const _Path& dir) : _dir(dir) {
+        std::optional<uint32_t> version = _VersionRead(_dir);
+        if (version && *version!=_Version)
+            throw Toastbox::RuntimeError(
+            "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
+            "please use a newer version of debase, or remove:\n"
+            "  %s", (uintmax_t)*version, (uintmax_t)_Version, _dir.c_str());
+        
+        // Delete the state directory to ensure we start with a clean slate
+        if (!version) {
+            // Sanity check to ensure we never delete anything that doesn't contain the string 'debase'.
+            // This is mainly a safeguard against situations where we might accidentally pass a truncated
+            // path to this function, like "/" or /Users/dave/Library.
+            assert(_dir.filename().string().find("debase") != std::string::npos);
+            std::filesystem::remove_all(_dir);
+        }
+        
+        _VersionWrite(_dir, _Version);
+    }
+    
+    RepoState repoStateCreate(Git::Repo repo, const std::set<Git::Ref>& refs) {
+        return RepoState(_RepoStateDirPath(_dir, repo), repo, refs);
+    }
+};

@@ -26,6 +26,7 @@
 #include "Bitfield.h"
 #include "ErrorPanel.h"
 #include "State.h"
+#include "StateDir.h"
 
 namespace fs = std::filesystem;
 
@@ -1501,11 +1502,13 @@ int main(int argc, const char* argv[]) {
             }
         }
         
+        State state(StateDir());
+        
         std::set<Git::Ref> refs;
         for (Git::Rev rev : _Revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
-        _RepoState = RepoState(_Repo, refs);
+        _RepoState = state.repoStateCreate(_Repo, refs);
         
 //        for (Git::Rev& rev : _Revs) {
 //            if (rev.ref) {
