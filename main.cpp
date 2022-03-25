@@ -433,7 +433,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         if (_Drag.titlePanel && ipos) {
             Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
             gitOp = Git::Op{
-                .repo = _Repo,
                 .type = (_Drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
                 .src = {
                     .rev = _Selection.rev,
@@ -464,7 +463,6 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
             if (doubleClicked) {
                 if (validTarget) {
                     gitOp = {
-                        .repo = _Repo,
                         .type = Git::Op::Type::Edit,
                         .src = {
                             .rev = _Selection.rev,
@@ -634,7 +632,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     std::optional<Git::Op> gitOp;
     if (menuButtonLabel == combineButton.label) {
         gitOp = Git::Op{
-            .repo = _Repo,
             .type = Git::Op::Type::Combine,
             .src = {
                 .rev = _Selection.rev,
@@ -644,7 +641,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     
     } else if (menuButtonLabel == editButton.label) {
         gitOp = Git::Op{
-            .repo = _Repo,
             .type = Git::Op::Type::Edit,
             .src = {
                 .rev = _Selection.rev,
@@ -654,7 +650,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     
     } else if (menuButtonLabel == deleteButton.label) {
         gitOp = Git::Op{
-            .repo = _Repo,
             .type = Git::Op::Type::Delete,
             .src = {
                 .rev = _Selection.rev,
@@ -872,7 +867,7 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
 static bool _ExecGitOp(const Git::Op& gitOp) {
     std::string errorMsg;
     try {
-        std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(gitOp);
+        std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(_Repo, gitOp);
         if (!opResult) return false;
         
         Git::Rev srcRevPrev = gitOp.src.rev;
@@ -1026,7 +1021,6 @@ static void _EventLoop() {
             }
             
             gitOp = {
-                .repo = _Repo,
                 .type = Git::Op::Type::Delete,
                 .src = {
                     .rev = _Selection.rev,
@@ -1043,7 +1037,6 @@ static void _EventLoop() {
             }
             
             gitOp = {
-                .repo = _Repo,
                 .type = Git::Op::Type::Combine,
                 .src = {
                     .rev = _Selection.rev,
@@ -1060,7 +1053,6 @@ static void _EventLoop() {
             }
             
             gitOp = {
-                .repo = _Repo,
                 .type = Git::Op::Type::Edit,
                 .src = {
                     .rev = _Selection.rev,

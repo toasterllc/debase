@@ -15,8 +15,6 @@ struct Op {
         Edit,
     };
     
-    Repo repo;
-    
     Type type = Type::None;
     
     struct {
@@ -178,7 +176,7 @@ inline bool _MoveIsNop(const Op& op) {
     return _InsertionIsNop(op.src.rev.commit, op.dst.position, op.src.commits);
 }
 
-inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
+inline std::optional<OpResult> _Exec_MoveCommits(Repo repo, const Op& op) {
     // When moving commits, the source and destination must be references (branches
     // or tags) since we're modifying both
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
@@ -193,7 +191,7 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         
         // Add and remove commits
         _AddRemoveResult srcDstResult = _AddRemoveCommits(
-            op.repo,            // repo:        Repo
+            repo,               // repo:        Repo
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
             op.src.rev.commit,  // addSrc:      Commit
@@ -202,7 +200,7 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         );
         
         // Replace the source branch/tag
-        Rev srcDstRev = op.repo.revReplace(op.src.rev, srcDstResult.commit);
+        Rev srcDstRev = repo.revReplace(op.src.rev, srcDstResult.commit);
         return OpResult{
             .src = {
                 .rev = srcDstRev,
@@ -220,7 +218,7 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
     } else {
         // Remove commits from `op.src`
         _AddRemoveResult srcResult = _AddRemoveCommits(
-            op.repo,            // repo:        Repo
+            repo,               // repo:        Repo
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
             nullptr,            // addSrc:      Commit
@@ -230,7 +228,7 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         
         // Add commits to `op.dst`
         _AddRemoveResult dstResult = _AddRemoveCommits(
-            op.repo,            // repo:        Repo
+            repo,               // repo:        Repo
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
             op.src.rev.commit,  // addSrc:      Commit
@@ -239,8 +237,8 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
         );
         
         // Replace the source and destination branches/tags
-        Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
-        Rev dstRev = op.repo.revReplace(op.dst.rev, dstResult.commit);
+        Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
+        Rev dstRev = repo.revReplace(op.dst.rev, dstResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -256,12 +254,12 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
     }
 }
 
-inline std::optional<OpResult> _Exec_CopyCommits(const Op& op) {
+inline std::optional<OpResult> _Exec_CopyCommits(Repo repo, const Op& op) {
     if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
     
     // Add commits to `op.dst`
     _AddRemoveResult dstResult = _AddRemoveCommits(
-        op.repo,            // repo:        Repo
+        repo,               // repo:        Repo
         op.dst.rev.commit,  // dst:         Commit
         op.src.commits,     // add:         std::set<Commit>
         op.src.rev.commit,  // addSrc:      Commit
@@ -270,7 +268,7 @@ inline std::optional<OpResult> _Exec_CopyCommits(const Op& op) {
     );
     
     // Replace the destination branch/tag
-    Rev dstRev = op.repo.revReplace(op.dst.rev, dstResult.commit);
+    Rev dstRev = repo.revReplace(op.dst.rev, dstResult.commit);
     return OpResult{
         .src = {
             .rev = op.src.rev,
@@ -283,12 +281,12 @@ inline std::optional<OpResult> _Exec_CopyCommits(const Op& op) {
     };
 }
 
-inline std::optional<OpResult> _Exec_DeleteCommits(const Op& op) {
+inline std::optional<OpResult> _Exec_DeleteCommits(Repo repo, const Op& op) {
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     
     // Remove commits from `op.src`
     _AddRemoveResult srcResult = _AddRemoveCommits(
-        op.repo,            // repo:        Repo
+        repo,               // repo:        Repo
         op.src.rev.commit,  // dst:         Commit
         {},                 // add:         std::set<Commit>
         nullptr,            // addSrc:      Commit
@@ -301,7 +299,7 @@ inline std::optional<OpResult> _Exec_DeleteCommits(const Op& op) {
     }
     
     // Replace the source branch/tag
-    Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
+    Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
     return OpResult{
         .src = {
             .rev = srcRev,
@@ -311,7 +309,7 @@ inline std::optional<OpResult> _Exec_DeleteCommits(const Op& op) {
     };
 }
 
-inline std::optional<OpResult> _Exec_CombineCommits(const Op& op) {
+inline std::optional<OpResult> _Exec_CombineCommits(Repo repo, const Op& op) {
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
     
@@ -333,7 +331,7 @@ inline std::optional<OpResult> _Exec_CombineCommits(const Op& op) {
     
     // Combine `head` with all the commits in `integrate`
     for (Commit commit : integrate) {
-        head = op.repo.commitIntegrate(head, commit);
+        head = repo.commitIntegrate(head, commit);
     }
     
     // Remember the final commit containing all the integrated commits
@@ -342,11 +340,11 @@ inline std::optional<OpResult> _Exec_CombineCommits(const Op& op) {
     // Attach every commit in `attach` to `head`
     for (Commit commit : attach) {
         // TODO:MERGE
-        head = op.repo.commitParentSet(commit, head);
+        head = repo.commitParentSet(commit, head);
     }
     
     // Replace the source branch/tag
-    Rev srcRev = op.repo.revReplace(op.src.rev, head);
+    Rev srcRev = repo.revReplace(op.src.rev, head);
     return OpResult{
         .src = {
             .rev = srcRev,
@@ -534,7 +532,7 @@ inline _Argv _CreateArgv(Repo repo, std::string_view filePath) {
 }
 
 template <auto T_SpawnFn>
-inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
+inline std::optional<OpResult> _Exec_EditCommit(Repo repo, const Op& op) {
     using File = RefCounted<int, close>;
     
     assert(op.src.commits.size() == 1); // Programmer error
@@ -554,7 +552,7 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
     _CommitMessageWrite(origMsg, tmpFilePath);
     
     // Spawn text editor
-    _Argv argv = _CreateArgv(op.repo, tmpFilePath);
+    _Argv argv = _CreateArgv(repo, tmpFilePath);
     T_SpawnFn(argv.argv.data());
     
     // Read back the edited commit message
@@ -569,12 +567,12 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
     time_t newTime = newMsg.time ? newMsg.time->time : origAuthor->when.time;
     int newOffset = newMsg.time ? newMsg.time->offset : origAuthor->when.offset;
     Signature newAuthor = Signature::Create(newName, newEmail, newTime, newOffset);
-    Commit newCommit = op.repo.commitAmend(origCommit, newAuthor, newMsg.message);
+    Commit newCommit = repo.commitAmend(origCommit, newAuthor, newMsg.message);
     
     // Rewrite the rev
     // Add and remove commits
     _AddRemoveResult srcResult = _AddRemoveCommits(
-        op.repo,            // repo:        Repo
+        repo,               // repo:        Repo
         op.src.rev.commit,  // dst:         Commit
         {newCommit},        // add:         std::set<Commit>
         newCommit,          // addSrc:      Commit
@@ -583,7 +581,7 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
     );
     
     // Replace the source branch/tag
-    Rev srcRev = op.repo.revReplace(op.src.rev, srcResult.commit);
+    Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
     return OpResult{
         .src = {
             .rev = srcRev,
@@ -594,14 +592,14 @@ inline std::optional<OpResult> _Exec_EditCommit(const Op& op) {
 }
 
 template <auto T_SpawnFn>
-inline std::optional<OpResult> Exec(const Op& op) {
+inline std::optional<OpResult> Exec(Repo repo, const Op& op) {
     switch (op.type) {
     case Op::Type::None:    return std::nullopt;
-    case Op::Type::Move:    return _Exec_MoveCommits(op);
-    case Op::Type::Copy:    return _Exec_CopyCommits(op);
-    case Op::Type::Delete:  return _Exec_DeleteCommits(op);
-    case Op::Type::Combine: return _Exec_CombineCommits(op);
-    case Op::Type::Edit:    return _Exec_EditCommit<T_SpawnFn>(op);
+    case Op::Type::Move:    return _Exec_MoveCommits(repo, op);
+    case Op::Type::Copy:    return _Exec_CopyCommits(repo, op);
+    case Op::Type::Delete:  return _Exec_DeleteCommits(repo, op);
+    case Op::Type::Combine: return _Exec_CombineCommits(repo, op);
+    case Op::Type::Edit:    return _Exec_EditCommit<T_SpawnFn>(repo, op);
     }
 }
 

@@ -9,6 +9,7 @@
 #include "lib/nlohmann/json.h"
 #include "History.h"
 #include "Git.h"
+#include "GitOp.h"
 
 template <typename T>
 inline void from_json(const nlohmann::json& j, Git::Repo repo, std::deque<T>& out);
@@ -32,6 +33,12 @@ struct RefState {
     bool operator!=(const RefState& x) const {
         return !(*this==x);
     }
+};
+
+struct Log {
+    struct Event {
+        
+    };
 };
 
 using RefHistory = T_History<RefState>;
