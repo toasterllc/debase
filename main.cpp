@@ -1091,8 +1091,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: test a commit stored in the undo history not existing
-    
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1233,6 +1231,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: write a version number at the root of the StateDir, and check it somewhere
 //
 //    #warning TODO: use advisory locking in State class to prevent multiple entities from modifying state on disk simultaneously. RepoState class will need to use this facility when writing its state. Whenever we acquire the lock, we should read the version, because the version may have changed since the last read! if so -> bail!
+//
+//    #warning TODO: test a commit stored in the undo history not existing
     
 //    {
 //        Git::Commit a;
