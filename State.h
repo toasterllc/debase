@@ -35,10 +35,34 @@ struct RefState {
     }
 };
 
-struct Log {
+struct RepoLog {
     struct Event {
+        struct GitOp {
         
+        };
+        
+        
+        enum class Type {
+            None,
+            Launched,
+            Exited,
+            ExecGitOp,
+        };
+        
+        Type type = Type::None;
+        uint64_t time = 0;
+        
+        struct {} launched;
+        
+        struct {} exited;
+        
+        struct {
+            Git::Op gitOp;
+        } execGitOp;
     };
+    
+    std::filesystem::path repo;
+    std::vector<Event> log;
 };
 
 using RefHistory = T_History<RefState>;
