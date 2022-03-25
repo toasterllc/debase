@@ -677,14 +677,6 @@ static void _Reload() {
     constexpr int ColumnWidth = 32;
     constexpr int ColumnSpacing = 6;
     
-//    bool showMutability = false;
-//    for (const Git::Rev& rev : revs) {
-//        if (!rev.isMutable()) {
-//            showMutability = true;
-//            break;
-//        }
-//    }
-    
     if (_Head.ref) {
         _Head = _Repo.revReload(_Head);
     }
@@ -709,8 +701,6 @@ static void _Reload() {
             .width          = ColumnWidth,
             .undoEnabled    = (h ? !h->begin() : false),
             .redoEnabled    = (h ? !h->end() : false),
-            
-//            .showMutability = showMutability,
         };
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
@@ -781,24 +771,6 @@ static UI::ColorPalette _ColorsCreate() {
     
     return colors;
 }
-
-//static _SavedColor _SavedColors[8];
-//
-//static void _CursesSaveColors() {
-//    for (size_t i=16; i<16+std::size(_SavedColors); i++) {
-//        _SavedColor& c = _SavedColors[i];
-//        int ir = color_content(i, &c.r, &c.g, &c.b);
-//        assert(!ir);
-//    }
-//}
-//
-//static void _CursesRestoreColors() {
-//    for (size_t i=1; i<std::size(_SavedColors); i++) {
-//        _SavedColor& c = _SavedColors[i];
-//        ::init_color(i, c.r, c.g, c.b);
-//        ::init_pair(i, i, -1);
-//    }
-//}
 
 static void _CursesInit() noexcept {
     // Default linux installs may not contain the /usr/share/terminfo database,
@@ -909,8 +881,6 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         Git::Rev dstRev = opResult->dst.rev;
         assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
-//                Git::Ref srcRef = srcOld.ref;
-//                Git::Ref dstRef = dstOld.ref;
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
             RefHistory& h = _RepoState.refHistory(srcRev.ref);
@@ -919,16 +889,6 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
                 .selection = opResult->src.selection,
                 .selectionPrev = opResult->src.selectionPrev,
             });
-            
-//                    uh.push({
-//                        .head = srcRevPrev.commit,
-//                        .selection = gitOp->src.commits,
-//                    });
-            
-//                    uh.set({
-//                        .head = srcRev.commit,
-////                        .selection = ,
-//                    });
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
@@ -938,48 +898,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
                 .head = dstRev.commit,
                 .selection = opResult->dst.selection,
                 .selectionPrev = opResult->dst.selectionPrev,
-//                            .selection = gitOp->src.commits,
             });
-            
-//                    uh.set({
-//                        .head = dstRev.commit,
-//                        .selection = opResult->dst.commits,
-////                        .selection = dstRe,
-//                    });
         }
-        
-        
-//                // We're using a set 
-//                assert((bool)srcNew.ref == (bool)srcOld.ref);
-//                assert((bool)dstNew.ref == (bool)dstOld.ref);
-//                std::set<std::tuple<Git::Rev,Git::Rev>> oldNewRevs;
-//                oldNewRevs.insert(std::make_tuple(srcOld, srcNew));
-//                oldNewRevs.insert(std::make_tuple(dstOld, dstNew));
-//                
-//                // Remember changes in our undo history
-//                for (const auto& i : oldNewRevs) {
-//                    const auto& [oldRev, newRev] = i;
-//                    if (newRev != oldRev) {
-//                        UndoHistory& uh = _RepoState.undoStates[newRev.ref];
-//                        RefState s = {
-//                            .head = ,
-//                            .selection = ,
-//                        };
-//                        us.push(newRev.commit);
-//                    }
-//                }
-        
-//                {
-//                    if (srcNew.ref && srcNew!=srcOld) {
-//                        UndoHistory& uh = _RepoState.undoStates[srcNew.ref];
-//                        us.push(srcNew.commit);
-//                    }
-//                    
-//                    if (dstNew.ref && dstNew.ref!=srcNew.ref && dstNew!=dstOld) {
-//                        UndoHistory& uh = _RepoState.undoStates[dstNew.ref];
-//                        us.push(dstNew.commit);
-//                    }
-//                }
         
         // Update the selection
         if (opResult->dst.rev) {
@@ -1167,52 +1087,10 @@ static void _EventLoop() {
         if (gitOp) {
             reload = _ExecGitOp(*gitOp);
         }
-        
-//        if (reload) {
-//            // Reload the UI
-//            if (_Head.ref) {
-//                _Head = _Repo.revReload(_Head);
-//            }
-//            
-//            for (Git::Rev& rev : _Revs) {
-//                if (rev.ref) {
-//                    rev = _Repo.revReload(rev);
-//                }
-//            }
-//        }
     }
 }
 
 int main(int argc, const char* argv[]) {
-//    _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
-//    git_status_list* status = nullptr;
-//    
-//    git_status_options opts = GIT_STATUS_OPTIONS_INIT;
-//    int ir = git_status_list_new(&status, *_Repo, &opts);
-//    assert(!ir);
-//    
-//	size_t count = git_status_list_entrycount(status);
-//	for (size_t i=0; i<count; i++) {
-//        const git_status_entry* entry = git_status_byindex(status, i);
-//        printf("%s\n", entry->index_to_workdir->old_file.path);
-//    }
-//    
-//    return 0;
-    
-//    std::map<Git::Ref,UndoHistory> map;
-//    
-////    std::map<std::string,int> map;
-////    map["hello"] = 1;
-////    map["goodbye"] = 2;
-//    
-//    nlohmann::json j = {
-//        {"version", 0},
-//        {"undoStates", map},
-//    };
-//    
-//    printf("%s\n", j.dump().c_str());
-//    exit(0);
-    
     #warning TODO: use advisory locking in State class to prevent multiple entities from modifying state on disk simultaneously. RepoState class will need to use this facility when writing its state. Whenever we acquire the lock, we should read the version, because the version may have changed since the last read! if so -> bail!
     
     #warning TODO: test a commit stored in the undo history not existing
@@ -1356,86 +1234,11 @@ int main(int argc, const char* argv[]) {
 //    
 //    #warning TODO: write a version number at the root of the StateDir, and check it somewhere
     
-    {
-        Git::Commit a;
-        if (a) {
-            a.idStr();
-        }
-    }
-    
-//    // commitAttach: attaches (cherry-picks) `src` onto `dst` and returns the result
-//    Commit commitAttach(Commit dst, Commit src) const {
-//        Tree srcTree = src.tree();
-//        Tree newTree;
-//        // `dst` can be null if we're making `src` a root commit
-//        if (dst) {
-//            Tree dstTree = dst.tree();
-//            Commit srcParent = src.parent();
-//            Tree ancestorTree = srcParent ? srcParent.tree() : nullptr;
-//            Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
-//            newTree = indexWrite(mergedTreesIndex);
-//        } else {
-//            newTree = src.tree();
-//        }
-//        
-//        return commitAttach(dst, newTree, src);
-//    }
-    
-    
-    
-    
-    
-    
-//    // Works to cherry-pick across a merge: 5e2992dae -> 19b7633ac -> 25d6fdfea
 //    {
-//        git_libgit2_init();
-//        
-//        _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
-//        
-//        Git::Ref masterRef = _Repo.refLookup("master");
-//        Git::Commit commit_19b7633ac = _Repo.commitLookup("19b7633aca6335bfdf79ab1fd71f99060f6e04ca");
-//        Git::Commit commit_25d6fdfea = _Repo.commitLookup("25d6fdfea7b40de852e00df405f018723b98b6f1");
-//        Git::Commit commit_5e2992dae = _Repo.commitLookup("5e2992dae2e2e858e40afbe8556b376708bf3974");
-//        Git::Commit commit_f5c20b828 = _Repo.commitLookup("f5c20b8286c5e302d65d5aaedb53441f498f5bc2");
-//        
-//        Git::Commit head = _Repo.commitParentsSet(commit_19b7633ac, {commit_5e2992dae});
-//        head = _Repo.commitParentsSet(commit_25d6fdfea, {head, commit_f5c20b828});
-//        
-//        Git::Ref ref = _Repo.refReplace(masterRef, head);
-//    }
-    
-    
-    
-    
-//    // Works to cherry-pick across a merge: 5e2992dae -> 19b7633ac -> 25d6fdfea
-//    {
-//        git_libgit2_init();
-//        
-//        _Repo = Git::Repo::Open("/Users/dave/Desktop/yosys");
-//        
-//        Git::Ref masterRef = _Repo.refLookup("master");
-//        Git::Commit commit_19b7633ac = _Repo.commitLookup("19b7633aca6335bfdf79ab1fd71f99060f6e04ca");
-//        Git::Commit commit_25d6fdfea = _Repo.commitLookup("25d6fdfea7b40de852e00df405f018723b98b6f1");
-//        Git::Commit commit_5e2992dae = _Repo.commitLookup("5e2992dae2e2e858e40afbe8556b376708bf3974");
-//        Git::Commit commit_f5c20b828 = _Repo.commitLookup("f5c20b8286c5e302d65d5aaedb53441f498f5bc2");
-//        
-//        
-//        Git::Commit head = _Repo.commitParentsSet(commit_19b7633ac, {commit_5e2992dae});
-//        
-//        {
-//            Git::Commit src = commit_25d6fdfea;
-//            Git::Commit dst = head;
-//            Git::Tree srcTree = src.tree();
-//            Git::Tree dstTree = dst.tree();
-//            Git::Tree ancestorTree = src.parent().tree();
-//            Git::Index mergedTreesIndex = _Repo.treesMerge(ancestorTree, dstTree, srcTree);
-//            Git::Tree newTree = _Repo.indexWrite(mergedTreesIndex);
-//            
-//            head = _Repo.commitAmend(commit_25d6fdfea, {head, commit_f5c20b828}, newTree);
+//        Git::Commit a;
+//        if (a) {
+//            a.idStr();
 //        }
-//        
-//        
-//        Git::Ref ref = _Repo.refReplace(masterRef, head);
 //    }
     
 //    {
@@ -1446,41 +1249,11 @@ int main(int argc, const char* argv[]) {
     try {
         setlocale(LC_ALL, "");
         
-//        State state;
-//        _StateWrite("/Users/dave/Desktop/state.json", state);
-        
-//        State state = _StateRead("/Users/dave/Desktop/state.json");
-//        
-//        Git::Repo yosys1 = Git::Repo::Open("/Users/dave/Desktop/yosys");
-//        Git::Repo yosys2 = Git::Repo::Open("/Users/dave/Desktop/yosys");
-//        printf("yosys1: %p\n", *yosys1);
-//        printf("yosys2: %p\n", *yosys2);
-        
         std::vector<std::string> revNames;
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
         
         _Repo = Git::Repo::Open(".");
         _Head = _Repo.head();
-        
-//        {
-//            int ir = 0;
-//            const char* name = nullptr;
-//            
-//            name = git_reference_name(*_Repo.head());
-//            
-//            name = git_reference_shorthand(*_Repo.head());
-////            ir = git_branch_name(&name, *_Repo.head());
-////            assert(!ir);
-//            
-//            git_reference* ref = nullptr;
-//            ir = git_reference_resolve(&ref, *_Repo.head());
-//            
-//            name = git_reference_name(ref);
-//            name = git_reference_shorthand(ref);
-//            ir = git_branch_name(&name, ref);
-//            assert(!ir);
-//        }
-        
         
         if (revNames.empty()) {
             _Revs.emplace_back(_Head);
@@ -1503,78 +1276,12 @@ int main(int argc, const char* argv[]) {
             }
         }
         
+        // Create _RepoState
         std::set<Git::Ref> refs;
         for (Git::Rev rev : _Revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
         _RepoState = RepoState(StateDir(), _Repo, refs);
-        
-//        for (Git::Rev& rev : _Revs) {
-//            if (rev.ref) {
-//                CommitHistoryMap chm = repoState.commitHistoryMap(rev.ref);
-//                RefHistory rh = chm[rev.commit];
-//                _RefHistory[rev.ref] = rh;
-//                
-//                chm.erase(rev.commit);
-//                repoState.setCommitHistoryMap(rev.ref, chm);
-//            }
-//        }
-        
-//        // Set the current commit of each ref's UndoHistory.
-//        // If an UndoHistory didn't already exist, one will be created.
-//        // If an UndoHistory did exist, but the new commit differs from
-//        // the recorded commit (loaded from the RepoState file on disk),
-//        // we'll clear its undo/redo history because it's stale.
-//        for (Git::Rev& rev : _Revs) {
-//            if (rev.ref) {
-//                RefHistory& h = _RefHistory.at(rev.ref);
-//                // If rev.ref points to a different commit than is stored in the UndoHistory,
-//                // clear the undo/redo history because it's stale.
-//                if (rev.commit != h.get().head) {
-//                    h.clear();
-//                    h.set(RefState{
-//                        .head = rev.commit,
-//                    });
-//                }
-//            }
-//        }
-        
-//        // Set the current commit of each ref's UndoHistory.
-//        // If an UndoHistory didn't already exist, one will be created.
-//        // If an UndoHistory did exist, but the new commit differs from
-//        // the recorded commit (loaded from the RepoState file on disk),
-//        // we'll clear its undo/redo history because it's stale.
-//        for (Git::Rev& rev : _Revs) {
-//            if (rev.ref) {
-//                RefHistory& h = _RefHistory(rev.ref);
-//                Git::Commit refCommit = rev.ref.commit();
-//                // If rev.ref points to a different commit than is stored in the UndoHistory,
-//                // clear the undo/redo history because it's stale.
-//                if (refCommit != h.get().head) {
-//                    h.clear();
-//                    h.set(RefState{
-//                        .head = refCommit,
-//                    });
-//                }
-//            }
-//        }
-        
-//        state the new state is different than the for each ref if it doesn't already exist, and 
-//        // Set the current state of each UndoHistory
-//        for (auto& i : _RepoState.undoStates) {
-//            const Git::Ref& ref = i.first;
-//            UndoHistory& uh = i.second;
-//            us.set(ref.commit());
-//        }
-        
-        
-//        // Remove _RepoState.undoStates entries for refs that don't match
-//        {
-//            std::set<Git::Ref> del;
-//            for (const auto& i : _RepoState.undoStates) {
-//                
-//            }
-//        }
         
         // Determine if we need to detach head.
         // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _Revs.
@@ -1602,7 +1309,7 @@ int main(int argc, const char* argv[]) {
                     }
                     
                     err += "\n";
-                    err += "Please move or remove them and run:\n";
+                    err += "Please move or delete them and run:\n";
                     err += "  git checkout " + _Head.ref.name() + "\n";
                 
                 } catch (const std::exception& e) {
@@ -1620,67 +1327,6 @@ int main(int argc, const char* argv[]) {
         fprintf(stderr, "Error: %s\n", e.what());
         return 1;
     }
-    
-//    try {
-//        _EventLoop();
-//        _RepoStateWrite(_Repo, _RepoState);
-//    } catch (const std::exception& e) {
-//        fprintf(stderr, "Error: %s\n\n", e.what());
-//    }
-//    
-//    {
-//        std::string err;
-//        Defer();
-//        
-//        _CursesInit();
-//        Defer(_CursesDeinit());
-//        
-//        std::string err;
-//        try {
-//            _EventLoop();
-//            _RepoStateWrite(_Repo, _RepoState);
-//        } catch (const std::exception& e) {
-//            fprintf(stderr, "Error: %s\n\n", e.what());
-//        }
-//        
-//        Defer();
-//        
-//        _CursesDeinit();
-//        
-//        fprintf(stderr, "Error: %s\n\n", e.what());
-//    }
-    
-//    if (detachHead) {
-//        // Restore previous head on exit
-//        std::cout << "Restoring HEAD to " << _Head.ref.name() << std::endl;
-//        _Repo.checkout(_Head.ref);
-//        std::cout << "Done" << std::endl;
-//    }
-    
-    
-    
-    
-    
-    
-//    std::optional<OpResult> r;
-//    std::exception_ptr err;
-//    try {
-//        switch (op.type) {
-//        case Op::Type::None:    r = std::nullopt; break;
-//        case Op::Type::Move:    r = _Exec_MoveCommits(op); break;
-//        case Op::Type::Copy:    r = _Exec_CopyCommits(op); break;
-//        case Op::Type::Delete:  r = _Exec_DeleteCommits(op); break;
-//        case Op::Type::Combine: r = _Exec_CombineCommits(op); break;
-//        case Op::Type::Edit:    r = _Exec_EditCommit<T_SpawnFn>(op); break;
-//        }
-//    } catch (const std::exception& e) {
-//        err = std::current_exception();
-//    }
-//    
-//    if (err) std::rethrow_exception(err);
-//    return r;
-    
-    
     
     return 0;
 }

@@ -192,14 +192,6 @@ private:
         }
     }
     
-//    static Toastbox::FileDescriptor _VersionLockFileOpen(_Path dir) {
-//        int ir = -1;
-//        do ir = open(_VersionLockFilePath(dir).c_str(), (O_RDONLY|O_EXLOCK));
-//        while (errno==EINTR);
-//        if (ir < 0) return {};
-//        return ir;
-//    }
-    
 public:
     RepoState() {}
     RepoState(_Path stateDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
@@ -221,24 +213,6 @@ public:
             versionLockFile = _VersionLockFileOpen(versionLockFilePath, false);
             _checkVersionAndMigrate(versionLockFile, true);
         }
-        
-//        std::optional<uint32_t> version = _VersionRead(_stateDir);
-//        if (version && *version!=_Version)
-//            throw Toastbox::RuntimeError(
-//            "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
-//            "please use a newer version of debase, or remove:\n"
-//            "  %s", (uintmax_t)*version, (uintmax_t)_Version, _stateDir.c_str());
-//        
-//        // Delete the state directory to ensure we start with a clean slate
-//        if (!version) {
-//            // Sanity check to ensure we never delete anything that doesn't contain the string 'debase'.
-//            // This is mainly a safeguard against situations where we might accidentally pass a truncated
-//            // path to this function, like "/" or /Users/dave/Library.
-//            assert(_stateDir.filename().string().find("debase") != std::string::npos);
-//            std::filesystem::remove_all(_stateDir);
-//        }
-//        
-//        _VersionWrite(_stateDir, _Version);
         
         std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
         try {
@@ -325,81 +299,3 @@ public:
         return _repo;
     }
 };
-
-//class State {
-//private:
-//    using _Path = std::filesystem::path;
-//    static constexpr uint32_t _Version = 0;
-//    _Path _dir;
-//    
-////        static constexpr uint32_t _Version = 0;
-////        static uint32_t _StoredStateVersion() {
-////            try {
-////                _Path fpath = RepoStateDir(_repo) / "RefHistory";
-////                std::ifstream f(fpath);
-////                f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-////                nlohmann::json j;
-////                f >> j;
-////                
-////                ::from_json(j, _repo, refHistorys);
-////            
-////            // Ignore deserialization errors (eg file not existing)
-////            } catch (...) {}
-////        }
-//    
-//    static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
-//        std::string name = std::filesystem::canonical(repo.path());
-//        std::replace(name.begin(), name.end(), '/', '-'); // Replace / with ~
-//        return dir / "Repo" / name;
-//    }
-//    
-//    static _Path _VersionFilePath(_Path dir) {
-//        return dir / "Version";
-//    }
-//    
-//    static std::optional<uint32_t> _VersionRead(_Path dir) {
-//        _Path p = _VersionFilePath(dir);
-//        if (!std::filesystem::exists(p)) return std::nullopt;
-//        
-//        std::ifstream f(_VersionFilePath(dir));
-//        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-//        nlohmann::json j;
-//        f >> j;
-//        uint32_t version = 0;
-//        version = j;
-//        return version;
-//    }
-//    
-//    static void _VersionWrite(_Path dir, uint32_t version) {
-//        std::filesystem::create_directories(dir);
-//        std::ofstream f(_VersionFilePath(dir));
-//        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-//        nlohmann::json j = version;
-//        f << j;
-//    }
-//    
-//public:
-//    State(const _Path& dir) : _dir(dir) {
-//        std::optional<uint32_t> version = _VersionRead(_dir);
-//        if (version && *version!=_Version)
-//            throw Toastbox::RuntimeError(
-//            "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
-//            "please use a newer version of debase, or remove:\n"
-//            "  %s", (uintmax_t)*version, (uintmax_t)_Version, _dir.c_str());
-//        
-//        // Delete the state directory to ensure we start with a clean slate
-//        if (!version) {
-//            // Sanity check to ensure we never delete anything that doesn't contain the string 'debase'.
-//            // This is mainly a safeguard against situations where we might accidentally pass a truncated
-//            // path to this function, like "/" or /Users/dave/Library.
-//            assert(_dir.filename().string().find("debase") != std::string::npos);
-//            std::filesystem::remove_all(_dir);
-//        }
-//        
-//        _VersionWrite(_dir, _Version);
-//    }
-//    
-//    RepoState repoStateCreate(Git::Repo repo, const std::set<Git::Ref>& refs) {
-//        return RepoState(_RepoStateDirPath(_dir, repo), repo, refs);
-//    }
-//};

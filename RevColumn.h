@@ -70,7 +70,6 @@ public:
             UI::ButtonOptions undoOpts = {
                 .colors = _opts.colors,
                 .label = "Undo",
-//                .key = "z",
                 .enabled = _opts.undoEnabled,
                 .center = true,
                 .drawBorder = true,
@@ -82,7 +81,6 @@ public:
             UI::ButtonOptions redoOpts = {
                 .colors = _opts.colors,
                 .label = "Redo",
-//                .key = "Z",
                 .enabled = _opts.redoEnabled,
                 .center = true,
                 .drawBorder = true,
@@ -96,8 +94,6 @@ public:
     void draw() {
         // Don't draw anything if our column is truncated
         if (_truncated) return;
-        
-//        _opts.win->drawLineVert({_opts.offsetX+_opts.width/2, 0}, _opts.win->bounds().size.y);
         
         // Draw branch name
         {

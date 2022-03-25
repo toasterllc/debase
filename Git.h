@@ -439,50 +439,7 @@ public:
     Commit commit;      // Mandatory
     Ref ref;            // Optional
     size_t skip = 0;
-//    size_t refSkip = 0; // Optional (number of `ref` commits to skip)
 };
-
-//class RevSkip : public Rev {
-//public:
-//    RevSkip() {}
-//    RevSkip(Commit commit) : Rev(commit) {}
-//    RevSkip(Ref ref, size_t skip) : Rev(ref), skip(skip) {}
-////    RevSkip(Rev r) : Rev(r) {}
-//    
-//    std::string displayName() const {
-//        if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
-//        return DisplayStringForId(commit.id());
-//    }
-//    
-//    bool operator==(const RevSkip& x) const {
-//        if (((Rev&)*this) != ((Rev&)x)) return false;
-//        if (skip != x.skip) return false;
-//        return true;
-//    }
-//    
-//    bool operator!=(const RevSkip& x) const { return !(*this==x); }
-//    
-//    bool operator<(const RevSkip& x) const {
-//        if (((Rev&)*this) != ((Rev&)x)) return ((Rev&)*this)<((Rev&)x);
-//        if (skip != x.skip) return skip<x.skip;
-//        return false;
-//    }
-//    
-//    // head(): returns the head commit considering `skip`
-//    // skip==0 -> return `commit`
-//    // skip>0  -> returns the `skip` parent of `commit`
-//    Commit head() const {
-//        Commit c = commit;
-//        size_t s = skip;
-//        while (c && s) {
-//            c = c.parent();
-//            s--;
-//        }
-//        return c;
-//    }
-//    
-//    size_t skip = 0;
-//};
 
 inline void _RepoFree(git_repository* repo) {
     git_repository_free(repo);
@@ -508,25 +465,7 @@ public:
     
     std::filesystem::path path() const {
         return git_repository_workdir(*get());
-//        return std::filesystem::canonical(git_repository_workdir(*get()));
     }
-    
-//    Repo(git_repository* x) : RefCounted(x) {
-//        printf("Repo(%p)\n", *get());
-//        git_libgit2_init();
-//    }
-//    
-//    ~Repo() {
-//        printf("~Repo(%p)\n", *get());
-//        git_libgit2_shutdown();
-//    }
-    
-//    Ref head() const {
-//        git_reference* x = nullptr;
-//        int ir = git_repository_head(&x, *get());
-//        if (ir) throw Error(ir, "git_repository_head failed");
-//        return x;
-//    }
     
     Rev head() const {
         Ref ref;
@@ -568,9 +507,6 @@ public:
             if (why == GIT_CHECKOUT_NOTIFY_CONFLICT) {
                 ctx.conflicts.push_back(workdir->path);
             }
-//            conflicts.push_back("hello");
-//            std::vector<std::string> conflicts = 
-//            printf("hello\n");
             return 0;
         };
         
@@ -581,20 +517,6 @@ public:
         ir = git_repository_set_head(*get(), fullName.c_str());
         if (ir) throw Error(ir, "git_repository_set_head failed");
     }
-    
-    
-//    void checkout(Ref ref) const {
-//        std::string fullName = ref.fullName();
-//        const git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-//        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
-//        if (ir) throw Error(ir, "git_checkout_tree failed");
-//        ir = git_repository_set_head(*get(), fullName.c_str());
-//        if (ir) throw Error(ir, "git_repository_set_head failed");
-//    }
-    
-//    void checkout(std::string_view name) const {
-//        checkout(refFullNameLookup(name));
-//    }
     
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;

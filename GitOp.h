@@ -33,7 +33,6 @@ struct Op {
 struct OpResult {
     struct Res {
         Rev rev;
-//        std::set<Commit> commits;
         std::set<Commit> selection;
         std::set<Commit> selectionPrev;
     };
@@ -133,13 +132,6 @@ inline _AddRemoveResult _AddRemoveCommits(
         // TODO:MERGE
         head = repo.commitParentSet(commit.commit, head);
         
-//        std::vector<Commit> parents = commit.parents();
-//        // Remove the commit's original parent[0]
-//        if (!parents.empty()) parents.erase(parents.begin());
-//        // Set the commit's parent[0] to head, if head!=nullptr
-//        if (head) parents.insert(parents.begin(), head);
-//        head = repo.commitParentsSet(commit, parents);
-        
         if (commit.added) {
             added.insert(head);
         }
@@ -221,7 +213,6 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
                 .rev = srcDstRev,
                 .selection = srcDstResult.added,
                 .selectionPrev = op.src.commits,
-//                .commits = srcDstResult.added,
             },
         };
     
@@ -258,7 +249,6 @@ inline std::optional<OpResult> _Exec_MoveCommits(const Op& op) {
             },
             .dst = {
                 .rev = dstRev,
-//                .commits = dstResult.added,
                 .selection = dstResult.added,
                 .selectionPrev = {},
             },
@@ -289,8 +279,6 @@ inline std::optional<OpResult> _Exec_CopyCommits(const Op& op) {
             .rev = dstRev,
             .selection = dstResult.added,
             .selectionPrev = {},
-            
-//            .commits = dstResult.added,
         },
     };
 }
@@ -434,56 +422,8 @@ inline std::optional<Time> _CommitTimeParse(std::string_view str) {
     }
 }
 
-
-
-
-//inline Signature _SignatureParse(std::string_view authorEmailStr, std::string_view timeStr) {
-//    size_t emailStart = authorEmailStr.find_first_of('<');
-//    if (emailStart == std::string::npos) throw RuntimeError("invalid name/email");
-//    size_t emailEnd = authorEmailStr.find_last_of('>');
-//    if (emailEnd == std::string::npos) throw RuntimeError("invalid name/email");
-//    if (emailStart >= emailEnd) throw RuntimeError("invalid name/email");
-//    
-//    std::string name = _Trim(authorEmailStr.substr(0, emailStart));
-//    std::string email = _Trim(authorEmailStr.substr(emailStart+1, emailEnd-emailStart-1));
-//    
-//    int offset = 0;
-//    git_time_t time = TimeFromString(timeStr, &offset);
-//    
-//    git_signature* sig = nullptr;
-//    int ir = git_signature_new(&sig, name.c_str(), email.c_str(), time, offset);
-//    if (ir) throw RuntimeError("git_signature_new failed: %s", git_error_last()->message);
-//    return sig;
-//}
-
-//inline std::optional<git_time> _TimeParse(std::string_view str) {
-//    return {};
-//}
-
 constexpr const char _AuthorPrefix[] = "Author:";
 constexpr const char _TimePrefix[]   = "Date:";
-
-
-
-//inline void _CommitMessageWrite(_CommitMessage commitMessage, const std::filesystem::path& path) {
-//    assert(commitMessage.author);
-//    assert(commitMessage.time);
-//    
-//    const git_signature* sig = git_commit_author(*commit);
-//    std::string timeStr = StringFromTime(sig->when.time);
-//    const char* msg = git_commit_message(*commit);
-//    
-//    commitMessage.time
-//    
-//    std::ofstream f;
-//    f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-//    f.open(path);
-//    
-//    f << _AuthorPrefix << " " << commitMessage.author->name << " <" << commitMessage.author->email << ">" << '\n';
-//    f << _TimePrefix << "   " << timeStr << '\n';
-//    f << '\n';
-//    f << msg;
-//}
 
 inline _CommitMessage _CommitMessageForCommit(Commit commit) {
     const git_signature* sig = git_commit_author(*commit);
