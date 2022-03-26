@@ -111,7 +111,7 @@ public:
                     .insetX = 1,
                     .frame = leftFrame,
                 };
-                _buttons.emplace_back(opts);
+                _buttons.push_back(MakeShared<UI::Button>(opts));
             }
             
             {
@@ -124,7 +124,7 @@ public:
                     .insetX = 1,
                     .frame = rightFrame,
                 };
-                _buttons.emplace_back(opts);
+                _buttons.push_back(MakeShared<UI::Button>(opts));
             }
             
             {
@@ -137,7 +137,7 @@ public:
                     .insetX = 1,
                     .frame = midFrame,
                 };
-                _buttons.emplace_back(opts);
+                _buttons.push_back(MakeShared<UI::Button>(opts));
             }
         }
     }
@@ -164,8 +164,8 @@ public:
             p->drawIfNeeded();
         }
         
-        for (const UI::Button& button : _buttons) {
-            button.draw(_opts.win);
+        for (UI::Button button : _buttons) {
+            button->draw(_opts.win);
         }
     }
     
@@ -176,8 +176,8 @@ public:
 //    }
     
     RevColumnHitTestResult hitTest(const UI::Point& p) {
-        for (UI::Button& button : _buttons) {
-            button.highlight(false);
+        for (UI::Button button : _buttons) {
+            button->options().highlight = false;
         }
         
 //        UI::Button* hitButton = nullptr;
@@ -200,11 +200,11 @@ public:
         
         int bnum = (int)RevColumnButton::None+1;
         for (UI::Button& button : _buttons) {
-            if (button.hitTest(p)) {
-                button.highlight(true);
+            if (button->hitTest(p)) {
+                button->options().highlight = true;
                 return RevColumnHitTestResult{
                     .button = (RevColumnButton)bnum,
-                    .buttonEnabled = button.opts().enabled,
+                    .buttonEnabled = button->options().enabled,
                 };
             }
             bnum++;

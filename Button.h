@@ -14,12 +14,13 @@ struct ButtonOptions {
     bool drawBorder = false;
     int insetX = 0;
     int hitTestExpand = 0;
+    bool highlight = false;
     Rect frame;
 };
 
-class Button {
+class _Button : public std::enable_shared_from_this<_Button> {
 public:
-    Button(const ButtonOptions& opts) : _opts(opts) {}
+    _Button(const ButtonOptions& opts) : _opts(opts) {}
     
 //    void setHighlight(bool highlight) {
 //        if (highlight == _highlight) return;
@@ -66,9 +67,9 @@ public:
         
         {
             UI::Attr attr;
-            if (_highlight && _opts.enabled) attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
-            else if (!_opts.enabled)         attr = UI::Attr(win, _opts.colors.subtitleText);
-            else                             attr = UI::Attr(win, A_NORMAL);
+            if (_opts.highlight && _opts.enabled) attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
+            else if (!_opts.enabled)              attr = UI::Attr(win, _opts.colors.subtitleText);
+            else                                  attr = UI::Attr(win, A_NORMAL);
             win->drawText(plabel, "%s", _opts.label.c_str());
         }
         
@@ -79,21 +80,15 @@ public:
         }
     }
     
-    bool highlight() const { return _highlight; }
-    void highlight(bool x) { _highlight = x; }
-    
-    const ButtonOptions& opts() const {
+    ButtonOptions& options() {
         return _opts;
-    }
-    
-    Rect frame() const {
-        return _opts.frame;
     }
     
 private:
     static constexpr int KeySpacing = 2;
     ButtonOptions _opts;
-    bool _highlight = false;
 };
+
+using Button = std::shared_ptr<_Button>;
 
 } // namespace UI

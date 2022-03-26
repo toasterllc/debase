@@ -677,16 +677,17 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
     bool editEnabled = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
     bool deleteEnabled = _Selection.rev.isMutable();
-    UI::ButtonOptions combineButton = { .label="Combine", .key="c",   .enabled=combineEnabled };
-    UI::ButtonOptions editButton    = { .label="Edit",    .key="ret", .enabled=editEnabled    };
-    UI::ButtonOptions deleteButton  = { .label="Delete",  .key="del", .enabled=deleteEnabled  };
-    std::vector<UI::ButtonOptions> buttons = { combineButton, editButton, deleteButton };
+    UI::Button combineButton = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Combine", .key="c",   .enabled=combineEnabled });
+    UI::Button editButton    = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Edit",    .key="ret", .enabled=editEnabled    });
+    UI::Button deleteButton  = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Delete",  .key="del", .enabled=deleteEnabled  });
+    std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
     
     _ContextMenu = MakeShared<UI::Menu>(_Colors, buttons);
     _ContextMenu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
-    const UI::Button* menuButton = nullptr;
+    UI::Button menuButton = nullptr;
     MouseButtons mouseUpButtons = MouseButtons::Right;
+    bool abort = false;
     for (;;) {
         if (ev.type == UI::Event::Mouse) {
             menuButton = _ContextMenu->hitTest({ev.mouse.x, ev.mouse.y});
@@ -696,9 +697,10 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         
         _Draw();
         ev = _WaitForEvent(mouseUpButtons);
+        abort = (ev.type != UI::Event::Mouse);
         
         // Check if we should abort
-        if (ev.type == UI::Event::KeyEscape) {
+        if (abort) {
             break;
         
         // Handle mouse up
@@ -720,7 +722,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 // enabled menu button.
                 // In other words, don't close the menu when clicking on a disabled menu
                 // button.
-                if (!menuButton || menuButton->opts().enabled) {
+                if (!menuButton || menuButton->options().enabled) {
                     break;
                 }
             }
@@ -728,34 +730,35 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     // Handle the clicked button
-    std::string menuButtonLabel = (menuButton && menuButton->opts().enabled ? menuButton->opts().label : "");
     std::optional<Git::Op> gitOp;
-    if (menuButtonLabel == combineButton.label) {
-        gitOp = Git::Op{
-            .type = Git::Op::Type::Combine,
-            .src = {
-                .rev = _Selection.rev,
-                .commits = _Selection.commits,
-            },
-        };
-    
-    } else if (menuButtonLabel == editButton.label) {
-        gitOp = Git::Op{
-            .type = Git::Op::Type::Edit,
-            .src = {
-                .rev = _Selection.rev,
-                .commits = _Selection.commits,
-            },
-        };
-    
-    } else if (menuButtonLabel == deleteButton.label) {
-        gitOp = Git::Op{
-            .type = Git::Op::Type::Delete,
-            .src = {
-                .rev = _Selection.rev,
-                .commits = _Selection.commits,
-            },
-        };
+    if (!abort) {
+        if (menuButton == combineButton) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Combine,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
+        
+        } else if (menuButton == editButton) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Edit,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
+        
+        } else if (menuButton == deleteButton) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Delete,
+                .src = {
+                    .rev = _Selection.rev,
+                    .commits = _Selection.commits,
+                },
+            };
+        }
     }
     
     // Reset state
@@ -767,18 +770,14 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
-    std::vector<UI::ButtonOptions> buttons;
-    buttons.push_back(UI::ButtonOptions{
-        .label="Start of Session", .enabled=true
-    });
+    std::vector<UI::Button> buttons;
+    buttons.push_back(MakeShared<UI::Button>(UI::ButtonOptions{ .label="Start of Session", .enabled=true }));
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
         Git::Commit commit = Convert(_Repo, it->history.get().head);
         std::string idStr = Git::DisplayStringForId(commit.id());
-        buttons.push_back(UI::ButtonOptions{
-            .label=idStr, .enabled=true
-        });
+        buttons.push_back(MakeShared<UI::Button>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
     _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);
@@ -786,11 +785,14 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
     _SnapshotsMenu->setPosition({px, 1});
     
-    const UI::Button* menuButton = nullptr;
+    UI::Button menuButton = nullptr;
+    bool abort = false;
     for (;;) {
         _Draw();
         
         _Event ev = _WaitForEvent();
+        abort = (ev.type != UI::Event::Mouse);
+        
         if (ev.type == UI::Event::Mouse) {
             menuButton = _SnapshotsMenu->hitTest({ev.mouse.x, ev.mouse.y});
         } else {
@@ -798,7 +800,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         }
         
         // Check if we should abort
-        if (ev.type == UI::Event::KeyEscape) {
+        if (abort) {
             break;
         
         // Handle mouse up
@@ -807,13 +809,15 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
             // enabled menu button.
             // In other words, don't close the menu when clicking on a disabled menu
             // button.
-            if (!menuButton || menuButton->opts().enabled) {
+            if (!menuButton || menuButton->options().enabled) {
                 break;
             }
         }
     }
     
-    
+    if (!abort) {
+        
+    }
     
     // Reset state
     {
