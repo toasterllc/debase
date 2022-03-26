@@ -26,14 +26,15 @@ public:
 //        _drawNeeded = true;
 //    }
     
-    bool hitTest(const UI::Point& p) const {
-        return !Empty(Intersection(_opts.frame, {p, {1,1}}));
-    }
-    
-    bool updateMouse(const Point& p) {
-        _highlight = hitTest(p);
+    bool hitTest(const UI::Point& p) {
+        _highlight = !Empty(Intersection(_opts.frame, {p, {1,1}}));
         return _highlight;
     }
+    
+//    bool updateMouse(const Point& p) {
+//        _highlight = hitTest(p);
+//        return _highlight;
+//    }
     
     void draw(Window win) const {
         size_t labelLen = UTF8::Strlen(_opts.label);

@@ -165,7 +165,7 @@ public:
     
     RevColumnHitTestResult hitTest(const UI::Point& p) {
         for (UI::Button& button : _buttons) {
-            button.updateMouse(p);
+            button.hitTest(p);
         }
         
         for (UI::CommitPanel panel : _panels) {
@@ -174,7 +174,7 @@ public:
         
         int bnum = (int)RevColumnButton::None+1;
         for (UI::Button& button : _buttons) {
-            if (button.updateMouse(p)) {
+            if (button.hitTest(p)) {
                 return RevColumnHitTestResult{
                     .button = (RevColumnButton)bnum,
                     .buttonEnabled = button.opts().enabled,
@@ -187,6 +187,7 @@ public:
     
     Git::Rev rev() { return _opts.rev; }
     UI::CommitPanelVec& panels() { return _panels; }
+    const RevColumnOptions& opts() { return _opts; }
     
 private:
     static constexpr int _ButtonsInsetY  = 0;

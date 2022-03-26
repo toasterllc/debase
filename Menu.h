@@ -83,13 +83,13 @@ public:
 //        return _mouseOverButton;
 //    }
     
-    const Button* updateMouse(const Point& p) {
+    const Button* hitTest(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
         
         Button* mouseOverButton = nullptr;
         for (Button& button : _buttons) {
-            bool hit = button.updateMouse(off);
+            bool hit = button.hitTest(off);
             if (hit) mouseOverButton = &button;
         }
         

@@ -60,12 +60,13 @@ static struct {
 } _DoubleClickState;
 
 static constexpr std::chrono::milliseconds _DoubleClickThresh(300);
-static constexpr std::chrono::milliseconds _MenuStayOpenThresh(300);
+static constexpr std::chrono::milliseconds _ContextMenuStayOpenThresh(300);
 
 static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
-static UI::Menu _Menu;
+static UI::Menu _ContextMenu;
+static UI::Menu _SnapshotsMenu;
 
 static UI::ErrorPanel _ErrorPanel;
 
@@ -138,8 +139,8 @@ static void _Draw() {
             _Drag.titlePanel->orderFront();
         }
         
-        if (_Menu) {
-            _Menu->orderFront();
+        if (_ContextMenu) {
+            _ContextMenu->orderFront();
         }
         
         if (_ErrorPanel) {
@@ -181,8 +182,8 @@ static void _Draw() {
             col->draw();
         }
         
-        if (_Menu) {
-            _Menu->drawIfNeeded();
+        if (_ContextMenu) {
+            _ContextMenu->drawIfNeeded();
         }
         
         if (_ErrorPanel) {
@@ -586,27 +587,31 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     UI::ButtonOptions deleteButton  = { .label="Delete",  .key="del", .enabled=deleteEnabled  };
     std::vector<UI::ButtonOptions> buttons = { combineButton, editButton, deleteButton };
     
-    _Menu = MakeShared<UI::Menu>(_Colors, buttons);
-    _Menu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
+    _ContextMenu = MakeShared<UI::Menu>(_Colors, buttons);
+    _ContextMenu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
     const UI::Button* menuButton = nullptr;
     MouseButtons mouseUpButtons = MouseButtons::Right;
     for (;;) {
         _Draw();
         std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, mouseUpButtons);
+        if (!ev || *ev == UI::Event::Mouse) {
+            menuButton = _SnapshotsMenu->hitTest({mouse.x, mouse.y});
+        }
+        
         // Check if we should abort
         if (ev && *ev==UI::Event::KeyEscape) {
             menuButton = nullptr;
             break;
-        }
+        
         // Handle mouse up
-        if (!ev) {
+        } else if (!ev) {
             if (!(mouseUpButtons & MouseButtons::Left)) {
                 // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
                 // stay open and we should start listening for left-mouse-down events.
                 // If the right-mouse-up occurs af
                 auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-                if (duration >= _MenuStayOpenThresh) break;
+                if (duration >= _ContextMenuStayOpenThresh) break;
                 
                 // Start listening for left mouse up
                 mouseUpButtons |= MouseButtons::Left;
@@ -623,8 +628,6 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 }
             }
         }
-        
-        menuButton = _Menu->updateMouse({mouse.x, mouse.y});
     }
     
     // Handle the clicked button
@@ -660,10 +663,50 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     
     // Reset state
     {
-        _Menu = nullptr;
+        _ContextMenu = nullptr;
     }
     
     return gitOp;
+}
+
+static void _TrackSnapshotsMenu(UI::RevColumn column) {
+    UI::ButtonOptions button = { .label="Hello", .key="A", .enabled=true };
+    std::vector<UI::ButtonOptions> buttons = { button };
+    
+    _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);
+    _SnapshotsMenu->setPosition({column->opts().offset.x, 1});
+    
+    const UI::Button* menuButton = nullptr;
+    for (;;) {
+        _Draw();
+        
+        MEVENT mouse = {};
+        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse);
+        if (!ev || *ev == UI::Event::Mouse) {
+            menuButton = _SnapshotsMenu->hitTest({mouse.x, mouse.y});
+        }
+        
+        // Check if we should abort
+        if (ev && *ev==UI::Event::KeyEscape) {
+            menuButton = nullptr;
+            break;
+        
+        // Handle mouse up
+        } else if (!ev) {
+            // Close the menu only if clicking outside of the menu, or clicking on an
+            // enabled menu button.
+            // In other words, don't close the menu when clicking on a disabled menu
+            // button.
+            if (!menuButton || menuButton->opts().enabled) {
+                break;
+            }
+        }
+    }
+    
+    // Reset state
+    {
+        _SnapshotsMenu = nullptr;
+    }
 }
 
 static void _Reload() {
@@ -992,7 +1035,7 @@ static void _EventLoop() {
                                 reload = true;
                                 break;
                             case UI::RevColumnButton::Snapshots:
-                                
+                                _TrackSnapshotsMenu(hitTest->column);
                                 break;
                             default:
                                 break;
