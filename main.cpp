@@ -197,9 +197,12 @@ static void _Draw() {
 struct _HitTestResult {
     UI::RevColumn column;
     UI::RevColumnHitTestResult hitTest;
+    operator bool() const {
+        return (bool)column;
+    }
 };
 
-static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
+static _HitTestResult _HitTest(const UI::Point& p) {
     for (UI::RevColumn col : _Columns) {
         if (auto hitTest = col->hitTest(p)) {
             return _HitTestResult{
@@ -208,7 +211,7 @@ static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
             };
         }
     }
-    return std::nullopt;
+    return {};
 }
 
 struct _InsertionPosition {
@@ -309,6 +312,62 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
     }
     // Programmer error if it doesn't exist
     abort();
+}
+
+static void _UndoRedo(UI::RevColumn col, bool undo) {
+    Git::Rev rev = col->rev();
+    State::Snapshot& h = _RepoState.activeSnapshot(col->rev().ref);
+    
+    State::RefState refStatePrev = h.history.get();
+    if (undo) h.history.prev();
+    else      h.history.next();
+    State::RefState refState = h.history.get();
+    
+    Git::Commit commit = State::Convert(_Repo, h.history.get().head);
+    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
+    
+    rev = _Repo.revReplace(rev, commit);
+    _Selection = {
+        .rev = rev,
+        .commits = selection,
+    };
+}
+
+static void _Reload() {
+    // Create a RevColumn for each specified branch
+    constexpr int InsetX = 3;
+    constexpr int ColumnWidth = 32;
+    constexpr int ColumnSpacing = 6;
+    
+    if (_Head.ref) {
+        _Head = _Repo.revReload(_Head);
+    }
+    
+    for (Git::Rev& rev : _Revs) {
+        if (rev.ref) {
+            rev = _Repo.revReload(rev);
+        }
+    }
+    
+    _Columns.clear();
+    int OffsetX = InsetX;
+    for (const Git::Rev& rev : _Revs) {
+        State::Snapshot* h = (rev.ref ? &_RepoState.activeSnapshot(rev.ref) : nullptr);
+        UI::RevColumnOptions opts = {
+            .win                = _RootWindow,
+            .colors             = _Colors,
+            .repo               = _Repo,
+            .rev                = rev,
+            .head               = (rev.displayHead() == _Head.commit),
+            .offset             = UI::Size{OffsetX, 0},
+            .width              = ColumnWidth,
+            .undoEnabled        = (h ? !h->history.begin() : false),
+            .redoEnabled        = (h ? !h->history.end() : false),
+            .snapshotsEnabled   = true,
+        };
+        _Columns.push_back(MakeShared<UI::RevColumn>(opts));
+        OffsetX += ColumnWidth+ColumnSpacing;
+    }
 }
 
 // _TrackMouseInsideCommitPanel
@@ -595,7 +654,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     for (;;) {
         _Draw();
         std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, mouseUpButtons);
-        if (!ev || *ev == UI::Event::Mouse) {
+        if (!ev || *ev==UI::Event::Mouse) {
             menuButton = _SnapshotsMenu->hitTest({mouse.x, mouse.y});
         }
         
@@ -682,7 +741,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         
         MEVENT mouse = {};
         std::optional<UI::Event> ev = _WaitForMouseEvent(mouse);
-        if (!ev || *ev == UI::Event::Mouse) {
+        if (!ev || *ev==UI::Event::Mouse) {
             menuButton = _SnapshotsMenu->hitTest({mouse.x, mouse.y});
         }
         
@@ -709,40 +768,34 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     }
 }
 
-static void _Reload() {
-    // Create a RevColumn for each specified branch
-    constexpr int InsetX = 3;
-    constexpr int ColumnWidth = 32;
-    constexpr int ColumnSpacing = 6;
-    
-    if (_Head.ref) {
-        _Head = _Repo.revReload(_Head);
-    }
-    
-    for (Git::Rev& rev : _Revs) {
-        if (rev.ref) {
-            rev = _Repo.revReload(rev);
+static void _TrackMouseInsideButton(MEVENT mouseDownEvent, UI::RevColumn column, const UI::RevColumnHitTestResult& mouseDownHitTest) {
+    UI::RevColumnHitTestResult hit;
+    for (;;) {
+        _Draw();
+        MEVENT mouse;
+        std::optional<UI::Event> ev = _WaitForMouseEvent(mouse);
+        if (!ev || *ev==UI::Event::Mouse) {
+            hit = column->hitTest({mouse.x, mouse.y});
         }
+        if (!ev) break;
     }
     
-    _Columns.clear();
-    int OffsetX = InsetX;
-    for (const Git::Rev& rev : _Revs) {
-        State::Snapshot* h = (rev.ref ? &_RepoState.activeSnapshot(rev.ref) : nullptr);
-        UI::RevColumnOptions opts = {
-            .win                = _RootWindow,
-            .colors             = _Colors,
-            .repo               = _Repo,
-            .rev                = rev,
-            .head               = (rev.displayHead() == _Head.commit),
-            .offset             = UI::Size{OffsetX, 0},
-            .width              = ColumnWidth,
-            .undoEnabled        = (h ? !h->history.begin() : false),
-            .redoEnabled        = (h ? !h->history.end() : false),
-            .snapshotsEnabled   = true,
-        };
-        _Columns.push_back(MakeShared<UI::RevColumn>(opts));
-        OffsetX += ColumnWidth+ColumnSpacing;
+    if (hit.buttonEnabled && hit==mouseDownHitTest) {
+        switch (hit.button) {
+        case UI::RevColumnButton::Undo:
+            _UndoRedo(column, true);
+            _Reload();
+            break;
+        case UI::RevColumnButton::Redo:
+            _UndoRedo(column, false);
+            _Reload();
+            break;
+        case UI::RevColumnButton::Snapshots:
+            _TrackSnapshotsMenu(column);
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -891,30 +944,11 @@ static void _Spawn(const char*const* argv) {
     if (!preserveTerminal) _CursesInit();
 }
 
-static void _UndoRedo(UI::RevColumn col, bool undo) {
-    Git::Rev rev = col->rev();
-    State::Snapshot& h = _RepoState.activeSnapshot(col->rev().ref);
-    
-    State::RefState refStatePrev = h.history.get();
-    if (undo) h.history.prev();
-    else      h.history.next();
-    State::RefState refState = h.history.get();
-    
-    Git::Commit commit = State::Convert(_Repo, h.history.get().head);
-    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-    
-    rev = _Repo.revReplace(rev, commit);
-    _Selection = {
-        .rev = rev,
-        .commits = selection,
-    };
-}
-
-static bool _ExecGitOp(const Git::Op& gitOp) {
+static void _ExecGitOp(const Git::Op& gitOp) {
     std::string errorMsg;
     try {
         std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(_Repo, gitOp);
-        if (!opResult) return false;
+        if (!opResult) return;
         
         Git::Rev srcRevPrev = gitOp.src.rev;
         Git::Rev dstRevPrev = gitOp.dst.rev;
@@ -955,7 +989,7 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
             };
         }
         
-        return true;
+        _Reload();
     
     } catch (const Git::Error& e) {
         switch (e.error) {
@@ -980,8 +1014,6 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         errorMsg[0] = toupper(errorMsg[0]);
         _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
     }
-    
-    return false;
 }
 
 static void _EventLoop() {
@@ -1014,33 +1046,16 @@ static void _EventLoop() {
                 continue;
             }
             
-            const auto hitTest = _HitTest({mouse.x, mouse.y});
+            const _HitTestResult hitTest = _HitTest({mouse.x, mouse.y});
             if (mouse.bstate & BUTTON1_PRESSED) {
                 const bool shift = (mouse.bstate & _SelectionShiftKeys);
                 if (hitTest && !shift) {
-                    auto& hit = hitTest->hitTest;
-                    if (hit.panel) {
+                    if (hitTest.hitTest.panel) {
                         // Mouse down inside of a CommitPanel, without shift key
-                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hit.panel);
+                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest.column, hitTest.hitTest.panel);
                     
                     } else {
-                        if (hit.buttonEnabled) {
-                            switch (hit.button) {
-                            case UI::RevColumnButton::Undo:
-                                _UndoRedo(hitTest->column, true);
-                                reload = true;
-                                break;
-                            case UI::RevColumnButton::Redo:
-                                _UndoRedo(hitTest->column, false);
-                                reload = true;
-                                break;
-                            case UI::RevColumnButton::Snapshots:
-                                _TrackSnapshotsMenu(hitTest->column);
-                                break;
-                            default:
-                                break;
-                            }
-                        }
+                        _TrackMouseInsideButton(mouse, hitTest.column, hitTest.hitTest);
                     }
                 
                 } else {
@@ -1050,9 +1065,8 @@ static void _EventLoop() {
             
             } else if (mouse.bstate & BUTTON3_PRESSED) {
                 if (hitTest) {
-                    auto& hit = hitTest->hitTest;
-                    if (hit.panel) {
-                        gitOp = _TrackRightMouse(mouse, hitTest->column, hit.panel);
+                    if (hitTest.hitTest.panel) {
+                        gitOp = _TrackRightMouse(mouse, hitTest.column, hitTest.hitTest.panel);
                     }
                 }
             }
@@ -1115,7 +1129,7 @@ static void _EventLoop() {
         }
         
         case UI::Event::WindowResize: {
-            reload = true;
+            _Reload();
             break;
         }
         
@@ -1128,9 +1142,7 @@ static void _EventLoop() {
             break;
         }}
         
-        if (gitOp) {
-            reload = _ExecGitOp(*gitOp);
-        }
+        if (gitOp) _ExecGitOp(*gitOp);
     }
 }
 

@@ -32,8 +32,20 @@ struct RevColumnHitTestResult {
     CommitPanel panel;
     RevColumnButton button = RevColumnButton::None;
     bool buttonEnabled = false;
+    
     operator bool() const {
         return panel || button!=RevColumnButton::None;
+    }
+    
+    bool operator==(const RevColumnHitTestResult& x) const {
+        if (panel != x.panel) return false;
+        if (button != x.button) return false;
+        if (buttonEnabled != x.buttonEnabled) return false;
+        return true;
+    }
+    
+    bool operator!=(const RevColumnHitTestResult& x) const {
+        return !(*this==x);
     }
 };
 
