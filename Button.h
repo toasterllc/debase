@@ -38,7 +38,7 @@ public:
 //        return _highlight;
 //    }
     
-    void draw(Window win) const {
+    virtual void draw(Window win) const {
         size_t labelLen = UTF8::Strlen(_opts.label);
         size_t keyLen = UTF8::Strlen(_opts.key);
         

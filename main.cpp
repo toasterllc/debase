@@ -27,6 +27,7 @@
 #include "ErrorPanel.h"
 #include "State.h"
 #include "StateDir.h"
+#include "SnapshotButton.h"
 
 namespace fs = std::filesystem;
 
@@ -771,13 +772,13 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     std::vector<UI::Button> buttons;
-    buttons.push_back(MakeShared<UI::Button>(UI::ButtonOptions{ .label="Start of Session", .enabled=true }));
+    buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label="Start of Session", .enabled=true }));
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
         Git::Commit commit = Convert(_Repo, it->history.get().head);
         std::string idStr = Git::DisplayStringForId(commit.id());
-        buttons.push_back(MakeShared<UI::Button>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
+        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
     _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);
