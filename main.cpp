@@ -143,6 +143,10 @@ static void _Draw() {
             _ContextMenu->orderFront();
         }
         
+        if (_SnapshotsMenu) {
+            _SnapshotsMenu->orderFront();
+        }
+        
         if (_ErrorPanel) {
             UI::Size ps = _ErrorPanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
@@ -184,6 +188,10 @@ static void _Draw() {
         
         if (_ContextMenu) {
             _ContextMenu->drawIfNeeded();
+        }
+        
+        if (_SnapshotsMenu) {
+            _SnapshotsMenu->drawIfNeeded();
         }
         
         if (_ErrorPanel) {
@@ -655,7 +663,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
         _Draw();
         std::optional<UI::Event> ev = _WaitForMouseEvent(mouse, mouseUpButtons);
         if (!ev || *ev==UI::Event::Mouse) {
-            menuButton = _SnapshotsMenu->hitTest({mouse.x, mouse.y});
+            menuButton = _ContextMenu->hitTest({mouse.x, mouse.y});
         }
         
         // Check if we should abort
@@ -729,11 +737,18 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
-    UI::ButtonOptions button = { .label="Hello", .key="A", .enabled=true };
-    std::vector<UI::ButtonOptions> buttons = { button };
+    
+    
+    
+    
+    
+    UI::ButtonOptions button = { .label="Start of Session", .enabled=true };
+    std::vector<UI::ButtonOptions> buttons = { button, button, button };
     
     _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);
-    _SnapshotsMenu->setPosition({column->opts().offset.x, 1});
+    
+    int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
+    _SnapshotsMenu->setPosition({px, 1});
     
     const UI::Button* menuButton = nullptr;
     for (;;) {

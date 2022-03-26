@@ -98,7 +98,7 @@ public:
             Rect leftFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {_ButtonWidth,3}};
             Rect rightFrame = {_opts.offset+Size{_opts.width-_ButtonWidth, _ButtonsInsetY}, {_ButtonWidth,3}};
             
-            constexpr int MidWidth = 14;
+            constexpr int MidWidth = 12;
             Rect midFrame = {_opts.offset+Size{(_opts.width-MidWidth)/2, _ButtonsInsetY}, {MidWidth,3}};
             
             {
@@ -130,7 +130,7 @@ public:
             {
                 UI::ButtonOptions opts = {
                     .colors = _opts.colors,
-                    .label = "Snapshots…",
+                    .label = "History…",
                     .enabled = _opts.snapshotsEnabled,
                     .center = true,
                     .drawBorder = true,
