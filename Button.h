@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include "Window.h"
+#include "UTF8.h"
 
 namespace UI {
 
@@ -35,6 +36,9 @@ public:
     }
     
     void draw(Window win) {
+        size_t labelLen = UTF8::Strlen(_opts.label);
+        size_t keyLen = UTF8::Strlen(_opts.key);
+        
         if (_opts.drawBorder) {
             UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.subtitleText));
             win->drawRect(_opts.frame);
@@ -46,16 +50,16 @@ public:
         Point plabel;
         Point pkey;
         if (_opts.center) {
-            int textWidth = (int)_opts.label.size() + (int)_opts.key.size() + (!_opts.key.empty() ? KeySpacing : 0);
+            int textWidth = (int)labelLen + (int)keyLen + (!_opts.key.empty() ? KeySpacing : 0);
             int leftX = _opts.insetX + ((_opts.frame.size.x-2*_opts.insetX)-textWidth)/2;
             int rightX = _opts.frame.size.x-leftX;
             
             plabel = _opts.frame.point + Size{leftX, offY};
-            pkey = _opts.frame.point + Size{rightX-(int)_opts.key.size(), offY};
+            pkey = _opts.frame.point + Size{rightX-(int)keyLen, offY};
         
         } else {
             plabel = _opts.frame.point + Size{_opts.insetX, offY};
-            pkey = _opts.frame.point + Size{_opts.frame.size.x-(int)_opts.key.size()-_opts.insetX, offY};
+            pkey = _opts.frame.point + Size{_opts.frame.size.x-(int)keyLen-_opts.insetX, offY};
         }
         
         {

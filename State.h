@@ -535,6 +535,7 @@ public:
         // the currently-active snapshot, if it contains modifications
         // since it was made the active snapshot
         _saveActiveSnapshotIfNeeded(Convert(ref));
+        
 //        Snapshot& active = _activeSnapshot.at(Convert(ref));
 //        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
 //        if (active != activePrev) {

@@ -5,6 +5,7 @@
 #include "Color.h"
 #include "Attr.h"
 #include "LineWrap.h"
+#include "UTF8.h"
 
 namespace UI {
 
@@ -68,7 +69,7 @@ public:
         
         {
             constexpr int width = 16;
-            int off = width - (int)_time.size();
+            int off = width - (int)UTF8::Strlen(_time);
             drawText({12 + (_header ? 1 : 0) + off, offY+0}, " %s ", _time.c_str());
         }
         

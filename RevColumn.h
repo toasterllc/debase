@@ -4,6 +4,7 @@
 #include "CommitPanel.h"
 #include "MakeShared.h"
 #include "Color.h"
+#include "UTF8.h"
 
 namespace UI {
 
@@ -17,6 +18,7 @@ struct RevColumnOptions {
     int width = 0;
     bool undoEnabled = false;
     bool redoEnabled = false;
+    bool snapshotsEnabled = false;
 };
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
@@ -33,7 +35,7 @@ public:
             }
             
             // Truncate the name to our width
-            _name.erase(std::min(_name.size(), (size_t)_opts.width));
+            _name.erase(std::min(UTF8::Strlen(_name), (size_t)_opts.width));
         }
         
         // Create our CommitPanels
@@ -67,27 +69,48 @@ public:
         if (_opts.rev.isMutable()) {
             Rect leftFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {_ButtonWidth,3}};
             Rect rightFrame = {_opts.offset+Size{_opts.width-_ButtonWidth, _ButtonsInsetY}, {_ButtonWidth,3}};
-            UI::ButtonOptions undoOpts = {
-                .colors = _opts.colors,
-                .label = "Undo",
-                .enabled = _opts.undoEnabled,
-                .center = true,
-                .drawBorder = true,
-                .insetX = 1,
-                .frame = leftFrame,
-            };
-            _undoButton = UI::Button(undoOpts);
             
-            UI::ButtonOptions redoOpts = {
-                .colors = _opts.colors,
-                .label = "Redo",
-                .enabled = _opts.redoEnabled,
-                .center = true,
-                .drawBorder = true,
-                .insetX = 1,
-                .frame = rightFrame,
-            };
-            _redoButton = UI::Button(redoOpts);
+            constexpr int MidWidth = 12;
+            Rect midFrame = {_opts.offset+Size{(_opts.width-MidWidth)/2, _ButtonsInsetY}, {MidWidth,3}};
+            
+            {
+                UI::ButtonOptions opts = {
+                    .colors = _opts.colors,
+                    .label = "Undo",
+                    .enabled = _opts.undoEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = leftFrame,
+                };
+                _undoButton = UI::Button(opts);
+            }
+            
+            {
+                UI::ButtonOptions opts = {
+                    .colors = _opts.colors,
+                    .label = "Snapshots…",
+                    .enabled = _opts.snapshotsEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = midFrame,
+                };
+                _snapshotsButton = UI::Button(opts);
+            }
+            
+            {
+                UI::ButtonOptions opts = {
+                    .colors = _opts.colors,
+                    .label = "Redo",
+                    .enabled = _opts.redoEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = rightFrame,
+                };
+                _redoButton = UI::Button(opts);
+            }
         }
     }
     
@@ -98,7 +121,7 @@ public:
         // Draw branch name
         {
             UI::Attr attr(_opts.win, A_UNDERLINE);
-            const Point p = _opts.offset + Size{(_opts.width-(int)_name.size())/2, _TitleInsetY};
+            const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             _opts.win->drawText(p, "%s", _name.c_str());
         }
         
@@ -115,17 +138,20 @@ public:
         
         if (_undoButton) _undoButton->draw(_opts.win);
         if (_redoButton) _redoButton->draw(_opts.win);
+        if (_snapshotsButton) _snapshotsButton->draw(_opts.win);
     }
     
     void updateMouse(const Point& p) {
         if (_undoButton) _undoButton->updateMouse(p);
         if (_redoButton) _redoButton->updateMouse(p);
+        if (_snapshotsButton) _snapshotsButton->updateMouse(p);
     }
     
     struct HitTestResult {
         CommitPanel panel;
         Button* undoButton = nullptr;
         Button* redoButton = nullptr;
+        Button* snapshotsButton = nullptr;
     };
     
     std::optional<HitTestResult> hitTest(const UI::Point& p) {
@@ -135,6 +161,7 @@ public:
         
         if (_undoButton && _undoButton->updateMouse(p)) return HitTestResult{ .undoButton = &*_undoButton };
         if (_redoButton && _redoButton->updateMouse(p)) return HitTestResult{ .redoButton = &*_redoButton };
+        if (_snapshotsButton && _redoButton->updateMouse(p)) return HitTestResult{ .snapshotsButton = &*_snapshotsButton };
         return std::nullopt;
     }
     
@@ -153,6 +180,7 @@ private:
     UI::CommitPanelVec _panels;
     std::optional<UI::Button> _undoButton;
     std::optional<UI::Button> _redoButton;
+    std::optional<UI::Button> _snapshotsButton;
 };
 
 using RevColumn = std::shared_ptr<_RevColumn>;

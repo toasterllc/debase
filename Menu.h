@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "Panel.h"
 #include "Button.h"
+#include "UTF8.h"
 
 namespace UI {
 
@@ -11,7 +12,7 @@ public:
         // Find the longest button to set our width
         int buttonWidth = 0;
         for (const ButtonOptions& opts : bopts) {
-            int w = (int)opts.label.size() + (int)opts.key.size();
+            int w = (int)UTF8::Strlen(opts.label) + (int)UTF8::Strlen(opts.key);
             buttonWidth = std::max(buttonWidth, w);
         }
         

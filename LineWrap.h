@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Color.h"
 #include "Attr.h"
+#include "UTF8.h"
 
 namespace UI::LineWrap {
 
@@ -33,7 +34,7 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         while (!lineInput.empty()) {
             // Add the space between words
             if (!msgline.empty()) {
-                const size_t rem = lineLenMax-msgline.size();
+                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
                 // No more space -> next line
                 if (!rem) break;
                 // Add the space between words
@@ -43,16 +44,17 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
             // Add the current word
             {
                 const std::string& word = lineInput.front();
-                const size_t rem = lineLenMax-msgline.size();
+                const size_t wordLen = UTF8::Strlen(word);
+                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
                 // No more space -> next line
                 if (!rem) break;
                 // Check if the line would overflow with `word`
-                if (word.size() > rem) {
+                if (wordLen > rem) {
                     // The word would fit by itself on a line -> next line
-                    if (word.size() <= lineLenMax) break;
+                    if (wordLen <= lineLenMax) break;
                     // The word wouldn't fit by itself on a line -> split word
                     std::string head = word.substr(0, rem);
-                    std::string tail = word.substr(rem, word.size()-rem);
+                    std::string tail = word.substr(rem, wordLen-rem);
                     
                     msgline += head;
                     lineInput.pop_front();
@@ -64,10 +66,6 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
                 lineInput.pop_front();
             }
         }
-        
-//            if (words.empty()) break; // No more words -> done
-//            if (lines.size() >= lineCountMax) break; // Hit max number of lines -> done
-//            if (words.front().size() > lineLenMax) break; // Current word is too large for line -> done
         
         if (lineInput.empty()) {
             linesInput.pop_front();
@@ -85,7 +83,7 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         // Our logic guarantees that if the word would have fit, it would've been included in the last line.
         // So since the word isn't included, the length of the line (with the word included) must be larger
         // than `lineLenMax`. So verify that assumption.
-        assert(line.size() > lineLenMax);
+        assert(UTF8::Strlen(line) > lineLenMax);
         line.erase(lineLenMax);
         
 //            const char*const ellipses = "...";

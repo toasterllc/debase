@@ -38,7 +38,7 @@ public:
         for (const std::string& line : _message) {
             int offX = 0;
             if (_message.size() == 1) {
-                offX = (bounds().size.x-(int)line.size()-2*_MessageInsetX)/2;
+                offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
             }
             drawText({_MessageInsetX+offX, _MessageInsetY+i}, "%s", line.c_str());
             i++;
