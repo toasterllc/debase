@@ -195,7 +195,7 @@ static void _Draw() {
 
 struct _HitTestResult {
     UI::RevColumn column;
-    UI::_RevColumn::HitTestResult hitTest;
+    UI::RevColumnHitTestResult hitTest;
 };
 
 static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
@@ -203,7 +203,7 @@ static std::optional<_HitTestResult> _HitTest(const UI::Point& p) {
         if (auto hitTest = col->hitTest(p)) {
             return _HitTestResult{
                 .column = col,
-                .hitTest = *hitTest,
+                .hitTest = hitTest,
             };
         }
     }
@@ -687,15 +687,16 @@ static void _Reload() {
     for (const Git::Rev& rev : _Revs) {
         State::Snapshot* h = (rev.ref ? &_RepoState.activeSnapshot(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
-            .win            = _RootWindow,
-            .colors         = _Colors,
-            .repo           = _Repo,
-            .rev            = rev,
-            .head           = (rev.displayHead() == _Head.commit),
-            .offset         = UI::Size{OffsetX, 0},
-            .width          = ColumnWidth,
-            .undoEnabled    = (h ? !h->history.begin() : false),
-            .redoEnabled    = (h ? !h->history.end() : false),
+            .win                = _RootWindow,
+            .colors             = _Colors,
+            .repo               = _Repo,
+            .rev                = rev,
+            .head               = (rev.displayHead() == _Head.commit),
+            .offset             = UI::Size{OffsetX, 0},
+            .width              = ColumnWidth,
+            .undoEnabled        = (h ? !h->history.begin() : false),
+            .redoEnabled        = (h ? !h->history.end() : false),
+            .snapshotsEnabled   = true,
         };
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
@@ -966,8 +967,8 @@ static void _EventLoop() {
             if (_ErrorPanel) {
                 if (mouse.bstate & BUTTON1_PRESSED) {
                     _ErrorPanel = nullptr;
-                    continue;
                 }
+                continue;
             }
             
             const auto hitTest = _HitTest({mouse.x, mouse.y});
@@ -979,16 +980,23 @@ static void _EventLoop() {
                         // Mouse down inside of a CommitPanel, without shift key
                         gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest->column, hit.panel);
                     
-                    } else if (hit.undoButton) {
-                        if (hit.undoButton->opts().enabled) {
-                            _UndoRedo(hitTest->column, true);
-                            reload = true;
-                        }
-                    
-                    } else if (hit.redoButton) {
-                        if (hit.redoButton->opts().enabled) {
-                            _UndoRedo(hitTest->column, false);
-                            reload = true;
+                    } else {
+                        if (hit.buttonEnabled) {
+                            switch (hit.button) {
+                            case UI::RevColumnButton::Undo:
+                                _UndoRedo(hitTest->column, true);
+                                reload = true;
+                                break;
+                            case UI::RevColumnButton::Redo:
+                                _UndoRedo(hitTest->column, false);
+                                reload = true;
+                                break;
+                            case UI::RevColumnButton::Snapshots:
+                                
+                                break;
+                            default:
+                                break;
+                            }
                         }
                     }
                 

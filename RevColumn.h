@@ -21,6 +21,22 @@ struct RevColumnOptions {
     bool snapshotsEnabled = false;
 };
 
+enum class RevColumnButton : int {
+    None,
+    Undo,
+    Redo,
+    Snapshots,
+};
+
+struct RevColumnHitTestResult {
+    CommitPanel panel;
+    RevColumnButton button = RevColumnButton::None;
+    bool buttonEnabled = false;
+    operator bool() const {
+        return panel || button!=RevColumnButton::None;
+    }
+};
+
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
 class _RevColumn {
@@ -83,20 +99,7 @@ public:
                     .insetX = 1,
                     .frame = leftFrame,
                 };
-                _undoButton = UI::Button(opts);
-            }
-            
-            {
-                UI::ButtonOptions opts = {
-                    .colors = _opts.colors,
-                    .label = "Snapshots…",
-                    .enabled = _opts.snapshotsEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = midFrame,
-                };
-                _snapshotsButton = UI::Button(opts);
+                _buttons.emplace_back(opts);
             }
             
             {
@@ -109,7 +112,20 @@ public:
                     .insetX = 1,
                     .frame = rightFrame,
                 };
-                _redoButton = UI::Button(opts);
+                _buttons.emplace_back(opts);
+            }
+            
+            {
+                UI::ButtonOptions opts = {
+                    .colors = _opts.colors,
+                    .label = "Snapshots…",
+                    .enabled = _opts.snapshotsEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = midFrame,
+                };
+                _buttons.emplace_back(opts);
             }
         }
     }
@@ -136,33 +152,37 @@ public:
             p->drawIfNeeded();
         }
         
-        if (_undoButton) _undoButton->draw(_opts.win);
-        if (_redoButton) _redoButton->draw(_opts.win);
-        if (_snapshotsButton) _snapshotsButton->draw(_opts.win);
+        for (const UI::Button& button : _buttons) {
+            button.draw(_opts.win);
+        }
     }
     
-    void updateMouse(const Point& p) {
-        if (_undoButton) _undoButton->updateMouse(p);
-        if (_redoButton) _redoButton->updateMouse(p);
-        if (_snapshotsButton) _snapshotsButton->updateMouse(p);
-    }
+//    void updateMouse(const Point& p) {
+//        for (UI::Button& button : _buttons) {
+//            button.updateMouse(p);
+//        }
+//    }
     
-    struct HitTestResult {
-        CommitPanel panel;
-        Button* undoButton = nullptr;
-        Button* redoButton = nullptr;
-        Button* snapshotsButton = nullptr;
-    };
-    
-    std::optional<HitTestResult> hitTest(const UI::Point& p) {
-        for (UI::CommitPanel panel : _panels) {
-            if (panel->hitTest(p)) return HitTestResult{ .panel = panel };
+    RevColumnHitTestResult hitTest(const UI::Point& p) {
+        for (UI::Button& button : _buttons) {
+            button.updateMouse(p);
         }
         
-        if (_undoButton && _undoButton->updateMouse(p)) return HitTestResult{ .undoButton = &*_undoButton };
-        if (_redoButton && _redoButton->updateMouse(p)) return HitTestResult{ .redoButton = &*_redoButton };
-        if (_snapshotsButton && _redoButton->updateMouse(p)) return HitTestResult{ .snapshotsButton = &*_snapshotsButton };
-        return std::nullopt;
+        for (UI::CommitPanel panel : _panels) {
+            if (panel->hitTest(p)) return RevColumnHitTestResult{ .panel = panel };
+        }
+        
+        int bnum = (int)RevColumnButton::None+1;
+        for (UI::Button& button : _buttons) {
+            if (button.updateMouse(p)) {
+                return RevColumnHitTestResult{
+                    .button = (RevColumnButton)bnum,
+                    .buttonEnabled = button.opts().enabled,
+                };
+            }
+            bnum++;
+        }
+        return {};
     }
     
     Git::Rev rev() { return _opts.rev; }
@@ -178,9 +198,13 @@ private:
     std::string _name;
     bool _truncated = false;
     UI::CommitPanelVec _panels;
-    std::optional<UI::Button> _undoButton;
-    std::optional<UI::Button> _redoButton;
-    std::optional<UI::Button> _snapshotsButton;
+    std::vector<UI::Button> _buttons;
+//    UI::Button* _undoButton = nullptr;
+//    UI::Button* _redoButton = nullptr;
+//    UI::Button* _snapshotsButton = nullptr;
+//    std::optional<UI::Button> _undoButton;
+//    std::optional<UI::Button> _redoButton;
+//    std::optional<UI::Button> _snapshotsButton;
 };
 
 using RevColumn = std::shared_ptr<_RevColumn>;
