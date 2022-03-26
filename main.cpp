@@ -211,15 +211,19 @@ struct _HitTestResult {
 };
 
 static _HitTestResult _HitTest(const UI::Point& p) {
+    // Don't bail when we get a hit -- we need to update the UI for all
+    // columns (by calling hitTest) before returning
+    _HitTestResult hit;
     for (UI::RevColumn col : _Columns) {
-        if (auto hitTest = col->hitTest(p)) {
-            return _HitTestResult{
+        UI::RevColumnHitTestResult h = col->hitTest(p);
+        if (h) {
+            hit = _HitTestResult{
                 .column = col,
-                .hitTest = hitTest,
+                .hitTest = h,
             };
         }
     }
-    return {};
+    return hit;
 }
 
 struct _InsertionPosition {
@@ -1162,6 +1166,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: rename all hittest functions -> updateMouse
+    
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
