@@ -552,6 +552,10 @@ public:
 //        return active != activePrev;
 //    }
     
+    const std::vector<Snapshot>& snapshots(Git::Ref ref) const {
+        return _snapshots.at(Convert(ref));
+    }
+    
     Git::Repo repo() const {
         return _repo;
     }

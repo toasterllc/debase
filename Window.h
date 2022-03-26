@@ -43,6 +43,7 @@ struct Rect {
 };
 
 enum class Event : int {
+    None            = 0,
     Mouse           = KEY_MOUSE,
     WindowResize    = KEY_RESIZE,
     KeyDelete       = '\x7F',
