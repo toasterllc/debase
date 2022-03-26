@@ -177,8 +177,22 @@ public:
     
     RevColumnHitTestResult hitTest(const UI::Point& p) {
         for (UI::Button& button : _buttons) {
-            button.hitTest(p);
+            button.highlight(false);
         }
+        
+//        UI::Button* hitButton = nullptr;
+//        int hitButtonNum = (int)RevColumnButton::None+1;
+//        for (UI::Button& button : _buttons) {
+//            bool hit = button.hitTest(p);
+//            if (hit && !hitButton) {
+//                button.highlight(true);
+//                hitButton = &button;
+//            } else {
+//                button.highlight(false);
+//            }
+//            
+//            if (!hitButton) hitButtonNum++;
+//        }
         
         for (UI::CommitPanel panel : _panels) {
             if (panel->hitTest(p)) return RevColumnHitTestResult{ .panel = panel };
@@ -187,6 +201,7 @@ public:
         int bnum = (int)RevColumnButton::None+1;
         for (UI::Button& button : _buttons) {
             if (button.hitTest(p)) {
+                button.highlight(true);
                 return RevColumnHitTestResult{
                     .button = (RevColumnButton)bnum,
                     .buttonEnabled = button.opts().enabled,
@@ -194,6 +209,14 @@ public:
             }
             bnum++;
         }
+        
+        
+//        if (hitButton) {
+//            return RevColumnHitTestResult{
+//                .button = (RevColumnButton)hitButtonNum,
+//                .buttonEnabled = hitButton->opts().enabled,
+//            };
+//        }
         return {};
     }
     

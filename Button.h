@@ -13,6 +13,7 @@ struct ButtonOptions {
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
+    int hitTestExpand = 0;
     Rect frame;
 };
 
@@ -27,8 +28,8 @@ public:
 //    }
     
     bool hitTest(const UI::Point& p) {
-        _highlight = !Empty(Intersection(_opts.frame, {p, {1,1}}));
-        return _highlight;
+        Rect rect = Inset(_opts.frame, {-_opts.hitTestExpand, -_opts.hitTestExpand});
+        return !Empty(Intersection(rect, {p, {1,1}}));
     }
     
 //    bool updateMouse(const Point& p) {
@@ -77,6 +78,9 @@ public:
             win->drawText(pkey, "%s", _opts.key.c_str());
         }
     }
+    
+    bool highlight() const { return _highlight; }
+    void highlight(bool x) { _highlight = x; }
     
     const ButtonOptions& opts() const {
         return _opts;

@@ -27,6 +27,7 @@ public:
             opts.insetX = InsetX;
             opts.colors = colors;
             opts.frame = {{x,y}, {2*InsetX+buttonWidth,1}};
+            opts.hitTestExpand = 1;
             _buttons.emplace_back(opts);
             idx++;
         }
@@ -34,7 +35,7 @@ public:
         int w = buttonWidth + 2*(BorderSize+InsetX);
         int h = (RowHeight*(int)bopts.size())-1 + 2;
         setSize({w, h});
-        _drawNeeded = true;
+//        _drawNeeded = true;
 //        
 //        _buttons = buttons;
     }
@@ -90,15 +91,15 @@ public:
         Button* mouseOverButton = nullptr;
         for (Button& button : _buttons) {
             bool hit = button.hitTest(off);
-            if (hit) mouseOverButton = &button;
+            if (hit && !mouseOverButton) {
+                button.highlight(true);
+                mouseOverButton = &button;
+            } else {
+                button.highlight(false);
+            }
         }
         
-        if (_mouseOverButton != mouseOverButton) {
-            _mouseOverButton = mouseOverButton;
-            _drawNeeded = true;
-        }
-        
-        return _mouseOverButton;
+        return mouseOverButton;
     }
     
     void draw() {
@@ -172,14 +173,14 @@ public:
             drawBorder();
         }
         
-        _drawNeeded = false;
+//        _drawNeeded = false;
     }
     
-    void drawIfNeeded() {
-        if (_drawNeeded) {
-            draw();
-        }
-    }
+//    void drawIfNeeded() {
+//        if (_drawNeeded) {
+//            draw();
+//        }
+//    }
     
 private:
     static constexpr int BorderSize = 1;
@@ -188,8 +189,7 @@ private:
     static constexpr int RowHeight  = 2;
     const ColorPalette& _colors;
     std::vector<Button> _buttons;
-    const Button* _mouseOverButton = nullptr;
-    bool _drawNeeded = false;
+//    bool _drawNeeded = false;
 };
 
 using Menu = std::shared_ptr<_Menu>;

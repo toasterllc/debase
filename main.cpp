@@ -187,11 +187,11 @@ static void _Draw() {
         }
         
         if (_ContextMenu) {
-            _ContextMenu->drawIfNeeded();
+            _ContextMenu->draw();
         }
         
         if (_SnapshotsMenu) {
-            _SnapshotsMenu->drawIfNeeded();
+            _SnapshotsMenu->draw();
         }
         
         if (_ErrorPanel) {
@@ -1166,6 +1166,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: get command-. working while context menu/snapshot menu is open
+    
     #warning TODO: rename all hittest functions -> updateMouse
     
     #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
