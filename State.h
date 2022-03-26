@@ -136,7 +136,52 @@ struct RefState {
     }
 };
 
-using RefHistory = T_History<RefState>;
+struct Snapshot {
+    using History = T_History<RefState>;
+    
+    Snapshot() {}
+    Snapshot(Git::Commit commit) {
+        creationTime = time(nullptr);
+        history.set(RefState{
+            .head = Convert(commit),
+        });
+    }
+    
+    bool operator==(const Snapshot& x) const {
+        if (creationTime != x.creationTime) return false;
+        if (history != x.history) return false;
+        return true;
+    }
+    
+    bool operator!=(const Snapshot& x) const {
+        return !(*this==x);
+    }
+    
+    uint64_t creationTime = 0;
+    History history;
+};
+
+inline void to_json(nlohmann::json& j, const Snapshot::History& out);
+inline void from_json(const nlohmann::json& j, Snapshot::History& out);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, head, selection, selectionPrev);
+//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot::History, _prev, _next, _current);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, history);
+
+// MARK: - Snapshot Serialization
+inline void to_json(nlohmann::json& j, const Snapshot::History& out) {
+    j = {
+        {"prev", out._prev},
+        {"next", out._next},
+        {"current", out._current},
+    };
+}
+
+inline void from_json(const nlohmann::json& j, Snapshot::History& out) {
+    j.at("prev").get_to(out._prev);
+    j.at("next").get_to(out._next);
+    j.at("current").get_to(out._current);
+}
 
 //// MARK: - Ref Serialization
 //inline void from_json(const nlohmann::json& j, Git::Repo repo, Git::Ref& out) {
@@ -152,35 +197,36 @@ using RefHistory = T_History<RefState>;
 //    out = repo.commitLookup(id);
 //}
 
-// MARK: - RefState Serialization
-inline void to_json(nlohmann::json& j, const RefState& out) {
-    j = {
-        {"head", out.head},
-        {"selection", out.selection},
-        {"selectionPrev", out.selectionPrev},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, RefState& out) {
-    j.at("head").get_to(out.head);
-    j.at("selection").get_to(out.selection);
-    j.at("selectionPrev").get_to(out.selectionPrev);
-}
-
-// MARK: - RefHistory Serialization
-inline void to_json(nlohmann::json& j, const RefHistory& out) {
-    j = {
-        {"prev", out._prev},
-        {"next", out._next},
-        {"current", out._current},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, RefHistory& out) {
-    j.at("prev").get_to(out._prev);
-    j.at("next").get_to(out._next);
-    j.at("current").get_to(out._current);
-}
+//// MARK: - RefState Serialization
+//inline void to_json(nlohmann::json& j, const RefState& out) {
+//    j = {
+//        {"head", out.head},
+//        {"selection", out.selection},
+//        {"selectionPrev", out.selectionPrev},
+//    };
+//}
+//
+//inline void from_json(const nlohmann::json& j, RefState& out) {
+//    j.at("head").get_to(out.head);
+//    j.at("selection").get_to(out.selection);
+//    j.at("selectionPrev").get_to(out.selectionPrev);
+//}
+//
+//// MARK: - Snapshot Serialization
+//inline void to_json(nlohmann::json& j, const Snapshot& out) {
+//    j = {
+//        {"prev", out._prev},
+//        {"next", out._next},
+//        {"current", out._current},
+//    };
+//}
+//
+//inline void from_json(const nlohmann::json& j, Snapshot& out) {
+//    j.at("prev").get_to(out._prev);
+//    j.at("next").get_to(out._next);
+//    j.at("current").get_to(out._current);
+//}
+//
 
 //template <typename T>
 //inline void from_json_vector(const nlohmann::json& j, Git::Repo repo, T& out) {
@@ -230,8 +276,10 @@ private:
     _Path _repoStateDir;
     Git::Repo _repo;
     
-    std::map<Git::Ref,RefHistory> _refHistorysPrev;
-    std::map<Git::Ref,RefHistory> _refHistorys;
+    std::map<Ref,std::vector<Snapshot>> _snapshots;
+    std::map<Ref,Snapshot> _initialSnapshot;
+    std::map<Ref,Snapshot> _activeSnapshotPrev;
+    std::map<Ref,Snapshot> _activeSnapshot;
     
     static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
@@ -290,6 +338,18 @@ private:
         }
     }
     
+    void _saveActiveSnapshotIfNeeded(Ref ref) {
+        Snapshot& active = _activeSnapshot.at(ref);
+        Snapshot& activePrev = _activeSnapshotPrev.at(ref);
+        if (active != activePrev) {
+            _snapshots[ref].push_back(active);
+        }
+    }
+    
+//    static bool _SnapshotDirty(const Snapshot& snap) {
+//        return 
+//    }
+    
 public:
     RepoState() {}
     RepoState(_Path stateDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
@@ -312,17 +372,44 @@ public:
             _checkVersionAndMigrate(versionLockFile, true);
         }
         
+        // Decode _snapshots
+        std::ifstream f(_repoStateDir / "Snapshot");
+        if (f) {
+            nlohmann::json j;
+            f >> j;
+            j.get_to(_snapshots);
+        }
+        
+        // Populate _initialSnapshot/_activeSnapshot
+        for (const Git::Ref& ref : refs) {
+            std::vector<Snapshot>& refSnapshots = _snapshots[Convert(ref)];
+            Snapshot* mostRecentSnapshot = (!refSnapshots.empty() ? &refSnapshots.back() : nullptr);
+            Git::Commit mostRecentSnapshotHead = (mostRecentSnapshot ? Convert(_repo, mostRecentSnapshot->history.get().head) : nullptr);
+            Git::Commit refCommit = ref.commit();
+            if (refCommit == mostRecentSnapshotHead) {
+                _initialSnapshot[Convert(ref)] = *mostRecentSnapshot;
+                _activeSnapshot[Convert(ref)] = *mostRecentSnapshot;
+                _activeSnapshotPrev[Convert(ref)] = *mostRecentSnapshot;
+            
+            } else {
+                Snapshot snap(ref.commit());
+                _initialSnapshot[Convert(ref)] = snap;
+                _activeSnapshot[Convert(ref)] = snap;
+                _activeSnapshotPrev[Convert(ref)] = snap;
+            }
+        }
+        
 //        // Manually decode refHistorys
 //        // We want to do this manually because we want to implement exception
-//        // handling at specific points in the ref->commit->RefHistory graph
+//        // handling at specific points in the ref->commit->Snapshot graph
 //        // decoding: if we failed to deserialize the current ref, we still
 //        // want to try to deserialize the next ref; if we failed to
-//        // deserialize a commit/RefHistory entry, we still want to try to
+//        // deserialize a commit/Snapshot entry, we still want to try to
 //        // deserialize the next entry.
-//        std::map<Git::Ref,std::map<Git::Commit,RefHistory>> refHistorys;
+//        std::map<Git::Ref,std::map<Git::Commit,Snapshot>> refHistorys;
 //        nlohmann::json refHistorysJson;
 //        try {
-//            _Path fpath = _repoStateDir / "RefHistory";
+//            _Path fpath = _repoStateDir / "Snapshot";
 //            std::ifstream f(fpath);
 //            f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 //            f >> refHistorysJson;
@@ -335,7 +422,7 @@ public:
 //        }
 //        
 //        for (const auto& i : refHistorysJsonMap) {
-//            const std::map<_Json,_Json>& map = i.second; // Commit -> RefHistory
+//            const std::map<_Json,_Json>& map = i.second; // Commit -> Snapshot
 //            Git::Ref ref;
 //            try {
 //                from_json(i.first, _repo, ref);
@@ -343,7 +430,7 @@ public:
 //            
 //            for (const auto& i : map) {
 //                Git::Commit commit;
-//                RefHistory refHistory;
+//                Snapshot refHistory;
 //                
 //                try {
 //                    from_json(i.first, _repo, commit);
@@ -354,7 +441,7 @@ public:
 //            }
 //        }
 //        
-//        // Populate _refHistory by looking up the RefHistory for each ref,
+//        // Populate _refHistory by looking up the Snapshot for each ref,
 //        // by looking at its current commit.
 //        // We also delete the matching commit->RevHistory entry after copying it
 //        // into `_refHistory`, because during this session we may modify the
@@ -362,8 +449,8 @@ public:
 //        // the state file would grow indefinitely.)
 //        for (const Git::Ref& ref : refs) {
 //            Git::Commit refCommit = ref.commit();
-//            std::map<Git::Commit,RefHistory>& refHistoryMap = refHistorys[ref];
-//            RefHistory& refHistory = _refHistorys[ref];
+//            std::map<Git::Commit,Snapshot>& refHistoryMap = refHistorys[ref];
+//            Snapshot& refHistory = _refHistorys[ref];
 //            if (auto find=refHistoryMap.find(refCommit); find!=refHistoryMap.end()) {
 //                refHistory = find->second;
 //            } else {
@@ -378,11 +465,24 @@ public:
     }
     
     void write() {
-        _Path fpath = _repoStateDir / "RefHistory";
-        
         // Lock the state dir via the version lock
         Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(_VersionLockFilePath(_stateDir), false);
         _checkVersionAndMigrate(versionLockFile, false);
+        
+//        {
+//            volatile bool a = false;
+//            while (!a);
+//        }
+        
+        for (const auto& i : _activeSnapshot) {
+            Ref ref = i.first;
+            _saveActiveSnapshotIfNeeded(ref);
+        }
+        
+        std::filesystem::create_directories(_repoStateDir);
+        std::ofstream f(_repoStateDir / "Snapshot");
+        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        f << std::setw(4) << nlohmann::json(_snapshots);
         
 //        // refHistory: intentional loose '_Json' typing because we want to maintain all
 //        // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
@@ -401,12 +501,12 @@ public:
 //        
 //        for (const auto& i : _refHistorysPrev) {
 //            Git::Ref ref = _repo.refReload(i.first);
-//            const RefHistory& refHistory = _refHistorys.at(ref);
-//            const RefHistory& refHistoryPrev = i.second;
+//            const Snapshot& refHistory = _refHistorys.at(ref);
+//            const Snapshot& refHistoryPrev = i.second;
 //            Git::Commit commit = ref.commit();
 //            // Ignore entries that didn't change
 //            if (refHistory == refHistoryPrev) continue;
-//            // The ref was modified, so erase the old Commit->RefHistory entry, and insert the new one.
+//            // The ref was modified, so erase the old Commit->Snapshot entry, and insert the new one.
 //            std::map<_Json,_Json>& refHistoryJson = refHistorysJson[ref];
 //            refHistoryJson.erase(refHistoryPrev.get().head);
 //            refHistoryJson[commit] = _refHistorys.at(ref);
@@ -418,9 +518,38 @@ public:
 //        f << std::setw(4) << refHistorysJson;
     }
     
-    RefHistory& refHistory(Git::Ref ref) {
-        return _refHistorys.at(ref);
+//    Snapshot& refHistory(Git::Ref ref) {
+//        return _refHistorys.at(ref);
+//    }
+    
+    Snapshot& initialSnapshot(Git::Ref ref) {
+        return _initialSnapshot.at(Convert(ref));
     }
+    
+    Snapshot& activeSnapshot(Git::Ref ref) {
+        return _activeSnapshot.at(Convert(ref));
+    }
+    
+    void setActiveSnapshot(Git::Ref ref, Snapshot& snap) {
+        // When setting the active snapshot, create a new snapshot from
+        // the currently-active snapshot, if it contains modifications
+        // since it was made the active snapshot
+        _saveActiveSnapshotIfNeeded(Convert(ref));
+//        Snapshot& active = _activeSnapshot.at(Convert(ref));
+//        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
+//        if (active != activePrev) {
+//            _snapshots.at(Convert(ref)).push_back(active);
+//        }
+        
+        _activeSnapshot.at(Convert(ref)) = snap;
+        _activeSnapshotPrev.at(Convert(ref)) = snap;
+    }
+    
+//    bool activeSnapshotDirty(Git::Ref ref) {
+//        Snapshot& active = _activeSnapshot.at(Convert(ref));
+//        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
+//        return active != activePrev;
+//    }
     
     Git::Repo repo() const {
         return _repo;

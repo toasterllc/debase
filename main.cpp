@@ -685,7 +685,7 @@ static void _Reload() {
     _Columns.clear();
     int OffsetX = InsetX;
     for (const Git::Rev& rev : _Revs) {
-        State::RefHistory* h = (rev.ref ? &_RepoState.refHistory(rev.ref) : nullptr);
+        State::Snapshot* h = (rev.ref ? &_RepoState.activeSnapshot(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
             .win            = _RootWindow,
             .colors         = _Colors,
@@ -694,8 +694,8 @@ static void _Reload() {
             .head           = (rev.displayHead() == _Head.commit),
             .offset         = UI::Size{OffsetX, 0},
             .width          = ColumnWidth,
-            .undoEnabled    = (h ? !h->begin() : false),
-            .redoEnabled    = (h ? !h->end() : false),
+            .undoEnabled    = (h ? !h->history.begin() : false),
+            .redoEnabled    = (h ? !h->history.end() : false),
         };
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
@@ -849,14 +849,14 @@ static void _Spawn(const char*const* argv) {
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
-    State::RefHistory& h = _RepoState.refHistory(col->rev().ref);
+    State::Snapshot& h = _RepoState.activeSnapshot(col->rev().ref);
     
-    State::RefState refStatePrev = h.get();
-    if (undo) h.prev();
-    else      h.next();
-    State::RefState refState = h.get();
+    State::RefState refStatePrev = h.history.get();
+    if (undo) h.history.prev();
+    else      h.history.next();
+    State::RefState refState = h.history.get();
     
-    Git::Commit commit = State::Convert(_Repo, h.get().head);
+    Git::Commit commit = State::Convert(_Repo, h.history.get().head);
     std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
     
     rev = _Repo.revReplace(rev, commit);
@@ -880,8 +880,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            State::RefHistory& h = _RepoState.refHistory(srcRev.ref);
-            h.push({
+            State::Snapshot& h = _RepoState.activeSnapshot(srcRev.ref);
+            h.history.push({
                 .head = State::Convert(srcRev.commit),
                 .selection = State::Convert(opResult->src.selection),
                 .selectionPrev = State::Convert(opResult->src.selectionPrev),
@@ -889,9 +889,8 @@ static bool _ExecGitOp(const Git::Op& gitOp) {
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            State::RefHistory& h = _RepoState.refHistory(dstRev.ref);
-            
-            h.push({
+            State::Snapshot& h = _RepoState.activeSnapshot(dstRev.ref);
+            h.history.push({
                 .head = State::Convert(dstRev.commit),
                 .selection = State::Convert(opResult->dst.selection),
                 .selectionPrev = State::Convert(opResult->dst.selectionPrev),
