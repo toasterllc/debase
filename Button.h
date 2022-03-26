@@ -20,7 +20,7 @@ struct ButtonOptions {
 
 class _Button : public std::enable_shared_from_this<_Button> {
 public:
-    _Button(const ButtonOptions& opts) : _opts(opts) {}
+    _Button() {}
     
 //    void setHighlight(bool highlight) {
 //        if (highlight == _highlight) return;

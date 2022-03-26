@@ -18,12 +18,12 @@ public:
     _colors(colors) {
         _commit = commit;
         _header = header;
-        _id = Git::DisplayStringForId(*git_commit_id(*_commit));
-        _time = Git::ShortStringForTime(Git::TimeForGitTime(git_commit_author(*_commit)->when));
-        _author = git_commit_author(*_commit)->name;
+        _id = Git::DisplayStringForId(_commit.id());
         
-        const std::string message = git_commit_message(*_commit);
-        _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, message);
+        Git::Signature sig = _commit.author();
+        _time = Git::ShortStringForTime(Git::TimeForGitTime(sig.time()));
+        _author = sig.name();
+        _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, _commit.message());
         
         setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
         _drawNeeded = true;

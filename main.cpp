@@ -650,6 +650,15 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
+static UI::Button _MakeButton(std::string_view label, std::string_view key, bool enabled) {
+    UI::Button b = MakeShared<UI::Button>();
+    UI::ButtonOptions& opts = b->options();
+    opts.label = label;
+    opts.key = key;
+    opts.enabled = enabled;
+    return b;
+}
+
 static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     auto mouseDownTime = std::chrono::steady_clock::now();
     _Event ev = {
@@ -676,11 +685,11 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     }
     
     bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
-    bool editEnabled = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
-    bool deleteEnabled = _Selection.rev.isMutable();
-    UI::Button combineButton = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Combine", .key="c",   .enabled=combineEnabled });
-    UI::Button editButton    = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Edit",    .key="ret", .enabled=editEnabled    });
-    UI::Button deleteButton  = MakeShared<UI::Button>(UI::ButtonOptions{ .label="Delete",  .key="del", .enabled=deleteEnabled  });
+    bool editEnabled    = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
+    bool deleteEnabled  = _Selection.rev.isMutable();
+    UI::Button combineButton = _MakeButton("Combine", "c", combineEnabled);
+    UI::Button editButton    = _MakeButton("Edit", "ret", editEnabled);
+    UI::Button deleteButton  = _MakeButton("Delete", "del", deleteEnabled);
     std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
     
     _ContextMenu = MakeShared<UI::Menu>(_Colors, buttons);
@@ -772,13 +781,24 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     std::vector<UI::Button> buttons;
-    buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label="Start of Session", .enabled=true }));
+    
+//    {
+//        auto button = MakeShared<UI::SnapshotButton>();
+//        button->options().label = "Start of Session";
+//        button->options().enabled = true;
+//        buttons.push_back(button);
+//    }
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
-        Git::Commit commit = Convert(_Repo, it->history.get().head);
-        std::string idStr = Git::DisplayStringForId(commit.id());
-        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
+//        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
+        buttons.push_back(MakeShared<UI::SnapshotButton>(_Repo, *it));
+        
+//        button->options().label = "Start of Session";
+//        button->options().enabled = true;
+//        Git::Commit commit = Convert(_Repo, it->history.get().head);
+//        std::string idStr = Git::DisplayStringForId(commit.id());
+//        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
     _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);

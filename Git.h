@@ -171,8 +171,9 @@ struct Signature : RefCounted<git_signature*, git_signature_free> {
         return x;
     }
     
-    std::string name() { return (*get())->name; }
-    std::string email() { return (*get())->email; }
+    std::string name() const { return (*get())->name; }
+    std::string email() const { return (*get())->email; }
+    git_time time() const { return (*get())->when; }
 };
 
 static void _BufDelete(git_buf& buf) { git_buf_dispose(&buf); }
@@ -231,6 +232,19 @@ struct Commit : Object {
         if (ir == GIT_ENOTFOUND) return nullptr; // `this` is the root commit -> no parent exists
         if (ir) throw Error(ir, "git_commit_tree failed");
         return x;
+    }
+    
+    Signature author() const {
+        const git_signature* author = git_commit_author(*get());
+        if (!author) return nullptr;
+        git_signature* x = nullptr;
+        int ir = git_signature_dup(&x, author);
+        if (ir) throw Error(ir, "git_signature_dup failed");
+        return x;
+    }
+    
+    std::string message() const {
+        return git_commit_message(*get());
     }
     
     std::vector<Commit> parents() const {

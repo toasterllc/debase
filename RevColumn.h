@@ -102,42 +102,39 @@ public:
             Rect midFrame = {_opts.offset+Size{(_opts.width-MidWidth)/2, _ButtonsInsetY}, {MidWidth,3}};
             
             {
-                UI::ButtonOptions opts = {
-                    .colors = _opts.colors,
-                    .label = "Undo",
-                    .enabled = _opts.undoEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = leftFrame,
-                };
-                _buttons.push_back(MakeShared<UI::Button>(opts));
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
+                UI::ButtonOptions& opts = button->options();
+                opts.colors = _opts.colors;
+                opts.label = "Undo";
+                opts.enabled = _opts.undoEnabled;
+                opts.center = true;
+                opts.drawBorder = true;
+                opts.insetX = 1;
+                opts.frame = leftFrame;
             }
             
             {
-                UI::ButtonOptions opts = {
-                    .colors = _opts.colors,
-                    .label = "Redo",
-                    .enabled = _opts.redoEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = rightFrame,
-                };
-                _buttons.push_back(MakeShared<UI::Button>(opts));
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
+                UI::ButtonOptions& opts = button->options();
+                opts.colors = _opts.colors;
+                opts.label = "Redo";
+                opts.enabled = _opts.redoEnabled;
+                opts.center = true;
+                opts.drawBorder = true;
+                opts.insetX = 1;
+                opts.frame = rightFrame;
             }
             
             {
-                UI::ButtonOptions opts = {
-                    .colors = _opts.colors,
-                    .label = "History…",
-                    .enabled = _opts.snapshotsEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = midFrame,
-                };
-                _buttons.push_back(MakeShared<UI::Button>(opts));
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
+                UI::ButtonOptions& opts = button->options();
+                opts.colors = _opts.colors;
+                opts.label = "History…";
+                opts.enabled = _opts.snapshotsEnabled;
+                opts.center = true;
+                opts.drawBorder = true;
+                opts.insetX = 1;
+                opts.frame = midFrame;
             }
         }
     }
