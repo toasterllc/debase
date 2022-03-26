@@ -653,9 +653,13 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
 static UI::Button _MakeButton(std::string_view label, std::string_view key, bool enabled) {
     UI::Button b = MakeShared<UI::Button>();
     UI::ButtonOptions& opts = b->options();
+    opts.colors = _Colors;
     opts.label = label;
     opts.key = key;
     opts.enabled = enabled;
+    opts.insetX = 0;
+    opts.frame.size.x = 20;
+    opts.frame.size.y = 1;
     return b;
 }
 
@@ -780,6 +784,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
+    constexpr int SnapshotMenuWidth = 26;
     std::vector<UI::Button> buttons;
     
 //    {
@@ -792,7 +797,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        buttons.push_back(MakeShared<UI::SnapshotButton>(_Repo, *it));
+        buttons.push_back(MakeShared<UI::SnapshotButton>(_Repo, *it, SnapshotMenuWidth));
         
 //        button->options().label = "Start of Session";
 //        button->options().enabled = true;

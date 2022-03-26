@@ -13,7 +13,6 @@ struct ButtonOptions {
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
-    int hitTestExpand = 0;
     bool highlight = false;
     Rect frame;
 };
@@ -28,9 +27,8 @@ public:
 //        _drawNeeded = true;
 //    }
     
-    bool hitTest(const UI::Point& p) {
-        Rect rect = Inset(_opts.frame, {-_opts.hitTestExpand, -_opts.hitTestExpand});
-        return !Empty(Intersection(rect, {p, {1,1}}));
+    bool hitTest(const UI::Point& p, UI::Size expand={0,0}) {
+        return UI::HitTest(_opts.frame, p, expand);
     }
     
 //    bool updateMouse(const Point& p) {

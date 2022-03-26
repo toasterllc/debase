@@ -79,6 +79,10 @@ inline bool Empty(const Rect& x) {
     return x.size.x==0 || x.size.y==0;
 }
 
+inline bool HitTest(const UI::Rect& r, const UI::Point& p, UI::Size expand={0,0}) {
+    return !Empty(Intersection(Inset(r, {-expand.x,-expand.y}), {p, {1,1}}));
+}
+
 inline void Redraw() {
     ::update_panels();
     ::doupdate();
@@ -160,7 +164,7 @@ public:
     }
     
     bool hitTest(const Point& p) const {
-        return !Empty(Intersection(frame(), Rect{.point=p, .size={1,1}}));
+        return HitTest(frame(), p);
     }
     
     Event nextEvent() const {

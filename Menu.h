@@ -10,33 +10,41 @@ class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
     _Menu(const ColorPalette& colors, const std::vector<Button>& buttons) : _colors(colors) {
         // Find the longest button to set our width
-        int buttonWidth = 0;
+        int width = 0;
         for (Button button : buttons) {
-            const ButtonOptions& opts = button->options();
-            int w = (int)UTF8::Strlen(opts.label) + (int)UTF8::Strlen(opts.key);
-            buttonWidth = std::max(buttonWidth, w);
+//            int w = (int)UTF8::Strlen(opts.label) + (int)UTF8::Strlen(opts.key);
+            width = std::max(width, button->options().frame.size.x);
         }
         
-        buttonWidth += KeySpacing;
+        width += 2*(_BorderSize+_InsetX);
+        
+//        buttonWidth += KeySpacing;
         
 //        const ButtonOptions& opts, const ColorPalette& colors, Window win, Rect frame
         
-        size_t idx = 0;
+        const int x = _BorderSize+_InsetX;
+        int y = _BorderSize;
+        int height = 2*_BorderSize;
         for (Button button : buttons) {
-            const int x = BorderSize;
-            const int y = BorderSize + (int)idx*RowHeight;
+//            const int x = BorderSize;
+//            const int y = BorderSize + (int)idx*RowHeight;
             
             ButtonOptions& opts = button->options();
-            opts.insetX = InsetX;
-            opts.colors = colors;
-            opts.frame = {{x,y}, {2*InsetX+buttonWidth,1}};
-            opts.hitTestExpand = 1;
-            idx++;
+//            opts.insetX = InsetX;
+//            opts.colors = colors;
+            opts.frame.point = {x,y};
+//            opts.hitTestExpand = 1;
+            
+            y += opts.frame.size.y+_SeparatorHeight;
+            height += opts.frame.size.y;
+            if (button != buttons.back()) {
+                height += _SeparatorHeight;
+            }
         }
         
-        int w = buttonWidth + 2*(BorderSize+InsetX);
-        int h = (RowHeight*(int)buttons.size())-1 + 2;
-        setSize({w, h});
+//        int w = width + 2*(BorderSize+InsetX);
+//        int h = (RowHeight*(int)buttons.size())-1 + 2;
+        setSize({width, height});
 //        _drawNeeded = true;
 //        
         _buttons = buttons;
@@ -92,7 +100,7 @@ public:
         
         Button mouseOverButton = nullptr;
         for (Button button : _buttons) {
-            bool hit = button->hitTest(off);
+            bool hit = button->hitTest(off, {1,1});
             if (hit && !mouseOverButton) {
                 button->options().highlight = true;
                 mouseOverButton = button;
@@ -185,10 +193,11 @@ public:
 //    }
     
 private:
-    static constexpr int BorderSize = 1;
-    static constexpr int InsetX     = 1;
-    static constexpr int KeySpacing = 2;
-    static constexpr int RowHeight  = 2;
+    static constexpr int _BorderSize      = 1;
+    static constexpr int _SeparatorHeight = 1;
+    static constexpr int _InsetX          = 1;
+    static constexpr int _KeySpacing      = 2;
+    static constexpr int _RowHeight       = 2;
     const ColorPalette& _colors;
     std::vector<Button> _buttons;
 //    bool _drawNeeded = false;
