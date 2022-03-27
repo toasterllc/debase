@@ -1269,8 +1269,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
     
-    #warning TODO: get command-. working while context menu/snapshot menu is open
-    
     #warning TODO: rename all hittest functions -> updateMouse
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1421,6 +1419,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: further, snapshots should be created only at startup ("Session Start"), and on exit, the snapshot to only be enqueued if it differs from the current HEAD of the repo
 //
 //    #warning TODO: when creating a new snapshot, if an equivalent one already exists, remove the old one.
+//
+//    #warning TODO: get command-. working while context menu/snapshot menu is open
     
 //    {
 //        Git::Commit a;

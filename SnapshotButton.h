@@ -22,7 +22,7 @@ public:
         _commit.author = sig.name();
         _commit.message = LineWrap::Wrap(1, width, commit.message());
         
-        options().frame.size = {width, 3};
+        options().frame.size = {width, (_sessionStart ? 4 : 3)};
         
 //        if (isdigit(_time[0])) _time += " ago";
     }
@@ -32,33 +32,44 @@ public:
         const ColorPalette& colors = opts.colors;
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
+        const int offY = (_sessionStart ? 1 : 0);
         
-        {
+        if (_sessionStart) {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            win->drawText(off + Size{0, 0}, "%s", _commit.id.c_str());
+            win->drawText(off, "Session Start");
         }
         
+        // Draw time
         {
             UI::Attr attr(win, opts.colors.subtitleText);
             int offX = width - (int)UTF8::Strlen(_time);
             win->drawText(off + Size{offX, 0}, "%s", _time.c_str());
         }
         
+        // Draw commit id
+        {
+            UI::Attr attr;
+            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+            win->drawText(off + Size{0, offY}, "%s", _commit.id.c_str());
+        }
+        
+        // Draw author name
         {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
             else                attr = UI::Attr(win, opts.colors.subtitleText);
-            win->drawText(off + Size{0, 1}, "%s", _commit.author.c_str());
+            win->drawText(off + Size{0, offY+1}, "%s", _commit.author.c_str());
         }
         
+        // Draw commit message
         {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
             
             int i = 0;
             for (const std::string& line : _commit.message) {
-                win->drawText(off + Size{0, 2+i}, "%s", line.c_str());
+                win->drawText(off + Size{0, offY+2+i}, "%s", line.c_str());
                 i++;
             }
         }
