@@ -1250,21 +1250,21 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: fully flesh out when to create new snapshots
+    
+    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
+    
     #warning TODO: when creating a new snapshot, if an equivalent one already exists, remove the old one. actually not sure if we should do this. eg sometimes we might want to revert back to the oldest thing that we have, but that might not be the thing we expect if we've removed the old snapshots...
     
     #warning TODO: get command-. working while context menu/snapshot menu is open
     
     #warning TODO: rename all hittest functions -> updateMouse
     
-    #warning TODO: implement log of events, so that if something goes wrong, we can manually get back
-    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: rigorously test copying/moving merge commits
     
     #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
-    
-    #warning TODO: backup all supplied revs before doing anything
     
     #warning TODO: support light mode
     
@@ -1398,6 +1398,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: use advisory locking in State class to prevent multiple entities from modifying state on disk simultaneously. RepoState class will need to use this facility when writing its state. Whenever we acquire the lock, we should read the version, because the version may have changed since the last read! if so -> bail!
 //
 //    #warning TODO: test a commit stored in the undo history not existing
+//
+//    #warning TODO: nevermind: implement log of events, so that if something goes wrong, we can manually get back
+//    
+//    #warning TODO: backup all supplied revs before doing anything
     
 //    {
 //        Git::Commit a;

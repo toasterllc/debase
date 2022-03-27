@@ -95,11 +95,13 @@ public:
         
         // Create our undo/redo buttons
         if (_opts.rev.isMutable()) {
-            Rect leftFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {_ButtonWidth,3}};
-            Rect rightFrame = {_opts.offset+Size{_opts.width-_ButtonWidth, _ButtonsInsetY}, {_ButtonWidth,3}};
+            constexpr int UndoWidth      = 8;
+            constexpr int RedoWidth      = 8;
+            constexpr int SnapshotsWidth = 16;
             
-            constexpr int MidWidth = 12;
-            Rect midFrame = {_opts.offset+Size{(_opts.width-MidWidth)/2, _ButtonsInsetY}, {MidWidth,3}};
+            Rect undoFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
+            Rect redoFrame = {_opts.offset+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
+            Rect snapshotsFrame = {_opts.offset+Size{(_opts.width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
             
             {
                 auto button = _buttons.emplace_back(MakeShared<UI::Button>());
@@ -110,7 +112,7 @@ public:
                 opts.center = true;
                 opts.drawBorder = true;
                 opts.insetX = 1;
-                opts.frame = leftFrame;
+                opts.frame = undoFrame;
             }
             
             {
@@ -122,19 +124,19 @@ public:
                 opts.center = true;
                 opts.drawBorder = true;
                 opts.insetX = 1;
-                opts.frame = rightFrame;
+                opts.frame = redoFrame;
             }
             
             {
                 auto button = _buttons.emplace_back(MakeShared<UI::Button>());
                 UI::ButtonOptions& opts = button->options();
                 opts.colors = _opts.colors;
-                opts.label = "History…";
+                opts.label = "Snapshots…";
                 opts.enabled = _opts.snapshotsEnabled;
                 opts.center = true;
                 opts.drawBorder = true;
                 opts.insetX = 1;
-                opts.frame = midFrame;
+                opts.frame = snapshotsFrame;
             }
         }
     }
