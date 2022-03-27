@@ -4,6 +4,9 @@
 template <typename T>
 class T_History {
 public:
+    T_History() {}
+    T_History(const T& t) : _current(t) {}
+    
     const T& get() const {
         return _current;
     }
@@ -18,7 +21,7 @@ public:
     }
     
     void push(const T& x) {
-        _next = {};
+        _next.clear();
         _prev.push_front(_current);
         _current = x;
     }

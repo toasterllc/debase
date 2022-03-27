@@ -120,6 +120,10 @@ inline auto Convert(const std::set<Git::Ref>& x) { return _Convert<Ref>(x); }
 //inline void from_json(const nlohmann::json& j, Git::Repo repo, std::map<T_Key,T_Val>& out);
 
 struct RefState {
+//public:
+//    RefState() {}
+//    RefState(Commit c) : head(c) {}
+    
     Commit head;
     std::set<Commit> selection;
     std::set<Commit> selectionPrev;
@@ -136,21 +140,15 @@ struct RefState {
     }
 };
 
+using History = T_History<RefState>;
+
 struct Snapshot {
-    using History = T_History<RefState>;
-    
     Snapshot() {}
-    Snapshot(Git::Commit c) : creationTime(time(nullptr)) {
-        history.set(RefState{
-            .head = Convert(c),
-        });
-    }
-    
-    Snapshot(const History& h) : creationTime(time(nullptr)), history(h) {}
+    Snapshot(Git::Commit c) : creationTime(time(nullptr)), head(Convert(c)) {}
     
     bool operator==(const Snapshot& x) const {
         if (creationTime != x.creationTime) return false;
-        if (history != x.history) return false;
+        if (head != x.head) return false;
         return true;
     }
     
@@ -159,18 +157,18 @@ struct Snapshot {
     }
     
     uint64_t creationTime = 0;
-    History history;
+    Commit head;
 };
 
-inline void to_json(nlohmann::json& j, const Snapshot::History& out);
-inline void from_json(const nlohmann::json& j, Snapshot::History& out);
+inline void to_json(nlohmann::json& j, const History& out);
+inline void from_json(const nlohmann::json& j, History& out);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, head, selection, selectionPrev);
 //NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot::History, _prev, _next, _current);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, history);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, head);
 
 // MARK: - Snapshot Serialization
-inline void to_json(nlohmann::json& j, const Snapshot::History& out) {
+inline void to_json(nlohmann::json& j, const History& out) {
     j = {
         {"prev", out._prev},
         {"next", out._next},
@@ -178,7 +176,7 @@ inline void to_json(nlohmann::json& j, const Snapshot::History& out) {
     };
 }
 
-inline void from_json(const nlohmann::json& j, Snapshot::History& out) {
+inline void from_json(const nlohmann::json& j, History& out) {
     j.at("prev").get_to(out._prev);
     j.at("next").get_to(out._next);
     j.at("current").get_to(out._current);
@@ -277,10 +275,11 @@ private:
     _Path _repoStateDir;
     Git::Repo _repo;
     
+    std::map<Ref,History> _history;
+    std::map<Ref,History> _historyPrev;
     std::map<Ref,std::vector<Snapshot>> _snapshots;
+    
     std::map<Ref,Snapshot> _initialSnapshot;
-    std::map<Ref,Snapshot> _activeSnapshotPrev;
-    std::map<Ref,Snapshot> _activeSnapshot;
     
     static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
@@ -339,13 +338,13 @@ private:
         }
     }
     
-    void _saveActiveSnapshotIfNeeded(Ref ref) {
-        Snapshot& active = _activeSnapshot.at(ref);
-        Snapshot& activePrev = _activeSnapshotPrev.at(ref);
-        if (active != activePrev) {
-            _snapshots[ref].emplace_back(active.history);
-        }
-    }
+//    void _saveActiveSnapshotIfNeeded(Ref ref) {
+//        Snapshot& active = _activeSnapshot.at(ref);
+//        Snapshot& activePrev = _activeSnapshotPrev.at(ref);
+//        if (active != activePrev) {
+//            _snapshots[ref].emplace_back(active.history);
+//        }
+//    }
     
 //    static bool _SnapshotDirty(const Snapshot& snap) {
 //        return 
@@ -373,31 +372,82 @@ public:
             _checkVersionAndMigrate(versionLockFile, true);
         }
         
-        // Decode _snapshots
-        std::ifstream f(_repoStateDir / "Snapshot");
+        // Decode _history / _snapshots
+        std::ifstream f(_repoStateDir / "State");
         if (f) {
             nlohmann::json j;
             f >> j;
-            j.get_to(_snapshots);
+            j.at("history").get_to(_history);
+            j.at("snapshots").get_to(_snapshots);
         }
         
-        // Populate _initialSnapshot/_activeSnapshot
-        for (const Git::Ref& ref : refs) {
-            std::vector<Snapshot>& refSnapshots = _snapshots[Convert(ref)];
-            Snapshot* mostRecentSnapshot = (!refSnapshots.empty() ? &refSnapshots.back() : nullptr);
-            Git::Commit mostRecentSnapshotHead = (mostRecentSnapshot ? Convert(_repo, mostRecentSnapshot->history.get().head) : nullptr);
-            Git::Commit refCommit = ref.commit();
-            if (refCommit == mostRecentSnapshotHead) {
-                _initialSnapshot[Convert(ref)] = *mostRecentSnapshot;
-                _activeSnapshot[Convert(ref)] = *mostRecentSnapshot;
-                _activeSnapshotPrev[Convert(ref)] = *mostRecentSnapshot;
-            
-            } else {
-                Snapshot snap(ref.commit());
-                _initialSnapshot[Convert(ref)] = snap;
-                _activeSnapshot[Convert(ref)] = snap;
-                _activeSnapshotPrev[Convert(ref)] = snap;
+        // Ensure that _history has an entry for each ref
+        // Also ensure that if the stored history head doesn't
+        // match the current head, we create a fresh history.
+        for (Git::Ref ref : refs) {
+            Git::Commit headCurrent = ref.commit();
+            auto find = _history.find(Convert(ref));
+            Git::Commit headStored = (find!=_history.end() ? Convert(_repo, find->second.get().head) : nullptr);
+            if (headStored != headCurrent) {
+                _history[Convert(ref)] = History(RefState{.head = Convert(headCurrent)});
             }
+            
+            
+//            Git::Commit headCurrent = ref.commit();
+//            History newHistory(RefState{.head = Convert(headCurrent)});
+//            auto [iter, created] = _history.insert(std::make_pair(Convert(ref), newHistory));
+//            if (!created) {
+//                // A History already existed for `ref`
+//                // If its head doesn't match `headCurrent`, clear the history
+//                History& history = iter->second;
+//                Git::Commit headStored = Convert(_repo, history.get().head);
+//                if (headStored != headCurrent) {
+//                    history.clear();
+//                    history.set(RefState{.head = Convert(headCurrent)});
+//                }
+//            }
+//            
+//            if (iter->get().head)
+//            
+//            History& history = _history[Convert(ref)];
+//            #warning TODO: handle exceptions if `headStored` can't be materialized
+//            Git::Commit headStored = Convert(_repo, history.get().head);
+//            if (headStored != headCurrent) {
+//                history.clear();
+//                history.set(RefState{.head = Convert(headCurrent)});
+//            }
+        }
+        
+        // Remember the initial history so we can tell if it changed upon exit,
+        // so we know whether to save it. (We don't want to save histories that
+        // didn't change to help prevent clobbering changes from another
+        // session.)
+        _historyPrev = _history;
+        
+        // Ensure that `_snapshots` has an entry for every ref
+        for (Git::Ref ref : refs) {
+            _snapshots[Convert(ref)];
+        }
+        
+        // Populate _initialSnapshot
+        for (Git::Ref ref : refs) {
+            _initialSnapshot[Convert(ref)] = ref.commit();
+            
+//            std::vector<Snapshot>& refSnapshots = _snapshots.at[Convert(ref)];
+//            Snapshot* mostRecentSnapshot = (!refSnapshots.empty() ? &refSnapshots.back() : nullptr);
+//            Git::Commit mostRecentSnapshotHead = (mostRecentSnapshot ? Convert(_repo, mostRecentSnapshot->history.get().head) : nullptr);
+//            Git::Commit refCommit = ref.commit();
+//            if (refCommit == mostRecentSnapshotHead) {
+//                _initialSnapshot[Convert(ref)] = *mostRecentSnapshot;
+//                _activeSnapshot[Convert(ref)] = *mostRecentSnapshot;
+//                _activeSnapshotPrev[Convert(ref)] = *mostRecentSnapshot;
+//            
+//            } else {
+//                Snapshot snap(ref.commit());
+//                _initialSnapshot[Convert(ref)] = snap;
+//                _activeSnapshot[Convert(ref)] = snap;
+//                _activeSnapshotPrev[Convert(ref)] = snap;
+//            }
         }
         
 //        // Manually decode refHistorys
@@ -475,15 +525,38 @@ public:
 //            while (!a);
 //        }
         
-        for (const auto& i : _activeSnapshot) {
+//        for (const auto& i : _activeSnapshot) {
+//            Ref ref = i.first;
+//            _saveActiveSnapshotIfNeeded(ref);
+//        }
+        
+        // For each ref, if the ref was changed during this session (ie the initial snapshot's
+        // head differs from the ref's current head), push the ref's initial snapshot
+        std::map<Ref,std::vector<Snapshot>> snapshots = _snapshots;
+        for (auto& i : snapshots) {
             Ref ref = i.first;
-            _saveActiveSnapshotIfNeeded(ref);
+            std::vector<Snapshot>& refSnapshots = i.second;
+            const History& refHistory = _history.at(ref);
+            const Snapshot& refInitialSnapshot = _initialSnapshot.at(ref);
+            Commit head = refHistory.get().head;
+            Commit headInitial = refInitialSnapshot.head;
+            
+            if (head != headInitial) {
+                refSnapshots.push_back(refInitialSnapshot);
+            }
         }
+//        snapshots.push
+        
+        #warning TODO: reload the state file (since it may have changed), and only update the history/snapshots that changed
         
         std::filesystem::create_directories(_repoStateDir);
-        std::ofstream f(_repoStateDir / "Snapshot");
+        std::ofstream f(_repoStateDir / "State");
         f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        f << std::setw(4) << nlohmann::json(_snapshots);
+        nlohmann::json j = {
+            {"history", _history},
+            {"snapshots", snapshots},
+        };
+        f << std::setw(4) << j;
         
 //        // refHistory: intentional loose '_Json' typing because we want to maintain all
 //        // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
@@ -527,31 +600,35 @@ public:
         return _initialSnapshot.at(Convert(ref));
     }
     
-    Snapshot& activeSnapshot(Git::Ref ref) {
-        return _activeSnapshot.at(Convert(ref));
-    }
-    
-    void setActiveSnapshot(Git::Ref ref, const Snapshot& snap) {
-        // When setting the active snapshot, create a new snapshot from
-        // the currently-active snapshot, if it contains modifications
-        // since it was made the active snapshot
-        _saveActiveSnapshotIfNeeded(Convert(ref));
-        
-//        Snapshot& active = _activeSnapshot.at(Convert(ref));
-//        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
-//        if (active != activePrev) {
-//            _snapshots.at(Convert(ref)).push_back(active);
-//        }
-        
-        _activeSnapshot.at(Convert(ref)) = snap;
-        _activeSnapshotPrev.at(Convert(ref)) = snap;
-    }
-    
+//    Snapshot& activeSnapshot(Git::Ref ref) {
+//        return _activeSnapshot.at(Convert(ref));
+//    }
+//    
+//    void setActiveSnapshot(Git::Ref ref, const Snapshot& snap) {
+//        // When setting the active snapshot, create a new snapshot from
+//        // the currently-active snapshot, if it contains modifications
+//        // since it was made the active snapshot
+//        _saveActiveSnapshotIfNeeded(Convert(ref));
+//        
+////        Snapshot& active = _activeSnapshot.at(Convert(ref));
+////        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
+////        if (active != activePrev) {
+////            _snapshots.at(Convert(ref)).push_back(active);
+////        }
+//        
+//        _activeSnapshot.at(Convert(ref)) = snap;
+//        _activeSnapshotPrev.at(Convert(ref)) = snap;
+//    }
+//    
 //    bool activeSnapshotDirty(Git::Ref ref) {
 //        Snapshot& active = _activeSnapshot.at(Convert(ref));
 //        Snapshot& activePrev = _activeSnapshotPrev.at(Convert(ref));
 //        return active != activePrev;
 //    }
+    
+    History& history(Git::Ref ref) {
+        return _history.at(Convert(ref));
+    }
     
     const std::vector<Snapshot>& snapshots(Git::Ref ref) const {
         return _snapshots.at(Convert(ref));

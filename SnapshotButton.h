@@ -12,7 +12,7 @@ namespace UI {
 class _SnapshotButton : public _Button {
 public:
     _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width) : _snapshot(snapshot) {
-        Git::Commit commit = State::Convert(repo, _snapshot.history.get().head);
+        Git::Commit commit = State::Convert(repo, _snapshot.head);
         Git::Signature sig = commit.author();
         
         _time = Time::RelativeTimeDisplayString(_snapshot.creationTime);
@@ -90,7 +90,7 @@ private:
     static constexpr size_t _LineCountMax = 2;
     static constexpr size_t _LineLenInset = 2;
     
-    const State::Snapshot& _snapshot;
+    const State::Snapshot _snapshot;
     
     std::string _time;
     struct {
