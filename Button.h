@@ -78,9 +78,8 @@ public:
         }
     }
     
-    ButtonOptions& options() {
-        return _opts;
-    }
+    ButtonOptions& options() { return _opts; }
+    const ButtonOptions& options() const { return _opts; }
     
 private:
     static constexpr int KeySpacing = 2;

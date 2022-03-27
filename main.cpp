@@ -650,7 +650,8 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
     }
 }
 
-static UI::Button _MakeButton(std::string_view label, std::string_view key, bool enabled) {
+static UI::Button _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled) {
+    constexpr int ContextMenuWidth = 12;
     UI::Button b = MakeShared<UI::Button>();
     UI::ButtonOptions& opts = b->options();
     opts.colors = _Colors;
@@ -658,7 +659,7 @@ static UI::Button _MakeButton(std::string_view label, std::string_view key, bool
     opts.key = key;
     opts.enabled = enabled;
     opts.insetX = 0;
-    opts.frame.size.x = 20;
+    opts.frame.size.x = ContextMenuWidth;
     opts.frame.size.y = 1;
     return b;
 }
@@ -691,9 +692,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
     bool editEnabled    = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
     bool deleteEnabled  = _Selection.rev.isMutable();
-    UI::Button combineButton = _MakeButton("Combine", "c", combineEnabled);
-    UI::Button editButton    = _MakeButton("Edit", "ret", editEnabled);
-    UI::Button deleteButton  = _MakeButton("Delete", "del", deleteEnabled);
+    UI::Button combineButton = _MakeContextMenuButton("Combine", "c", combineEnabled);
+    UI::Button editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
+    UI::Button deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
     std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
     
     _ContextMenu = MakeShared<UI::Menu>(_Colors, buttons);
@@ -783,8 +784,15 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-static void _TrackSnapshotsMenu(UI::RevColumn column) {
+static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot& snap) {
     constexpr int SnapshotMenuWidth = 26;
+    UI::Button b = MakeShared<UI::SnapshotButton>(repo, snap, SnapshotMenuWidth);
+    UI::ButtonOptions& opts = b->options();
+    opts.colors = _Colors;
+    return b;
+}
+
+static void _TrackSnapshotsMenu(UI::RevColumn column) {
     std::vector<UI::Button> buttons;
     
 //    {
@@ -797,7 +805,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        buttons.push_back(MakeShared<UI::SnapshotButton>(_Repo, *it, SnapshotMenuWidth));
+        buttons.push_back(_MakeSnapshotMenuButton(_Repo, *it));
         
 //        button->options().label = "Start of Session";
 //        button->options().enabled = true;

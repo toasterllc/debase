@@ -32,29 +32,31 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         std::string& msgline = lines.emplace_back();
         
         while (!lineInput.empty()) {
-            // Add the space between words
-            if (!msgline.empty()) {
-                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
-                // No more space -> next line
-                if (!rem) break;
-                // Add the space between words
-                msgline += " ";
-            }
+//            // Add the space between words
+//            if (!msgline.empty()) {
+//                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
+//                // No more space -> next line
+//                if (!rem) break;
+//                // Add the space between words
+//                msgline += " ";
+//            }
             
             // Add the current word
             {
                 const std::string& word = lineInput.front();
                 const size_t wordLen = UTF8::Strlen(word);
+                const std::string add = (msgline.empty() ? "" : " ") + word;
+                const size_t addLen = UTF8::Strlen(add);
                 const size_t rem = lineLenMax-UTF8::Strlen(msgline);
                 // No more space -> next line
                 if (!rem) break;
-                // Check if the line would overflow with `word`
-                if (wordLen > rem) {
-                    // The word would fit by itself on a line -> next line
+                // Check if the line would overflow with `add`
+                if (addLen > rem) {
+                    // The word (without potential space) would fit by itself on a line -> next line
                     if (wordLen <= lineLenMax) break;
                     // The word wouldn't fit by itself on a line -> split word
-                    std::string head = word.substr(0, rem);
-                    std::string tail = word.substr(rem, wordLen-rem);
+                    std::string head = add.substr(0, rem);
+                    std::string tail = add.substr(rem, addLen-rem);
                     
                     msgline += head;
                     lineInput.pop_front();
@@ -62,7 +64,7 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
                     continue;
                 }
                 
-                msgline += word;
+                msgline += add;
                 lineInput.pop_front();
             }
         }
