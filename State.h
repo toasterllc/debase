@@ -271,14 +271,17 @@ private:
     
     static constexpr uint32_t _Version = 0;
     
+    struct _State {
+        std::map<Ref,History> history;
+        std::map<Ref,std::vector<Snapshot>> snapshots;
+    };
+    
     _Path _stateDir;
     _Path _repoStateDir;
     Git::Repo _repo;
     
-    std::map<Ref,History> _history;
+    _State _state;
     std::map<Ref,History> _historyPrev;
-    std::map<Ref,std::vector<Snapshot>> _snapshots;
-    
     std::map<Ref,Snapshot> _initialSnapshot;
     
     static _Path _VersionLockFilePath(_Path dir) {
@@ -289,6 +292,10 @@ private:
         std::string name = std::filesystem::canonical(repo.path());
         std::replace(name.begin(), name.end(), '/', '-'); // Replace / with ~
         return dir / "Repo" / name;
+    }
+    
+    static _Path _RepoStateFilePath(_Path repoStateDir) {
+        return repoStateDir / "State";
     }
     
     static uint32_t _VersionRead(std::istream& stream) {
@@ -338,6 +345,23 @@ private:
         }
     }
     
+    static void _StateRead(_State& state, std::istream& stream) {
+        stream.exceptions(std::ios::failbit | std::ios::badbit);
+        nlohmann::json j;
+        stream >> j;
+        j.at("history").get_to(state.history);
+        j.at("snapshots").get_to(state.snapshots);
+    }
+    
+    static void _StateWrite(const _State& state, std::ostream& stream) {
+        stream.exceptions(std::ios::failbit | std::ios::badbit);
+        nlohmann::json j = {
+            {"history", state.history},
+            {"snapshots", state.snapshots},
+        };
+        stream << std::setw(4) << j;
+    }
+    
 //    void _saveActiveSnapshotIfNeeded(Ref ref) {
 //        Snapshot& active = _activeSnapshot.at(ref);
 //        Snapshot& activePrev = _activeSnapshotPrev.at(ref);
@@ -373,23 +397,18 @@ public:
         }
         
         // Decode _history / _snapshots
-        std::ifstream f(_repoStateDir / "State");
-        if (f) {
-            nlohmann::json j;
-            f >> j;
-            j.at("history").get_to(_history);
-            j.at("snapshots").get_to(_snapshots);
-        }
+        std::ifstream f(_RepoStateFilePath(_repoStateDir));
+        if (f) _StateRead(_state, f);
         
-        // Ensure that _history has an entry for each ref
+        // Ensure that _state.history has an entry for each ref
         // Also ensure that if the stored history head doesn't
         // match the current head, we create a fresh history.
         for (Git::Ref ref : refs) {
             Git::Commit headCurrent = ref.commit();
-            auto find = _history.find(Convert(ref));
-            Git::Commit headStored = (find!=_history.end() ? Convert(_repo, find->second.get().head) : nullptr);
+            auto find = _state.history.find(Convert(ref));
+            Git::Commit headStored = (find!=_state.history.end() ? Convert(_repo, find->second.get().head) : nullptr);
             if (headStored != headCurrent) {
-                _history[Convert(ref)] = History(RefState{.head = Convert(headCurrent)});
+                _state.history[Convert(ref)] = History(RefState{.head = Convert(headCurrent)});
             }
             
             
@@ -422,11 +441,11 @@ public:
         // so we know whether to save it. (We don't want to save histories that
         // didn't change to help prevent clobbering changes from another
         // session.)
-        _historyPrev = _history;
+        _historyPrev = _state.history;
         
         // Ensure that `_snapshots` has an entry for every ref
         for (Git::Ref ref : refs) {
-            _snapshots[Convert(ref)];
+            _state.snapshots[Convert(ref)];
         }
         
         // Populate _initialSnapshot
@@ -529,34 +548,63 @@ public:
 //            Ref ref = i.first;
 //            _saveActiveSnapshotIfNeeded(ref);
 //        }
-        
         // For each ref, if the ref was changed during this session (ie the initial snapshot's
         // head differs from the ref's current head), push the ref's initial snapshot
-        std::map<Ref,std::vector<Snapshot>> snapshots = _snapshots;
-        for (auto& i : snapshots) {
-            Ref ref = i.first;
-            std::vector<Snapshot>& refSnapshots = i.second;
-            const History& refHistory = _history.at(ref);
-            const Snapshot& refInitialSnapshot = _initialSnapshot.at(ref);
-            Commit head = refHistory.get().head;
-            Commit headInitial = refInitialSnapshot.head;
-            
-            if (head != headInitial) {
-                refSnapshots.push_back(refInitialSnapshot);
-            }
+        
+        // Read existing state
+        _State state;
+        {
+            std::ifstream f(_RepoStateFilePath(_repoStateDir));
+            if (f) _StateRead(state, f);
         }
-//        snapshots.push
+        
+        // historyNew / snapshotsNew: populate with only the entries that changed, and
+        // therefore need to be written.
+        // We use this strategy so that we don't clobber data written by another debase
+        // session, for unrelated refs. If two debase sessions made modifications to the same
+        // refs, then the one that write later wins.
+        std::map<Ref,History> historyNew;
+        std::map<Ref,std::vector<Snapshot>> snapshotsNew;
+        for (const auto& i : _state.history) {
+            Ref ref = i.first;
+            const History& refHistory = i.second;
+            const History& refHistoryPrev = _historyPrev.at(ref);
+            if (refHistory != refHistoryPrev) {
+                historyNew[ref] = refHistory;
+                
+                std::vector<Snapshot> refSnapshots = _state.snapshots.at(ref);
+                refSnapshots.push_back(_initialSnapshot.at(ref));
+                snapshotsNew[ref] = refSnapshots;
+            }
+            
+            
+//            Ref ref = i.first;
+//            std::vector<Snapshot> refSnapshots = i.second;
+//            const History& refHistory = _history.at(ref);
+//            const Snapshot& refInitialSnapshot = _initialSnapshot.at(ref);
+//            Commit head = refHistory.get().head;
+//            Commit headInitial = refInitialSnapshot.head;
+//            
+//            if (head != headInitial) {
+//                refSnapshots.push_back(refInitialSnapshot);
+//            }
+        }
         
         #warning TODO: reload the state file (since it may have changed), and only update the history/snapshots that changed
         
         std::filesystem::create_directories(_repoStateDir);
-        std::ofstream f(_repoStateDir / "State");
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        nlohmann::json j = {
-            {"history", _history},
-            {"snapshots", snapshots},
-        };
-        f << std::setw(4) << j;
+        {
+            std::ofstream f(_RepoStateFilePath(_repoStateDir));
+            _StateWrite(state, f);
+        }
+        
+//        std::ofstream f(_repoStateDir / "State");
+//        f.exceptions(std::ios::failbit | std::ios::badbit);
+//        nlohmann::json j = {
+//            {"history", _state.history},
+//            {"snapshots", _state.snapshots},
+//        };
+//        f << std::setw(4) << j;
         
 //        // refHistory: intentional loose '_Json' typing because we want to maintain all
 //        // of its data, even if, eg we fail to construct a Ref because it doesn't exist.
@@ -627,11 +675,11 @@ public:
 //    }
     
     History& history(Git::Ref ref) {
-        return _history.at(Convert(ref));
+        return _state.history.at(Convert(ref));
     }
     
     const std::vector<Snapshot>& snapshots(Git::Ref ref) const {
-        return _snapshots.at(Convert(ref));
+        return _state.snapshots.at(Convert(ref));
     }
     
     Git::Repo repo() const {
