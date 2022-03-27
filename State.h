@@ -146,6 +146,12 @@ struct Snapshot {
     Snapshot() {}
     Snapshot(Git::Commit c) : creationTime(time(nullptr)), head(Convert(c)) {}
     
+    bool operator<(const Snapshot& x) const {
+        if (creationTime != x.creationTime) return creationTime < x.creationTime;
+        if (head != x.head) head < x.head;
+        return false;
+    }
+    
     bool operator==(const Snapshot& x) const {
         if (creationTime != x.creationTime) return false;
         if (head != x.head) return false;
@@ -362,6 +368,26 @@ private:
         stream << std::setw(4) << j;
     }
     
+    static std::vector<Snapshot> _CleanSnapshots(const std::vector<Snapshot>& snapshots) {
+//        std::set<Snapshot> unique;
+//        unique.insert(snapshots.begin(), snapshots.end());
+        
+        std::map<Commit,Snapshot> latestSnapshot;
+        for (const Snapshot& snap : snapshots) {
+            auto find = latestSnapshot.find(snap.head);
+            if (find==latestSnapshot.end() || snap.creationTime>find->second.creationTime) {
+                latestSnapshot[snap.head] = snap;
+            }
+        }
+        
+        std::vector<Snapshot> r;
+        for (auto i : latestSnapshot) {
+            r.push_back(i.second);
+        }
+        std::sort(r.begin(), r.end());
+        return r;
+    }
+    
 //    void _saveActiveSnapshotIfNeeded(Ref ref) {
 //        Snapshot& active = _activeSnapshot.at(ref);
 //        Snapshot& activePrev = _activeSnapshotPrev.at(ref);
@@ -558,23 +584,24 @@ public:
             if (f) _StateRead(state, f);
         }
         
-        // historyNew / snapshotsNew: populate with only the entries that changed, and
+        // Update `state.history`/`state.snapshots` with only the entries that changed, and
         // therefore need to be written.
         // We use this strategy so that we don't clobber data written by another debase
         // session, for unrelated refs. If two debase sessions made modifications to the same
         // refs, then the one that write later wins.
-        std::map<Ref,History> historyNew;
-        std::map<Ref,std::vector<Snapshot>> snapshotsNew;
         for (const auto& i : _state.history) {
             Ref ref = i.first;
             const History& refHistory = i.second;
             const History& refHistoryPrev = _historyPrev.at(ref);
             if (refHistory != refHistoryPrev) {
-                historyNew[ref] = refHistory;
+                state.history[ref] = refHistory;
                 
                 std::vector<Snapshot> refSnapshots = _state.snapshots.at(ref);
                 refSnapshots.push_back(_initialSnapshot.at(ref));
-                snapshotsNew[ref] = refSnapshots;
+                // Remove duplicate snapshots and sort them
+                refSnapshots = _CleanSnapshots(refSnapshots);
+                
+                state.snapshots[ref] = refSnapshots;
             }
             
             
