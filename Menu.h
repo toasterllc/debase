@@ -94,7 +94,7 @@ public:
 //        return _mouseOverButton;
 //    }
     
-    const Button hitTest(const Point& p) {
+    Button hitTest(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
         

@@ -337,25 +337,6 @@ static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commi
     abort();
 }
 
-static void _UndoRedo(UI::RevColumn col, bool undo) {
-    Git::Rev rev = col->rev();
-    State::Snapshot& h = _RepoState.activeSnapshot(col->rev().ref);
-    
-    State::RefState refStatePrev = h.history.get();
-    if (undo) h.history.prev();
-    else      h.history.next();
-    State::RefState refState = h.history.get();
-    
-    Git::Commit commit = State::Convert(_Repo, h.history.get().head);
-    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-    
-    rev = _Repo.revReplace(rev, commit);
-    _Selection = {
-        .rev = rev,
-        .commits = selection,
-    };
-}
-
 static void _Reload() {
     // Create a RevColumn for each specified branch
     constexpr int InsetX = 3;
@@ -391,6 +372,27 @@ static void _Reload() {
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
+}
+
+static void _UndoRedo(UI::RevColumn col, bool undo) {
+    Git::Rev rev = col->rev();
+    State::Snapshot& h = _RepoState.activeSnapshot(col->rev().ref);
+    
+    State::RefState refStatePrev = h.history.get();
+    if (undo) h.history.prev();
+    else      h.history.next();
+    State::RefState refState = h.history.get();
+    
+    Git::Commit commit = State::Convert(_Repo, h.history.get().head);
+    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
+    
+    rev = _Repo.revReplace(rev, commit);
+    _Selection = {
+        .rev = rev,
+        .commits = selection,
+    };
+    
+    _Reload();
 }
 
 // _TrackMouseInsideCommitPanel
@@ -788,11 +790,13 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot&
     constexpr int SnapshotMenuWidth = 26;
     UI::Button b = MakeShared<UI::SnapshotButton>(repo, snap, SnapshotMenuWidth);
     UI::ButtonOptions& opts = b->options();
+    opts.enabled = true;
     opts.colors = _Colors;
     return b;
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
+    Git::Ref ref = column->rev().ref;
     std::vector<UI::Button> buttons;
     
 //    {
@@ -802,7 +806,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
 //        buttons.push_back(button);
 //    }
     
-    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(column->rev().ref);
+    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
         buttons.push_back(_MakeSnapshotMenuButton(_Repo, *it));
@@ -819,7 +823,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
     _SnapshotsMenu->setPosition({px, 1});
     
-    UI::Button menuButton = nullptr;
+    UI::SnapshotButton menuButton = nullptr;
     bool abort = false;
     for (;;) {
         _Draw();
@@ -828,7 +832,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         abort = (ev.type != UI::Event::Mouse);
         
         if (ev.type == UI::Event::Mouse) {
-            menuButton = _SnapshotsMenu->hitTest({ev.mouse.x, ev.mouse.y});
+            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->hitTest({ev.mouse.x, ev.mouse.y}));
         } else {
             menuButton = nullptr;
         }
@@ -849,8 +853,16 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         }
     }
     
-    if (!abort) {
-        
+    if (!abort && menuButton) {
+        Git::Commit commit;
+        // Scope `snap` because it's invalid after the call to setActiveSnapshot()
+        {
+            const State::Snapshot& snap = menuButton->snapshot();
+            commit = Convert(_Repo, snap.history.get().head);
+            _RepoState.setActiveSnapshot(ref, snap);
+        }
+        _Repo.refReplace(ref, commit);
+        _Reload();
     }
     
     // Reset state
@@ -882,11 +894,9 @@ static void _TrackMouseInsideButton(MEVENT mouseDownEvent, UI::RevColumn column,
         switch (hit.button) {
         case UI::RevColumnButton::Undo:
             _UndoRedo(column, true);
-            _Reload();
             break;
         case UI::RevColumnButton::Redo:
             _UndoRedo(column, false);
-            _Reload();
             break;
         case UI::RevColumnButton::Snapshots:
             _TrackSnapshotsMenu(column);
@@ -1119,14 +1129,9 @@ static void _EventLoop() {
     Defer(_CursesDeinit());
     
     _RootWindow = MakeShared<UI::Window>(::stdscr);
+    _Reload();
     
-    bool reload = true;
     for (;;) {
-        if (reload) {
-            _Reload();
-            reload = false;
-        }
-        
         _Draw();
         UI::Event ev = _RootWindow->nextEvent();
         std::optional<Git::Op> gitOp;
