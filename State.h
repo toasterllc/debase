@@ -140,12 +140,13 @@ struct Snapshot {
     using History = T_History<RefState>;
     
     Snapshot() {}
-    Snapshot(Git::Commit commit) {
-        creationTime = time(nullptr);
+    Snapshot(Git::Commit c) : creationTime(time(nullptr)) {
         history.set(RefState{
-            .head = Convert(commit),
+            .head = Convert(c),
         });
     }
+    
+    Snapshot(const History& h) : creationTime(time(nullptr)), history(h) {}
     
     bool operator==(const Snapshot& x) const {
         if (creationTime != x.creationTime) return false;
@@ -304,7 +305,7 @@ private:
     
     static Toastbox::FDStreamInOut _VersionLockFileOpen(_Path path, bool create) {
         constexpr mode_t Mode = (S_IRUSR|S_IWUSR) | S_IRGRP | S_IROTH;
-        const int opts = (O_RDWR|O_EXLOCK) | (create ? (O_CREAT|O_EXCL) : 0);
+        const int opts = (O_RDWR|O_EXLOCK|O_CLOEXEC) | (create ? (O_CREAT|O_EXCL) : 0);
         int ir = -1;
         do ir = open(path.c_str(), opts, Mode);
         while (errno==EINTR);
@@ -342,7 +343,7 @@ private:
         Snapshot& active = _activeSnapshot.at(ref);
         Snapshot& activePrev = _activeSnapshotPrev.at(ref);
         if (active != activePrev) {
-            _snapshots[ref].push_back(active);
+            _snapshots[ref].emplace_back(active.history);
         }
     }
     
@@ -530,7 +531,7 @@ public:
         return _activeSnapshot.at(Convert(ref));
     }
     
-    void setActiveSnapshot(Git::Ref ref, Snapshot& snap) {
+    void setActiveSnapshot(Git::Ref ref, const Snapshot& snap) {
         // When setting the active snapshot, create a new snapshot from
         // the currently-active snapshot, if it contains modifications
         // since it was made the active snapshot

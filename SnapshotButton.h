@@ -26,30 +26,39 @@ public:
     }
     
     void draw(Window win) const override {
-        const int width = options().frame.size.x;
-        const Point off = options().frame.point;
+        const ButtonOptions& opts = options();
+        const ColorPalette& colors = opts.colors;
+        const int width = opts.frame.size.x;
+        const Point off = opts.frame.point;
         
         {
             UI::Attr attr;
-//            if (!_header && _borderColor) attr = Attr(shared_from_this(), *_borderColor);
+            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
             win->drawText(off + Size{0, 0}, "%s", _commit.id.c_str());
         }
         
         {
+            UI::Attr attr(win, opts.colors.subtitleText);
             int offX = width - (int)UTF8::Strlen(_time);
-            UI::Attr attr(win, options().colors.subtitleText);
             win->drawText(off + Size{offX, 0}, "%s", _time.c_str());
         }
         
         {
-            UI::Attr attr(win, options().colors.subtitleText);
+            UI::Attr attr;
+            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+            else                attr = UI::Attr(win, opts.colors.subtitleText);
             win->drawText(off + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
-        int i = 0;
-        for (const std::string& line : _commit.message) {
-            win->drawText(off + Size{0, 2+i}, "%s", line.c_str());
-            i++;
+        {
+            UI::Attr attr;
+            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+            
+            int i = 0;
+            for (const std::string& line : _commit.message) {
+                win->drawText(off + Size{0, 2+i}, "%s", line.c_str());
+                i++;
+            }
         }
         
 //        {
