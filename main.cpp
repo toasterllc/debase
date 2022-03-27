@@ -1251,15 +1251,11 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: turn snapshots into merely keeping track of what commit was the HEAD, not the full undo history.
-    #warning TODO: when restoring a snapshot, it should just restore the HEAD of the snapshot, and push an undo operation (as any other operation) that the user can undo/redo as normal
-    #warning TODO: further, snapshots should be created only at startup ("Session Start"), and on exit, the snapshot to only be enqueued if it differs from the current HEAD of the repo
+    #warning TODO: show "Session Start" snapshot
     
     #warning TODO: fully flesh out when to create new snapshots
     
     #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
-    
-    #warning TODO: when creating a new snapshot, if an equivalent one already exists, remove the old one. actually not sure if we should do this. eg sometimes we might want to revert back to the oldest thing that we have, but that might not be the thing we expect if we've removed the old snapshots...
     
     #warning TODO: get command-. working while context menu/snapshot menu is open
     
@@ -1407,6 +1403,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: nevermind: implement log of events, so that if something goes wrong, we can manually get back
 //    
 //    #warning TODO: backup all supplied revs before doing anything
+//
+//    #warning TODO: turn snapshots into merely keeping track of what commit was the HEAD, not the full undo history.
+//    #warning TODO: when restoring a snapshot, it should just restore the HEAD of the snapshot, and push an undo operation (as any other operation) that the user can undo/redo as normal
+//    #warning TODO: further, snapshots should be created only at startup ("Session Start"), and on exit, the snapshot to only be enqueued if it differs from the current HEAD of the repo
+//
+//    #warning TODO: when creating a new snapshot, if an equivalent one already exists, remove the old one.
     
 //    {
 //        Git::Commit a;
