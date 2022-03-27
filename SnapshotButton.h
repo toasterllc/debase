@@ -11,8 +11,8 @@ namespace UI {
 
 class _SnapshotButton : public _Button {
 public:
-    _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, bool sessionStart, int width) :
-    _sessionStart(sessionStart), _snapshot(snapshot) {
+    _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width, bool sessionStart, bool activeSnapshot) :
+    _snapshot(snapshot), _sessionStart(sessionStart), _activeSnapshot(activeSnapshot) {
         
         Git::Commit commit = State::Convert(repo, _snapshot.head);
         Git::Signature sig = commit.author();
@@ -28,16 +28,19 @@ public:
     }
     
     void draw(Window win) const override {
+        constexpr int InsetX = 2;
+        
         const ButtonOptions& opts = options();
         const ColorPalette& colors = opts.colors;
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
-        const int offY = (_sessionStart ? 1 : 0);
+        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
+//        const int offY = (_sessionStart ? 1 : 0);
         
         if (_sessionStart) {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            win->drawText(off, "Session Start");
+            win->drawText(off + Size{InsetX,0}, "Session Start");
         }
         
         // Draw time
@@ -51,27 +54,44 @@ public:
         {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            win->drawText(off + Size{0, offY}, "%s", _commit.id.c_str());
+            win->drawText(offText + Size{0, 0}, "%s", _commit.id.c_str());
         }
         
         // Draw author name
         {
-            UI::Attr attr;
-            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            else                attr = UI::Attr(win, opts.colors.subtitleText);
-            win->drawText(off + Size{0, offY+1}, "%s", _commit.author.c_str());
+            UI::Attr attr(win, opts.colors.subtitleText);
+//            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+//            else                attr = UI::Attr(win, opts.colors.subtitleText);
+            win->drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
         // Draw commit message
         {
-            UI::Attr attr;
-            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+//            UI::Attr attr;
+//            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
             
             int i = 0;
             for (const std::string& line : _commit.message) {
-                win->drawText(off + Size{0, offY+2+i}, "%s", line.c_str());
+                win->drawText(offText + Size{0, 2+i}, "%s", line.c_str());
                 i++;
             }
+        }
+        
+        // Draw highlight
+        {
+            if (opts.highlight) {
+                UI::Attr attr(win, colors.menu|A_BOLD);
+                win->drawText(off + Size{0,0}, "●");
+            
+            } else if (_activeSnapshot) {
+                win->drawText(off + Size{0,0}, "○");
+            }
+            
+//            if (opts.highlight) {
+//                UI::Attr attr(win, colors.menu|A_BOLD);
+////                win->drawText(off + Size{0,0}, "●");
+//                win->drawText(off + Size{0,0}, "○");
+//            }
         }
         
 //        {
@@ -106,6 +126,7 @@ private:
     const State::Snapshot _snapshot;
     
     bool _sessionStart = false;
+    bool _activeSnapshot = false;
     std::string _time;
     struct {
         std::string id;

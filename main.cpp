@@ -803,25 +803,32 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot& snap, bool sessionStart) {
+static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
     constexpr int SnapshotMenuWidth = 26;
-    UI::Button b = MakeShared<UI::SnapshotButton>(repo, snap, sessionStart, SnapshotMenuWidth);
+    bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
+    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(repo, snap, SnapshotMenuWidth, sessionStart, activeSnapshot);
     UI::ButtonOptions& opts = b->options();
     opts.enabled = true;
     opts.colors = _Colors;
+    
+//    UI::SnapshotButtonOptions& snapOpts = b->snapshotOptions();
+//    snapOpts.sessionStart = sessionStart;
+//    snapOpts.activeSnapshot = false;
+////    .sessionStart = sessionStart
+    
     return b;
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     Git::Ref ref = column->rev().ref;
     std::vector<UI::Button> buttons = {
-        _MakeSnapshotMenuButton(_Repo, _RepoState.initialSnapshot(ref), true),
+        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
     };
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        buttons.push_back(_MakeSnapshotMenuButton(_Repo, *it, false));
+        buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
         
 //        button->options().label = "Start of Session";
 //        button->options().enabled = true;
