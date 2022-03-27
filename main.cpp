@@ -36,6 +36,9 @@ struct _Selection {
     std::set<Git::Commit> commits;
 };
 
+class _ExitRequest : public std::exception {
+};
+
 static UI::ColorPalette _Colors;
 static std::optional<UI::ColorPalette> _ColorsPrev;
 
@@ -299,16 +302,30 @@ static _Event _WaitForEvent(MouseButtons buttons=MouseButtons::Left) {
     // Wait for another mouse event
     for (;;) {
         UI::Event ev = _RootWindow->nextEvent();
-        if (ev == UI::Event::KeyEscape) return _Event{ .type = UI::Event::KeyEscape };
-        if (ev != UI::Event::Mouse) continue;
-        MEVENT mouse = {};
-        int ir = ::getmouse(&mouse);
-        if (ir != OK) continue;
-        return _Event{
-            .type = UI::Event::Mouse,
-            .mouse = mouse,
-            .mouseUp = (bool)(mouse.bstate & mouseReleasedMask),
-        };
+        switch (ev) {
+        case UI::Event::KeyEscape: {
+            return _Event{ .type = ev };
+        }
+        
+        case UI::Event::Mouse: {
+            MEVENT mouse = {};
+            int ir = ::getmouse(&mouse);
+            if (ir != OK) continue;
+            return _Event{
+                .type = UI::Event::Mouse,
+                .mouse = mouse,
+                .mouseUp = (bool)(mouse.bstate & mouseReleasedMask),
+            };
+        }
+        
+        case UI::Event::KeyCtrlC:
+        case UI::Event::KeyCtrlD: {
+            throw _ExitRequest();
+        }
+        
+        default: {
+            continue;
+        }}
     }
 }
 
@@ -786,9 +803,9 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot& snap) {
+static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot& snap, bool sessionStart) {
     constexpr int SnapshotMenuWidth = 26;
-    UI::Button b = MakeShared<UI::SnapshotButton>(repo, snap, SnapshotMenuWidth);
+    UI::Button b = MakeShared<UI::SnapshotButton>(repo, snap, sessionStart, SnapshotMenuWidth);
     UI::ButtonOptions& opts = b->options();
     opts.enabled = true;
     opts.colors = _Colors;
@@ -797,19 +814,14 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, const State::Snapshot&
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     Git::Ref ref = column->rev().ref;
-    std::vector<UI::Button> buttons;
-    
-//    {
-//        auto button = MakeShared<UI::SnapshotButton>();
-//        button->options().label = "Start of Session";
-//        button->options().enabled = true;
-//        buttons.push_back(button);
-//    }
+    std::vector<UI::Button> buttons = {
+        _MakeSnapshotMenuButton(_Repo, _RepoState.initialSnapshot(ref), true),
+    };
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        buttons.push_back(_MakeSnapshotMenuButton(_Repo, *it));
+        buttons.push_back(_MakeSnapshotMenuButton(_Repo, *it, false));
         
 //        button->options().label = "Start of Session";
 //        button->options().enabled = true;
@@ -1239,7 +1251,7 @@ static void _EventLoop() {
         
         case UI::Event::KeyCtrlC:
         case UI::Event::KeyCtrlD: {
-            return;
+            throw _ExitRequest();
         }
         
         default: {
@@ -1496,7 +1508,14 @@ int main(int argc, const char* argv[]) {
             }
         );
         
-        _EventLoop();
+        try {
+            _EventLoop();
+        } catch (const _ExitRequest&) {
+            // Nothing to do
+        } catch (...) {
+            throw;
+        }
+        
         _RepoState.write();
     
     } catch (const std::exception& e) {

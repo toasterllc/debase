@@ -11,7 +11,9 @@ namespace UI {
 
 class _SnapshotButton : public _Button {
 public:
-    _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width) : _snapshot(snapshot) {
+    _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, bool sessionStart, int width) :
+    _sessionStart(sessionStart), _snapshot(snapshot) {
+        
         Git::Commit commit = State::Convert(repo, _snapshot.head);
         Git::Signature sig = commit.author();
         
@@ -92,6 +94,7 @@ private:
     
     const State::Snapshot _snapshot;
     
+    bool _sessionStart = false;
     std::string _time;
     struct {
         std::string id;
