@@ -9,20 +9,30 @@
 
 namespace UI {
 
+struct SnapshotButtonOptions {
+    // Required (by constructor)
+    Git::Repo repo;
+    State::Snapshot snapshot;
+    int width = 0;
+    bool sessionStart = false;
+    
+    // Optional
+    bool activeSnapshot = false;
+};
+
 class _SnapshotButton : public _Button {
 public:
-    _SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width, bool sessionStart, bool activeSnapshot) :
-    _snapshot(snapshot), _sessionStart(sessionStart), _activeSnapshot(activeSnapshot) {
+    _SnapshotButton(const SnapshotButtonOptions& opts) : _opts(opts) {
         
-        Git::Commit commit = State::Convert(repo, _snapshot.head);
+        Git::Commit commit = State::Convert(_opts.repo, _opts.snapshot.head);
         Git::Signature sig = commit.author();
         
-        _time = Time::RelativeTimeDisplayString(_snapshot.creationTime);
+        _time = Time::RelativeTimeDisplayString(_opts.snapshot.creationTime);
         _commit.id = Git::DisplayStringForId(commit.id());
         _commit.author = sig.name();
-        _commit.message = LineWrap::Wrap(1, width, commit.message());
+        _commit.message = LineWrap::Wrap(1, _opts.width, commit.message());
         
-        options().frame.size = {width, 3 + (_sessionStart ? _SessionStartHeaderHeight : 0)};
+        options().frame.size = {_opts.width, 3};
         
 //        if (isdigit(_time[0])) _time += " ago";
     }
@@ -35,13 +45,13 @@ public:
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
         const Size offTextX = Size{InsetX, 0};
-        const Size offTextY = Size{0, (_sessionStart ? _SessionStartHeaderHeight : 0)};
+        const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;
         
 //        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
 //        const int offY = (_sessionStart ? 1 : 0);
         
-        if (_sessionStart) {
+        if (_opts.sessionStart) {
 //            const char title[] = "       Session Start      ";
 //            int offX = 0;
 //            UI::Attr attr(win, A_BOLD|A_UNDERLINE);
@@ -58,11 +68,11 @@ public:
 //            win->drawText(off + Size{offX, 0}, title);
             
             
-            const char title[] = " Session Start ";
-            int offX = (width - (std::size(title)-1))/2;
-            win->drawLineHoriz(off, width);
-            UI::Attr attr(win, A_BOLD);
-            win->drawText(off + Size{offX, 0}, title);
+//            const char title[] = " Session Start ";
+//            int offX = (width - (std::size(title)-1))/2;
+//            win->drawLineHoriz(off, width);
+//            UI::Attr attr(win, A_BOLD);
+//            win->drawText(off + Size{offX, 0}, title);
             
             
 //            win->drawLineHoriz(off, width);
@@ -114,8 +124,12 @@ public:
                 UI::Attr attr(win, colors.menu|A_BOLD);
                 win->drawText(off + offTextY, "●");
             
-            } else if (_activeSnapshot) {
-                win->drawText(off + offTextY, "○");
+            } else if (_opts.activeSnapshot) {
+                if (opts.mouseActive) {
+                    win->drawText(off + offTextY, "○");
+                } else {
+                    win->drawText(off + offTextY, "●");
+                }
             }
             
 //            if (opts.highlight) {
@@ -148,15 +162,12 @@ public:
 //        }
     }
     
-    const State::Snapshot& snapshot() { return _snapshot; }
+    const SnapshotButtonOptions& snapshotOptions() { return _opts; }
     
 private:
-    static constexpr int _SessionStartHeaderHeight = 1;
+//    static constexpr int _SessionStartHeaderHeight = 1;
     
-    const State::Snapshot _snapshot;
-    
-    bool _sessionStart = false;
-    bool _activeSnapshot = false;
+    SnapshotButtonOptions _opts;
     std::string _time;
     struct {
         std::string id;

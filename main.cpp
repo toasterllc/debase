@@ -28,6 +28,7 @@
 #include "State.h"
 #include "StateDir.h"
 #include "SnapshotButton.h"
+#include "SnapshotMenu.h"
 
 namespace fs = std::filesystem;
 
@@ -70,7 +71,7 @@ static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
 static UI::Menu _ContextMenu;
-static UI::Menu _SnapshotsMenu;
+static UI::SnapshotMenu _SnapshotsMenu;
 
 static UI::ErrorPanel _ErrorPanel;
 
@@ -715,8 +716,11 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     UI::Button editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
     UI::Button deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
     std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
-    
-    _ContextMenu = MakeShared<UI::Menu>(_Colors, buttons);
+    UI::MenuOptions opts = {
+        .colors = _Colors,
+        .buttons = buttons
+    };
+    _ContextMenu = MakeShared<UI::Menu>(opts);
     _ContextMenu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
     UI::Button menuButton = nullptr;
@@ -803,13 +807,25 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
+    Git::Repo repo;
+    State::Snapshot snapshot;
+    int width = 0;
+    bool sessionStart = false;
+
 static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
     constexpr int SnapshotMenuWidth = 26;
     bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
-    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(repo, snap, SnapshotMenuWidth, sessionStart, activeSnapshot);
-    UI::ButtonOptions& opts = b->options();
-    opts.enabled = true;
-    opts.colors = _Colors;
+    UI::SnapshotButtonOptions snapButtonOpts = {
+        .repo           = repo,
+        .snapshot       = snap,
+        .width          = SnapshotMenuWidth,
+        .sessionStart   = sessionStart,
+        .activeSnapshot = activeSnapshot,
+    };
+    
+    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(snapButtonOpts);
+    b->options().enabled = true;
+    b->options().colors = _Colors;
     
 //    UI::SnapshotButtonOptions& snapOpts = b->snapshotOptions();
 //    snapOpts.sessionStart = sessionStart;
@@ -821,8 +837,11 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const St
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     Git::Ref ref = column->rev().ref;
-    std::vector<UI::Button> buttons = {
-        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
+    bool showSessionStart = (State::Convert(ref.commit()) != _RepoState.initialSnapshot(ref).head);
+    std::vector<UI::Button> buttons;
+    
+    if (showSessionStart) {
+        buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true));
     };
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
@@ -837,7 +856,16 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
 //        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
-    _SnapshotsMenu = MakeShared<UI::Menu>(_Colors, buttons);
+    UI::MenuOptions menuOpts = {
+        .colors = _Colors,
+        .title = (showSessionStart ? "Session Start" : ""),
+        .buttons = buttons
+    };
+    
+    UI::SnapshotMenuOptions snapMenuOpts = {
+        .sessionStart = showSessionStart,
+    };
+    _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(snapMenuOpts, menuOpts);
     
     int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
     _SnapshotsMenu->setPosition({px, 1});
@@ -874,7 +902,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     
     if (!abort && menuButton) {
         State::History& h = _RepoState.history(ref);
-        State::Commit commitNew = menuButton->snapshot().head;
+        State::Commit commitNew = menuButton->snapshotOptions().snapshot.head;
         State::Commit commitCur = h.get().head;
         
         if (commitNew != commitCur) {
@@ -1270,6 +1298,10 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: only show the current-session marker on the "Session Start" element if there's no other snapshot that has it
+    
+    #warning TODO: don't show the first snapshot if it's the same as the "Session Start" snapshot
+    
     #warning TODO: improve appearance of active snapshot marker in snapshot menu
     
     #warning TODO: figure out how to hide a snapshot if it's the same as the "Session Start" snapshot

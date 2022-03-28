@@ -14,6 +14,7 @@ struct ButtonOptions {
     bool drawBorder = false;
     int insetX = 0;
     bool highlight = false;
+    bool mouseActive = false;
     Rect frame;
 };
 

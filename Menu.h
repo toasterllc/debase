@@ -6,12 +6,18 @@
 
 namespace UI {
 
+struct MenuOptions {
+    const ColorPalette& colors;
+    std::string title;
+    std::vector<Button> buttons;
+};
+
 class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
 public:
-    _Menu(const ColorPalette& colors, const std::vector<Button>& buttons) : _colors(colors) {
+    _Menu(const MenuOptions& opts) : _opts(opts) {
         // Find the longest button to set our width
         int width = 0;
-        for (Button button : buttons) {
+        for (Button button : _opts.buttons) {
 //            int w = (int)UTF8::Strlen(opts.label) + (int)UTF8::Strlen(opts.key);
             width = std::max(width, button->options().frame.size.x);
         }
@@ -25,7 +31,7 @@ public:
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
         int height = 2*_BorderSize;
-        for (Button button : buttons) {
+        for (Button button : _opts.buttons) {
 //            const int x = BorderSize;
 //            const int y = BorderSize + (int)idx*RowHeight;
             
@@ -37,7 +43,7 @@ public:
             
             y += opts.frame.size.y+_SeparatorHeight;
             height += opts.frame.size.y;
-            if (button != buttons.back()) {
+            if (button != _opts.buttons.back()) {
                 height += _SeparatorHeight;
             }
         }
@@ -47,7 +53,7 @@ public:
         setSize({width, height});
 //        _drawNeeded = true;
 //        
-        _buttons = buttons;
+//        _buttons = _opts.buttons;
     }
     
     
@@ -97,15 +103,18 @@ public:
     Button hitTest(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
+        bool mouseActive = HitTest(frame, p);
         
         Button mouseOverButton = nullptr;
-        for (Button button : _buttons) {
+        for (Button button : _opts.buttons) {
+            ButtonOptions& opts = button->options();
+            opts.mouseActive = mouseActive;
             bool hit = button->hitTest(off, {1,1});
             if (hit && !mouseOverButton) {
-                button->options().highlight = true;
+                opts.highlight = true;
                 mouseOverButton = button;
             } else {
-                button->options().highlight = false;
+                opts.highlight = false;
             }
         }
         
@@ -113,17 +122,38 @@ public:
     }
     
     void draw() {
+        const int width = bounds().size.x;
         erase();
         
-        const int w = bounds().size.x;
-        for (Button button : _buttons) {
+        size_t idx = 0;
+        for (Button button : _opts.buttons) {
             button->draw(shared_from_this());
             
+//            // Draw separator
+//            if (button != _buttons.back()) {
+//                int len = w;
+//                Point p = {0, button->options().frame.ymax()+1};
+//                cchar_t c = {
+//                    .chars = L"═",
+//                };
+//                mvwhline_set(*this, p.y, p.x, &c, len);
+////                UI::Attr attr(shared_from_this(), _colors.menu);
+////                drawLineHoriz({0, button->options().frame.ymax()+1}, w);
+//            }
+            
             // Draw separator
-            if (button != _buttons.back()) {
-                UI::Attr attr(shared_from_this(), _colors.menu);
-                drawLineHoriz({0, button->options().frame.ymax()+1}, w);
+            if (idx != _opts.buttons.size()-1) {
+                UI::Attr attr(shared_from_this(), _opts.colors.menu);
+//                UI::Attr attr(shared_from_this(), _colors.menu | (!idx ? A_UNDERLINE|A_BOLD : 0));
+                drawLineHoriz({0, button->options().frame.ymax()+1}, width);
             }
+            
+            
+//            // Draw separator
+//            if (idx != _buttons.size()-1) {
+//                UI::Attr attr(shared_from_this(), _colors.menu | (!idx ? A_UNDERLINE|A_BOLD : 0));
+//                drawLineHoriz({0, button->options().frame.ymax()+1}, w);
+//            }
 //            
 ////        for (size_t i=0; i<_buttonCount; i++) {
 ////            ::wmove(*this, p.y, p.x);
@@ -173,19 +203,29 @@ public:
 ////            if (_buttons[i] == _mouseOverButton) {
 ////                drawLineHoriz({0,y}, 10);
 ////            }
-//            
-//            idx++;
+            
+            idx++;
         }
         
         // Draw border
         {
-            UI::Attr attr(shared_from_this(), _colors.menu);
+            UI::Attr attr(shared_from_this(), _opts.colors.menu);
             drawBorder();
+            
+            // Draw title
+            if (!_opts.title.empty()) {
+                int offX = (width-(int)UTF8::Strlen(_opts.title))/2;
+                drawText({offX,0}, " %s ", _opts.title.c_str());
+            }
         }
         
 //        _drawNeeded = false;
     }
     
+    const MenuOptions& options() { return _opts; }
+    
+//    const std::vector<Button>& buttons() const { return _buttons; }
+//    
 //    void drawIfNeeded() {
 //        if (_drawNeeded) {
 //            draw();
@@ -198,8 +238,12 @@ private:
     static constexpr int _InsetX          = 1;
     static constexpr int _KeySpacing      = 2;
     static constexpr int _RowHeight       = 2;
-    const ColorPalette& _colors;
-    std::vector<Button> _buttons;
+    
+    MenuOptions _opts;
+    
+//    const ColorPalette& _colors;
+//    std::string _title;
+//    std::vector<Button> _buttons;
 //    bool _drawNeeded = false;
 };
 
