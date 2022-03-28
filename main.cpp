@@ -1291,8 +1291,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: rename all hittest functions -> updateMouse
-    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: rigorously test copying/moving merge commits
@@ -1463,6 +1461,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: nevermind: don't show the first snapshot if it's the same as the "Session Start" snapshot
 //
 //    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
+//    
+//    #warning TODO: rename all hittest functions -> updateMouse
     
 //    {
 //        Git::Commit a;
