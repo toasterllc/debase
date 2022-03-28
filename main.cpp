@@ -102,7 +102,7 @@ static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
 //}
 
 static void _Draw() {
-    const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selectionMove);
+    const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
     
     // Update panels
     {
@@ -124,7 +124,7 @@ static void _Draw() {
                 if (selectState == _SelectState::True) {
                     visible = !dragging || copying;
                     if (dragging) borderColor = _Colors.selectionSimilar;
-                    else          borderColor = _Colors.selectionMove;
+                    else          borderColor = _Colors.selection;
                 
                 } else {
                     visible = true;
@@ -183,7 +183,7 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::Attr attr(_RootWindow, _Colors.selectionMove);
+            UI::Attr attr(_RootWindow, _Colors.selection);
             _RootWindow->drawRect(*_SelectionRect);
         }
         
@@ -975,39 +975,32 @@ static UI::ColorPalette _ColorsSet(const UI::ColorPalette& colors) {
 }
 
 static UI::ColorPalette _ColorsCreate() {
-    // _Idx0: start outside the standard 0-7 range because we don't want to clobber the standard terminal colors.
-    // This is because reading the current terminal colors isn't reliable (via color_content), therefore when we
-    // restore colors on exit, we won't necessarily be restoring the original color. So if we're going to clobber
-    // colors, clobber the colors that are less likely to be used.
-    static constexpr int Idx0 = 16;
-    
     std::string termProg = getenv("TERM_PROGRAM");
     
     UI::ColorPalette colors;
-    
     if (termProg == "Apple_Terminal") {
         // Colorspace: unknown
         // There's no simple relation between these numbers and the resulting colors because Apple's
         // Terminal.app applies some kind of filtering on top of these numbers. These values were
         // manually chosen based on their appearance.
         colors.normal           = COLOR_BLACK;
-        colors.selectionMove    = UI::Color(Idx0+0,    0,    0, 1000);
-        colors.selectionCopy    = UI::Color(Idx0+1,    0, 1000,    0);
-        colors.selectionSimilar = UI::Color(Idx0+2,  550,  550, 1000);
-        colors.disabledText     = UI::Color(Idx0+3,  300,  300,  300);
-        colors.menu             = UI::Color(Idx0+4, 1000,  435,    0);
-        colors.error            = UI::Color(Idx0+5, 1000,    0,    0);
+        colors.dimmed           = colors.add(77, 77, 77);    // Gray
+        colors.selection        = colors.add(0, 2, 255);     // Purple
+        colors.selectionCopy    = colors.add(0, 229, 130);   // Minty Green
+        colors.selectionSimilar = colors.add(140, 140, 255); // Light purple
+        colors.menu             = colors.selectionCopy;      // Minty Green
+        colors.error            = colors.add(255, 0, 0);     // Red
     
     } else {
-        // Colorspace: sRGB
-        // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
-        colors.normal           = COLOR_BLACK;
-        colors.selectionMove    = UI::Color(Idx0+0,  463,  271, 1000);
-        colors.selectionCopy    = UI::Color(Idx0+1,  165, 1000,  114);
-        colors.selectionSimilar = UI::Color(Idx0+2,  671,  667, 1000);
-        colors.disabledText     = UI::Color(Idx0+3,  486,  486,  486);
-        colors.menu             = UI::Color(Idx0+4,  969,  447,  431);
-        colors.error            = UI::Color(Idx0+5, 1000,  298,  153);
+//        // Colorspace: sRGB
+//        // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
+//        colors.normal           = COLOR_BLACK;
+//        colors.dimmed           = UI::Color(Idx0+0,  486,  486,  486);
+//        colors.selection        = UI::Color(Idx0+1,  463,  271, 1000);
+//        colors.selectionCopy    = UI::Color(Idx0+2,  165, 1000,  114);
+//        colors.selectionSimilar = UI::Color(Idx0+3,  671,  667, 1000);
+//        colors.menu             = UI::Color(Idx0+4,  969,  447,  431);
+//        colors.error            = UI::Color(Idx0+5, 1000,  298,  153);
     }
     
     return colors;

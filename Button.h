@@ -42,7 +42,7 @@ public:
         size_t keyLen = UTF8::Strlen(_opts.key);
         
         if (_opts.drawBorder) {
-            UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.disabledText));
+            UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.dimmed));
             win->drawRect(_opts.frame);
         }
         
@@ -67,14 +67,14 @@ public:
         {
             UI::Attr attr;
             if (_opts.highlight && _opts.enabled) attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
-            else if (!_opts.enabled)              attr = UI::Attr(win, _opts.colors.disabledText);
+            else if (!_opts.enabled)              attr = UI::Attr(win, _opts.colors.dimmed);
             else                                  attr = UI::Attr(win, A_NORMAL);
             win->drawText(plabel, "%s", _opts.label.c_str());
         }
         
         // Draw button key
         {
-            UI::Attr attr(win, _opts.colors.disabledText);
+            UI::Attr attr(win, _opts.colors.dimmed);
             win->drawText(pkey, "%s", _opts.key.c_str());
         }
     }

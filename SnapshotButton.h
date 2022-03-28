@@ -86,7 +86,7 @@ public:
         
         // Draw time
         {
-            UI::Attr attr(win, opts.colors.disabledText);
+            UI::Attr attr(win, opts.colors.dimmed);
             int offX = width - (int)UTF8::Strlen(_time);
             win->drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
@@ -94,15 +94,17 @@ public:
         // Draw commit id
         {
             UI::Attr attr;
-            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
+            if (opts.highlight || (_opts.activeSnapshot && !opts.mouseActive)) {
+                attr = UI::Attr(win, colors.menu|A_BOLD);
+            }
             win->drawText(offText, "%s", _commit.id.c_str());
         }
         
         // Draw author name
         {
-            UI::Attr attr(win, opts.colors.disabledText);
+            UI::Attr attr(win, opts.colors.dimmed);
 //            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-//            else                attr = UI::Attr(win, opts.colors.disabledText);
+//            else                attr = UI::Attr(win, opts.colors.dimmed);
             win->drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
@@ -128,6 +130,7 @@ public:
                 if (opts.mouseActive) {
                     win->drawText(off + offTextY, "%s", "○");
                 } else {
+                    UI::Attr attr(win, colors.menu|A_BOLD);
                     win->drawText(off + offTextY, "%s", "●");
                 }
             }
