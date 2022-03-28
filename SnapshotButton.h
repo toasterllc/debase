@@ -34,27 +34,31 @@ public:
         const ColorPalette& colors = opts.colors;
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
-        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
+        const Size offTextX = Size{InsetX, 0};
+        const Size offTextY = Size{0, (_sessionStart ? 1 : 0)};
+        const Size offText = off+offTextX+offTextY;
+        
+//        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
 //        const int offY = (_sessionStart ? 1 : 0);
         
         if (_sessionStart) {
-            UI::Attr attr;
-            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            win->drawText(off + Size{InsetX,0}, "Session Start");
+//            win->drawLineHoriz(off, width);
+            UI::Attr attr(win, A_BOLD);
+            win->drawText(off + offTextX, "Session Start");
         }
         
         // Draw time
         {
             UI::Attr attr(win, opts.colors.subtitleText);
             int offX = width - (int)UTF8::Strlen(_time);
-            win->drawText(off + Size{offX, 0}, "%s", _time.c_str());
+            win->drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
         
         // Draw commit id
         {
             UI::Attr attr;
             if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            win->drawText(offText + Size{0, 0}, "%s", _commit.id.c_str());
+            win->drawText(offText, "%s", _commit.id.c_str());
         }
         
         // Draw author name
@@ -81,10 +85,10 @@ public:
         {
             if (opts.highlight) {
                 UI::Attr attr(win, colors.menu|A_BOLD);
-                win->drawText(off + Size{0,0}, "●");
+                win->drawText(off + offTextY, "●");
             
             } else if (_activeSnapshot) {
-                win->drawText(off + Size{0,0}, "○");
+                win->drawText(off + offTextY, "○");
             }
             
 //            if (opts.highlight) {
