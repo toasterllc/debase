@@ -224,9 +224,9 @@ public:
     const RevColumnOptions& opts() { return _opts; }
     
 private:
-    static constexpr int _ButtonsInsetY  = 0;
-    static constexpr int _ReadonlyInsetY = 1;
-    static constexpr int _TitleInsetY    = 3;
+    static constexpr int _TitleInsetY    = 0;
+    static constexpr int _ReadonlyInsetY = 2;
+    static constexpr int _ButtonsInsetY  = 1;
     static constexpr int _CommitsInsetY  = 5;
     static constexpr int _ButtonWidth    = 8;
     RevColumnOptions _opts;
