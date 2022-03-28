@@ -954,29 +954,26 @@ struct _SavedColor {
     short b = 0;
 };
 
-static UI::ColorPalette _ColorsSet(const UI::ColorPalette& colors) {
-    UI::ColorPalette colorsPrev;
+static UI::Color _ColorSet(const UI::Color& c) {
+    UI::Color prev(c.idx);
+    color_content(prev.idx, &prev.r, &prev.g, &prev.b);
+    ::init_color(c.idx, c.r, c.g, c.b);
+    return prev;
+}
+
+static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
+    UI::ColorPalette colors = p;
     
-    for (const UI::ColorPalette::CustomColor& custom : colors.customColors()) {
-        
+    // Set the values for the custom colors, and remember the old values
+    for (UI::Color& c : colors.custom()) {
+        c = _ColorSet(c);
     }
     
-    auto colorsAll = colors.all();
-    auto colorsPrevAll = colorsPrev.all();
-    for (auto i=colorsAll.begin(), ip=colorsPrevAll.begin(); i!=colorsAll.end(); i++, ip++) {
-        UI::Color& c = i->get();
-        
-        if (c.custom) {
-            UI::Color& cprev = ip->get();
-            cprev.idx = c.idx;
-            color_content(cprev.idx, &cprev.r, &cprev.g, &cprev.b);
-            ::init_color(c.idx, c.r, c.g, c.b);
-        }
-        
+    for (const UI::Color& c : colors.colors()) {
         ::init_pair(c.idx, c.idx, -1);
     }
     
-    return colorsPrev;
+    return colors;
 }
 
 static UI::ColorPalette _ColorsCreate() {
@@ -1289,6 +1286,8 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: move branch name to top
+    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: support light mode
@@ -1459,8 +1458,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
 //    
 //    #warning TODO: rename all hittest functions -> updateMouse
-
+//
 //    #warning TODO: nevermind: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
+//
+//    #warning TODO: fix: snapshots line wrap is 1-character off
     
 //    {
 //        Git::Commit a;

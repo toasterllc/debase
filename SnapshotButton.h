@@ -30,7 +30,7 @@ public:
         _time = Time::RelativeTimeDisplayString(_opts.snapshot.creationTime);
         _commit.id = Git::DisplayStringForId(commit.id());
         _commit.author = sig.name();
-        _commit.message = LineWrap::Wrap(1, _opts.width, commit.message());
+        _commit.message = LineWrap::Wrap(1, _opts.width-_TextInsetX, commit.message());
         
         options().frame.size = {_opts.width, 3};
         
@@ -38,13 +38,11 @@ public:
     }
     
     void draw(Window win) const override {
-        constexpr int InsetX = 2;
-        
         const ButtonOptions& opts = options();
         const ColorPalette& colors = opts.colors;
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
-        const Size offTextX = Size{InsetX, 0};
+        const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;
         
@@ -169,6 +167,7 @@ public:
     
 private:
 //    static constexpr int _SessionStartHeaderHeight = 1;
+    static constexpr int _TextInsetX = 2;
     
     SnapshotButtonOptions _opts;
     std::string _time;
