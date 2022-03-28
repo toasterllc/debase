@@ -1292,8 +1292,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: don't show the first snapshot if it's the same as the "Session Start" snapshot
-    
     #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
     
     #warning TODO: rename all hittest functions -> updateMouse
@@ -1464,6 +1462,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: keep the oldest snapshots, instead of the newest
 //
 //    #warning TODO: make sure works with submodules
+//
+//    #warning TODO: nevermind: don't show the first snapshot if it's the same as the "Session Start" snapshot
     
 //    {
 //        Git::Commit a;
