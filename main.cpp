@@ -1286,8 +1286,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: move branch name to top
-    
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: support light mode
@@ -1462,6 +1460,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: nevermind: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
 //
 //    #warning TODO: fix: snapshots line wrap is 1-character off
+//
+//    #warning TODO: move branch name to top
     
 //    {
 //        Git::Commit a;

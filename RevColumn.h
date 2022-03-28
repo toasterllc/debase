@@ -83,7 +83,7 @@ public:
                     if (Intersection(_opts.win->bounds(), frame) != frame) break;
                     panel->setPosition(p);
                     _panels.push_back(panel);
-                    offY += panel->frame().size.y + 1;
+                    offY += panel->frame().size.y + _CommitSpacing;
                 
                 } else {
                     skip--;
@@ -229,6 +229,7 @@ private:
     static constexpr int _ButtonsInsetY  = 1;
     static constexpr int _CommitsInsetY  = 5;
     static constexpr int _ButtonWidth    = 8;
+    static constexpr int _CommitSpacing  = 1;
     RevColumnOptions _opts;
     std::string _name;
     bool _truncated = false;
