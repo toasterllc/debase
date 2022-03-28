@@ -1293,9 +1293,9 @@ static void _EventLoop() {
 int main(int argc, const char* argv[]) {
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
-    #warning TODO: rigorously test copying/moving merge commits
-    
     #warning TODO: support light mode
+    
+    #warning TODO: do lots of testing
     
 //  Future:
     
