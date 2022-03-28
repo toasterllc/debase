@@ -1270,9 +1270,9 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: show "Session Start" snapshot
+    #warning TODO: improve appearance of active snapshot marker in snapshot menu
     
-    #warning TODO: fully flesh out when to create new snapshots
+    #warning TODO: figure out how to hide a snapshot if it's the same as the "Session Start" snapshot
     
     #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
     
@@ -1428,6 +1428,12 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: when creating a new snapshot, if an equivalent one already exists, remove the old one.
 //
 //    #warning TODO: get command-. working while context menu/snapshot menu is open
+//
+//    #warning TODO: fix: crash when deleting prefs dir while debase is running
+//
+//    #warning TODO: show "Session Start" snapshot
+//
+//    #warning TODO: fully flesh out when to create new snapshots
     
 //    {
 //        Git::Commit a;
