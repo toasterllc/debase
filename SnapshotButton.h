@@ -122,13 +122,13 @@ public:
         {
             if (opts.highlight) {
                 UI::Attr attr(win, colors.menu|A_BOLD);
-                win->drawText(off + offTextY, "●");
+                win->drawText(off + offTextY, "%s", "●");
             
             } else if (_opts.activeSnapshot) {
                 if (opts.mouseActive) {
-                    win->drawText(off + offTextY, "○");
+                    win->drawText(off + offTextY, "%s", "○");
                 } else {
-                    win->drawText(off + offTextY, "●");
+                    win->drawText(off + offTextY, "%s", "●");
                 }
             }
             

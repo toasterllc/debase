@@ -1291,16 +1291,7 @@ static void _EventLoop() {
     }
 }
 
-int submoduleCallback(git_submodule *sm, const char *name, void *payload) {
-    return 0;
-}
-
-
 int main(int argc, const char* argv[]) {
-    _Repo = Git::Repo::Open(".");
-    _Repo.submodulesUpdate(true);
-    return 0;
-    
     #warning TODO: make sure works with submodules
     
     #warning TODO: don't show the first snapshot if it's the same as the "Session Start" snapshot

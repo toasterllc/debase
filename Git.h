@@ -210,7 +210,6 @@ struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
     }
     
     void update() {
-        git_submodule_update_options opts = GIT_SUBMODULE_UPDATE_OPTIONS_INIT;
         int ir = git_submodule_update(*get(), false, nullptr);
         if (ir) throw Error(ir, "git_submodule_update failed");
     }
@@ -495,6 +494,19 @@ public:
         return x;
     }
     
+    static Repo Open(Submodule sm) {
+        git_libgit2_init();
+        
+        git_repository* x = nullptr;
+        int ir = git_submodule_open(&x, *sm);
+        if (ir) {
+            git_libgit2_shutdown();
+            throw Error(ir, "git_submodule_open failed");
+        }
+        
+        return x;
+    }
+    
     std::filesystem::path path() const {
         return git_repository_workdir(*get());
     }
@@ -548,6 +560,8 @@ public:
         
         ir = git_repository_set_head(*get(), fullName.c_str());
         if (ir) throw Error(ir, "git_repository_set_head failed");
+        
+        submodulesUpdate(true);
     }
     
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
@@ -843,9 +857,9 @@ public:
         return false;
     }
     
-    std::set<Submodule> submodules() const {
+    std::vector<Submodule> submodules() const {
         struct Ctx {
-            std::map<std::filesystem::path,Submodule> submodules;
+            std::vector<Submodule> submodules;
         };
         Ctx ctx;
         
@@ -863,33 +877,37 @@ public:
                 submodule = x;
             }
             
-            printf("indexId: %p\n", submodule.indexId());
+            // Ignore submodules for which we don't have an indexId.
+            // On macOS, `git_submodule_foreach` supplies the same submodule multiple
+            // times, with different-case paths (eg lib/Toastbox and Lib/Toastbox).
+            // Empirically, only one of them returns a valid indexId, which is
+            // required for Submodule::update() to work. So ignore submodules that
+            // have a null indexId.
+            if (!submodule.indexId()) return 0;
             
-            // On macOS, `git_submodule_foreach` appears to supply the same submodule multiple
-            // times, with different-case paths (eg lib/Toastbox and Lib/Toastbox). So we need
-            // to unique the submodules using the paths, which we do using
-            // std::filesystem::canonical() and a map.
             std::filesystem::path path = std::filesystem::canonical(submodule.path());
-            ctx.submodules[path] = submodule;
+            ctx.submodules.push_back(submodule);
             return 0;
         };
         
         int ir = git_submodule_foreach(*get(), callback, &ctx);
         if (ir) throw Error(ir, "git_submodule_foreach failed");
         
-        std::set<Submodule> submodules;
-        for (const auto& i : ctx.submodules) {
-            submodules.insert(i.second);
-        }
-        return submodules;
+        return ctx.submodules;
+        
+//        std::set<Submodule> submodules;
+//        for (const auto& i : ctx.submodules) {
+//            submodules.insert(i.second);
+//        }
+//        return submodules;
     }
     
-    void submodulesUpdate(bool recurse=false) {
-        std::set<Submodule> sms = submodules();
+    void submodulesUpdate(bool recurse=false) const {
+        std::vector<Submodule> sms = submodules();
         for (Submodule sm : sms) {
             sm.update();
             if (recurse) {
-                Repo repo = Repo::Open(sm.path());
+                Repo repo = Repo::Open(sm);
                 repo.submodulesUpdate(recurse);
             }
         }
