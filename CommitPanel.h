@@ -57,7 +57,7 @@ public:
             drawBorder();
             
             if (_commit.isMerge()) {
-                mvwprintw(*this, 1, 0, "𝝠");
+                drawText({0, 1}, "%s", "𝝠");
             }
         }
         
