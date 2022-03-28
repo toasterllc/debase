@@ -837,11 +837,8 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const St
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     Git::Ref ref = column->rev().ref;
-    bool showSessionStart = (State::Convert(ref.commit()) != _RepoState.initialSnapshot(ref).head);
-    std::vector<UI::Button> buttons;
-    
-    if (showSessionStart) {
-        buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true));
+    std::vector<UI::Button> buttons = {
+        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
     };
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
@@ -858,14 +855,11 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     
     UI::MenuOptions menuOpts = {
         .colors = _Colors,
-        .title = (showSessionStart ? "Session Start" : ""),
+        .title = "Session Start",
         .buttons = buttons
     };
     
-    UI::SnapshotMenuOptions snapMenuOpts = {
-        .sessionStart = showSessionStart,
-    };
-    _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(snapMenuOpts, menuOpts);
+    _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(menuOpts);
     
     int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
     _SnapshotsMenu->setPosition({px, 1});
@@ -1298,13 +1292,7 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: only show the current-session marker on the "Session Start" element if there's no other snapshot that has it
-    
     #warning TODO: don't show the first snapshot if it's the same as the "Session Start" snapshot
-    
-    #warning TODO: improve appearance of active snapshot marker in snapshot menu
-    
-    #warning TODO: figure out how to hide a snapshot if it's the same as the "Session Start" snapshot
     
     #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
     
@@ -1466,6 +1454,14 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: show "Session Start" snapshot
 //
 //    #warning TODO: fully flesh out when to create new snapshots
+//
+//    #warning TODO: nevermind: only show the current-session marker on the "Session Start" element if there's no other snapshot that has it
+//
+//    #warning TODO: improve appearance of active snapshot marker in snapshot menu
+//
+//    #warning TODO: nevermind: figure out how to hide a snapshot if it's the same as the "Session Start" snapshot
+//
+//    #warning TODO: keep the oldest snapshots, instead of the newest
     
 //    {
 //        Git::Commit a;

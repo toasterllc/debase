@@ -92,7 +92,8 @@ using History = T_History<RefState>;
 
 struct Snapshot {
     Snapshot() {}
-    Snapshot(Git::Commit c) : creationTime(time(nullptr)), head(Convert(c)) {}
+    Snapshot(Commit c) : creationTime(time(nullptr)), head(c) {}
+    Snapshot(Git::Commit c) : Snapshot(Convert(c)) {}
     
     bool operator<(const Snapshot& x) const {
         if (creationTime != x.creationTime) return creationTime < x.creationTime;
@@ -235,16 +236,16 @@ private:
     }
     
     static std::vector<Snapshot> _CleanSnapshots(const std::vector<Snapshot>& snapshots) {
-        std::map<Commit,Snapshot> latestSnapshot;
+        std::map<Commit,Snapshot> earliestSnapshot;
         for (const Snapshot& snap : snapshots) {
-            auto find = latestSnapshot.find(snap.head);
-            if (find==latestSnapshot.end() || snap.creationTime>find->second.creationTime) {
-                latestSnapshot[snap.head] = snap;
+            auto find = earliestSnapshot.find(snap.head);
+            if (find==earliestSnapshot.end() || snap.creationTime<find->second.creationTime) {
+                earliestSnapshot[snap.head] = snap;
             }
         }
         
         std::vector<Snapshot> r;
-        for (auto i : latestSnapshot) {
+        for (auto i : earliestSnapshot) {
             r.push_back(i.second);
         }
         std::sort(r.begin(), r.end());
@@ -394,6 +395,7 @@ public:
                 state.history[ref] = refHistory;
                 
                 std::vector<Snapshot> refSnapshots = _state.snapshots.at(ref);
+                refSnapshots.push_back(refHistory.get().head);
                 refSnapshots.push_back(_initialSnapshot.at(ref));
                 // Remove duplicate snapshots and sort them
                 refSnapshots = _CleanSnapshots(refSnapshots);
