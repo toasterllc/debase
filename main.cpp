@@ -304,6 +304,7 @@ static _Event _WaitForEvent(MouseButtons buttons=MouseButtons::Left) {
     for (;;) {
         UI::Event ev = _RootWindow->nextEvent();
         switch (ev) {
+        case UI::Event::WindowResize:
         case UI::Event::KeyEscape: {
             return _Event{ .type = ev };
         }
@@ -718,10 +719,11 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
     UI::MenuOptions opts = {
         .colors = _Colors,
+        .parentWindow = _RootWindow,
+        .position = {mouseDownEvent.x, mouseDownEvent.y},
         .buttons = buttons
     };
     _ContextMenu = MakeShared<UI::Menu>(opts);
-    _ContextMenu->setPosition({mouseDownEvent.x, mouseDownEvent.y});
     
     UI::Button menuButton = nullptr;
     MouseButtons mouseUpButtons = MouseButtons::Right;
@@ -807,18 +809,14 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     return gitOp;
 }
 
-    Git::Repo repo;
-    State::Snapshot snapshot;
-    int width = 0;
-    bool sessionStart = false;
+constexpr int _SnapshotMenuWidth = 26;
 
 static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
-    constexpr int SnapshotMenuWidth = 26;
     bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
     UI::SnapshotButtonOptions snapButtonOpts = {
         .repo           = repo,
         .snapshot       = snap,
-        .width          = SnapshotMenuWidth,
+        .width          = _SnapshotMenuWidth,
         .sessionStart   = sessionStart,
         .activeSnapshot = activeSnapshot,
     };
@@ -853,16 +851,17 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
 //        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
+    const int width = _SnapshotMenuWidth+UI::_SnapshotMenu::Padding().x;
+    const int px = column->opts().offset.x + (column->opts().width-width)/2;
     UI::MenuOptions menuOpts = {
         .colors = _Colors,
+        .parentWindow = _RootWindow,
+        .position = {px, 1},
         .title = "Session Start",
-        .buttons = buttons
+        .buttons = buttons,
+        .allowTruncate = true,
     };
-    
     _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(menuOpts);
-    
-    int px = column->opts().offset.x + (column->opts().width-_SnapshotsMenu->frame().size.x)/2;
-    _SnapshotsMenu->setPosition({px, 1});
     
     UI::SnapshotButton menuButton = nullptr;
     bool abort = false;
@@ -1471,7 +1470,7 @@ int main(int argc, const char* argv[]) {
 //            a.idStr();
 //        }
 //    }
-    
+//    
 //    {
 //        volatile bool a = false;
 //        while (!a);

@@ -149,17 +149,18 @@ public:
         ::werase(*this);
     }
     
+    Size size() const {
+        return { getmaxx(_win), getmaxy(_win) };
+    }
+    
     Rect bounds() const {
-        return Rect{
-            .point = {},
-            .size  = { getmaxx(_win), getmaxy(_win) },
-        };
+        return Rect{ .size = size() };
     }
     
     Rect frame() const {
         return Rect{
             .point = { getbegx(_win), getbegy(_win) },
-            .size  = { getmaxx(_win), getmaxy(_win) },
+            .size  = size(),
         };
     }
     
