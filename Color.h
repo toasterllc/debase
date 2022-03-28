@@ -24,7 +24,7 @@ struct ColorPalette {
     Color selectionMove     = COLOR_BLUE;
     Color selectionCopy     = COLOR_GREEN;
     Color selectionSimilar  = COLOR_BLACK;
-    Color subtitleText      = COLOR_BLACK;
+    Color disabledText      = COLOR_BLACK;
     Color menu              = COLOR_RED;
     Color error             = COLOR_RED;
     
@@ -34,7 +34,7 @@ struct ColorPalette {
             selectionMove,
             selectionCopy,
             selectionSimilar,
-            subtitleText,
+            disabledText,
             menu,
             error
         };

@@ -86,7 +86,7 @@ public:
         
         // Draw time
         {
-            UI::Attr attr(win, opts.colors.subtitleText);
+            UI::Attr attr(win, opts.colors.disabledText);
             int offX = width - (int)UTF8::Strlen(_time);
             win->drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
@@ -100,9 +100,9 @@ public:
         
         // Draw author name
         {
-            UI::Attr attr(win, opts.colors.subtitleText);
+            UI::Attr attr(win, opts.colors.disabledText);
 //            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-//            else                attr = UI::Attr(win, opts.colors.subtitleText);
+//            else                attr = UI::Attr(win, opts.colors.disabledText);
             win->drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         

@@ -994,8 +994,8 @@ static UI::ColorPalette _ColorsCreate() {
         colors.selectionMove    = UI::Color(Idx0+0,    0,    0, 1000);
         colors.selectionCopy    = UI::Color(Idx0+1,    0, 1000,    0);
         colors.selectionSimilar = UI::Color(Idx0+2,  550,  550, 1000);
-        colors.subtitleText     = UI::Color(Idx0+3,  300,  300,  300);
-        colors.menu             = UI::Color(Idx0+4,  800,  300,  300);
+        colors.disabledText     = UI::Color(Idx0+3,  300,  300,  300);
+        colors.menu             = UI::Color(Idx0+4, 1000,  435,    0);
         colors.error            = UI::Color(Idx0+5, 1000,    0,    0);
     
     } else {
@@ -1005,7 +1005,7 @@ static UI::ColorPalette _ColorsCreate() {
         colors.selectionMove    = UI::Color(Idx0+0,  463,  271, 1000);
         colors.selectionCopy    = UI::Color(Idx0+1,  165, 1000,  114);
         colors.selectionSimilar = UI::Color(Idx0+2,  671,  667, 1000);
-        colors.subtitleText     = UI::Color(Idx0+3,  486,  486,  486);
+        colors.disabledText     = UI::Color(Idx0+3,  486,  486,  486);
         colors.menu             = UI::Color(Idx0+4,  969,  447,  431);
         colors.error            = UI::Color(Idx0+5, 1000,  298,  153);
     }
@@ -1014,7 +1014,7 @@ static UI::ColorPalette _ColorsCreate() {
 }
 
 static void _CursesInit() noexcept {
-    // Default linux installs may not contain the /usr/share/terminfo database,
+    // Default Linux installs may not contain the /usr/share/terminfo database,
     // so provide a fallback terminfo that usually works.
     nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
     
@@ -1034,11 +1034,11 @@ static void _CursesInit() noexcept {
     ::use_default_colors();
     ::start_color();
     
-//    const bool customColors = false;
     if (can_change_color()) {
         _Colors = _ColorsCreate();
-        _ColorsPrev = _ColorsSet(_Colors);
     }
+    
+    _ColorsPrev = _ColorsSet(_Colors);
     
     // Hide cursor
     ::curs_set(0);

@@ -80,7 +80,7 @@ public:
         }
         
         {
-            UI::Attr attr(shared_from_this(), _colors.subtitleText);
+            UI::Attr attr(shared_from_this(), _colors.disabledText);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
         

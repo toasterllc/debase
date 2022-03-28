@@ -198,7 +198,7 @@ public:
 //                    attr = UI::Attr(shared_from_this(), _colors.menu|A_BOLD);
 //                
 //                } else if (!button.enabled) {
-//                    attr = UI::Attr(shared_from_this(), _colors.subtitleText);
+//                    attr = UI::Attr(shared_from_this(), _colors.disabledText);
 //                
 //                } else {
 //                    attr = UI::Attr(shared_from_this(), A_NORMAL);
@@ -215,7 +215,7 @@ public:
 //            
 //            // Draw button key
 //            {
-//                UI::Attr attr(shared_from_this(), _colors.subtitleText);
+//                UI::Attr attr(shared_from_this(), _colors.disabledText);
 //                drawText({w-BorderSize-InsetX-(int)button.key.size(), y}, "%s", button.key.c_str());
 //            }
 //            
