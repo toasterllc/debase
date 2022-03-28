@@ -202,6 +202,24 @@ struct Config : RefCounted<git_config*, git_config_free> {
     }
 };
 
+struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
+    using RefCounted::RefCounted;
+    
+    std::filesystem::path path() const {
+        return git_submodule_path(*get());
+    }
+    
+    void update() {
+        git_submodule_update_options opts = GIT_SUBMODULE_UPDATE_OPTIONS_INIT;
+        int ir = git_submodule_update(*get(), false, nullptr);
+        if (ir) throw Error(ir, "git_submodule_update failed");
+    }
+    
+    const Id* indexId() const {
+        return git_submodule_index_id(*get());
+    }
+};
+
 struct Commit : Object {
     using Object::Object;
     Commit(const git_commit* x) : Object((git_object*)x) {}
@@ -824,7 +842,59 @@ public:
         }
         return false;
     }
-
+    
+    std::set<Submodule> submodules() const {
+        struct Ctx {
+            std::map<std::filesystem::path,Submodule> submodules;
+        };
+        Ctx ctx;
+        
+        auto callback = [] (
+            git_submodule* sm,
+            const char* name,
+            void* ctxp
+        ) -> int {
+            Ctx& ctx = *(Ctx*)ctxp;
+            Submodule submodule;
+            {
+                git_submodule* x = nullptr;
+                int ir = git_submodule_dup(&x, sm);
+                if (ir) return ir;
+                submodule = x;
+            }
+            
+            printf("indexId: %p\n", submodule.indexId());
+            
+            // On macOS, `git_submodule_foreach` appears to supply the same submodule multiple
+            // times, with different-case paths (eg lib/Toastbox and Lib/Toastbox). So we need
+            // to unique the submodules using the paths, which we do using
+            // std::filesystem::canonical() and a map.
+            std::filesystem::path path = std::filesystem::canonical(submodule.path());
+            ctx.submodules[path] = submodule;
+            return 0;
+        };
+        
+        int ir = git_submodule_foreach(*get(), callback, &ctx);
+        if (ir) throw Error(ir, "git_submodule_foreach failed");
+        
+        std::set<Submodule> submodules;
+        for (const auto& i : ctx.submodules) {
+            submodules.insert(i.second);
+        }
+        return submodules;
+    }
+    
+    void submodulesUpdate(bool recurse=false) {
+        std::set<Submodule> sms = submodules();
+        for (Submodule sm : sms) {
+            sm.update();
+            if (recurse) {
+                Repo repo = Repo::Open(sm.path());
+                repo.submodulesUpdate(recurse);
+            }
+        }
+    }
+    
 private:
     Rev _revLookup(std::string_view str) const {
         Ref ref;
