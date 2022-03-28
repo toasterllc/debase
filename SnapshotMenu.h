@@ -23,7 +23,7 @@ public:
             Point p = {1, button0->options().frame.ymax()+1};
             int len = width-2;
 //            mvwhline(*this, p.y, p.x+1, '-', len);
-            cchar_t c = { .chars = L"╌" };
+            cchar_t c = { .chars = L"╍" };
             mvwhline_set(*this, p.y, p.x, &c, len);
         }
     }
