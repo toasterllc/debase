@@ -22,7 +22,7 @@ public:
         _commit.author = sig.name();
         _commit.message = LineWrap::Wrap(1, width, commit.message());
         
-        options().frame.size = {width, (_sessionStart ? 4 : 3)};
+        options().frame.size = {width, 3 + (_sessionStart ? _SessionStartHeaderHeight : 0)};
         
 //        if (isdigit(_time[0])) _time += " ago";
     }
@@ -35,16 +35,43 @@ public:
         const int width = opts.frame.size.x;
         const Point off = opts.frame.point;
         const Size offTextX = Size{InsetX, 0};
-        const Size offTextY = Size{0, (_sessionStart ? 1 : 0)};
+        const Size offTextY = Size{0, (_sessionStart ? _SessionStartHeaderHeight : 0)};
         const Size offText = off+offTextX+offTextY;
         
 //        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
 //        const int offY = (_sessionStart ? 1 : 0);
         
         if (_sessionStart) {
-//            win->drawLineHoriz(off, width);
+//            const char title[] = "       Session Start      ";
+//            int offX = 0;
+//            UI::Attr attr(win, A_BOLD|A_UNDERLINE);
+//            win->drawText(off + Size{offX, 0}, title);
+            
+//            const char title[] = "Session Start";
+//            int offX = (width - (std::size(title)-1))/2;
+//            UI::Attr attr(win, A_BOLD|A_UNDERLINE);
+//            win->drawText(off + Size{offX, 0}, title);
+            
+//            const char title[] = "Session Start";
+//            int offX = 0;
+//            UI::Attr attr(win, A_BOLD);
+//            win->drawText(off + Size{offX, 0}, title);
+            
+            
+            const char title[] = " Session Start ";
+            int offX = (width - (std::size(title)-1))/2;
+            win->drawLineHoriz(off, width);
             UI::Attr attr(win, A_BOLD);
-            win->drawText(off + offTextX, "Session Start");
+            win->drawText(off + Size{offX, 0}, title);
+            
+            
+//            win->drawLineHoriz(off, width);
+//            UI::Attr attr(win, A_BOLD);
+////            UI::Attr attr(win, A_UNDERLINE);
+//            const char title[] = "Session Start";
+//            int offX = 0;
+////            int offX = (width - std::size(title)-1)/2;
+//            win->drawText(off + Size{offX, 0}, "Session Start ");
         }
         
         // Draw time
@@ -124,8 +151,7 @@ public:
     const State::Snapshot& snapshot() { return _snapshot; }
     
 private:
-    static constexpr size_t _LineCountMax = 2;
-    static constexpr size_t _LineLenInset = 2;
+    static constexpr int _SessionStartHeaderHeight = 1;
     
     const State::Snapshot _snapshot;
     
