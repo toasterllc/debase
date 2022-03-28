@@ -1295,8 +1295,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: rigorously test copying/moving merge commits
     
-    #warning TODO: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
-    
     #warning TODO: support light mode
     
 //  Future:
@@ -1463,6 +1461,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
 //    
 //    #warning TODO: rename all hittest functions -> updateMouse
+
+//    #warning TODO: nevermind: show warning on startup: Take care when rewriting history. As with any software, debase may be bugs. As a safety precaution, debase will automatically backup all branches before modifying them, as <BranchName>-DebaseBackup
     
 //    {
 //        Git::Commit a;
