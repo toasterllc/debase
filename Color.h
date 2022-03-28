@@ -7,15 +7,8 @@ class Color {
 public:
     Color() : Color(COLOR_BLACK) {}
     Color(int idx) : idx(idx) {}
-    Color(int idx, NCURSES_COLOR_T r, NCURSES_COLOR_T g, NCURSES_COLOR_T b) :
-    idx(idx), r(r), g(g), b(b), custom(true) {}
     
     int idx = 0;
-    NCURSES_COLOR_T r = 0;
-    NCURSES_COLOR_T g = 0;
-    NCURSES_COLOR_T b = 0;
-    bool custom = false;
-    
     operator int() const { return COLOR_PAIR(idx); }
     bool operator ==(const Color& x) const { return !memcmp(this, &x, sizeof(Color)); }
 };
@@ -30,26 +23,28 @@ public:
     Color menu              = COLOR_RED;
     Color error             = COLOR_RED;
     
-    Color add(int r, int g, int b) {
+    struct CustomColor : Color {
+        int idx = 0;
+        int r = 0;
+        int g = 0;
+        int b = 0;
+    };
+    
+    Color addCustomColor(int r, int g, int b) {
+        int idx = _IdxCustom++;
         r = (r*1000)/255;
         g = (g*1000)/255;
         b = (b*1000)/255;
-        const Color& c = _custom.emplace_back(_IdxCustom++, r, g, b);
+        _custom.push_back(CustomColor{.idx=idx, .r=r, .g=g, .b=b});
+        
+        const CustomColor& c = _custom.emplace_back(_IdxCustom++, r, g, b);
         return c;
     }
     
-    const std::vector<Color>& custom() { return _custom; }
+    const std::vector<CustomColor>& customColors() { return _custom; }
     
-    std::vector<std::reference_wrapper<Color>> all() {
-        return {
-            normal,
-            dimmed,
-            selection,
-            selectionSimilar,
-            selectionCopy,
-            menu,
-            error,
-        };
+    std::vector<std::reference_wrapper<Color>> colors() {
+        return { normal, dimmed, selection, selectionSimilar, selectionCopy, menu, error, };
     };
     
 private:
@@ -62,7 +57,7 @@ private:
     static constexpr int _IdxCustomInit = 16;
     static inline std::atomic<int> _IdxCustom = _IdxCustomInit;
     
-    std::vector<Color> _custom;
+    std::vector<CustomColor> _custom;
     
 //    std::vector<std::reference_wrapper<Color>> all() {
 //        return {

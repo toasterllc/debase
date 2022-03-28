@@ -956,6 +956,11 @@ struct _SavedColor {
 
 static UI::ColorPalette _ColorsSet(const UI::ColorPalette& colors) {
     UI::ColorPalette colorsPrev;
+    
+    for (const UI::ColorPalette::CustomColor& custom : colors.customColors()) {
+        
+    }
+    
     auto colorsAll = colors.all();
     auto colorsPrevAll = colorsPrev.all();
     for (auto i=colorsAll.begin(), ip=colorsPrevAll.begin(); i!=colorsAll.end(); i++, ip++) {
