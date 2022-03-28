@@ -126,7 +126,7 @@ public:
 //        return _mouseOverButton;
 //    }
     
-    Button hitTest(const Point& p) {
+    Button updateMouse(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
         bool mouseActive = HitTest(frame, p);

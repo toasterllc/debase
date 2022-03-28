@@ -220,7 +220,7 @@ static _HitTestResult _HitTest(const UI::Point& p) {
     // columns (by calling hitTest) before returning
     _HitTestResult hit;
     for (UI::RevColumn col : _Columns) {
-        UI::RevColumnHitTestResult h = col->hitTest(p);
+        UI::RevColumnHitTestResult h = col->updateMouse(p);
         if (h) {
             hit = _HitTestResult{
                 .column = col,
@@ -730,7 +730,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     bool abort = false;
     for (;;) {
         if (ev.type == UI::Event::Mouse) {
-            menuButton = _ContextMenu->hitTest({ev.mouse.x, ev.mouse.y});
+            menuButton = _ContextMenu->updateMouse({ev.mouse.x, ev.mouse.y});
         } else {
             menuButton = nullptr;
         }
@@ -872,7 +872,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         abort = (ev.type != UI::Event::Mouse);
         
         if (ev.type == UI::Event::Mouse) {
-            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->hitTest({ev.mouse.x, ev.mouse.y}));
+            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->updateMouse({ev.mouse.x, ev.mouse.y}));
         } else {
             menuButton = nullptr;
         }
@@ -921,7 +921,7 @@ static void _TrackMouseInsideButton(MEVENT mouseDownEvent, UI::RevColumn column,
     
     for (;;) {
         if (ev.type == UI::Event::Mouse) {
-            hit = column->hitTest({ev.mouse.x, ev.mouse.y});
+            hit = column->updateMouse({ev.mouse.x, ev.mouse.y});
         } else {
             hit = {};
         }
@@ -1291,8 +1291,6 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
-    
     #warning TODO: rename all hittest functions -> updateMouse
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
@@ -1463,6 +1461,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: make sure works with submodules
 //
 //    #warning TODO: nevermind: don't show the first snapshot if it's the same as the "Session Start" snapshot
+//
+//    #warning TODO: fix: handle case when snapshot menu won't fit entirely on screen
     
 //    {
 //        Git::Commit a;

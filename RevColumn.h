@@ -174,7 +174,7 @@ public:
 //        }
 //    }
     
-    RevColumnHitTestResult hitTest(const UI::Point& p) {
+    RevColumnHitTestResult updateMouse(const UI::Point& p) {
         for (UI::Button button : _buttons) {
             button->options().highlight = false;
         }
