@@ -423,7 +423,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         mouseDownPanelFrame.point.y-mouseDownEvent.y,
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
-    const UI::Rect innerBounds = Inset(_RootWindow->bounds(), {2,2});
+    const UI::Rect rootWinBounds = _RootWindow->bounds();
     const auto doubleClickStatePrev = _DoubleClickState;
     _DoubleClickState = {};
     
@@ -457,7 +457,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         const int w = std::abs(mouseDownEvent.x - p.x);
         const int h = std::abs(mouseDownEvent.y - p.y);
         // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
-        const bool allow = !Empty(Intersection(innerBounds, {p, {1,1}}));
+        const bool allow = UI::HitTest(rootWinBounds, p, {-3,-3});
         mouseDragged |= w>1 || h>1;
         
         // Find insertion position
@@ -856,7 +856,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     UI::MenuOptions menuOpts = {
         .colors = _Colors,
         .parentWindow = _RootWindow,
-        .position = {px, 1},
+        .position = {px, 2},
         .title = "Session Start",
         .buttons = buttons,
         .allowTruncate = true,
@@ -900,8 +900,11 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         
         if (commitNew != commitCur) {
             #warning TODO: handle not being able to materialize commit
+            Git::Commit commit = Convert(_Repo, commitNew);
             h.push(State::RefState{.head = commitNew});
-            _Repo.refReplace(ref, Convert(_Repo, commitNew));
+            _Repo.refReplace(ref, commit);
+            // Clear the selection when restoring a snapshot
+            _Selection = {};
             _Reload();
         }
     }
@@ -977,33 +980,46 @@ static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
 }
 
 static UI::ColorPalette _ColorsCreate() {
-    std::string termProg = getenv("TERM_PROGRAM");
+    const std::string termProg = getenv("TERM_PROGRAM");
     
     UI::ColorPalette colors;
+    UI::Color black;
+    UI::Color gray;
+    UI::Color purple;
+    UI::Color purpleLight;
+    UI::Color greenMint;
+    UI::Color red;
+    
     if (termProg == "Apple_Terminal") {
         // Colorspace: unknown
         // There's no simple relation between these numbers and the resulting colors because Apple's
         // Terminal.app applies some kind of filtering on top of these numbers. These values were
         // manually chosen based on their appearance.
-        colors.normal           = COLOR_BLACK;
-        colors.dimmed           = colors.add(77, 77, 77);    // Gray
-        colors.selection        = colors.add(0, 2, 255);     // Purple
-        colors.selectionCopy    = colors.add(0, 229, 130);   // Minty Green
-        colors.selectionSimilar = colors.add(140, 140, 255); // Light purple
-        colors.menu             = colors.selectionCopy;      // Minty Green
-        colors.error            = colors.add(255, 0, 0);     // Red
+        black       = COLOR_BLACK;
+        gray        = colors.add( 77,  77,  77);
+        purple      = colors.add(  0,   2, 255);
+        purpleLight = colors.add(140, 140, 255);
+        greenMint   = colors.add(  0, 229, 130);
+        red         = colors.add(255,   0,   0);
     
     } else {
-//        // Colorspace: sRGB
-//        // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
-//        colors.normal           = COLOR_BLACK;
-//        colors.dimmed           = UI::Color(Idx0+0,  486,  486,  486);
-//        colors.selection        = UI::Color(Idx0+1,  463,  271, 1000);
-//        colors.selectionCopy    = UI::Color(Idx0+2,  165, 1000,  114);
-//        colors.selectionSimilar = UI::Color(Idx0+3,  671,  667, 1000);
-//        colors.menu             = UI::Color(Idx0+4,  969,  447,  431);
-//        colors.error            = UI::Color(Idx0+5, 1000,  298,  153);
+        // Colorspace: sRGB
+        // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
+        black       = COLOR_BLACK;
+        gray        = colors.add(.486*255, .486*255, .486*255);
+        purple      = colors.add(.463*255, .275*255, 1.00*255);
+        purpleLight = colors.add(.671*255, .659*255, 1.00*255);
+        greenMint   = colors.add(.196*255, .961*255, .569*255);
+        red         = colors.add(.996*255, .294*255, .153*255);
     }
+    
+    colors.normal           = black;
+    colors.dimmed           = gray;
+    colors.selection        = purple;
+    colors.selectionSimilar = purpleLight;
+    colors.selectionCopy    = greenMint;
+    colors.menu             = greenMint;
+    colors.error            = red;
     
     return colors;
 }
@@ -1462,6 +1478,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: fix: snapshots line wrap is 1-character off
 //
 //    #warning TODO: move branch name to top
+//
+//    #warning TODO: when switching snapshots, clear the selection
     
 //    {
 //        Git::Commit a;
