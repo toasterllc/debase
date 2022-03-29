@@ -1304,6 +1304,10 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: support light mode
     
+    #warning TODO: implement 7-day trial
+    
+    #warning TODO: implement registration
+    
     #warning TODO: do lots of testing
     
 //  Future:
@@ -1478,6 +1482,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: move branch name to top
 //
 //    #warning TODO: when switching snapshots, clear the selection
+//
+//    #warning TODO: improve error when working directory isn't a git repo
     
 //    {
 //        Git::Commit a;
@@ -1494,11 +1500,15 @@ int main(int argc, const char* argv[]) {
     try {
         setlocale(LC_ALL, "");
         
+        try {
+            _Repo = Git::Repo::Open(".");
+        } catch (...) {
+            throw Toastbox::RuntimeError("current directory isn't a git repository");
+        }
+        _Head = _Repo.head();
+        
         std::vector<std::string> revNames;
         for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
-        
-        _Repo = Git::Repo::Open(".");
-        _Head = _Repo.head();
         
         if (revNames.empty()) {
             _Revs.emplace_back(_Head);

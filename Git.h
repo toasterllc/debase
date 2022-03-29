@@ -487,8 +487,12 @@ public:
         git_repository* x = nullptr;
         int ir = git_repository_open(&x, path.native().data());
         if (ir) {
+            // Create the error before calling git_libgit2_shutdown(), otherwise we'd call
+            // git_error_last() after git_libgit2_shutdown(), which isn't allowed, and we
+            // get the wrong error message
+            Error e(ir, "git_repository_open failed");
             git_libgit2_shutdown();
-            throw Error(ir, "git_repository_open failed");
+            throw e;
         }
         
         return x;
@@ -500,8 +504,12 @@ public:
         git_repository* x = nullptr;
         int ir = git_submodule_open(&x, *sm);
         if (ir) {
+            // Create the error before calling git_libgit2_shutdown(), otherwise we'd call
+            // git_error_last() after git_libgit2_shutdown(), which isn't allowed, and we
+            // get the wrong error message
+            Error e(ir, "git_repository_open failed");
             git_libgit2_shutdown();
-            throw Error(ir, "git_submodule_open failed");
+            throw e;
         }
         
         return x;
