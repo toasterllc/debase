@@ -1310,6 +1310,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: do lots of testing
     
+    #warning TODO: add help flag
+    
 //  Future:
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
