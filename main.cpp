@@ -41,7 +41,7 @@ class _ExitRequest : public std::exception {
 };
 
 static UI::ColorPalette _Colors;
-static std::optional<UI::ColorPalette> _ColorsPrev;
+static UI::ColorPalette _ColorsPrev;
 
 static Git::Repo _Repo;
 static State::RepoState _RepoState;
@@ -951,12 +951,6 @@ static void _TrackMouseInsideButton(MEVENT mouseDownEvent, UI::RevColumn column,
     }
 }
 
-struct _SavedColor {
-    short r = 0;
-    short g = 0;
-    short b = 0;
-};
-
 static UI::Color _ColorSet(const UI::Color& c) {
     UI::Color prev(c.idx);
     color_content(prev.idx, &prev.r, &prev.g, &prev.b);
@@ -965,18 +959,18 @@ static UI::Color _ColorSet(const UI::Color& c) {
 }
 
 static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
-    UI::ColorPalette colors = p;
+    UI::ColorPalette pcopy = p;
     
     // Set the values for the custom colors, and remember the old values
-    for (UI::Color& c : colors.custom()) {
+    for (UI::Color& c : pcopy.custom()) {
         c = _ColorSet(c);
     }
     
-    for (const UI::Color& c : colors.colors()) {
+    for (const UI::Color& c : p.colors()) {
         ::init_pair(c.idx, c.idx, -1);
     }
     
-    return colors;
+    return pcopy;
 }
 
 static UI::ColorPalette _ColorsCreate() {
@@ -1051,6 +1045,14 @@ static void _CursesInit() noexcept {
     
     _ColorsPrev = _ColorsSet(_Colors);
     
+//    {
+//        ::endwin();
+//        for (const UI::Color& c : _ColorsPrev.custom()) {
+//            printf("%d: %d %d %d\n", c.idx, c.r, c.g, c.b);
+//        }
+//        exit(0);
+//    }
+    
     // Hide cursor
     ::curs_set(0);
     
@@ -1063,11 +1065,7 @@ static void _CursesInit() noexcept {
 static void _CursesDeinit() noexcept {
 //    ::mousemask(0, NULL);
     
-    if (_ColorsPrev) {
-        _ColorsSet(*_ColorsPrev);
-        _ColorsPrev = std::nullopt;
-    }
-    
+    _ColorsSet(_ColorsPrev);
     ::endwin();
 }
 
