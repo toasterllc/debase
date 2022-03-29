@@ -151,61 +151,43 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Theme, {
 });
 
 // MARK: - State
-struct State {
-    std::string license;
-    Theme theme = Theme::None;
-};
-
-inline void to_json(nlohmann::json& j, const State& out) {
-    j = {
-        {"license", out.license},
-        {"theme", out.theme},
-    };
-}
-
-inline void from_json(const nlohmann::json& j, State& out) {
-    j.at("license").get_to(out.license);
-    j.at("theme").get_to(out.theme);
-}
-
-// MARK: - RepoState
-class RepoState {
+class State {
 private:
     using _Path = std::filesystem::path;
-    using _Json = nlohmann::json;
     
-    static constexpr uint32_t _Version = 0;
-    
-    struct _RepoState {
-        std::map<Ref,History> history;
-        std::map<Ref,std::vector<Snapshot>> snapshots;
+    struct _State {
+        std::string license;
+        Theme theme = Theme::None;
     };
     
-    _Path _stateDir;
-    _Path _repoStateDir;
-    Git::Repo _repo;
-    
-    State _state;
-    _RepoState _repoState;
-    std::map<Ref,History> _historyPrev;
-    std::map<Ref,Snapshot> _initialSnapshot;
-    
+    static constexpr uint32_t _Version = 0;
     static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
     }
     
-    static _Path _StateFilePath(_Path stateDir) {
-        return stateDir / "State";
+    static _Path _StateFilePath(_Path rootDir) {
+        return rootDir / "State";
     }
     
-    static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
-        std::string name = std::filesystem::canonical(repo.path());
-        std::replace(name.begin(), name.end(), '/', '-'); // Replace / with ~
-        return dir / "Repo" / name;
+    static void _StateRead(_Path path, _State& state) {
+        std::ifstream f(path);
+        if (f) {
+            f.exceptions(std::ios::failbit | std::ios::badbit);
+            nlohmann::json j;
+            f >> j;
+            j.at("license").get_to(state.license);
+            j.at("theme").get_to(state.theme);
+        }
     }
     
-    static _Path _RepoStateFilePath(_Path repoStateDir) {
-        return repoStateDir / "State";
+    static void _StateWrite(_Path path, const _State& state) {
+        std::ofstream f(path);
+        f.exceptions(std::ios::failbit | std::ios::badbit);
+        nlohmann::json j = {
+            {"license", state.license},
+            {"theme", state.theme},
+        };
+        f << std::setw(4) << j;
     }
     
     static uint32_t _VersionRead(std::istream& stream) {
@@ -231,21 +213,21 @@ private:
         return f;
     }
     
-    void _migrate(uint32_t versionPrev) {
+    static void _Migrate(_Path rootDir, uint32_t versionPrev) {
         // Stub until we have a new version
     }
     
-    void _checkVersionAndMigrate(std::istream& stream, bool migrate) {
+    static void _CheckVersionAndMigrate(_Path rootDir, std::istream& stream, bool migrate) {
         uint32_t version = _VersionRead(stream);
         if (version > _Version) {
             throw Toastbox::RuntimeError(
                 "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
                 "please use a newer version of debase, or delete:\n"
-                "  %s", (uintmax_t)version, (uintmax_t)_Version, _stateDir.c_str());
+                "  %s", (uintmax_t)version, (uintmax_t)_Version, rootDir.c_str());
         
         } else if (version < _Version) {
             if (migrate) {
-                _migrate(version);
+                _Migrate(rootDir, version);
             
             } else {
                 throw Toastbox::RuntimeError(
@@ -255,12 +237,17 @@ private:
         }
     }
     
-    Toastbox::FDStreamInOut _acquireVersionLock(bool migrate) {
+    _Path _rootDir;
+    _State _state;
+    Toastbox::FDStreamInOut _versionLock;
+    
+public:
+    static Toastbox::FDStreamInOut AcquireVersionLock(_Path rootDir, bool migrate) {
         // Create the state directory
-        std::filesystem::create_directories(_stateDir);
+        std::filesystem::create_directories(rootDir);
         
         // Try to create the version lock file
-        _Path versionLockFilePath = _VersionLockFilePath(_stateDir);
+        _Path versionLockFilePath = _VersionLockFilePath(rootDir);
         bool created = false;
         Toastbox::FDStreamInOut versionLockFile;
         try {
@@ -284,27 +271,73 @@ private:
         } else {
             // The version lock file already existed.
             // Read the version and migrate the old state to the current version, if needed.
-            _checkVersionAndMigrate(versionLockFile, migrate);
+            _CheckVersionAndMigrate(rootDir, versionLockFile, migrate);
         }
         return versionLockFile;
     }
     
-    static void _StateRead(_Path path, State& state) {
-        std::ifstream f(path);
-        if (f) {
-            f.exceptions(std::ios::failbit | std::ios::badbit);
-            nlohmann::json j;
-            f >> j;
-            j.get_to(state);
-        }
+    State(_Path rootDir) : _rootDir(rootDir) {
+        _versionLock = AcquireVersionLock(_rootDir, true);
+        // Decode _state
+        _StateRead(_StateFilePath(_rootDir), _state);
     }
     
-    static void _StateWrite(_Path path, const State& state) {
-        std::ofstream f(path);
-        f.exceptions(std::ios::failbit | std::ios::badbit);
-        nlohmann::json j = state;
-        f << std::setw(4) << j;
+    void write() {
+        _StateWrite(_StateFilePath(_rootDir), _state);
     }
+    
+    std::string license() const { return _state.license; }
+    void license(std::string_view x) { _state.license = x; }
+    
+    Theme theme() const { return _state.theme; }
+    void theme(Theme x) { _state.theme = x; }
+};
+
+// MARK: - RepoState
+class RepoState {
+private:
+    using _Path = std::filesystem::path;
+    using _Json = nlohmann::json;
+    
+    struct _RepoState {
+        std::map<Ref,History> history;
+        std::map<Ref,std::vector<Snapshot>> snapshots;
+    };
+    
+    _Path _rootDir;
+    _Path _repoStateDir;
+    Git::Repo _repo;
+    
+    _RepoState _repoState;
+    std::map<Ref,History> _historyPrev;
+    std::map<Ref,Snapshot> _initialSnapshot;
+    
+    static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
+        std::string name = std::filesystem::canonical(repo.path());
+        std::replace(name.begin(), name.end(), '/', '-'); // Replace / with ~
+        return dir / "Repo" / name;
+    }
+    
+    static _Path _RepoStateFilePath(_Path repoStateDir) {
+        return repoStateDir / "State";
+    }
+//    
+//    static void _StateRead(_Path path, State& state) {
+//        std::ifstream f(path);
+//        if (f) {
+//            f.exceptions(std::ios::failbit | std::ios::badbit);
+//            nlohmann::json j;
+//            f >> j;
+//            j.get_to(state);
+//        }
+//    }
+//    
+//    static void _StateWrite(_Path path, const State& state) {
+//        std::ofstream f(path);
+//        f.exceptions(std::ios::failbit | std::ios::badbit);
+//        nlohmann::json j = state;
+//        f << std::setw(4) << j;
+//    }
     
     static void _RepoStateRead(_Path path, _RepoState& state) {
         std::ifstream f(path);
@@ -346,19 +379,19 @@ private:
     
 public:
     RepoState() {}
-    RepoState(_Path stateDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
-    _stateDir(stateDir), _repoStateDir(_RepoStateDirPath(_stateDir, repo)), _repo(repo) {
-        Toastbox::FDStreamInOut versionLockFile = _acquireVersionLock(true);
+    RepoState(_Path rootDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
+    _rootDir(rootDir), _repoStateDir(_RepoStateDirPath(_rootDir, repo)), _repo(repo) {
+        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, true);
         
-        // Decode _state
-        _StateRead(_StateFilePath(_stateDir), _state);
-        
-        
+//        // Decode _state
+//        _StateRead(_StateFilePath(_rootDir), _state);
+//        
+//        
 //        // Create the state directory
-//        std::filesystem::create_directories(_stateDir);
+//        std::filesystem::create_directories(_rootDir);
 //        
 //        // Try to create the version lock file
-//        _Path versionLockFilePath = _VersionLockFilePath(_stateDir);
+//        _Path versionLockFilePath = _VersionLockFilePath(_rootDir);
 //        bool created = false;
 //        Toastbox::FDStreamInOut versionLockFile;
 //        try {
@@ -433,10 +466,10 @@ public:
 //            while (!a);
 //        }
         
-        Toastbox::FDStreamInOut versionLockFile = _acquireVersionLock(false);
+        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, false);
         
 //        // Lock the state dir via the version lock
-//        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(_VersionLockFilePath(_stateDir), false);
+//        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(_VersionLockFilePath(_rootDir), false);
 //        _checkVersionAndMigrate(versionLockFile, false);
         
         // Read existing state
@@ -479,14 +512,6 @@ public:
     
     const std::vector<Snapshot>& snapshots(Git::Ref ref) const {
         return _repoState.snapshots.at(Convert(ref));
-    }
-    
-    Theme theme() const { return _state.theme; }
-    void theme(Theme x) {
-        Toastbox::FDStreamInOut versionLockFile = _acquireVersionLock(false);
-        _StateRead(_StateFilePath(_stateDir), _state);
-        _state.theme = x;
-        _StateWrite(_StateFilePath(_stateDir), _state);
     }
     
     Git::Repo repo() const {
