@@ -29,6 +29,7 @@
 #include "StateDir.h"
 #include "SnapshotButton.h"
 #include "SnapshotMenu.h"
+#include "Terminal.h"
 
 namespace fs = std::filesystem;
 
@@ -39,6 +40,8 @@ struct _Selection {
 
 class _ExitRequest : public std::exception {
 };
+
+static State::Theme _Theme = State::Theme::None;
 
 static UI::ColorPalette _Colors;
 static UI::ColorPalette _ColorsPrev;
@@ -1501,6 +1504,37 @@ int main(int argc, const char* argv[]) {
     
     try {
         setlocale(LC_ALL, "");
+        
+        {
+            State::State state(StateDir());
+            _Theme = state.theme();
+            if (_Theme == State::Theme::None) {
+                bool write = false;
+                // If a theme isn't set, ask the terminal for its background color,
+                // and we'll choose the theme based on that
+                Terminal::Background bg = Terminal::Background::Dark;
+                try {
+                    bg = Terminal::BackgroundGet();
+                } catch (...) {
+                    // We failed to get the terminal background color, so write the theme
+                    // for the default background color to disk, so we don't try to get
+                    // the background color again in the future. (This avoids a timeout
+                    // delay in Terminal::BackgroundGet() that occurs if the terminal
+                    // doesn't support querying the background color.)
+                    write = true;
+                }
+                
+                switch (bg) {
+                case Terminal::Background::Dark:    _Theme = State::Theme::Dark; break;
+                case Terminal::Background::Light:   _Theme = State::Theme::Light; break;
+                }
+                
+                if (write) {
+                    state.theme(_Theme);
+                    state.write();
+                }
+            }
+        }
         
         try {
             _Repo = Git::Repo::Open(".");
