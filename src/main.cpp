@@ -11,8 +11,8 @@
 #include <map>
 #include <filesystem>
 #include <spawn.h>
-#include "lib/Toastbox/RuntimeError.h"
-#include "lib/Toastbox/Defer.h"
+#include "lib/toastbox/RuntimeError.h"
+#include "lib/toastbox/Defer.h"
 #include "Git.h"
 #include "Window.h"
 #include "Panel.h"

@@ -3,11 +3,11 @@
 #include <string>
 #include <optional>
 #include <termios.h>
-#include "lib/Toastbox/RuntimeError.h"
-#include "lib/Toastbox/ReadWrite.h"
-#include "lib/Toastbox/StringSplit.h"
-#include "lib/Toastbox/IntForStr.h"
-#include "lib/Toastbox/Defer.h"
+#include "lib/toastbox/RuntimeError.h"
+#include "lib/toastbox/ReadWrite.h"
+#include "lib/toastbox/StringSplit.h"
+#include "lib/toastbox/IntForStr.h"
+#include "lib/toastbox/Defer.h"
 
 //// Terminal::_Parse() Fuzz testing (replaces ReadWrite.h)
 //namespace Toastbox {

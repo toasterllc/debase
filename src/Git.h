@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 #include "RefCounted.h"
-#include "lib/Toastbox/RuntimeError.h"
+#include "lib/toastbox/RuntimeError.h"
 #include "lib/libgit2/include/git2.h"
 
 namespace Git {
@@ -887,7 +887,7 @@ public:
             
             // Ignore submodules for which we don't have an indexId.
             // On macOS, `git_submodule_foreach` supplies the same submodule multiple
-            // times, with different-case paths (eg lib/Toastbox and Lib/Toastbox).
+            // times, with different-case paths (eg lib/toastbox and Lib/Toastbox).
             // Empirically, only one of them returns a valid indexId, which is
             // required for Submodule::update() to work. So ignore submodules that
             // have a null indexId.

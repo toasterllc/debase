@@ -3,9 +3,9 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "lib/Toastbox/RuntimeError.h"
-#include "lib/Toastbox/FileDescriptor.h"
-#include "lib/Toastbox/FDStream.h"
+#include "lib/toastbox/RuntimeError.h"
+#include "lib/toastbox/FileDescriptor.h"
+#include "lib/toastbox/FDStream.h"
 #include "lib/nlohmann/json.h"
 #include "History.h"
 #include "Git.h"

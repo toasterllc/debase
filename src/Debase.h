@@ -1,5 +1,5 @@
 #pragma once
-#include "lib/Toastbox/Stringify.h"
+#include "lib/toastbox/Stringify.h"
 
 #define DebaseBundleId "com.heytoaster.debase"
 #define DebaseVersion 1
