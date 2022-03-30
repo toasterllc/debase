@@ -1133,17 +1133,23 @@ static void _EventLoop() {
         try {
             // If we have a modal panel, let it handle the event
             if (_MessagePanel) {
-                std::optional<UI::Event> evopt = _MessagePanel->handleEvent(ev);
-                if (!evopt) continue;
+                ev = _MessagePanel->handleEvent(ev);
             
             } else if (_RegisterPanel) {
-                std::optional<UI::Event> evopt = _RegisterPanel->handleEvent(ev);
-                if (!evopt) continue;
+                ev = _RegisterPanel->handleEvent(ev);
             }
             
             std::optional<Git::Op> gitOp;
             switch (ev.type) {
             case UI::Event::Type::Mouse: {
+                // If _MessagePanel is displayed, the first click should dismiss the error
+                // Note that _MessagePanel eats all mouse events except mouse-up, so we
+                // don't have to check for the type
+                if (_MessagePanel) {
+                    _MessagePanel = nullptr;
+                    break;
+                }
+                
                 const _HitTestResult hitTest = _HitTest({ev.mouse.x, ev.mouse.y});
                 if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
                     const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
@@ -1171,11 +1177,17 @@ static void _EventLoop() {
                 break;
             }
             
+            case UI::Event::Type::KeyEscape: {
+                // Dismiss _MessagePanel if it's open
+                _MessagePanel = nullptr;
+                break;
+            }
+            
             case UI::Event::Type::KeyDelete:
             case UI::Event::Type::KeyFnDelete: {
                 if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
                     beep();
-                    continue;
+                    break;
                 }
                 
                 gitOp = {
@@ -1191,7 +1203,7 @@ static void _EventLoop() {
             case UI::Event::Type::KeyC: {
                 if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
                     beep();
-                    continue;
+                    break;
                 }
                 
                 gitOp = {
@@ -1207,7 +1219,7 @@ static void _EventLoop() {
             case UI::Event::Type::KeyReturn: {
                 if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
                     beep();
-                    continue;
+                    break;
                 }
                 
                 gitOp = {

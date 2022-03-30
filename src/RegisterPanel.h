@@ -52,7 +52,7 @@ public:
 //        mvwgetnstr(*this, offY-2, _MessageInsetX, buf, sizeof(buf));
     }
     
-    virtual bool handleEvent(const UI::Event& ev) override {
+    virtual UI::Event handleEvent(const UI::Event& ev) override {
         if (ev.type == UI::Event::Type::Mouse) {
             
         } else if (iscntrl((int)ev.type)) {
@@ -86,7 +86,7 @@ public:
 //            return true;
 //        }
 //        
-        return true;
+        return {};
     }
     
 private:

@@ -56,21 +56,26 @@ public:
     }
     
     void drawIfNeeded() {
-//        if (_drawNeeded) {
+        if (_drawNeeded) {
             draw();
-//        }
+        }
     }
     
     bool drawNeeded() const { return _drawNeeded; }
     void drawNeeded(bool x) { _drawNeeded = x; }
     
-    virtual std::optional<UI::Event> handleEvent(const UI::Event& ev) {
+    virtual UI::Event handleEvent(const UI::Event& ev) {
         // Let caller handle mouse-up's
         if (ev.mouseUp()) return ev;
         // Let caller handle escape key
         if (ev.type == UI::Event::Type::KeyEscape) return ev;
+        // Let caller handle escape key
+        if (ev.type == UI::Event::Type::WindowResize) return ev;
+        // Let caller handle Ctrl-C/D
+        if (ev.type == UI::Event::Type::KeyCtrlC) return ev;
+        if (ev.type == UI::Event::Type::KeyCtrlD) return ev;
         // Eat all other events
-        return std::nullopt;
+        return {};
     }
     
     const MessagePanelOptions& options() { return _opts; }
