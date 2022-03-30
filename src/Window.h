@@ -2,6 +2,7 @@
 #define NCURSES_WIDECHAR 1
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
+#include "Bitfield.h"
 
 namespace UI {
 
@@ -42,18 +43,56 @@ struct Rect {
     int ymax() const { return point.y+size.y-1; }
 };
 
-enum class Event : int {
-    None            = 0,
-    Mouse           = KEY_MOUSE,
-    WindowResize    = KEY_RESIZE,
-    KeyDelete       = '\x7F',
-    KeyFnDelete     = KEY_DC,
-    KeyEscape       = '\x1B',
-    KeyReturn       = '\n',
-    KeyCtrlC        = '\x03',
-    KeyCtrlD        = '\x04',
-    KeyC            = 'c',
+struct Event {
+    enum class Type : int {
+        None            = 0,
+        Mouse           = KEY_MOUSE,
+        WindowResize    = KEY_RESIZE,
+        KeyDelete       = '\x7F',
+        KeyFnDelete     = KEY_DC,
+        KeyEscape       = '\x1B',
+        KeyReturn       = '\n',
+        KeyCtrlC        = '\x03',
+        KeyCtrlD        = '\x04',
+        KeyC            = 'c',
+    };
+    
+    struct MouseButtons : Bitfield<uint8_t> {
+        static constexpr Bit Left  = 1<<0;
+        static constexpr Bit Right = 1<<1;
+        using Bitfield::Bitfield;
+    };
+    
+    Type type = Type::None;
+    MEVENT mouse = {};
+    
+    bool mouseDown(MouseButtons buttons=MouseButtons::Left) const {
+        if (type != Type::Mouse) return false;
+        return mouse.bstate & _DownMaskForButtons(buttons);
+    }
+    
+    bool mouseUp(MouseButtons buttons=MouseButtons::Left) const {
+        if (type != Type::Mouse) return false;
+        return mouse.bstate & _UpMaskForButtons(buttons);
+    }
+    
+private:
+    static mmask_t _DownMaskForButtons(MouseButtons buttons) {
+        mmask_t r = 0;
+        if (buttons & MouseButtons::Left)  r |= BUTTON1_PRESSED;
+        if (buttons & MouseButtons::Right) r |= BUTTON3_PRESSED;
+        return r;
+    }
+    
+    static mmask_t _UpMaskForButtons(MouseButtons buttons) {
+        mmask_t r = 0;
+        if (buttons & MouseButtons::Left)  r |= BUTTON1_RELEASED;
+        if (buttons & MouseButtons::Right) r |= BUTTON3_RELEASED;
+        return r;
+    }
 };
+
+struct ExitRequest : std::exception {};
 
 inline Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.point.x, b.point.x);
@@ -79,7 +118,7 @@ inline bool Empty(const Rect& x) {
     return x.size.x==0 || x.size.y==0;
 }
 
-inline bool HitTest(const UI::Rect& r, const UI::Point& p, UI::Size expand={0,0}) {
+inline bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
     return !Empty(Intersection(Inset(r, {-expand.x,-expand.y}), {p, {1,1}}));
 }
 
@@ -164,8 +203,32 @@ public:
         return HitTest(frame(), p);
     }
     
-    Event nextEvent() const {
-        return (Event)::wgetch(*this);
+    Event nextEvent() {
+        // Wait for another mouse event
+        for (;;) {
+            Event ev = {
+                .type = (Event::Type)::wgetch(*this),
+            };
+            switch (ev.type) {
+            case Event::Type::Mouse: {
+                MEVENT mouse = {};
+                int ir = ::getmouse(&mouse);
+                if (ir != OK) continue;
+                return Event{
+                    .type = Event::Type::Mouse,
+                    .mouse = mouse,
+                };
+            }
+            
+            case Event::Type::KeyCtrlC:
+            case Event::Type::KeyCtrlD: {
+                throw ExitRequest();
+            }
+            
+            default: {
+                return ev;
+            }}
+        }
     }
     
     operator WINDOW*() const { return _win; }

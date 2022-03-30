@@ -55,6 +55,10 @@ public:
         }
     }
     
+    virtual void handleEvent(UI::Event ev) {
+        
+    }
+    
     const MessagePanelOptions& options() { return _opts; }
     
 protected:

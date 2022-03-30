@@ -40,8 +40,6 @@ struct _Selection {
     std::set<Git::Commit> commits;
 };
 
-struct _ExitRequest : std::exception {};
-
 static State::Theme _Theme = State::Theme::None;
 
 static UI::ColorPalette _Colors;
@@ -291,58 +289,6 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     return _InsertionPosition{icol, iiter};
 }
 
-struct MouseButtons : Bitfield<uint8_t> {
-    static constexpr Bit Left  = 1<<0;
-    static constexpr Bit Right = 1<<1;
-    using Bitfield::Bitfield;
-};
-
-static mmask_t _MouseButtonReleasedMask(MouseButtons buttons) {
-    mmask_t r = 0;
-    if (buttons & MouseButtons::Left)  r |= BUTTON1_RELEASED;
-    if (buttons & MouseButtons::Right) r |= BUTTON3_RELEASED;
-    return r;
-}
-
-struct _Event {
-    UI::Event type = UI::Event::None;
-    MEVENT mouse = {};
-    bool mouseUp = false;
-};
-
-static _Event _WaitForEvent(MouseButtons buttons=MouseButtons::Left) {
-    const mmask_t mouseReleasedMask = _MouseButtonReleasedMask(buttons);
-    // Wait for another mouse event
-    for (;;) {
-        UI::Event ev = _RootWindow->nextEvent();
-        switch (ev) {
-        case UI::Event::WindowResize:
-        case UI::Event::KeyEscape: {
-            return _Event{ .type = ev };
-        }
-        
-        case UI::Event::Mouse: {
-            MEVENT mouse = {};
-            int ir = ::getmouse(&mouse);
-            if (ir != OK) continue;
-            return _Event{
-                .type = UI::Event::Mouse,
-                .mouse = mouse,
-                .mouseUp = (bool)(mouse.bstate & mouseReleasedMask),
-            };
-        }
-        
-        case UI::Event::KeyCtrlC:
-        case UI::Event::KeyCtrlD: {
-            throw _ExitRequest();
-        }
-        
-        default: {
-            continue;
-        }}
-    }
-}
-
 static UI::RevColumn _ColumnForRev(Git::Rev rev) {
     for (UI::RevColumn col : _Columns) {
         if (col->rev() == rev) return col;
@@ -404,18 +350,18 @@ static void _Reload() {
         OffsetX += ColumnWidth+ColumnSpacing;
     }
     
-    {
-        constexpr int RegisterPanelWidth = 50;
-        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
-        
-        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
-            .color   = _Colors.menu,
-            .width   = registerPanelWidth,
-            .center  = false,
-            .title   = "Register",
-            .message = "Please register debase",
-        });
-    }
+//    {
+//        constexpr int RegisterPanelWidth = 50;
+//        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+//        
+//        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+//            .color   = _Colors.menu,
+//            .width   = registerPanelWidth,
+//            .center  = false,
+//            .title   = "Register",
+//            .message = "Please register debase",
+//        });
+//    }
 }
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
@@ -452,11 +398,11 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
 
 // _TrackMouseInsideCommitPanel
 // Handles clicking/dragging a set of CommitPanels
-static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
     const UI::Size delta = {
-        mouseDownPanelFrame.point.x-mouseDownEvent.x,
-        mouseDownPanelFrame.point.y-mouseDownEvent.y,
+        mouseDownPanelFrame.point.x-mouseDownEvent.mouse.x,
+        mouseDownPanelFrame.point.y-mouseDownEvent.mouse.y,
     };
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
     const UI::Rect rootWinBounds = _RootWindow->bounds();
@@ -478,10 +424,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         _Selection.commits.insert(mouseDownPanel->commit());
     }
     
-    _Event ev = {
-        .type = UI::Event::Mouse,
-        .mouse = mouseDownEvent,
-    };
+    UI::Event ev = mouseDownEvent;
     std::optional<_InsertionPosition> ipos;
     bool abort = false;
     bool mouseDragged = false;
@@ -490,8 +433,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
         
         const UI::Point p = {ev.mouse.x, ev.mouse.y};
-        const int w = std::abs(mouseDownEvent.x - p.x);
-        const int h = std::abs(mouseDownEvent.y - p.y);
+        const int w = std::abs(mouseDownEvent.mouse.x - p.x);
+        const int h = std::abs(mouseDownEvent.mouse.y - p.y);
         // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
         const bool allow = UI::HitTest(rootWinBounds, p, {-3,-3});
         mouseDragged |= w>1 || h>1;
@@ -566,10 +509,10 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
         }
         
         _Draw();
-        ev = _WaitForEvent();
-        abort = (ev.type != UI::Event::Mouse);
+        ev = _RootWindow->nextEvent();
+        abort = (ev.type != UI::Event::Type::Mouse);
         // Check if we should abort
-        if (abort || ev.mouseUp) {
+        if (abort || ev.mouseUp()) {
             break;
         }
     }
@@ -638,18 +581,15 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(MEVENT mouseDownEvent
 
 // _TrackMouseOutsideCommitPanel
 // Handles updating the selection rectangle / selection state
-static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
+static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
     auto selectionOld = _Selection;
-    _Event ev = {
-        .type = UI::Event::Mouse,
-        .mouse = mouseDownEvent,
-    };
+    UI::Event ev = mouseDownEvent;
     
     for (;;) {
-        const int x = std::min(mouseDownEvent.x, ev.mouse.x);
-        const int y = std::min(mouseDownEvent.y, ev.mouse.y);
-        const int w = std::abs(mouseDownEvent.x - ev.mouse.x);
-        const int h = std::abs(mouseDownEvent.y - ev.mouse.y);
+        const int x = std::min(mouseDownEvent.mouse.x, ev.mouse.x);
+        const int y = std::min(mouseDownEvent.mouse.y, ev.mouse.y);
+        const int w = std::abs(mouseDownEvent.mouse.x - ev.mouse.x);
+        const int h = std::abs(mouseDownEvent.mouse.y - ev.mouse.y);
         const bool dragStart = w>1 || h>1;
         
         // Mouse-down outside of a commit:
@@ -673,7 +613,7 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
                 if (!selectionNew.commits.empty()) break;
             }
             
-            const bool shift = (mouseDownEvent.bstate & _SelectionShiftKeys);
+            const bool shift = (mouseDownEvent.mouse.bstate & _SelectionShiftKeys);
             if (shift && (selectionNew.commits.empty() || selectionOld.rev==selectionNew.rev)) {
                 struct _Selection selection = {
                     .rev = selectionOld.rev,
@@ -694,9 +634,9 @@ static void _TrackMouseOutsideCommitPanel(MEVENT mouseDownEvent) {
         }
         
         _Draw();
-        ev = _WaitForEvent();
+        ev = _RootWindow->nextEvent();
         // Check if we should abort
-        if (ev.type!=UI::Event::Mouse || ev.mouseUp) {
+        if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
             break;
         }
     }
@@ -721,12 +661,9 @@ static UI::Button _MakeContextMenuButton(std::string_view label, std::string_vie
     return b;
 }
 
-static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     auto mouseDownTime = std::chrono::steady_clock::now();
-    _Event ev = {
-        .type = UI::Event::Mouse,
-        .mouse = mouseDownEvent,
-    };
+    UI::Event ev = mouseDownEvent;
     
     // If the commit that was clicked isn't selected, set the selection to only that commit
     if (!_Selected(mouseDownColumn, mouseDownPanel)) {
@@ -753,35 +690,34 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
     UI::Button editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
     UI::Button deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
     std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
-    UI::MenuOptions opts = {
+    _ContextMenu = MakeShared<UI::Menu>(UI::MenuOptions{
         .colors = _Colors,
         .parentWindow = _RootWindow,
-        .position = {mouseDownEvent.x, mouseDownEvent.y},
+        .position = {mouseDownEvent.mouse.x, mouseDownEvent.mouse.y},
         .buttons = buttons
-    };
-    _ContextMenu = MakeShared<UI::Menu>(opts);
+    });
     
     UI::Button menuButton = nullptr;
-    MouseButtons mouseUpButtons = MouseButtons::Right;
+    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
     bool abort = false;
     for (;;) {
-        if (ev.type == UI::Event::Mouse) {
+        if (ev.type == UI::Event::Type::Mouse) {
             menuButton = _ContextMenu->updateMouse({ev.mouse.x, ev.mouse.y});
         } else {
             menuButton = nullptr;
         }
         
         _Draw();
-        ev = _WaitForEvent(mouseUpButtons);
-        abort = (ev.type != UI::Event::Mouse);
+        ev = _RootWindow->nextEvent();
+        abort = (ev.type != UI::Event::Type::Mouse);
         
         // Check if we should abort
         if (abort) {
             break;
         
         // Handle mouse up
-        } else if (ev.mouseUp) {
-            if (!(mouseUpButtons & MouseButtons::Left)) {
+        } else if (ev.mouseUp(mouseUpButtons)) {
+            if (!(mouseUpButtons & UI::Event::MouseButtons::Left)) {
                 // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
                 // stay open and we should start listening for left-mouse-down events.
                 // If the right-mouse-up occurs af
@@ -789,7 +725,7 @@ static std::optional<Git::Op> _TrackRightMouse(MEVENT mouseDownEvent, UI::RevCol
                 if (duration >= _ContextMenuStayOpenThresh) break;
                 
                 // Start listening for left mouse up
-                mouseUpButtons |= MouseButtons::Left;
+                mouseUpButtons |= UI::Event::MouseButtons::Left;
                 
                 // Right mouse up, but menu stays open
                 // Now start tracking both left+right mouse down
@@ -894,10 +830,10 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     for (;;) {
         _Draw();
         
-        _Event ev = _WaitForEvent();
-        abort = (ev.type != UI::Event::Mouse);
+        UI::Event ev = _RootWindow->nextEvent();
+        abort = (ev.type != UI::Event::Type::Mouse);
         
-        if (ev.type == UI::Event::Mouse) {
+        if (ev.type == UI::Event::Type::Mouse) {
             menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->updateMouse({ev.mouse.x, ev.mouse.y}));
         } else {
             menuButton = nullptr;
@@ -908,7 +844,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
             break;
         
         // Handle mouse up
-        } else if (ev.mouseUp) {
+        } else if (ev.mouseUp()) {
             // Close the menu only if clicking outside of the menu, or clicking on an
             // enabled menu button.
             // In other words, don't close the menu when clicking on a disabled menu
@@ -940,23 +876,20 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     }
 }
 
-static void _TrackMouseInsideButton(MEVENT mouseDownEvent, UI::RevColumn column, const UI::RevColumnHitTestResult& mouseDownHitTest) {
+static void _TrackMouseInsideButton(const UI::Event& mouseDownEvent, UI::RevColumn column, const UI::RevColumnHitTestResult& mouseDownHitTest) {
     UI::RevColumnHitTestResult hit;
-    _Event ev = {
-        .type = UI::Event::Mouse,
-        .mouse = mouseDownEvent,
-    };
+    UI::Event ev = mouseDownEvent;
     
     for (;;) {
-        if (ev.type == UI::Event::Mouse) {
+        if (ev.type == UI::Event::Type::Mouse) {
             hit = column->updateMouse({ev.mouse.x, ev.mouse.y});
         } else {
             hit = {};
         }
         
         _Draw();
-        ev = _WaitForEvent();
-        if (ev.mouseUp) break;
+        ev = _RootWindow->nextEvent();
+        if (ev.mouseUp()) break;
     }
     
     if (hit.buttonEnabled && hit==mouseDownHitTest) {
@@ -1193,59 +1126,54 @@ static void _EventLoop() {
     
     for (;;) {
         std::string errorMsg;
+        _Draw();
+        UI::Event ev = _RootWindow->nextEvent();
+        
         try {
-            _Draw();
-            UI::Event ev = _RootWindow->nextEvent();
+//            // If we have a modal panel, let it handle the event
+//            if (_MessagePanel) {
+//                bool br = _MessagePanel->handleEvent(ev);
+//                if (!br) _MessagePanel = nullptr;
+//                continue;
+//            
+//            } else if (_RegisterPanel) {
+//                bool br = _RegisterPanel->handleEvent(ev);
+//                if (!br) _RegisterPanel = nullptr;
+//                continue;
+//            }
+            
             std::optional<Git::Op> gitOp;
-            switch (ev) {
-            case UI::Event::Mouse: {
-                MEVENT mouse = {};
-                int ir = ::getmouse(&mouse);
-                if (ir != OK) continue;
-                
-                // If there's an error displayed, the first click should dismiss the error
-                if (_MessagePanel) {
-                    if (mouse.bstate & BUTTON1_PRESSED) {
-                        _MessagePanel = nullptr;
-                    }
-                    continue;
-                }
-                
-                const _HitTestResult hitTest = _HitTest({mouse.x, mouse.y});
-                if (mouse.bstate & BUTTON1_PRESSED) {
-                    const bool shift = (mouse.bstate & _SelectionShiftKeys);
+            switch (ev.type) {
+            case UI::Event::Type::Mouse: {
+                const _HitTestResult hitTest = _HitTest({ev.mouse.x, ev.mouse.y});
+                if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                    const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
                     if (hitTest && !shift) {
                         if (hitTest.hitTest.panel) {
                             // Mouse down inside of a CommitPanel, without shift key
-                            gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest.column, hitTest.hitTest.panel);
+                            gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.hitTest.panel);
                         
                         } else {
-                            _TrackMouseInsideButton(mouse, hitTest.column, hitTest.hitTest);
+                            _TrackMouseInsideButton(ev, hitTest.column, hitTest.hitTest);
                         }
                     
                     } else {
                         // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _TrackMouseOutsideCommitPanel(mouse);
+                        _TrackMouseOutsideCommitPanel(ev);
                     }
                 
-                } else if (mouse.bstate & BUTTON3_PRESSED) {
+                } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
                     if (hitTest) {
                         if (hitTest.hitTest.panel) {
-                            gitOp = _TrackRightMouse(mouse, hitTest.column, hitTest.hitTest.panel);
+                            gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.hitTest.panel);
                         }
                     }
                 }
                 break;
             }
             
-            case UI::Event::KeyEscape: {
-                // Dismiss error panel if it's open
-                _MessagePanel = nullptr;
-                break;
-            }
-            
-            case UI::Event::KeyDelete:
-            case UI::Event::KeyFnDelete: {
+            case UI::Event::Type::KeyDelete:
+            case UI::Event::Type::KeyFnDelete: {
                 if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
                     beep();
                     continue;
@@ -1261,7 +1189,7 @@ static void _EventLoop() {
                 break;
             }
             
-            case UI::Event::KeyC: {
+            case UI::Event::Type::KeyC: {
                 if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
                     beep();
                     continue;
@@ -1277,7 +1205,7 @@ static void _EventLoop() {
                 break;
             }
             
-            case UI::Event::KeyReturn: {
+            case UI::Event::Type::KeyReturn: {
                 if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
                     beep();
                     continue;
@@ -1293,14 +1221,9 @@ static void _EventLoop() {
                 break;
             }
             
-            case UI::Event::WindowResize: {
+            case UI::Event::Type::WindowResize: {
                 _Reload();
                 break;
-            }
-            
-            case UI::Event::KeyCtrlC:
-            case UI::Event::KeyCtrlD: {
-                throw _ExitRequest();
             }
             
             default: {
@@ -1321,7 +1244,7 @@ static void _EventLoop() {
                 break;
             }
         
-        } catch (const _ExitRequest&) {
+        } catch (const UI::ExitRequest&) {
             throw;
         
         } catch (const std::exception& e) {
@@ -1761,7 +1684,7 @@ int main(int argc, const char* argv[]) {
         
         try {
             _EventLoop();
-        } catch (const _ExitRequest&) {
+        } catch (const UI::ExitRequest&) {
             // Nothing to do
         } catch (...) {
             throw;
