@@ -1130,17 +1130,17 @@ static void _EventLoop() {
         UI::Event ev = _RootWindow->nextEvent();
         
         try {
-//            // If we have a modal panel, let it handle the event
-//            if (_MessagePanel) {
-//                bool br = _MessagePanel->handleEvent(ev);
-//                if (!br) _MessagePanel = nullptr;
-//                continue;
-//            
-//            } else if (_RegisterPanel) {
-//                bool br = _RegisterPanel->handleEvent(ev);
-//                if (!br) _RegisterPanel = nullptr;
-//                continue;
-//            }
+            // If we have a modal panel, let it handle the event
+            if (_MessagePanel) {
+                bool br = _MessagePanel->handleEvent(ev);
+                if (!br) _MessagePanel = nullptr;
+                continue;
+            
+            } else if (_RegisterPanel) {
+                bool br = _RegisterPanel->handleEvent(ev);
+                if (!br) _RegisterPanel = nullptr;
+                continue;
+            }
             
             std::optional<Git::Op> gitOp;
             switch (ev.type) {

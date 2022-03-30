@@ -55,8 +55,24 @@ public:
         }
     }
     
-    virtual void handleEvent(UI::Event ev) {
+    virtual bool handleEvent(const UI::Event& ev) {
+        switch (ev.type) {
+        case UI::Event::Type::Mouse: {
+            if (ev.mouseUp() && !HitTest(frame(), {ev.mouse.x, ev.mouse.y})) {
+                // Dismiss when clicking outside of the panel
+                return false;
+            }
+            return true;
+        }
         
+        case UI::Event::Type::KeyEscape: {
+            // Dismiss when clicking outside of the panel
+            return false;
+        }
+        
+        default:
+            return true;
+        }
     }
     
     const MessagePanelOptions& options() { return _opts; }
