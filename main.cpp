@@ -1307,18 +1307,39 @@ static void _EventLoop() {
     }
 }
 
-int main(int argc, const char* argv[]) {
-    // Disable echo before activating ncurses
-    // This is necessary to prevent an edge case where the mouse-moved escape
-    // sequences can get printed to the console when debase exits.
-    // So far we haven't been able to reproduce the issue after adding this
-    // code. But if we do see it again in the future, try giving tcsetattr()
-    // the TCSAFLUSH or TCSADRAIN flag in Terminal::Settings (instead of
-    // TCSANOW) to see if that solves it.
-    Terminal::Settings term(STDIN_FILENO);
-    term.c_lflag &= ~(ICANON|ECHO);
-    term.set();
+static State::Theme _ReadTheme() {
+    State::State state(StateDir());
+    State::Theme theme = state.theme();
+    if (theme != State::Theme::None) return theme;
     
+    bool write = false;
+    // If a theme isn't set, ask the terminal for its background color,
+    // and we'll choose the theme based on that
+    Terminal::Background bg = Terminal::Background::Dark;
+    try {
+        bg = Terminal::BackgroundGet();
+    } catch (...) {
+        // We failed to get the terminal background color, so write the theme
+        // for the default background color to disk, so we don't try to get
+        // the background color again in the future. (This avoids a timeout
+        // delay in Terminal::BackgroundGet() that occurs if the terminal
+        // doesn't support querying the background color.)
+        write = true;
+    }
+    
+    switch (bg) {
+    case Terminal::Background::Dark:    theme = State::Theme::Dark; break;
+    case Terminal::Background::Light:   theme = State::Theme::Light; break;
+    }
+    
+    if (write) {
+        state.theme(theme);
+        state.write();
+    }
+    return theme;
+}
+
+int main(int argc, const char* argv[]) {
     #warning TODO: add help flag
     
     #warning TODO: implement 7-day trial
@@ -1516,38 +1537,20 @@ int main(int argc, const char* argv[]) {
 //    }
     
     try {
+        // Disable echo before activating ncurses
+        // This is necessary to prevent an edge case where the mouse-moved escape
+        // sequences can get printed to the console when debase exits.
+        // So far we haven't been able to reproduce the issue after adding this
+        // code. But if we do see it again in the future, try giving tcsetattr()
+        // the TCSAFLUSH or TCSADRAIN flag in Terminal::Settings (instead of
+        // TCSANOW) to see if that solves it.
+        Terminal::Settings term(STDIN_FILENO);
+        term.c_lflag &= ~(ICANON|ECHO);
+        term.set();
+        
         setlocale(LC_ALL, "");
         
-        {
-            State::State state(StateDir());
-            _Theme = state.theme();
-            if (_Theme == State::Theme::None) {
-                bool write = false;
-                // If a theme isn't set, ask the terminal for its background color,
-                // and we'll choose the theme based on that
-                Terminal::Background bg = Terminal::Background::Dark;
-                try {
-                    bg = Terminal::BackgroundGet();
-                } catch (...) {
-                    // We failed to get the terminal background color, so write the theme
-                    // for the default background color to disk, so we don't try to get
-                    // the background color again in the future. (This avoids a timeout
-                    // delay in Terminal::BackgroundGet() that occurs if the terminal
-                    // doesn't support querying the background color.)
-                    write = true;
-                }
-                
-                switch (bg) {
-                case Terminal::Background::Dark:    _Theme = State::Theme::Dark; break;
-                case Terminal::Background::Light:   _Theme = State::Theme::Light; break;
-                }
-                
-                if (write) {
-                    state.theme(_Theme);
-                    state.write();
-                }
-            }
-        }
+        _Theme = _ReadTheme();
         
         try {
             _Repo = Git::Repo::Open(".");
