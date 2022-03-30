@@ -1321,9 +1321,9 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
+    #warning TODO: make dark-mode error color more reddish
     
-    #warning TODO: support light mode
+    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
     #warning TODO: implement 7-day trial
     
@@ -1507,6 +1507,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: when switching snapshots, clear the selection
 //
 //    #warning TODO: improve error when working directory isn't a git repo
+//
+//    #warning TODO: support light mode
     
 //    {
 //        Git::Commit a;
