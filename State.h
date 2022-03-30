@@ -436,8 +436,15 @@ public:
         // match the current head, we create a fresh history.
         for (Git::Ref ref : refs) {
             Git::Commit headCurrent = ref.commit();
+            Git::Commit headStored;
             auto find = _repoState.history.find(Convert(ref));
-            Git::Commit headStored = (find!=_repoState.history.end() ? Convert(_repo, find->second.get().head) : nullptr);
+            if (find != _repoState.history.end()) {
+                // Handle the stored commit not existing
+                try {
+                    headStored = Convert(_repo, find->second.get().head);
+                } catch (...) {}
+            }
+            
             if (headStored != headCurrent) {
                 _repoState.history[Convert(ref)] = History(RefState{.head = Convert(headCurrent)});
             }

@@ -844,8 +844,12 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     
     const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
     for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
+        // Creating the button will throw if we can't get the commit for the snapshot
+        // If that happens, just don't shown the button representing the snapshot
+        try {
+            buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
+        } catch (...) {}
 //        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
         
 //        button->options().label = "Start of Session";
 //        button->options().enabled = true;
@@ -1517,11 +1521,11 @@ int main(int argc, const char* argv[]) {
 //            a.idStr();
 //        }
 //    }
-//    
-//    {
-//        volatile bool a = false;
-//        while (!a);
-//    }
+    
+    {
+        volatile bool a = false;
+        while (!a);
+    }
     
     try {
         setlocale(LC_ALL, "");
