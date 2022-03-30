@@ -902,7 +902,6 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         State::Commit commitCur = h.get().head;
         
         if (commitNew != commitCur) {
-            #warning TODO: handle not being able to materialize commit
             Git::Commit commit = Convert(_Repo, commitNew);
             h.push(State::RefState{.head = commitNew});
             _Repo.refReplace(ref, commit);
@@ -1000,7 +999,7 @@ static UI::ColorPalette _ColorsCreate(State::Theme theme) {
             colors.selectionSimilar = colors.add(140, 140, 255);
             colors.selectionCopy    = colors.add(  0, 229, 130);
             colors.menu             = colors.selectionCopy;
-            colors.error            = colors.add(203,   0, 111);
+            colors.error            = colors.add(194,   0,  71);
         
         } else {
             colors.normal           = COLOR_BLACK;
@@ -1008,7 +1007,7 @@ static UI::ColorPalette _ColorsCreate(State::Theme theme) {
             colors.selection        = colors.add(  0,   2, 255);
             colors.selectionSimilar = colors.add(140, 140, 255);
             colors.selectionCopy    = colors.add( 52, 167,   0);
-            colors.menu             = colors.add(174,   0,  85);
+            colors.menu             = colors.add(194,   0,  71);
             colors.error            = colors.menu;
         }
     
@@ -1023,7 +1022,7 @@ static UI::ColorPalette _ColorsCreate(State::Theme theme) {
             colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
             colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
             colors.menu             = colors.selectionCopy;
-            colors.error            = colors.add(.988*255, .298*255, .592*255);
+            colors.error            = colors.add(.969*255, .298*255, .435*255);
         
         } else {
             colors.normal           = COLOR_BLACK;
@@ -1031,7 +1030,7 @@ static UI::ColorPalette _ColorsCreate(State::Theme theme) {
             colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
             colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
             colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
-            colors.menu             = colors.add(.827*255, .224*255, .447*255);
+            colors.menu             = colors.add(.969*255, .298*255, .435*255);
             colors.error            = colors.menu;
         }
     }
@@ -1321,7 +1320,7 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: make dark-mode error color more reddish
+    #warning TODO: handle not being able to materialize commits via Convert()
     
     #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
@@ -1509,6 +1508,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: improve error when working directory isn't a git repo
 //
 //    #warning TODO: support light mode
+//
+//    #warning TODO: make dark-mode error color more reddish
     
 //    {
 //        Git::Commit a;
