@@ -38,8 +38,7 @@ struct _Selection {
     std::set<Git::Commit> commits;
 };
 
-class _ExitRequest : public std::exception {
-};
+struct _ExitRequest : std::exception {};
 
 static State::Theme _Theme = State::Theme::None;
 
@@ -399,20 +398,31 @@ static void _Reload() {
 static void _UndoRedo(UI::RevColumn col, bool undo) {
     Git::Rev rev = col->rev();
     State::History& h = _RepoState.history(col->rev().ref);
-    
     State::RefState refStatePrev = h.get();
-    if (undo) h.prev();
-    else      h.next();
-    State::RefState refState = h.get();
+    State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
     
-    Git::Commit commit = State::Convert(_Repo, h.get().head);
-    std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
+    try {
+        Git::Commit commit;
+        try {
+            commit = State::Convert(_Repo, refState.head);
+        } catch (...) {
+            throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
+        }
+        
+        std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
+        rev = _Repo.revReplace(rev, commit);
+        _Selection = {
+            .rev = rev,
+            .commits = selection,
+        };
+        
+        if (undo) h.prev();
+        else      h.next();
     
-    rev = _Repo.revReplace(rev, commit);
-    _Selection = {
-        .rev = rev,
-        .commits = selection,
-    };
+    } catch (const std::exception& e) {
+        if (undo) throw Toastbox::RuntimeError("undo failed: %s", e.what());
+        else      throw Toastbox::RuntimeError("redo failed: %s", e.what());
+    }
     
     _Reload();
 }
@@ -1127,75 +1137,49 @@ static void _Spawn(const char*const* argv) {
 }
 
 static void _ExecGitOp(const Git::Op& gitOp) {
-    std::string errorMsg;
-    try {
-        std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(_Repo, gitOp);
-        if (!opResult) return;
-        
-        Git::Rev srcRevPrev = gitOp.src.rev;
-        Git::Rev dstRevPrev = gitOp.dst.rev;
-        Git::Rev srcRev = opResult->src.rev;
-        Git::Rev dstRev = opResult->dst.rev;
-        assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
-        assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
-        
-        if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            State::History& h = _RepoState.history(srcRev.ref);
-            h.push({
-                .head = State::Convert(srcRev.commit),
-                .selection = State::Convert(opResult->src.selection),
-                .selectionPrev = State::Convert(opResult->src.selectionPrev),
-            });
-        }
-        
-        if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            State::History& h = _RepoState.history(dstRev.ref);
-            h.push({
-                .head = State::Convert(dstRev.commit),
-                .selection = State::Convert(opResult->dst.selection),
-                .selectionPrev = State::Convert(opResult->dst.selectionPrev),
-            });
-        }
-        
-        // Update the selection
-        if (opResult->dst.rev) {
-            _Selection = {
-                .rev = opResult->dst.rev,
-                .commits = opResult->dst.selection,
-            };
-        
-        } else {
-            _Selection = {
-                .rev = opResult->src.rev,
-                .commits = opResult->src.selection,
-            };
-        }
-        
-        _Reload();
+    std::optional<Git::OpResult> opResult = Git::Exec<_Spawn>(_Repo, gitOp);
+    if (!opResult) return;
     
-    } catch (const Git::Error& e) {
-        switch (e.error) {
-        case GIT_EUNMERGED:
-        case GIT_EMERGECONFLICT:
-            errorMsg = "a merge conflict occurred";
-            break;
-        
-        default:
-            errorMsg = e.what();
-            break;
-        }
+    Git::Rev srcRevPrev = gitOp.src.rev;
+    Git::Rev dstRevPrev = gitOp.dst.rev;
+    Git::Rev srcRev = opResult->src.rev;
+    Git::Rev dstRev = opResult->dst.rev;
+    assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
+    assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
     
-    } catch (const std::exception& e) {
-        errorMsg = e.what();
+    if (srcRev && srcRev.commit!=srcRevPrev.commit) {
+        State::History& h = _RepoState.history(srcRev.ref);
+        h.push({
+            .head = State::Convert(srcRev.commit),
+            .selection = State::Convert(opResult->src.selection),
+            .selectionPrev = State::Convert(opResult->src.selectionPrev),
+        });
     }
     
-    if (!errorMsg.empty()) {
-        constexpr int ErrorPanelWidth = 35;
-        const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
-        
-        errorMsg[0] = toupper(errorMsg[0]);
-        _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
+    if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
+        State::History& h = _RepoState.history(dstRev.ref);
+        h.push({
+            .head = State::Convert(dstRev.commit),
+            .selection = State::Convert(opResult->dst.selection),
+            .selectionPrev = State::Convert(opResult->dst.selectionPrev),
+        });
     }
+    
+    // Update the selection
+    if (opResult->dst.rev) {
+        _Selection = {
+            .rev = opResult->dst.rev,
+            .commits = opResult->dst.selection,
+        };
+    
+    } else {
+        _Selection = {
+            .rev = opResult->src.rev,
+            .commits = opResult->src.selection,
+        };
+    }
+    
+    _Reload();
 }
 
 static void _EventLoop() {
@@ -1206,120 +1190,149 @@ static void _EventLoop() {
     _Reload();
     
     for (;;) {
-        _Draw();
-        UI::Event ev = _RootWindow->nextEvent();
-        std::optional<Git::Op> gitOp;
-        switch (ev) {
-        case UI::Event::Mouse: {
-            MEVENT mouse = {};
-            int ir = ::getmouse(&mouse);
-            if (ir != OK) continue;
-            
-            // If there's an error displayed, the first click should dismiss the error
-            if (_ErrorPanel) {
-                if (mouse.bstate & BUTTON1_PRESSED) {
-                    _ErrorPanel = nullptr;
+        std::string errorMsg;
+        try {
+            _Draw();
+            UI::Event ev = _RootWindow->nextEvent();
+            std::optional<Git::Op> gitOp;
+            switch (ev) {
+            case UI::Event::Mouse: {
+                MEVENT mouse = {};
+                int ir = ::getmouse(&mouse);
+                if (ir != OK) continue;
+                
+                // If there's an error displayed, the first click should dismiss the error
+                if (_ErrorPanel) {
+                    if (mouse.bstate & BUTTON1_PRESSED) {
+                        _ErrorPanel = nullptr;
+                    }
+                    continue;
                 }
-                continue;
-            }
-            
-            const _HitTestResult hitTest = _HitTest({mouse.x, mouse.y});
-            if (mouse.bstate & BUTTON1_PRESSED) {
-                const bool shift = (mouse.bstate & _SelectionShiftKeys);
-                if (hitTest && !shift) {
-                    if (hitTest.hitTest.panel) {
-                        // Mouse down inside of a CommitPanel, without shift key
-                        gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest.column, hitTest.hitTest.panel);
+                
+                const _HitTestResult hitTest = _HitTest({mouse.x, mouse.y});
+                if (mouse.bstate & BUTTON1_PRESSED) {
+                    const bool shift = (mouse.bstate & _SelectionShiftKeys);
+                    if (hitTest && !shift) {
+                        if (hitTest.hitTest.panel) {
+                            // Mouse down inside of a CommitPanel, without shift key
+                            gitOp = _TrackMouseInsideCommitPanel(mouse, hitTest.column, hitTest.hitTest.panel);
+                        
+                        } else {
+                            _TrackMouseInsideButton(mouse, hitTest.column, hitTest.hitTest);
+                        }
                     
                     } else {
-                        _TrackMouseInsideButton(mouse, hitTest.column, hitTest.hitTest);
+                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                        _TrackMouseOutsideCommitPanel(mouse);
                     }
                 
-                } else {
-                    // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                    _TrackMouseOutsideCommitPanel(mouse);
-                }
-            
-            } else if (mouse.bstate & BUTTON3_PRESSED) {
-                if (hitTest) {
-                    if (hitTest.hitTest.panel) {
-                        gitOp = _TrackRightMouse(mouse, hitTest.column, hitTest.hitTest.panel);
+                } else if (mouse.bstate & BUTTON3_PRESSED) {
+                    if (hitTest) {
+                        if (hitTest.hitTest.panel) {
+                            gitOp = _TrackRightMouse(mouse, hitTest.column, hitTest.hitTest.panel);
+                        }
                     }
                 }
-            }
-            break;
-        }
-        
-        case UI::Event::KeyEscape: {
-            // Dismiss error panel if it's open
-            _ErrorPanel = nullptr;
-            break;
-        }
-        
-        case UI::Event::KeyDelete:
-        case UI::Event::KeyFnDelete: {
-            if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
-                beep();
-                continue;
+                break;
             }
             
-            gitOp = {
-                .type = Git::Op::Type::Delete,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-            break;
-        }
-        
-        case UI::Event::KeyC: {
-            if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
-                beep();
-                continue;
+            case UI::Event::KeyEscape: {
+                // Dismiss error panel if it's open
+                _ErrorPanel = nullptr;
+                break;
             }
             
-            gitOp = {
-                .type = Git::Op::Type::Combine,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-            break;
-        }
-        
-        case UI::Event::KeyReturn: {
-            if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
-                beep();
-                continue;
+            case UI::Event::KeyDelete:
+            case UI::Event::KeyFnDelete: {
+                if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
+                    beep();
+                    continue;
+                }
+                
+                gitOp = {
+                    .type = Git::Op::Type::Delete,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                break;
             }
             
-            gitOp = {
-                .type = Git::Op::Type::Edit,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-            break;
+            case UI::Event::KeyC: {
+                if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
+                    beep();
+                    continue;
+                }
+                
+                gitOp = {
+                    .type = Git::Op::Type::Combine,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                break;
+            }
+            
+            case UI::Event::KeyReturn: {
+                if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
+                    beep();
+                    continue;
+                }
+                
+                gitOp = {
+                    .type = Git::Op::Type::Edit,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                break;
+            }
+            
+            case UI::Event::WindowResize: {
+                _Reload();
+                break;
+            }
+            
+            case UI::Event::KeyCtrlC:
+            case UI::Event::KeyCtrlD: {
+                throw _ExitRequest();
+            }
+            
+            default: {
+                break;
+            }}
+            
+            if (gitOp) _ExecGitOp(*gitOp);
+        
+        } catch (const Git::Error& e) {
+            switch (e.error) {
+            case GIT_EUNMERGED:
+            case GIT_EMERGECONFLICT:
+                errorMsg = "a merge conflict occurred";
+                break;
+            
+            default:
+                errorMsg = e.what();
+                break;
+            }
+        
+        } catch (const _ExitRequest&) {
+            throw;
+        
+        } catch (const std::exception& e) {
+            errorMsg = e.what();
         }
         
-        case UI::Event::WindowResize: {
-            _Reload();
-            break;
+        if (!errorMsg.empty()) {
+            constexpr int ErrorPanelWidth = 35;
+            const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
+            
+            errorMsg[0] = toupper(errorMsg[0]);
+            _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
         }
-        
-        case UI::Event::KeyCtrlC:
-        case UI::Event::KeyCtrlD: {
-            throw _ExitRequest();
-        }
-        
-        default: {
-            break;
-        }}
-        
-        if (gitOp) _ExecGitOp(*gitOp);
     }
 }
 
@@ -1522,10 +1535,10 @@ int main(int argc, const char* argv[]) {
 //        }
 //    }
     
-    {
-        volatile bool a = false;
-        while (!a);
-    }
+//    {
+//        volatile bool a = false;
+//        while (!a);
+//    }
     
     try {
         setlocale(LC_ALL, "");

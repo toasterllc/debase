@@ -40,6 +40,16 @@ public:
         _next.pop_front();
     }
     
+    const T& prevPeek() {
+        assert(!begin());
+        return _prev.front();
+    }
+    
+    const T& nextPeek() {
+        assert(!end());
+        return _next.front();
+    }
+    
     bool begin() const { return _prev.empty(); }
     bool end() const { return _next.empty(); }
     
