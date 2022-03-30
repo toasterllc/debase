@@ -1101,6 +1101,8 @@ static void _CursesDeinit() noexcept {
     
     _ColorsSet(_ColorsPrev);
     ::endwin();
+    
+//    sleep(1);
 }
 
 extern "C" {
@@ -1337,17 +1339,40 @@ static void _EventLoop() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: handle not being able to materialize commits via Convert()
+    // Disable echo before activating ncurses
+    // This is necessary to prevent an edge case where the mouse-moved escape
+    // sequences can get printed to the console when debase exits.
+    // So far we haven't been able to reproduce the issue after adding this
+    // code. But if we do see it again in the future, try giving tcsetattr()
+    // the TCSAFLUSH or TCSADRAIN flag in Terminal::Settings (instead of
+    // TCSANOW) to see if that solves it.
+    Terminal::Settings term(STDIN_FILENO);
+    term.c_lflag &= ~(ICANON|ECHO);
+    term.set();
     
-    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
+//    printf("hallo\n");
+//    
+//    struct termios term;
+//    int ir = tcgetattr(STDIN_FILENO, &term);
+//    if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
+//    
+//    term.c_lflag &= ~(ECHO);
+//    ir = tcsetattr(STDIN_FILENO, TCSANOW, &term);
+//    if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
+//    
+//    sleep(5);
+//    
+//    printf("goodbye\n");
+//    
+//    return 0;
+    
+    #warning TODO: add help flag
     
     #warning TODO: implement 7-day trial
     
     #warning TODO: implement registration
     
     #warning TODO: do lots of testing
-    
-    #warning TODO: add help flag
     
 //  Future:
     
@@ -1527,6 +1552,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: support light mode
 //
 //    #warning TODO: make dark-mode error color more reddish
+//
+//    #warning TODO: handle not being able to materialize commits via Convert()
+//
+//    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
     
 //    {
 //        Git::Commit a;

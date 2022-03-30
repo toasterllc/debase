@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <optional>
 #include <termios.h>
 #include "lib/Toastbox/RuntimeError.h"
 #include "lib/Toastbox/ReadWrite.h"
@@ -71,6 +72,61 @@
 
 namespace Terminal {
 
+class Settings : public termios {
+public:
+    Settings(int fd) : _fd(fd) {
+        _Get(_fd, *this);
+    }
+    
+    ~Settings() {
+        if (_prev) {
+            restore();
+        }
+    }
+    
+    void set() {
+        assert(!_prev);
+        _prev.emplace();
+        _Get(_fd, *_prev);
+        _Set(_fd, *this);
+    }
+    
+    void restore() {
+        assert(_prev);
+        _Set(_fd, *_prev);
+        _prev = std::nullopt;
+    }
+    
+private:
+    using _Settings = struct termios;
+    
+    static void _Get(int fd, _Settings& out) {
+        int ir = 0;
+        do ir = tcgetattr(fd, &out);
+        while (ir==-1 && errno==EINTR);
+        if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
+    }
+    
+    static void _Set(int fd, const _Settings& out) {
+        int ir = 0;
+        do ir = tcsetattr(fd, TCSANOW, &out);
+        while (ir==-1 && errno==EINTR);
+        if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
+    }
+    
+//    static void _Swap() {
+//        assert(!_rev);
+//        do ir = tcsetattr(_fd, TCSANOW, &term);
+//        while (ir==-1 && errno==EINTR);
+//        if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
+//        // Restore terminal attributes on return
+//        Defer(tcsetattr(_fd, TCSANOW, &termPrev));
+//    }
+    
+    int _fd = -1;
+    std::optional<struct termios> _prev;
+};
+
 enum class Background {
     Dark,
     Light,
@@ -125,19 +181,23 @@ inline _Color _Parse(std::string_view str) {
 
 // Get(): returns the background color of the terminal, or throws if it couldn't be determined
 inline Background BackgroundGet() {
-    struct termios termPrev;
-    int ir = 0;
-    do ir = tcgetattr(0, &termPrev);
-    while (ir==-1 && errno==EINTR);
-    if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
+    Settings settings(STDIN_FILENO);
+    settings.c_lflag &= ~(ICANON|ECHO);
+    settings.set();
     
-    struct termios term = termPrev;
-    term.c_lflag &= ~(ICANON|ECHO);
-    do ir = tcsetattr(0, TCSANOW, &term);
-    while (ir==-1 && errno==EINTR);
-    if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
-    // Restore terminal attributes on return
-    Defer(tcsetattr(0, TCSANOW, &termPrev));
+//    struct termios termPrev;
+//    int ir = 0;
+//    do ir = tcgetattr(STDIN_FILENO, &termPrev);
+//    while (ir==-1 && errno==EINTR);
+//    if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
+//    
+//    struct termios term = termPrev;
+//    term.c_lflag &= ~(ICANON|ECHO);
+//    do ir = tcsetattr(STDIN_FILENO, TCSANOW, &term);
+//    while (ir==-1 && errno==EINTR);
+//    if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
+//    // Restore terminal attributes on return
+//    Defer(tcsetattr(STDIN_FILENO, TCSANOW, &termPrev));
     
     // Request terminal background color
     {
