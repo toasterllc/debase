@@ -30,6 +30,7 @@
 #include "SnapshotButton.h"
 #include "SnapshotMenu.h"
 #include "Terminal.h"
+#include "Version.h"
 
 namespace fs = std::filesystem;
 
@@ -1307,7 +1308,7 @@ static void _EventLoop() {
     }
 }
 
-static State::Theme _ReadTheme() {
+static State::Theme _ThemeRead() {
     State::State state(StateDir());
     State::Theme theme = state.theme();
     if (theme != State::Theme::None) return theme;
@@ -1337,6 +1338,78 @@ static State::Theme _ReadTheme() {
         state.write();
     }
     return theme;
+}
+
+static void _ThemeWrite(State::Theme theme) {
+    State::State state(StateDir());
+    state.theme(theme);
+    state.write();
+}
+
+struct _Args {
+    struct {
+        bool en = false;
+    } help;
+    
+    struct {
+        bool en = false;
+        std::string theme;
+    } setTheme;
+    
+    struct {
+        bool en = false;
+        std::vector<std::string> revs;
+    } normal;
+};
+
+static _Args _ParseArgs(int argc, const char* argv[]) {
+    using namespace Toastbox;
+    
+    std::vector<std::string> strs;
+    for (int i=0; i<argc; i++) strs.push_back(argv[i]);
+    
+    _Args args;
+    if (strs.size() < 1) {
+        return _Args{ .normal = {.en = true}, };
+    }
+    
+    if (strs[0]=="-h" || strs[0]=="--help") {
+        return _Args{ .help = {.en = true}, };
+    }
+    
+    if (strs[0] == "--theme") {
+        if (strs.size() < 2) throw std::runtime_error("no theme specified");
+        if (strs.size() > 2) throw std::runtime_error("too many arguments supplied");
+        return _Args{
+            .setTheme = {
+                .en = true,
+                .theme = strs[1],
+            },
+        };
+    }
+    
+    return _Args{
+        .normal = {
+            .en = true,
+            .revs = strs,
+        },
+    };
+}
+
+static void _PrintUsage() {
+    using namespace std;
+    cout << "debase version " DebaseVersionString "\n";
+    cout << "\n";
+    cout << "Usage:\n";
+    cout << "  -h, --help\n";
+    cout << "      Print this help message\n";
+    cout << "\n";
+    cout << "  --theme <auto|dark|light>\n";
+    cout << "      Set theme\n";
+    cout << "\n";
+    cout << "  [<rev>...]\n";
+    cout << "      Open the specified git revisions in debase\n";
+    cout << "\n";
 }
 
 int main(int argc, const char* argv[]) {
@@ -1537,6 +1610,30 @@ int main(int argc, const char* argv[]) {
 //    }
     
     try {
+        _Args args = _ParseArgs(argc-1, argv+1);
+        
+        if (args.help.en) {
+            _PrintUsage();
+            return 0;
+        
+        } else if (args.setTheme.en) {
+            State::Theme theme = State::Theme::None;
+            if (args.setTheme.theme == "auto") {
+                theme = State::Theme::None;
+            } else if (args.setTheme.theme == "dark") {
+                theme = State::Theme::Dark;
+            } else if (args.setTheme.theme == "light") {
+                theme = State::Theme::Light;
+            } else {
+                throw Toastbox::RuntimeError("invalid theme: %s", args.setTheme.theme.c_str());
+            }
+            _ThemeWrite(theme);
+            return 0;
+        
+        } else if (!args.normal.en) {
+            throw Toastbox::RuntimeError("invalid arguments");
+        }
+        
         // Disable echo before activating ncurses
         // This is necessary to prevent an edge case where the mouse-moved escape
         // sequences can get printed to the console when debase exits.
@@ -1550,25 +1647,23 @@ int main(int argc, const char* argv[]) {
         
         setlocale(LC_ALL, "");
         
-        _Theme = _ReadTheme();
+        _Theme = _ThemeRead();
         
         try {
             _Repo = Git::Repo::Open(".");
         } catch (...) {
             throw Toastbox::RuntimeError("current directory isn't a git repository");
         }
+        
         _Head = _Repo.head();
         
-        std::vector<std::string> revNames;
-        for (int i=1; i<argc; i++) revNames.push_back(argv[i]);
-        
-        if (revNames.empty()) {
+        if (args.normal.revs.empty()) {
             _Revs.emplace_back(_Head);
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
             std::set<Git::Rev> unique;
-            for (const std::string& revName : revNames) {
+            for (const std::string& revName : args.normal.revs) {
                 Git::Rev rev;
                 try {
                     rev = _Repo.revLookup(revName);
