@@ -32,15 +32,6 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         std::string& msgline = lines.emplace_back();
         
         while (!lineInput.empty()) {
-//            // Add the space between words
-//            if (!msgline.empty()) {
-//                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
-//                // No more space -> next line
-//                if (!rem) break;
-//                // Add the space between words
-//                msgline += " ";
-//            }
-            
             // Add the current word
             {
                 const std::string& word = lineInput.front();
@@ -87,16 +78,6 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         // than `lineLenMax`. So verify that assumption.
         assert(UTF8::Strlen(line) > lineLenMax);
         line.erase(lineLenMax);
-        
-//            const char*const ellipses = "...";
-//            // Find the first non-space character, at least strlen(ellipses) characters before the end
-//            auto it =line.begin()+lineLenMax-strlen(ellipses);
-//            for (; it!=line.begin() && std::isspace(*it); it--);
-//            
-//            line.erase(it, line.end());
-//            
-//            // Replace the line's final characters with an ellipses
-//            line.replace(it, it+strlen(ellipses), ellipses);
     }
     
     return lines;

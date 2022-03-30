@@ -64,7 +64,6 @@ public:
         return !(*this==x);
     }
     
-//private:
     T _current = {};
     std::deque<T> _prev;
     std::deque<T> _next;

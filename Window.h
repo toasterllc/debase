@@ -109,10 +109,6 @@ public:
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
     }
     
-//    void setPosition(const Point& p) {
-//        ::mvwin(*this, p.y, p.x);
-//    }
-    
     void drawBorder() const {
         ::box(*this, 0, 0);
     }
@@ -173,10 +169,6 @@ public:
     }
     
     operator WINDOW*() const { return _win; }
-    
-//    Attr setAttr(int attr) const {
-//        return Attr(*this, attr);
-//    }
     
 private:
     WINDOW* _win = nullptr;

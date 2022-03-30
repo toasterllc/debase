@@ -114,15 +114,6 @@ private:
         if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
     }
     
-//    static void _Swap() {
-//        assert(!_rev);
-//        do ir = tcsetattr(_fd, TCSANOW, &term);
-//        while (ir==-1 && errno==EINTR);
-//        if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
-//        // Restore terminal attributes on return
-//        Defer(tcsetattr(_fd, TCSANOW, &termPrev));
-//    }
-    
     int _fd = -1;
     std::optional<struct termios> _prev;
 };
@@ -160,7 +151,6 @@ inline _Color _Parse(std::string_view str) {
     float colors[3] = {};
     for (size_t i=0; i<3; i++) {
         const std::string& colorStr = parts[i];
-//        printf("str %zu: %s\n", i, colorStr.c_str());
         float val = Toastbox::IntForStr<uint16_t>(colorStr, 16);
         switch (colorStr.size()) {
         case 1:
@@ -184,20 +174,6 @@ inline Background BackgroundGet() {
     Settings settings(STDIN_FILENO);
     settings.c_lflag &= ~(ICANON|ECHO);
     settings.set();
-    
-//    struct termios termPrev;
-//    int ir = 0;
-//    do ir = tcgetattr(STDIN_FILENO, &termPrev);
-//    while (ir==-1 && errno==EINTR);
-//    if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
-//    
-//    struct termios term = termPrev;
-//    term.c_lflag &= ~(ICANON|ECHO);
-//    do ir = tcsetattr(STDIN_FILENO, TCSANOW, &term);
-//    while (ir==-1 && errno==EINTR);
-//    if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
-//    // Restore terminal attributes on return
-//    Defer(tcsetattr(STDIN_FILENO, TCSANOW, &termPrev));
     
     // Request terminal background color
     {

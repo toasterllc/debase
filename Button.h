@@ -22,20 +22,9 @@ class _Button : public std::enable_shared_from_this<_Button> {
 public:
     _Button() {}
     
-//    void setHighlight(bool highlight) {
-//        if (highlight == _highlight) return;
-//        _highlight = highlight;
-//        _drawNeeded = true;
-//    }
-    
     bool hitTest(const UI::Point& p, UI::Size expand={0,0}) {
         return UI::HitTest(_opts.frame, p, expand);
     }
-    
-//    bool updateMouse(const Point& p) {
-//        _highlight = hitTest(p);
-//        return _highlight;
-//    }
     
     virtual void draw(Window win) const {
         size_t labelLen = UTF8::Strlen(_opts.label);

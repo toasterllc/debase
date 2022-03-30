@@ -12,21 +12,15 @@ public:
     _ErrorPanel(const ColorPalette& colors, int width, std::string_view title, std::string_view message) :
     _colors(colors), _title(title) {
         _message = LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);
-//        setSize({10, 10});
         setSize({width, (int)_message.size()+2*_MessageInsetY});
         _drawNeeded = true;
     }
     
     void draw() {
-//        drawRect(<#const Rect &rect#>)
-        
         {
             UI::Attr attr(shared_from_this(), _colors.error);
             drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
-//            drawBorder();
-//            drawRect(Inset(rect(), {1,1}));
-//            drawBorder();
         }
         
         {

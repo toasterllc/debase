@@ -19,10 +19,8 @@ public:
         if (opts.buttons.size() > 1) {
             UI::Button button0 = opts.buttons[0];
             UI::Attr attr(shared_from_this(), opts.colors.menu);
-//            drawLineHoriz({0, button0->options().frame.ymax()+1}, width);
             Point p = {1, button0->options().frame.ymax()+1};
             int len = width-2;
-//            mvwhline(*this, p.y, p.x+1, '-', len);
             cchar_t c = { .chars = L"╍" };
             mvwhline_set(*this, p.y, p.x, &c, len);
         }

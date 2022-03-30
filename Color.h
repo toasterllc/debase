@@ -52,27 +52,6 @@ private:
     static inline std::atomic<int> _IdxCustom = _IdxCustomInit;
     
     std::vector<Color> _custom;
-    
-//    std::vector<std::reference_wrapper<Color>> all() {
-//        return {
-//            normal,
-//            selectionMove,
-//            selectionCopy,
-//            selectionSimilar,
-//            dimmed,
-//            menu,
-//            error
-//        };
-//    };
-//    
-//    std::vector<std::reference_wrapper<Color>> all() const {
-//        return (((ColorPalette*)this)->all());
-////        return const_cast<int&>(const_cast<const Foo*>(this)->get());
-////        
-////        return (((ColorPalette*)this)->all());
-////        return std::remove_const_t<decltype(*this)>::all();
-////        return all();
-//    };
 };
 
 } // namespace UI

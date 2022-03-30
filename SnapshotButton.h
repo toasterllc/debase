@@ -14,7 +14,6 @@ struct SnapshotButtonOptions {
     Git::Repo repo;
     State::Snapshot snapshot;
     int width = 0;
-    bool sessionStart = false;
     
     // Optional
     bool activeSnapshot = false;
@@ -23,7 +22,6 @@ struct SnapshotButtonOptions {
 class _SnapshotButton : public _Button {
 public:
     _SnapshotButton(const SnapshotButtonOptions& opts) : _opts(opts) {
-        
         Git::Commit commit = State::Convert(_opts.repo, _opts.snapshot.head);
         Git::Signature sig = commit.author();
         
@@ -33,8 +31,6 @@ public:
         _commit.message = LineWrap::Wrap(1, _opts.width-_TextInsetX, commit.message());
         
         options().frame.size = {_opts.width, 3};
-        
-//        if (isdigit(_time[0])) _time += " ago";
     }
     
     void draw(Window win) const override {
@@ -45,42 +41,6 @@ public:
         const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;
-        
-//        const Point offText = off + Size{InsetX, (_sessionStart ? 1 : 0)};
-//        const int offY = (_sessionStart ? 1 : 0);
-        
-        if (_opts.sessionStart) {
-//            const char title[] = "       Session Start      ";
-//            int offX = 0;
-//            UI::Attr attr(win, A_BOLD|A_UNDERLINE);
-//            win->drawText(off + Size{offX, 0}, title);
-            
-//            const char title[] = "Session Start";
-//            int offX = (width - (std::size(title)-1))/2;
-//            UI::Attr attr(win, A_BOLD|A_UNDERLINE);
-//            win->drawText(off + Size{offX, 0}, title);
-            
-//            const char title[] = "Session Start";
-//            int offX = 0;
-//            UI::Attr attr(win, A_BOLD);
-//            win->drawText(off + Size{offX, 0}, title);
-            
-            
-//            const char title[] = " Session Start ";
-//            int offX = (width - (std::size(title)-1))/2;
-//            win->drawLineHoriz(off, width);
-//            UI::Attr attr(win, A_BOLD);
-//            win->drawText(off + Size{offX, 0}, title);
-            
-            
-//            win->drawLineHoriz(off, width);
-//            UI::Attr attr(win, A_BOLD);
-////            UI::Attr attr(win, A_UNDERLINE);
-//            const char title[] = "Session Start";
-//            int offX = 0;
-////            int offX = (width - std::size(title)-1)/2;
-//            win->drawText(off + Size{offX, 0}, "Session Start ");
-        }
         
         // Draw time
         {
@@ -102,16 +62,11 @@ public:
         // Draw author name
         {
             UI::Attr attr(win, opts.colors.dimmed);
-//            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-//            else                attr = UI::Attr(win, opts.colors.dimmed);
             win->drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
         // Draw commit message
         {
-//            UI::Attr attr;
-//            if (opts.highlight) attr = UI::Attr(win, colors.menu|A_BOLD);
-            
             int i = 0;
             for (const std::string& line : _commit.message) {
                 win->drawText(offText + Size{0, 2+i}, "%s", line.c_str());
@@ -133,41 +88,12 @@ public:
                     win->drawText(off + offTextY, "%s", "●");
                 }
             }
-            
-//            if (opts.highlight) {
-//                UI::Attr attr(win, colors.menu|A_BOLD);
-////                win->drawText(off + Size{0,0}, "●");
-//                win->drawText(off + Size{0,0}, "○");
-//            }
         }
-        
-//        {
-//            UI::Attr attr;
-//            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
-//            drawBorder();
-//            
-//            if (_commit.isMerge()) {
-//                mvwprintw(*this, 1, 0, "𝝠");
-//            }
-//        }
-        
-//        {
-//            constexpr int width = 16;
-//            int offX = width - (int)UTF8::Strlen(_time);
-//            win->drawText(off + Size{12 + (_header ? 1 : 0) + offX, 0}, " %s ", _time.c_str());
-//        }
-        
-//        if (_header) {
-//            UI::Attr attr;
-////            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
-//            win->drawText({3, 0}, " %s ", _headerLabel.c_str());
-//        }
     }
     
     const SnapshotButtonOptions& snapshotOptions() { return _opts; }
     
 private:
-//    static constexpr int _SessionStartHeaderHeight = 1;
     static constexpr int _TextInsetX = 2;
     
     SnapshotButtonOptions _opts;
@@ -177,21 +103,6 @@ private:
         std::string author;
         std::vector<std::string> message;
     } _commit;
-    
-//    static ButtonOptions _Opts() {
-//        return ButtonOptions{
-//            .colors ,
-//            .label,
-//            .key,
-//            .enabled = false,
-//            .center = false,
-//            .drawBorder = false,
-//            .insetX = 0,
-//            .hitTestExpand = 0,
-//            .highlight = false,
-//            .frame,
-//        };
-//    }
 };
 
 using SnapshotButton = std::shared_ptr<_SnapshotButton>;

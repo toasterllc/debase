@@ -321,23 +321,6 @@ private:
     static _Path _RepoStateFilePath(_Path repoStateDir) {
         return repoStateDir / "State";
     }
-//    
-//    static void _StateRead(_Path path, State& state) {
-//        std::ifstream f(path);
-//        if (f) {
-//            f.exceptions(std::ios::failbit | std::ios::badbit);
-//            nlohmann::json j;
-//            f >> j;
-//            j.get_to(state);
-//        }
-//    }
-//    
-//    static void _StateWrite(_Path path, const State& state) {
-//        std::ofstream f(path);
-//        f.exceptions(std::ios::failbit | std::ios::badbit);
-//        nlohmann::json j = state;
-//        f << std::setw(4) << j;
-//    }
     
     static void _RepoStateRead(_Path path, _RepoState& state) {
         std::ifstream f(path);
@@ -383,51 +366,6 @@ public:
     _rootDir(rootDir), _repoStateDir(_RepoStateDirPath(_rootDir, repo)), _repo(repo) {
         Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, true);
         
-//        // Decode _state
-//        _StateRead(_StateFilePath(_rootDir), _state);
-//        
-//        
-//        // Create the state directory
-//        std::filesystem::create_directories(_rootDir);
-//        
-//        // Try to create the version lock file
-//        _Path versionLockFilePath = _VersionLockFilePath(_rootDir);
-//        bool created = false;
-//        Toastbox::FDStreamInOut versionLockFile;
-//        try {
-//            // Try to create the version lock file first
-//            versionLockFile = _VersionLockFileOpen(versionLockFilePath, true);
-//            created = true;
-//        
-//        } catch (...) {
-//            // We weren't able to create the version lock file, presumably because it already exists.
-//            // Try just opening it instead.
-//            versionLockFile = _VersionLockFileOpen(versionLockFilePath, false);
-//        }
-//        
-//        if (created) {
-//            // We created the version lock file
-//            // Write our version number
-//            _VersionWrite(versionLockFile, _Version);
-//        } else {
-//            // The version lock file already existed.
-//            // Read the version and migrate the old state to the current version, if needed.
-//            _checkVersionAndMigrate(versionLockFile, true);
-//        }
-        
-//        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(versionLockFilePath, true);
-//        if (versionLockFile) {
-//            // We created the version lock file
-//            // Write our version number
-//            _VersionWrite(versionLockFile, _Version);
-//        
-//        } else {
-//            // We weren't able to create the version lock file, presumably because it already exists.
-//            // Try just opening it instead.
-//            versionLockFile = _VersionLockFileOpen(versionLockFilePath, false);
-//            _checkVersionAndMigrate(versionLockFile, true);
-//        }
-        
         // Decode _repoState
         _RepoStateRead(_RepoStateFilePath(_repoStateDir), _repoState);
         
@@ -468,16 +406,7 @@ public:
     }
     
     void write() {
-//        {
-//            volatile bool a = 0;
-//            while (!a);
-//        }
-        
         Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, false);
-        
-//        // Lock the state dir via the version lock
-//        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(_VersionLockFilePath(_rootDir), false);
-//        _checkVersionAndMigrate(versionLockFile, false);
         
         // Read existing state
         _RepoState repoState;

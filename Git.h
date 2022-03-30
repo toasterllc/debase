@@ -902,12 +902,6 @@ public:
         if (ir) throw Error(ir, "git_submodule_foreach failed");
         
         return ctx.submodules;
-        
-//        std::set<Submodule> submodules;
-//        for (const auto& i : ctx.submodules) {
-//            submodules.insert(i.second);
-//        }
-//        return submodules;
     }
     
     void submodulesUpdate(bool recurse=false) const {

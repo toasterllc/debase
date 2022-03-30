@@ -95,14 +95,6 @@ static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
     return _SelectStateGet(col, panel) == _SelectState::True;
 }
 
-//static RefHistory& _RefHistory(Git::Ref ref) {
-//    return _RefHistoryMap.at(ref);
-//}
-//
-//static RefHistory& _RefHistoryX(Git::Ref ref) {
-//    return _RefCommitHistoryMap[ref][ref.commit()];
-//}
-
 static void _Draw() {
     const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
     
@@ -830,19 +822,12 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const St
         .repo           = repo,
         .snapshot       = snap,
         .width          = _SnapshotMenuWidth,
-        .sessionStart   = sessionStart,
         .activeSnapshot = activeSnapshot,
     };
     
     UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(snapButtonOpts);
     b->options().enabled = true;
     b->options().colors = _Colors;
-    
-//    UI::SnapshotButtonOptions& snapOpts = b->snapshotOptions();
-//    snapOpts.sessionStart = sessionStart;
-//    snapOpts.activeSnapshot = false;
-////    .sessionStart = sessionStart
-    
     return b;
 }
 
@@ -859,13 +844,6 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         try {
             buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
         } catch (...) {}
-//        auto button = MakeShared<UI::SnapshotButton>(_Repo, *it);
-        
-//        button->options().label = "Start of Session";
-//        button->options().enabled = true;
-//        Git::Commit commit = Convert(_Repo, it->history.get().head);
-//        std::string idStr = Git::DisplayStringForId(commit.id());
-//        buttons.push_back(MakeShared<UI::SnapshotButton>(UI::ButtonOptions{ .label=idStr, .enabled=true }));
     }
     
     const int width = _SnapshotMenuWidth+UI::_SnapshotMenu::Padding().x;
@@ -1067,7 +1045,6 @@ static void _CursesInit() noexcept {
     
     ::initscr();
     ::noecho();
-//    ::cbreak();
     ::raw();
     
     ::use_default_colors();
@@ -1078,14 +1055,6 @@ static void _CursesInit() noexcept {
     }
     
     _ColorsPrev = _ColorsSet(_Colors);
-    
-//    {
-//        ::endwin();
-//        for (const UI::Color& c : _ColorsPrev.custom()) {
-//            printf("%d: %d %d %d\n", c.idx, c.r, c.g, c.b);
-//        }
-//        exit(0);
-//    }
     
     // Hide cursor
     ::curs_set(0);
@@ -1350,22 +1319,6 @@ int main(int argc, const char* argv[]) {
     term.c_lflag &= ~(ICANON|ECHO);
     term.set();
     
-//    printf("hallo\n");
-//    
-//    struct termios term;
-//    int ir = tcgetattr(STDIN_FILENO, &term);
-//    if (ir) throw Toastbox::RuntimeError("tcgetattr failed: %s", strerror(errno));
-//    
-//    term.c_lflag &= ~(ECHO);
-//    ir = tcsetattr(STDIN_FILENO, TCSANOW, &term);
-//    if (ir) throw Toastbox::RuntimeError("tcsetattr failed: %s", strerror(errno));
-//    
-//    sleep(5);
-//    
-//    printf("goodbye\n");
-//    
-//    return 0;
-    
     #warning TODO: add help flag
     
     #warning TODO: implement 7-day trial
@@ -1556,13 +1509,6 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: handle not being able to materialize commits via Convert()
 //
 //    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
-    
-//    {
-//        Git::Commit a;
-//        if (a) {
-//            a.idStr();
-//        }
-//    }
     
 //    {
 //        volatile bool a = false;

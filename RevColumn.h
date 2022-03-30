@@ -168,30 +168,10 @@ public:
         }
     }
     
-//    void updateMouse(const Point& p) {
-//        for (UI::Button& button : _buttons) {
-//            button.updateMouse(p);
-//        }
-//    }
-    
     RevColumnHitTestResult updateMouse(const UI::Point& p) {
         for (UI::Button button : _buttons) {
             button->options().highlight = false;
         }
-        
-//        UI::Button* hitButton = nullptr;
-//        int hitButtonNum = (int)RevColumnButton::None+1;
-//        for (UI::Button& button : _buttons) {
-//            bool hit = button.hitTest(p);
-//            if (hit && !hitButton) {
-//                button.highlight(true);
-//                hitButton = &button;
-//            } else {
-//                button.highlight(false);
-//            }
-//            
-//            if (!hitButton) hitButtonNum++;
-//        }
         
         for (UI::CommitPanel panel : _panels) {
             if (panel->hitTest(p)) return RevColumnHitTestResult{ .panel = panel };
@@ -209,13 +189,6 @@ public:
             bnum++;
         }
         
-        
-//        if (hitButton) {
-//            return RevColumnHitTestResult{
-//                .button = (RevColumnButton)hitButtonNum,
-//                .buttonEnabled = hitButton->opts().enabled,
-//            };
-//        }
         return {};
     }
     
@@ -235,12 +208,6 @@ private:
     bool _truncated = false;
     UI::CommitPanelVec _panels;
     std::vector<UI::Button> _buttons;
-//    UI::Button* _undoButton = nullptr;
-//    UI::Button* _redoButton = nullptr;
-//    UI::Button* _snapshotsButton = nullptr;
-//    std::optional<UI::Button> _undoButton;
-//    std::optional<UI::Button> _redoButton;
-//    std::optional<UI::Button> _snapshotsButton;
 };
 
 using RevColumn = std::shared_ptr<_RevColumn>;
