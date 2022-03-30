@@ -9,6 +9,7 @@ namespace UI {
 struct MessagePanelOptions {
     Color color;
     int width = 0;
+    int messageInsetY = 0;
     int extraHeight = 0;
     bool center = false;
     std::string title;
@@ -19,12 +20,15 @@ class _MessagePanel : public _Panel, public std::enable_shared_from_this<_Messag
 public:
     _MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {
         _message = LineWrap::Wrap(SIZE_MAX, _opts.width-2*_MessageInsetX, _opts.message);
-        int height = 2*_MessageInsetY + (int)_message.size() + _opts.extraHeight;
+        int height = 2*_MessageInsetY + _opts.messageInsetY + (int)_message.size() + _opts.extraHeight;
         setSize({_opts.width, height});
         _drawNeeded = true;
     }
     
     virtual void draw() {
+        erase();
+        
+        int offY = _MessageInsetY-1; // -1 because the title overwrites the border
         {
             UI::Attr attr(shared_from_this(), _opts.color);
             drawRect(Inset(bounds(), {2,1}));
@@ -33,52 +37,46 @@ public:
         
         {
             UI::Attr attr(shared_from_this(), _opts.color|A_BOLD);
-            drawText({_MessageInsetX, _MessageInsetY-1}, " %s ", _opts.title.c_str());
+            drawText({_MessageInsetX, offY}, " %s ", _opts.title.c_str());
+            offY++;
         }
         
-        int i = 0;
+        offY += _opts.messageInsetY;
+        
         for (const std::string& line : _message) {
             int offX = 0;
             if (_opts.center) {
                 offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
             }
-            drawText({_MessageInsetX+offX, _MessageInsetY+i}, "%s", line.c_str());
-            i++;
+            drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
+            offY++;
         }
         
         _drawNeeded = false;
     }
     
     void drawIfNeeded() {
-        if (_drawNeeded) {
+//        if (_drawNeeded) {
             draw();
-        }
+//        }
     }
     
-    virtual bool handleEvent(const UI::Event& ev) {
-        switch (ev.type) {
-        case UI::Event::Type::Mouse: {
-            if (ev.mouseUp() && !HitTest(frame(), {ev.mouse.x, ev.mouse.y})) {
-                // Dismiss when clicking outside of the panel
-                return false;
-            }
-            return true;
-        }
-        
-        case UI::Event::Type::KeyEscape: {
-            // Dismiss when clicking outside of the panel
-            return false;
-        }
-        
-        default:
-            return true;
-        }
+    bool drawNeeded() const { return _drawNeeded; }
+    void drawNeeded(bool x) { _drawNeeded = x; }
+    
+    virtual std::optional<UI::Event> handleEvent(const UI::Event& ev) {
+        // Let caller handle mouse-up's
+        if (ev.mouseUp()) return ev;
+        // Let caller handle escape key
+        if (ev.type == UI::Event::Type::KeyEscape) return ev;
+        // Eat all other events
+        return std::nullopt;
     }
     
     const MessagePanelOptions& options() { return _opts; }
     
 protected:
-    static constexpr int _MessageInsetX = 4;
+    static constexpr int _MessageInsetX = 5;
     static constexpr int _MessageInsetY = 2;
     
 private:

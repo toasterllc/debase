@@ -350,18 +350,19 @@ static void _Reload() {
         OffsetX += ColumnWidth+ColumnSpacing;
     }
     
-//    {
-//        constexpr int RegisterPanelWidth = 50;
-//        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
-//        
-//        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
-//            .color   = _Colors.menu,
-//            .width   = registerPanelWidth,
-//            .center  = false,
-//            .title   = "Register",
-//            .message = "Please register debase",
-//        });
-//    }
+    {
+        constexpr int RegisterPanelWidth = 50;
+        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+        
+        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+            .color          = _Colors.menu,
+            .width          = registerPanelWidth,
+            .messageInsetY  = 1,
+            .center         = false,
+            .title          = "Register",
+            .message        = "Please register debase",
+        });
+    }
 }
 
 static void _UndoRedo(UI::RevColumn col, bool undo) {
@@ -1132,14 +1133,12 @@ static void _EventLoop() {
         try {
             // If we have a modal panel, let it handle the event
             if (_MessagePanel) {
-                bool br = _MessagePanel->handleEvent(ev);
-                if (!br) _MessagePanel = nullptr;
-                continue;
+                std::optional<UI::Event> evopt = _MessagePanel->handleEvent(ev);
+                if (!evopt) continue;
             
             } else if (_RegisterPanel) {
-                bool br = _RegisterPanel->handleEvent(ev);
-                if (!br) _RegisterPanel = nullptr;
-                continue;
+                std::optional<UI::Event> evopt = _RegisterPanel->handleEvent(ev);
+                if (!evopt) continue;
             }
             
             std::optional<Git::Op> gitOp;
