@@ -30,7 +30,7 @@
 #include "SnapshotButton.h"
 #include "SnapshotMenu.h"
 #include "Terminal.h"
-#include "Version.h"
+#include "Debase.h"
 
 namespace fs = std::filesystem;
 
