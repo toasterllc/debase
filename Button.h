@@ -65,10 +65,11 @@ public:
         }
         
         {
-            UI::Attr attr;
-            if (_opts.highlight && _opts.enabled) attr = UI::Attr(win, _opts.colors.menu|A_BOLD);
-            else if (!_opts.enabled)              attr = UI::Attr(win, _opts.colors.dimmed);
-            else                                  attr = UI::Attr(win, A_NORMAL);
+            UI::Attr bold;
+            UI::Attr color;
+            if (_opts.enabled)                    bold = UI::Attr(win, A_BOLD);
+            if (_opts.highlight && _opts.enabled) color = UI::Attr(win, _opts.colors.menu);
+            else if (!_opts.enabled)              color = UI::Attr(win, _opts.colors.dimmed);
             win->drawText(plabel, "%s", _opts.label.c_str());
         }
         

@@ -240,6 +240,7 @@ public:
             
             // Draw title
             if (!_opts.title.empty()) {
+                UI::Attr bold(shared_from_this(), A_BOLD);
                 int offX = (width-(int)UTF8::Strlen(_opts.title))/2;
                 drawText({offX,0}, " %s ", _opts.title.c_str());
             }

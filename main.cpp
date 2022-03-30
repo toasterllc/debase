@@ -976,8 +976,9 @@ static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
     return pcopy;
 }
 
-static UI::ColorPalette _ColorsCreate() {
+static UI::ColorPalette _ColorsCreate(State::Theme theme) {
     const std::string termProg = getenv("TERM_PROGRAM");
+    const bool themeDark = (theme==State::Theme::None || theme == State::Theme::Dark);
     
     UI::ColorPalette colors;
     UI::Color black;
@@ -992,31 +993,48 @@ static UI::ColorPalette _ColorsCreate() {
         // There's no simple relation between these numbers and the resulting colors because Apple's
         // Terminal.app applies some kind of filtering on top of these numbers. These values were
         // manually chosen based on their appearance.
-        black       = COLOR_BLACK;
-        gray        = colors.add( 77,  77,  77);
-        purple      = colors.add(  0,   2, 255);
-        purpleLight = colors.add(140, 140, 255);
-        greenMint   = colors.add(  0, 229, 130);
-        red         = colors.add(255,   0,   0);
+        if (themeDark) {
+            colors.normal           = COLOR_BLACK;
+            colors.dimmed           = colors.add( 77,  77,  77);
+            colors.selection        = colors.add(  0,   2, 255);
+            colors.selectionSimilar = colors.add(140, 140, 255);
+            colors.selectionCopy    = colors.add(  0, 229, 130);
+            colors.menu             = colors.selectionCopy;
+            colors.error            = colors.add(203,   0, 111);
+        
+        } else {
+            colors.normal           = COLOR_BLACK;
+            colors.dimmed           = colors.add(128, 128, 128);
+            colors.selection        = colors.add(  0,   2, 255);
+            colors.selectionSimilar = colors.add(140, 140, 255);
+            colors.selectionCopy    = colors.add( 52, 167,   0);
+            colors.menu             = colors.add(174,   0,  85);
+            colors.error            = colors.menu;
+        }
     
     } else {
         // Colorspace: sRGB
         // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
-        black       = COLOR_BLACK;
-        gray        = colors.add(.486*255, .486*255, .486*255);
-        purple      = colors.add(.463*255, .275*255, 1.00*255);
-        purpleLight = colors.add(.671*255, .659*255, 1.00*255);
-        greenMint   = colors.add(.196*255, .961*255, .569*255);
-        red         = colors.add(.996*255, .294*255, .153*255);
+        
+        if (themeDark) {
+            colors.normal           = COLOR_BLACK;
+            colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
+            colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
+            colors.selectionSimilar = colors.add(.671*255, .659*255, 1.00*255);
+            colors.selectionCopy    = colors.add(.196*255, .961*255, .569*255);
+            colors.menu             = colors.selectionCopy;
+            colors.error            = colors.add(.996*255, .294*255, .153*255);
+        
+        } else {
+            colors.normal           = COLOR_BLACK;
+            colors.dimmed           = colors.add(  0,   0,   0);
+            colors.selection        = colors.add(  0,   0,   0);
+            colors.selectionSimilar = colors.add(  0,   0,   0);
+            colors.selectionCopy    = colors.add(  0,   0,   0);
+            colors.menu             = colors.selectionCopy;
+            colors.error            = colors.add(  0,   0,   0);
+        }
     }
-    
-    colors.normal           = black;
-    colors.dimmed           = gray;
-    colors.selection        = purple;
-    colors.selectionSimilar = purpleLight;
-    colors.selectionCopy    = greenMint;
-    colors.menu             = greenMint;
-    colors.error            = red;
     
     return colors;
 }
@@ -1043,7 +1061,7 @@ static void _CursesInit() noexcept {
     ::start_color();
     
     if (can_change_color()) {
-        _Colors = _ColorsCreate();
+        _Colors = _ColorsCreate(_Theme);
     }
     
     _ColorsPrev = _ColorsSet(_Colors);

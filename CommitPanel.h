@@ -62,8 +62,9 @@ public:
         }
         
         {
-            UI::Attr attr;
-            if (!_header && _borderColor) attr = Attr(shared_from_this(), *_borderColor);
+            UI::Attr bold(shared_from_this(), A_BOLD);
+            UI::Attr color;
+            if (!_header && _borderColor) color = Attr(shared_from_this(), *_borderColor);
             drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
         

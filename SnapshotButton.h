@@ -91,9 +91,10 @@ public:
         
         // Draw commit id
         {
-            UI::Attr attr;
+            UI::Attr bold(win, A_BOLD);
+            UI::Attr color;
             if (opts.highlight || (_opts.activeSnapshot && !opts.mouseActive)) {
-                attr = UI::Attr(win, colors.menu|A_BOLD);
+                color = UI::Attr(win, colors.menu);
             }
             win->drawText(offText, "%s", _commit.id.c_str());
         }

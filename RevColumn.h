@@ -147,7 +147,7 @@ public:
         
         // Draw branch name
         {
-            UI::Attr attr(_opts.win, A_UNDERLINE);
+            UI::Attr attr(_opts.win, A_BOLD);
             const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             _opts.win->drawText(p, "%s", _name.c_str());
         }
