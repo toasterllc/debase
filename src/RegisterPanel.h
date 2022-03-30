@@ -17,35 +17,25 @@ public:
         int offY = size().y-_FieldsExtraHeight-1;
         _MessagePanel::draw();
         
+        // Draw email field
         {
-            {
-                UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
-                drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
-            }
-            
-//            {
-//                drawText({_FieldValueInsetX, offY}, "%s", "aaaa_aaaa_aaaa_aaaa_aaaa_aaaa_aaaa_aaaa_");
-//            }
-            
-            {
-                drawText({_FieldValueInsetX, offY}, "%s", _email.c_str());
-            }
-            
-            offY += 2;
+            UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
+            drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
+        {
+            drawText({_FieldValueInsetX, offY}, "%s", _email.c_str());
+        }
+        offY += 2;
         
+        // Draw code field
         {
-            {
-                UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
-                drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
-            }
-            
-            {
-                drawText({_FieldValueInsetX, offY}, "%s", _code.c_str());
-            }
-            
-            offY += 2;
+            UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
+            drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
+        {
+            drawText({_FieldValueInsetX, offY}, "%s", _code.c_str());
+        }
+        offY += 2;
         
 //        char buf[128];
 //        wgetnstr(*this, buf, sizeof(buf));
