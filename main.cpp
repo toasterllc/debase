@@ -1413,8 +1413,6 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: add help flag
-    
     #warning TODO: implement 7-day trial
     
     #warning TODO: implement registration
@@ -1603,6 +1601,8 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: handle not being able to materialize commits via Convert()
 //
 //    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
+//
+//    #warning TODO: add help flag
     
 //    {
 //        volatile bool a = false;
