@@ -24,7 +24,8 @@
 #include "GitOp.h"
 #include "MakeShared.h"
 #include "Bitfield.h"
-#include "ErrorPanel.h"
+#include "MessagePanel.h"
+#include "RegisterPanel.h"
 #include "State.h"
 #include "StateDir.h"
 #include "SnapshotButton.h"
@@ -76,7 +77,8 @@ static std::optional<UI::Rect> _SelectionRect;
 static UI::Menu _ContextMenu;
 static UI::SnapshotMenu _SnapshotsMenu;
 
-static UI::ErrorPanel _ErrorPanel;
+static UI::MessagePanel _MessagePanel;
+static UI::RegisterPanel _RegisterPanel;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
@@ -147,15 +149,26 @@ static void _Draw() {
             _SnapshotsMenu->orderFront();
         }
         
-        if (_ErrorPanel) {
-            UI::Size ps = _ErrorPanel->frame().size;
+        if (_MessagePanel) {
+            UI::Size ps = _MessagePanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
             UI::Point p = {
                 (rs.x-ps.x)/2,
                 (rs.y-ps.y)/3,
             };
-            _ErrorPanel->setPosition(p);
-            _ErrorPanel->orderFront();
+            _MessagePanel->setPosition(p);
+            _MessagePanel->orderFront();
+        }
+        
+        if (_RegisterPanel) {
+            UI::Size ps = _RegisterPanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _RegisterPanel->setPosition(p);
+            _RegisterPanel->orderFront();
         }
     }
     
@@ -194,8 +207,12 @@ static void _Draw() {
             _SnapshotsMenu->draw();
         }
         
-        if (_ErrorPanel) {
-            _ErrorPanel->drawIfNeeded();
+        if (_MessagePanel) {
+            _MessagePanel->drawIfNeeded();
+        }
+        
+        if (_RegisterPanel) {
+            _RegisterPanel->drawIfNeeded();
         }
         
         UI::Redraw();
@@ -385,6 +402,19 @@ static void _Reload() {
         };
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
+    }
+    
+    {
+        constexpr int RegisterPanelWidth = 50;
+        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+        
+        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+            .color   = _Colors.menu,
+            .width   = registerPanelWidth,
+            .center  = false,
+            .title   = "Register",
+            .message = "Please register debase",
+        });
     }
 }
 
@@ -1174,9 +1204,9 @@ static void _EventLoop() {
                 if (ir != OK) continue;
                 
                 // If there's an error displayed, the first click should dismiss the error
-                if (_ErrorPanel) {
+                if (_MessagePanel) {
                     if (mouse.bstate & BUTTON1_PRESSED) {
-                        _ErrorPanel = nullptr;
+                        _MessagePanel = nullptr;
                     }
                     continue;
                 }
@@ -1210,7 +1240,7 @@ static void _EventLoop() {
             
             case UI::Event::KeyEscape: {
                 // Dismiss error panel if it's open
-                _ErrorPanel = nullptr;
+                _MessagePanel = nullptr;
                 break;
             }
             
@@ -1299,11 +1329,18 @@ static void _EventLoop() {
         }
         
         if (!errorMsg.empty()) {
-            constexpr int ErrorPanelWidth = 35;
-            const int errorPanelWidth = std::min(ErrorPanelWidth, _RootWindow->bounds().size.x);
+            constexpr int MessagePanelWidth = 35;
+            const int errorPanelWidth = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
             
             errorMsg[0] = toupper(errorMsg[0]);
-            _ErrorPanel = MakeShared<UI::ErrorPanel>(_Colors, errorPanelWidth, "Error", errorMsg);
+            
+            _MessagePanel = MakeShared<UI::MessagePanel>(UI::MessagePanelOptions{
+                .color   = _Colors.error,
+                .width   = errorPanelWidth,
+                .center  = true,
+                .title   = "Error",
+                .message = errorMsg,
+            });
         }
     }
 }
