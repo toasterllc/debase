@@ -53,6 +53,7 @@ struct Event {
         KeyLeft         = KEY_LEFT,
         KeyRight        = KEY_RIGHT,
         KeyTab          = '\t',
+        KeyBackTab      = KEY_BTAB,
         KeyEscape       = '\x1B',
         KeyReturn       = '\n',
         KeyCtrlC        = '\x03',

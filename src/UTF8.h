@@ -18,7 +18,8 @@ inline size_t Strlen(std::string_view str) {
     return r;
 }
 
-inline size_t Strlen(std::string::const_iterator start, std::string::const_iterator end) {
+template <typename T_Iter>
+inline size_t Strlen(T_Iter start, T_Iter end) {
     size_t r = 0;
     for (auto it=start; it!=end; it++) {
         uint8_t b = *it;

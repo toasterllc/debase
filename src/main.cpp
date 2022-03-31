@@ -1408,6 +1408,10 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: TextField: make clicking to reposition cursor work
     
+    #warning TODO: switch Button to follow TextField handleEvent() model
+    
+    #warning TODO: switch classes to not be shared_ptr where possible. particularly Window.
+    
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
     #warning TODO: implement 7-day trial

@@ -38,7 +38,18 @@ public:
         if (!_focus) color = win.attr(_opts.colors.dimmed);
         win.drawLineHoriz(_opts.frame.point, _opts.frame.size.x, ' ');
         
-        win.drawText(_opts.frame.point, "%s", _value.c_str());
+        // Print as many runes as will fit our width
+        const int width = _opts.frame.size.x;
+        auto left = _left();
+        auto right = left;
+        int len = 0;
+        while (len<width && right!=_value.end()) {
+            right = UTF8::Next(right, _value.end());
+            len++;
+        }
+        
+        std::string substr(left, right);
+        win.drawText(_opts.frame.point, "%s", substr.c_str());
         
         if (_focus) {
             Point p = win.frame().point + _opts.frame.point;
@@ -46,9 +57,10 @@ public:
 //            std::string_view value = _value;
 //            CursorState a = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
 //            size_t lenBytes = std::distance(_value.begin(), _posCursor);
-            size_t lenRunes = UTF8::Strlen(_left(), _cursor());
-            
-            _cursorState = CursorState(true, {p.x+(int)lenRunes, p.y});
+//            size_t lenRunes = UTF8::Strlen(_left(), _cursor());
+//            assert(lenRunes <= width); // Programmer error
+            size_t cursorOff = UTF8::Strlen(_left(), _cursor());
+            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
 //            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
         }
         
@@ -84,6 +96,12 @@ public:
                     size_t eraseSize = std::distance(eraseBegin, cursor);
                     _value.erase(eraseBegin, cursor);
                     _offCursor -= eraseSize;
+                    
+                    auto left = _left();
+                    if (left != _value.begin()) {
+                        left = UTF8::Prev(left, _value.begin());
+                        _offLeft = std::distance(_value.begin(), left);
+                    }
                 }
                 return {};
             
@@ -92,12 +110,27 @@ public:
                 if (cursor != _value.end()) {
                     auto eraseEnd = UTF8::Next(cursor, _value.end());
                     _value.erase(cursor, eraseEnd);
+                    
+                    auto left = _left();
+                    if (left != _value.begin()) {
+                        left = UTF8::Prev(left, _value.begin());
+                        _offLeft = std::distance(_value.begin(), left);
+                    }
                 }
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyLeft) {
                 auto cursor = _cursor();
                 if (cursor != _value.begin()) {
+                    // If the cursor's at the display-beginning, shift view left
+                    if (cursor == _cursorMin()) {
+                        auto left = _left();
+                        if (left != _value.begin()) {
+                            left = UTF8::Prev(left, _value.begin());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
+                    }
+                    
                     auto it = UTF8::Prev(cursor, _value.begin());
                     _offCursor = std::distance(_value.begin(), it);
                 }
@@ -106,6 +139,15 @@ public:
             } else if (ev.type == UI::Event::Type::KeyRight) {
                 auto cursor = _cursor();
                 if (cursor != _value.end()) {
+                    // If the cursor's at the display-end, shift view right
+                    if (cursor == _cursorMax()) {
+                        auto left = _left();
+                        if (left != _value.end()) {
+                            left = UTF8::Next(left, _value.end());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
+                    }
+                    
                     auto it = UTF8::Next(cursor, _value.end());
                     _offCursor = std::distance(_value.begin(), it);
                 }
@@ -115,14 +157,52 @@ public:
                 _opts.releaseFocus(*this, false);
                 return {};
             
+            } else if (ev.type == UI::Event::Type::KeyBackTab) {
+                _opts.releaseFocus(*this, false);
+                return {};
+            
             } else if (ev.type == UI::Event::Type::KeyReturn) {
                 _opts.releaseFocus(*this, true);
                 return {};
             
             } else {
+                // If the cursor's at the display-end, shift view right
+//                auto cursor = _cursor();
+//                if (cursor == _cursorMax()) {
+//                    auto left = _left();
+//                    if (left != _value.end()) {
+//                        left = UTF8::Next(left, _value.end());
+//                        _offLeft = std::distance(_value.begin(), left);
+//                    }
+//                    
+////                    beep();
+//                    
+////                    _offLeftUpdate();
+////                    auto left = _left();
+////                    if (left != _value.end()) {
+////                        left = UTF8::Next(left, _value.end());
+////                        _offLeft = std::distance(_value.begin(), left);
+////                    }
+//                }
+                
+                const int width = _opts.frame.size.x;
+                if (UTF8::Strlen(_left(), _cursor()) >= width) {
+                    auto cursor = _cursor();
+                    // If the cursor's at the display-end, shift view right
+                    if (cursor == _cursorMax()) {
+                        auto left = _left();
+                        if (left != _value.end()) {
+                            left = UTF8::Next(left, _value.end());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
+                    }
+                }
+                
     //            if (!iscntrl((int)ev.type)) {
                 _value.insert(_cursor(), (int)ev.type);
                 _offCursor++;
+                
+//                _offLeftUpdate();
                 return {};
             }
         }
@@ -150,6 +230,52 @@ private:
     
     std::string::iterator _left() { return _value.begin()+_offLeft; }
     std::string::iterator _cursor() { return _value.begin()+_offCursor; }
+    
+    std::string::iterator _cursorMin() { return _left(); }
+    std::string::iterator _cursorMax() {
+        const int width = _opts.frame.size.x;
+        auto left = _cursorMin();
+        auto right = left;
+        int len = 0;
+        while (len<width && right!=_value.end()) {
+            right = UTF8::Next(right, _value.end());
+            len++;
+        }
+        return right;
+    }
+    
+//    std::string::const_iterator _cleft() const { return _value.cbegin()+_offLeft; }
+//    std::string::const_iterator _ccursor() const { return _value.cbegin()+_offCursor; }
+//    
+//    void _offLeftUpdate() {
+//        const int width = _opts.frame.size.x;
+//        auto right = _cursor();
+//        auto left = right;
+//        int len = 0;
+//        while (len<width && left!=_value.begin()) {
+//            left = UTF8::Prev(left, _value.begin());
+//            len++;
+//        }
+//        _offLeft = std::distance(_value.begin(), left);
+//    }
+//    
+//    void _offCursorUpdate() {
+//        const int width = _opts.frame.size.x;
+//        auto left = _left();
+//        auto right = left;
+//        int len = 0;
+//        while (len<width && right!=_value.end()) {
+//            right = UTF8::Next(right, _value.end());
+//            len++;
+//        }
+//        _offCursor = std::distance(_value.begin(), right);
+//    }
+//    
+//    // _cursorDisplayOffset(): returns the offset of the cursor within the
+//    // text field, as visible to the user
+//    size_t _cursorDisplayOffset() const {
+//        return UTF8::Strlen(_cleft(), _ccursor());
+//    }
     
     Options _opts;
     std::string _value;
