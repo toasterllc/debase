@@ -84,7 +84,20 @@ public:
     UI::Event handleEvent(const UI::Event& ev) {
         if (ev.type == UI::Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(_opts.frame, ev.mouse.point)) {
-                _opts.requestFocus(*this);
+                if (!_focus) {
+                    _opts.requestFocus(*this);
+                
+                } else {
+                    // Update the cursor position to the clicked point
+                    int offX = ev.mouse.point.x-_opts.frame.point.x;
+                    auto it = _left();
+                    while (offX && it!=_value.end()) {
+                        it = UTF8::Next(it, _value.end());
+                        offX--;
+                    }
+                    _offCursor = std::distance(_value.begin(), it);
+                }
+                
                 return {};
             }
         
@@ -92,29 +105,41 @@ public:
             if (ev.type == UI::Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor != _value.begin()) {
+                    if (_cursorMax() == _value.end()) {
+                        auto left = _left();
+                        if (left != _value.begin()) {
+                            left = UTF8::Prev(left, _value.begin());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
+                    }
+                    
                     auto eraseBegin = UTF8::Prev(cursor, _value.begin());
                     size_t eraseSize = std::distance(eraseBegin, cursor);
                     _value.erase(eraseBegin, cursor);
                     _offCursor -= eraseSize;
-                    
-                    auto left = _left();
-                    if (left != _value.begin()) {
-                        left = UTF8::Prev(left, _value.begin());
-                        _offLeft = std::distance(_value.begin(), left);
-                    }
                 }
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
                 if (cursor != _value.end()) {
+//                    // If the cursor's at the display-end, move it left
+//                    auto cursor = _cursor();
+//                    if (cursor == _cursorMax()) {
+//                        cursor = UTF8::Prev(cursor, _value.end());
+//                        _offCursor = std::distance(_value.begin(), cursor);
+//                    }
+                    
                     auto eraseEnd = UTF8::Next(cursor, _value.end());
                     _value.erase(cursor, eraseEnd);
                     
-                    auto left = _left();
-                    if (left != _value.begin()) {
-                        left = UTF8::Prev(left, _value.begin());
-                        _offLeft = std::distance(_value.begin(), left);
+//                    auto cursor = _cursor();
+                    if (_cursorMax() == _value.end()) {
+                        auto left = _left();
+                        if (left != _value.begin()) {
+                            left = UTF8::Prev(left, _value.begin());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
                     }
                 }
                 return {};
