@@ -3,7 +3,6 @@
 #include "Panel.h"
 #include "Color.h"
 #include "Attr.h"
-#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -14,8 +13,8 @@ struct MessagePanelOptions {
     int messageInsetY = 0;
     int extraHeight = 0;
     bool center = false;
-    tiny_utf8::string title;
-    tiny_utf8::string message;
+    std::string title;
+    std::string message;
 };
 
 class _MessagePanel : public _Panel, public std::enable_shared_from_this<_MessagePanel> {
@@ -45,10 +44,10 @@ public:
         
         offY += _opts.messageInsetY;
         
-        for (const tiny_utf8::string& line : _message) {
+        for (const std::string& line : _message) {
             int offX = 0;
             if (_opts.center) {
-                offX = (bounds().size.x-(int)line.length()-2*_MessageInsetX)/2;
+                offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
             }
             drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
             offY++;
@@ -88,7 +87,7 @@ protected:
     
 private:
     MessagePanelOptions _opts;
-    std::vector<tiny_utf8::string> _message;
+    std::vector<std::string> _message;
     bool _drawNeeded = false;
 };
 

@@ -6,7 +6,6 @@
 #include "UTF8.h"
 #include "State.h"
 #include "Time.h"
-#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -46,7 +45,7 @@ public:
         // Draw time
         {
             UI::Attr attr(win, opts.colors.dimmed);
-            int offX = width - (int)_time.length();
+            int offX = width - (int)UTF8::Strlen(_time);
             win->drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
         
@@ -69,7 +68,7 @@ public:
         // Draw commit message
         {
             int i = 0;
-            for (const tiny_utf8::string& line : _commit.message) {
+            for (const std::string& line : _commit.message) {
                 win->drawText(offText + Size{0, 2+i}, "%s", line.c_str());
                 i++;
             }
@@ -98,11 +97,11 @@ private:
     static constexpr int _TextInsetX = 2;
     
     SnapshotButtonOptions _opts;
-    tiny_utf8::string _time;
+    std::string _time;
     struct {
-        tiny_utf8::string id;
-        tiny_utf8::string author;
-        std::vector<tiny_utf8::string> message;
+        std::string id;
+        std::string author;
+        std::vector<std::string> message;
     } _commit;
 };
 

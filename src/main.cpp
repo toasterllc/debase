@@ -1402,8 +1402,6 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: implement --legal option to print copyright notices
-    
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
     #warning TODO: implement 7-day trial
