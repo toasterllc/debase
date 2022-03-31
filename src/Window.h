@@ -126,7 +126,8 @@ inline bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
 
 inline void Redraw() {
     ::update_panels();
-    ::doupdate();
+    ::refresh();
+//    ::doupdate();
 }
 
 class _Window {

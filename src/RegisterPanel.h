@@ -28,6 +28,8 @@ public:
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
         });
         offY += 2;
+        
+        _email->active(true);
     }
     
     void draw() override {
@@ -66,8 +68,9 @@ public:
         if (ev.type == UI::Event::Type::KeyCtrlD) return ev;
         
         UI::Event e = ev;
-        if (e) e = _email->handleEvent(ev);
-        if (e) e = _code->handleEvent(ev);
+        if (e) e = _email->handleEvent(shared_from_this(), ev);
+        if (e) e = _code->handleEvent(shared_from_this(), ev);
+        drawNeeded(true);
         return {};
         
         

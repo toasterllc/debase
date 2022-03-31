@@ -32,6 +32,7 @@
 #include "SnapshotMenu.h"
 #include "Terminal.h"
 #include "Debase.h"
+#include "CursorState.h"
 
 namespace fs = std::filesystem;
 
@@ -44,6 +45,7 @@ static State::Theme _Theme = State::Theme::None;
 
 static UI::ColorPalette _Colors;
 static UI::ColorPalette _ColorsPrev;
+static UI::CursorState _CursorState;
 
 static Git::Repo _Repo;
 static State::RepoState _RepoState;
@@ -212,6 +214,10 @@ static void _Draw() {
         if (_RegisterPanel) {
             _RegisterPanel->drawIfNeeded();
         }
+        
+//        curs_set(1);
+//        move(5, 5);
+////        wmove(*_RootWindow, 5, 5);
         
         UI::Redraw();
     }
@@ -1026,8 +1032,10 @@ static void _CursesInit() noexcept {
     
     _ColorsPrev = _ColorsSet(_Colors);
     
-    // Hide cursor
-    ::curs_set(0);
+    _CursorState = UI::CursorState(false, {});
+    
+//    // Hide cursor
+//    ::curs_set(0);
     
     ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
     ::mouseinterval(0);
@@ -1037,6 +1045,8 @@ static void _CursesInit() noexcept {
 
 static void _CursesDeinit() noexcept {
 //    ::mousemask(0, NULL);
+    
+    _CursorState.restore();
     
     _ColorsSet(_ColorsPrev);
     ::endwin();
@@ -1128,6 +1138,8 @@ static void _EventLoop() {
     Defer(_CursesDeinit());
     
     _RootWindow = MakeShared<UI::Window>(::stdscr);
+//    ::leaveok(*_RootWindow, true);
+//    
     _Reload();
     
     for (;;) {
@@ -1390,6 +1402,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
+    
     #warning TODO: implement 7-day trial
     
     #warning TODO: implement registration

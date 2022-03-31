@@ -78,6 +78,9 @@ public:
         _Get(_fd, *this);
     }
     
+    Settings(const Settings& x) = delete;
+    Settings(Settings&& x) = delete;
+    
     ~Settings() {
         if (_prev) {
             restore();
