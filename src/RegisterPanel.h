@@ -15,22 +15,22 @@ public:
         Size s = size();
         int offY = s.y-_FieldsExtraHeight-1;
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
+        auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
+        auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
         _email = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
-            .wantsFocus = [&] (TextField& field) {
-                _fieldWantsFocus(field);
-            },
+            .requestFocus = requestFocus,
+            .releaseFocus = releaseFocus,
         });
         offY += 2;
         
         _code = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
-            .wantsFocus = [&] (TextField& field) {
-                _fieldWantsFocus(field);
-            },
+            .requestFocus = requestFocus,
+            .releaseFocus = releaseFocus,
         });
         offY += 2;
         
@@ -128,10 +128,29 @@ private:
         return opts;
     }
     
-    void _fieldWantsFocus(TextField& field) {
+    void _fieldRequestFocus(TextField& field) {
         _email->focus(false);
         _code->focus(false);
         field.focus(true);
+    }
+    
+    void _fieldReleaseFocus(TextField& field, bool done) {
+        _email->focus(false);
+        _code->focus(false);
+        
+        bool fieldsFilled = !_email->value().empty() && !_code->value().empty();
+        if (!done || !fieldsFilled) {
+            // Tab behavior
+            if (&field == &*_email) {
+                _code->focus(true);
+            } else if (&field == &*_code) {
+                _email->focus(true);
+            }
+        
+        } else {
+            // Return behavior
+            beep();
+        }
     }
     
     TextFieldPtr _email;

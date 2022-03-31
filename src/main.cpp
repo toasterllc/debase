@@ -1400,13 +1400,9 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: TextField: make tabbing between fields work
-    
     #warning TODO: TextField: make text truncation work, including arrow keys to change left position
     
     #warning TODO: TextField: filter printable characters better
-    
-    #warning TODO: TextField: make enter key work
     
     #warning TODO: TextField: don't lose content when resizing window
     
@@ -1604,6 +1600,10 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO: fix: if the mouse is moving upon exit, we get mouse characters printed to the terminal
 //
 //    #warning TODO: add help flag
+//
+//    #warning TODO: TextField: make tabbing between fields work
+//
+//    #warning TODO: TextField: make enter key work
     
 //    {
 //        volatile bool a = false;

@@ -17,7 +17,8 @@ public:
     //    bool highlight = false;
     //    bool mouseActive = false;
         Rect frame;
-        std::function<void(TextField&)> wantsFocus;
+        std::function<void(TextField&)> requestFocus;
+        std::function<void(TextField&, bool)> releaseFocus;
     //    bool focus = false;
     };
     
@@ -71,7 +72,7 @@ public:
     UI::Event handleEvent(const UI::Event& ev) {
         if (ev.type == UI::Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(_opts.frame, ev.mouse.point)) {
-                _opts.wantsFocus(*this);
+                _opts.requestFocus(*this);
                 return {};
             }
         
@@ -108,6 +109,14 @@ public:
                     auto it = UTF8::Next(cursor, _value.end());
                     _offCursor = std::distance(_value.begin(), it);
                 }
+                return {};
+            
+            } else if (ev.type == UI::Event::Type::KeyTab) {
+                _opts.releaseFocus(*this, false);
+                return {};
+            
+            } else if (ev.type == UI::Event::Type::KeyReturn) {
+                _opts.releaseFocus(*this, true);
                 return {};
             
             } else {
