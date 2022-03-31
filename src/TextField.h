@@ -27,19 +27,20 @@ public:
     }
     
     void draw(Window win) {
+        UI::Attr underline(win, A_UNDERLINE);
         UI::Attr color;
         if (!_active) color = UI::Attr(win, _opts.colors.dimmed);
-        win->drawLineHoriz(_opts.frame.point, _opts.frame.size.x);
+        win->drawLineHoriz(_opts.frame.point, _opts.frame.size.x, ' ');
         
         win->drawText(_opts.frame.point, "%s", _value.c_str());
         
         if (_active) {
             Point p = win->frame().point + _opts.frame.point;
             
-            std::string_view value = _value;
+//            std::string_view value = _value;
 //            CursorState a = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
-            size_t lenBytes = std::distance(_value.begin(), _valuePosCursor);
-            size_t lenRunes = UTF8::Strlen(value.substr(0, lenBytes));
+//            size_t lenBytes = std::distance(_value.begin(), _posCursor);
+            size_t lenRunes = UTF8::Strlen(_left(), _cursor());
             
             _cursorState = CursorState(true, {p.x+(int)lenRunes, p.y});
 //            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
@@ -70,20 +71,40 @@ public:
             
         
         } else if (ev.type == UI::Event::Type::KeyDelete) {
-            if (_valuePosCursor != _value.begin()) {
-                _valuePosCursor = _value.erase(std::prev(_valuePosCursor));
+            auto cursor = _cursor();
+            if (cursor != _value.begin()) {
+                auto eraseBegin = UTF8::Prev(cursor, _value.begin());
+                size_t eraseSize = std::distance(eraseBegin, cursor);
+                _value.erase(eraseBegin, cursor);
+                _offCursor -= eraseSize;
             }
         
         } else if (ev.type == UI::Event::Type::KeyFnDelete) {
-            if (_valuePosCursor != _value.end()) {
-                _valuePosCursor = _value.erase(_valuePosCursor);
+            auto cursor = _cursor();
+            if (cursor != _value.end()) {
+                auto eraseEnd = UTF8::Next(cursor, _value.end());
+                _value.erase(cursor, eraseEnd);
+            }
+        
+        } else if (ev.type == UI::Event::Type::KeyLeft) {
+            auto cursor = _cursor();
+            if (cursor != _value.begin()) {
+                auto it = UTF8::Prev(cursor, _value.begin());
+                _offCursor = std::distance(_value.begin(), it);
+            }
+        
+        } else if (ev.type == UI::Event::Type::KeyRight) {
+            auto cursor = _cursor();
+            if (cursor != _value.end()) {
+                auto it = UTF8::Next(cursor, _value.end());
+                _offCursor = std::distance(_value.begin(), it);
             }
         
         } else {
-            if (!iscntrl((int)ev.type)) {
-                _valuePosCursor = _value.insert(_valuePosCursor, (int)ev.type);
-                _valuePosCursor++;
-            }
+//            if (!iscntrl((int)ev.type)) {
+                _value.insert(_cursor(), (int)ev.type);
+                _offCursor++;
+//            }
         }
         
         return {};
@@ -105,11 +126,14 @@ public:
     }
     
 private:
+    std::string::iterator _left() { return _value.begin()+_offLeft; }
+    std::string::iterator _cursor() { return _value.begin()+_offCursor; }
+    
     static constexpr int KeySpacing = 2;
     TextFieldOptions _opts;
     std::string _value;
-    std::string::iterator _valuePosStart = _value.begin();
-    std::string::iterator _valuePosCursor = _value.end();
+    size_t _offLeft = 0;
+    size_t _offCursor = 0;
     bool _active = false;
     CursorState _cursorState;
 //    CursorVisibility _cursorVis;

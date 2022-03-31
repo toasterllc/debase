@@ -50,6 +50,8 @@ struct Event {
         WindowResize    = KEY_RESIZE,
         KeyDelete       = '\x7F',
         KeyFnDelete     = KEY_DC,
+        KeyLeft         = KEY_LEFT,
+        KeyRight        = KEY_RIGHT,
         KeyEscape       = '\x1B',
         KeyReturn       = '\n',
         KeyCtrlC        = '\x03',
@@ -155,12 +157,12 @@ public:
         ::box(*this, 0, 0);
     }
     
-    void drawLineHoriz(const Point& p, int len) const {
-        mvwhline(*this, p.y, p.x, 0, len);
+    void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
+        mvwhline(*this, p.y, p.x, ch, len);
     }
     
-    void drawLineVert(const Point& p, int len) const {
-        mvwvline(*this, p.y, p.x, 0, len);
+    void drawLineVert(const Point& p, int len, chtype ch=0) const {
+        mvwvline(*this, p.y, p.x, ch, len);
     }
     
     void drawRect(const Rect& rect) const {
@@ -209,9 +211,10 @@ public:
     Event nextEvent() {
         // Wait for another mouse event
         for (;;) {
-            Event ev = {
-                .type = (Event::Type)::wgetch(*this),
-            };
+            int ch = ::wgetch(*this);
+            if (ch == ERR) continue;
+            
+            Event ev = { .type = (Event::Type)ch };
             switch (ev.type) {
             case Event::Type::Mouse: {
                 MEVENT mouse = {};
