@@ -123,6 +123,14 @@ public:
             } else if (ev.type == UI::Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
                 if (cursor != _value.end()) {
+                    if (_cursorMax() == _value.end()) {
+                        auto left = _left();
+                        if (left != _value.begin()) {
+                            left = UTF8::Prev(left, _value.begin());
+                            _offLeft = std::distance(_value.begin(), left);
+                        }
+                    }
+                    
 //                    // If the cursor's at the display-end, move it left
 //                    auto cursor = _cursor();
 //                    if (cursor == _cursorMax()) {
@@ -134,13 +142,6 @@ public:
                     _value.erase(cursor, eraseEnd);
                     
 //                    auto cursor = _cursor();
-                    if (_cursorMax() == _value.end()) {
-                        auto left = _left();
-                        if (left != _value.begin()) {
-                            left = UTF8::Prev(left, _value.begin());
-                            _offLeft = std::distance(_value.begin(), left);
-                        }
-                    }
                 }
                 return {};
             
