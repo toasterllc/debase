@@ -2,7 +2,6 @@
 #include <optional>
 #include "Panel.h"
 #include "Color.h"
-#include "Attr.h"
 #include "UTF8.h"
 
 namespace UI::LineWrap {

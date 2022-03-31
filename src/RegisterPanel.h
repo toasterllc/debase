@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include "Panel.h"
 #include "Color.h"
-#include "Attr.h"
 #include "MessagePanel.h"
 #include "TextField.h"
 #include "MakeShared.h"
@@ -45,7 +44,7 @@ public:
         
         // Draw email field
         {
-            Attr attr(shared_from_this(), opts.color|A_BOLD);
+            Attr color = attr(opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
         
@@ -54,7 +53,7 @@ public:
         
         // Draw code field
         {
-            Attr attr(shared_from_this(), opts.color|A_BOLD);
+            Attr color = attr(opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
         

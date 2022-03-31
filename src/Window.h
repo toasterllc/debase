@@ -137,6 +137,30 @@ inline void Redraw() {
 
 class _Window {
 public:
+    class Attr {
+    public:
+        Attr() {}
+        Attr(const _Window& win, int attr) : _s({.win=&win, .attr=attr}) {
+            wattron(*_s.win, _s.attr);
+        }
+        
+        Attr(const Attr& x) = delete;
+        Attr(Attr&& x) { std::swap(_s, x._s); }
+        Attr& operator=(Attr&& x) { std::swap(_s, x._s); return *this; }
+        
+        ~Attr() {
+            if (_s.win) {
+                wattroff(*_s.win, _s.attr);
+            }
+        }
+    
+    private:
+        struct {
+            const _Window* win = nullptr;
+            int attr = 0;
+        } _s;
+    };
+    
     _Window(WINDOW* win=nullptr) : _win(win) {
         if (!_win) {
             _win = ::newwin(0, 0, 0, 0);
@@ -215,6 +239,10 @@ public:
         Point r = p;
         r -= frame().point;
         return r;
+    }
+    
+    Attr attr(int attr) const {
+        return Attr(*this, attr);
     }
     
     Event nextEvent() {

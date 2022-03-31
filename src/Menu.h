@@ -92,23 +92,23 @@ public:
         
         for (size_t i=0; i<_buttonCount; i++) {
             Button button = _opts.buttons[i];
-            button->draw(shared_from_this());
+            button->draw(*this);
             
             // Draw separator
             if (i != _buttonCount-1) {
-                UI::Attr attr(shared_from_this(), _opts.colors.menu);
+                UI::_Window::Attr color = attr(_opts.colors.menu);
                 drawLineHoriz({0, button->options().frame.ymax()+1}, width);
             }
         }
         
         // Draw border
         {
-            UI::Attr attr(shared_from_this(), _opts.colors.menu);
+            UI::_Window::Attr color = attr(_opts.colors.menu);
             drawBorder();
             
             // Draw title
             if (!_opts.title.empty()) {
-                UI::Attr bold(shared_from_this(), A_BOLD);
+                UI::_Window::Attr bold = attr(A_BOLD);
                 int offX = (width-(int)UTF8::Strlen(_opts.title))/2;
                 drawText({offX,0}, " %s ", _opts.title.c_str());
             }

@@ -3,7 +3,6 @@
 #include "Git.h"
 #include "Panel.h"
 #include "Color.h"
-#include "Attr.h"
 #include "LineWrap.h"
 #include "UTF8.h"
 
@@ -52,8 +51,8 @@ public:
         }
         
         {
-            UI::Attr attr;
-            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
+            UI::_Window::Attr color;
+            if (_borderColor) color = attr(*_borderColor);
             drawBorder();
             
             if (_commit.isMerge()) {
@@ -62,9 +61,9 @@ public:
         }
         
         {
-            UI::Attr bold(shared_from_this(), A_BOLD);
-            UI::Attr color;
-            if (!_header && _borderColor) color = Attr(shared_from_this(), *_borderColor);
+            UI::_Window::Attr bold = attr(A_BOLD);
+            UI::_Window::Attr color;
+            if (!_header && _borderColor) color = attr(*_borderColor);
             drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
         
@@ -75,13 +74,13 @@ public:
         }
         
         if (_header) {
-            UI::Attr attr;
-            if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
+            UI::_Window::Attr color;
+            if (_borderColor) color = attr(*_borderColor);
             drawText({3, 0}, " %s ", _headerLabel.c_str());
         }
         
         {
-            UI::Attr attr(shared_from_this(), _colors.dimmed);
+            UI::_Window::Attr color = attr(_colors.dimmed);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
         

@@ -181,7 +181,7 @@ static void _Draw() {
             
             // Draw insertion marker
             if (_Drag.insertionMarker) {
-                UI::Attr attr(_RootWindow, selectionColor);
+                UI::_Window::Attr color = _RootWindow->attr(selectionColor);
                 _RootWindow->drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
             }
         }
@@ -191,12 +191,12 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::Attr attr(_RootWindow, _Colors.selection);
+            UI::_Window::Attr color = _RootWindow->attr(_Colors.selection);
             _RootWindow->drawRect(*_SelectionRect);
         }
         
         for (UI::RevColumn col : _Columns) {
-            col->draw();
+            col->draw(*_RootWindow);
         }
         
         if (_ContextMenu) {
@@ -341,8 +341,8 @@ static void _Reload() {
     for (const Git::Rev& rev : _Revs) {
         State::History* h = (rev.ref ? &_RepoState.history(rev.ref) : nullptr);
         UI::RevColumnOptions opts = {
-            .win                = _RootWindow,
             .colors             = _Colors,
+            .containerBounds    = _RootWindow->bounds(),
             .repo               = _Repo,
             .rev                = rev,
             .head               = (rev.displayHead() == _Head.commit),

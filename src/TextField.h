@@ -32,9 +32,9 @@ public:
     }
     
     void draw(Window win) {
-        UI::Attr underline(win, A_UNDERLINE);
-        UI::Attr color;
-        if (!_active) color = UI::Attr(win, _opts.colors.dimmed);
+        UI::_Window::Attr underline = win->attr(A_UNDERLINE);
+        UI::_Window::Attr color;
+        if (!_active) color = win->attr(_opts.colors.dimmed);
         win->drawLineHoriz(_opts.frame.point, _opts.frame.size.x, ' ');
         
         win->drawText(_opts.frame.point, "%s", _value.c_str());

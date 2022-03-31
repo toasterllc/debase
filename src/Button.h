@@ -26,13 +26,13 @@ public:
         return UI::HitTest(_opts.frame, p, expand);
     }
     
-    virtual void draw(Window win) const {
+    virtual void draw(const _Window& win) const {
         size_t labelLen = UTF8::Strlen(_opts.label);
         size_t keyLen = UTF8::Strlen(_opts.key);
         
         if (_opts.drawBorder) {
-            UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.dimmed));
-            win->drawRect(_opts.frame);
+            UI::_Window::Attr color = win.attr(_opts.enabled ? _opts.colors.normal : _opts.colors.dimmed);
+            win.drawRect(_opts.frame);
         }
         
         int offY = (_opts.frame.size.y-1)/2;
@@ -54,18 +54,18 @@ public:
         }
         
         {
-            UI::Attr bold;
-            UI::Attr color;
-            if (_opts.enabled)                    bold = UI::Attr(win, A_BOLD);
-            if (_opts.highlight && _opts.enabled) color = UI::Attr(win, _opts.colors.menu);
-            else if (!_opts.enabled)              color = UI::Attr(win, _opts.colors.dimmed);
-            win->drawText(plabel, "%s", _opts.label.c_str());
+            UI::_Window::Attr bold;
+            UI::_Window::Attr color;
+            if (_opts.enabled)                    bold = win.attr(A_BOLD);
+            if (_opts.highlight && _opts.enabled) color = win.attr(_opts.colors.menu);
+            else if (!_opts.enabled)              color = win.attr(_opts.colors.dimmed);
+            win.drawText(plabel, "%s", _opts.label.c_str());
         }
         
         // Draw button key
         {
-            UI::Attr attr(win, _opts.colors.dimmed);
-            win->drawText(pkey, "%s", _opts.key.c_str());
+            UI::_Window::Attr color = win.attr(_opts.colors.dimmed);
+            win.drawText(pkey, "%s", _opts.key.c_str());
         }
     }
     

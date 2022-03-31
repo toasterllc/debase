@@ -9,8 +9,8 @@
 namespace UI {
 
 struct RevColumnOptions {
-    UI::Window win;
     const ColorPalette& colors;
+    Rect containerBounds;
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
@@ -68,7 +68,7 @@ public:
         
         // Create our CommitPanels
         UI::Rect nameFrame = {_opts.offset, {_opts.width, 1}};
-        _truncated = Intersection(_opts.win->bounds(), nameFrame) != nameFrame;
+        _truncated = Intersection(_opts.containerBounds, nameFrame) != nameFrame;
         if (!_truncated) {
             // Create panels for each commit
             int offY = _CommitsInsetY;
@@ -80,7 +80,7 @@ public:
                     UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_opts.colors, false, _opts.width, commit);
                     UI::Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
-                    if (Intersection(_opts.win->bounds(), frame) != frame) break;
+                    if (Intersection(_opts.containerBounds, frame) != frame) break;
                     panel->setPosition(p);
                     _panels.push_back(panel);
                     offY += panel->frame().size.y + _CommitSpacing;
@@ -141,22 +141,22 @@ public:
         }
     }
     
-    void draw() {
+    void draw(const _Window& win) {
         // Don't draw anything if our column is truncated
         if (_truncated) return;
         
         // Draw branch name
         {
-            UI::Attr attr(_opts.win, A_BOLD);
+            UI::_Window::Attr bold = win.attr(A_BOLD);
             const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
-            _opts.win->drawText(p, "%s", _name.c_str());
+            win.drawText(p, "%s", _name.c_str());
         }
         
         if (!_opts.rev.isMutable()) {
-            UI::Attr attr(_opts.win, _opts.colors.error);
+            UI::_Window::Attr color = win.attr(_opts.colors.error);
             const char immutableText[] = "read-only";
             const Point p = _opts.offset + Size{std::max(0, (_opts.width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
-            _opts.win->drawText(p, "%s", immutableText);
+            win.drawText(p, "%s", immutableText);
         }
         
         for (UI::CommitPanel p : _panels) {
@@ -164,7 +164,7 @@ public:
         }
         
         for (UI::Button button : _buttons) {
-            button->draw(_opts.win);
+            button->draw(win);
         }
     }
     

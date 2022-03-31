@@ -2,7 +2,6 @@
 #include <optional>
 #include "Panel.h"
 #include "Color.h"
-#include "Attr.h"
 
 namespace UI {
 
@@ -20,8 +19,8 @@ public:
     }
     
     void draw() {
-        UI::Attr attr;
-        if (_borderColor) attr = Attr(shared_from_this(), *_borderColor);
+        UI::_Window::Attr color;
+        if (_borderColor) color = attr(*_borderColor);
         drawBorder();
         _drawNeeded = false;
     }

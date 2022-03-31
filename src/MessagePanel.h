@@ -2,7 +2,6 @@
 #include <optional>
 #include "Panel.h"
 #include "Color.h"
-#include "Attr.h"
 
 namespace UI {
 
@@ -31,13 +30,13 @@ public:
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border
         {
-            UI::Attr attr(shared_from_this(), _opts.color);
+            UI::_Window::Attr color = attr(_opts.color);
             drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
         }
         
         {
-            UI::Attr attr(shared_from_this(), _opts.color|A_BOLD);
+            UI::_Window::Attr color = attr(_opts.color|A_BOLD);
             drawText({_MessageInsetX, offY}, " %s ", _opts.title.c_str());
             offY++;
         }
