@@ -225,8 +225,10 @@ public:
                 }
                 
     //            if (!iscntrl((int)ev.type)) {
-                _value.insert(_cursor(), (int)ev.type);
-                _offCursor++;
+                if ((int)ev.type < 0x100) {
+                    _value.insert(_cursor(), (int)ev.type);
+                    _offCursor++;
+                }
                 
 //                _offLeftUpdate();
                 return {};

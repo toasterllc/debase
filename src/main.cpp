@@ -1400,11 +1400,7 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: TextField: filter printable characters better
-    
     #warning TODO: TextField: don't lose content when resizing window
-    
-    #warning TODO: TextField: make clicking to reposition cursor work
     
     #warning TODO: switch Button to follow TextField handleEvent() model
     
@@ -1429,7 +1425,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: TextField: filter printable characters better
+//
+//    #warning TODO: TextField: make clicking to reposition cursor work
+//
 //    #warning TODO: TextField: make text truncation work, including arrow keys to change left position//
+//
 //    #warning TODO: TextField: make enter key work
 //
 //    #warning TODO: TextField: make tabbing between fields work

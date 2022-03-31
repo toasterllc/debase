@@ -139,18 +139,42 @@ private:
         _code->focus(false);
         
         bool fieldsFilled = !_email->value().empty() && !_code->value().empty();
-        if (!done || !fieldsFilled) {
+        if (done) {
+            if (fieldsFilled) {
+                beep();
+            
+            } else {
+                if (field.value().empty()) {
+                    field.focus(true);
+                
+                } else {
+                    if (_email->value().empty())     _email->focus(true);
+                    else if (_code->value().empty()) _code->focus(true);
+                }
+            }
+        
+        } else {
             // Tab behavior
             if (&field == &*_email) {
                 _code->focus(true);
             } else if (&field == &*_code) {
                 _email->focus(true);
             }
-        
-        } else {
-            // Return behavior
-            beep();
         }
+        
+        
+//        if (!done || !fieldsFilled) {
+//            // Tab behavior
+//            if (&field == &*_email) {
+//                _code->focus(true);
+//            } else if (&field == &*_code) {
+//                _email->focus(true);
+//            }
+//        
+//        } else {
+//            // Return behavior
+//            beep();
+//        }
     }
     
     TextFieldPtr _email;
