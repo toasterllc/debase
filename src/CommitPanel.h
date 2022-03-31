@@ -6,6 +6,7 @@
 #include "Attr.h"
 #include "LineWrap.h"
 #include "UTF8.h"
+#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -35,7 +36,7 @@ public:
         _drawNeeded = true;
     }
     
-    void setHeaderLabel(std::string_view x) {
+    void setHeaderLabel(const tiny_utf8::string& x) {
         assert(_header);
         if (_headerLabel == x) return;
         _headerLabel = x;
@@ -46,7 +47,7 @@ public:
         const int offY = (_header ? 1 : 0);
         
         int i = 0;
-        for (const std::string& line : _message) {
+        for (const tiny_utf8::string& line : _message) {
             drawText({2, offY+2+i}, "%s", line.c_str());
             i++;
         }
@@ -70,7 +71,7 @@ public:
         
         {
             constexpr int width = 16;
-            int off = width - (int)UTF8::Strlen(_time);
+            int off = width - (int)_time.length();
             drawText({12 + (_header ? 1 : 0) + off, offY+0}, " %s ", _time.c_str());
         }
         
@@ -103,11 +104,11 @@ private:
     const ColorPalette& _colors;
     Git::Commit _commit;
     bool _header = false;
-    std::string _headerLabel;
-    std::string _id;
-    std::string _time;
-    std::string _author;
-    std::vector<std::string> _message;
+    tiny_utf8::string _headerLabel;
+    tiny_utf8::string _id;
+    tiny_utf8::string _time;
+    tiny_utf8::string _author;
+    std::vector<tiny_utf8::string> _message;
     std::optional<Color> _borderColor;
     bool _drawNeeded = false;
 };

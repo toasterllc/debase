@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Button.h"
 #include "UTF8.h"
+#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -10,7 +11,7 @@ struct MenuOptions {
     const ColorPalette& colors;
     Window parentWindow;
     Point position;
-    std::string title;
+    tiny_utf8::string title;
     std::vector<Button> buttons;
     bool allowTruncate = false;
 };
@@ -109,7 +110,7 @@ public:
             // Draw title
             if (!_opts.title.empty()) {
                 UI::Attr bold(shared_from_this(), A_BOLD);
-                int offX = (width-(int)UTF8::Strlen(_opts.title))/2;
+                int offX = (width-(int)_opts.title.length())/2;
                 drawText({offX,0}, " %s ", _opts.title.c_str());
             }
         }

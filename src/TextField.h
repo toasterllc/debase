@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "UTF8.h"
 #include "CursorState.h"
+#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -36,13 +37,12 @@ public:
         if (_active) {
             Point p = win->frame().point + _opts.frame.point;
             
-            std::string_view value = _value;
+//            std::string_view value = _value;
 //            CursorState a = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
-            size_t lenBytes = std::distance(_value.begin(), _valuePosCursor);
-            size_t lenRunes = UTF8::Strlen(value.substr(0, lenBytes));
+//            size_t lenBytes = std::distance(_value.begin(), _valuePosCursor);
+//            size_t lenRunes = UTF8::Strlen(value.substr(0, lenBytes));
             
-            _cursorState = CursorState(true, {p.x+(int)lenRunes, p.y});
-//            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
+//            _cursorState = CursorState(true, {p.x+(int)lenRunes, p.y});
         }
         
 //        if (_active) {
@@ -71,25 +71,28 @@ public:
         
         } else if (ev.type == UI::Event::Type::KeyDelete) {
             if (_valuePosCursor != _value.begin()) {
-                _valuePosCursor = _value.erase(std::prev(_valuePosCursor));
+//                _valuePosCursor = _value.erase(std::prev(_valuePosCursor));
             }
         
         } else if (ev.type == UI::Event::Type::KeyFnDelete) {
             if (_valuePosCursor != _value.end()) {
-                _valuePosCursor = _value.erase(_valuePosCursor);
+//                _valuePosCursor = _value.erase(_valuePosCursor);
             }
         
         } else {
             if (!iscntrl((int)ev.type)) {
-                _valuePosCursor = _value.insert(_valuePosCursor, (int)ev.type);
-                _valuePosCursor++;
+                uint8_t c = (uint8_t)ev.type;
+                _value.insert(_value.end(), &c);
+                _value.insert(_value.end(), "hello");
+//                _valuePosCursor = _value.insert(_valuePosCursor, (int)ev.type);
+//                _valuePosCursor++;
             }
         }
         
         return {};
     }
     
-    const std::string& value() const {
+    const tiny_utf8::string& value() const {
         return _value;
     }
     
@@ -107,9 +110,9 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     TextFieldOptions _opts;
-    std::string _value;
-    std::string::iterator _valuePosStart = _value.begin();
-    std::string::iterator _valuePosCursor = _value.end();
+    tiny_utf8::string _value;
+    tiny_utf8::string::iterator _valuePosStart = _value.begin();
+    tiny_utf8::string::iterator _valuePosCursor = _value.end();
     bool _active = false;
     CursorState _cursorState;
 //    CursorVisibility _cursorVis;

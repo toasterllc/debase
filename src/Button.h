@@ -2,13 +2,14 @@
 #include <algorithm>
 #include "Window.h"
 #include "UTF8.h"
+#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
 struct ButtonOptions {
     const ColorPalette& colors;
-    std::string label;
-    std::string key;
+    tiny_utf8::string label;
+    tiny_utf8::string key;
     bool enabled = false;
     bool center = false;
     bool drawBorder = false;
@@ -27,8 +28,8 @@ public:
     }
     
     virtual void draw(Window win) const {
-        size_t labelLen = UTF8::Strlen(_opts.label);
-        size_t keyLen = UTF8::Strlen(_opts.key);
+        size_t labelLen = _opts.label.length();
+        size_t keyLen = _opts.key.length();
         
         if (_opts.drawBorder) {
             UI::Attr attr(win, (_opts.enabled ? _opts.colors.normal : _opts.colors.dimmed));

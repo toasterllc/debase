@@ -5,6 +5,7 @@
 #include "MakeShared.h"
 #include "Color.h"
 #include "UTF8.h"
+#include "lib/tinyutf8/tinyutf8.h"
 
 namespace UI {
 
@@ -63,7 +64,7 @@ public:
             }
             
             // Truncate the name to our width
-            _name.erase(std::min(UTF8::Strlen(_name), (size_t)_opts.width));
+            _name.erase(std::min(_name.length(), (size_t)_opts.width));
         }
         
         // Create our CommitPanels
@@ -148,7 +149,7 @@ public:
         // Draw branch name
         {
             UI::Attr attr(_opts.win, A_BOLD);
-            const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
+            const Point p = _opts.offset + Size{(_opts.width-(int)_name.length())/2, _TitleInsetY};
             _opts.win->drawText(p, "%s", _name.c_str());
         }
         
@@ -204,7 +205,7 @@ private:
     static constexpr int _ButtonWidth    = 8;
     static constexpr int _CommitSpacing  = 1;
     RevColumnOptions _opts;
-    std::string _name;
+    tiny_utf8::string _name;
     bool _truncated = false;
     UI::CommitPanelVec _panels;
     std::vector<UI::Button> _buttons;
