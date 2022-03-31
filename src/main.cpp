@@ -408,7 +408,7 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
 // Handles clicking/dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-    const UI::Size delta = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
+    const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
     const UI::Rect rootWinBounds = _RootWindow->bounds();
     const auto doubleClickStatePrev = _DoubleClickState;
@@ -483,7 +483,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
             
             // Position title panel / shadow panels
             {
-                const UI::Point pos0 = p + delta;
+                const UI::Point pos0 = p + mouseDownOffset;
                 
                 _Drag.titlePanel->setPosition(pos0);
                 
