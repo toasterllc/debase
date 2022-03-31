@@ -137,10 +137,11 @@ public:
     }
     
 private:
+    static constexpr int KeySpacing = 2;
+    
     std::string::iterator _left() { return _value.begin()+_offLeft; }
     std::string::iterator _cursor() { return _value.begin()+_offCursor; }
     
-    static constexpr int KeySpacing = 2;
     Options _opts;
     std::string _value;
     size_t _offLeft = 0;

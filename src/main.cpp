@@ -1400,6 +1400,18 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: TextField: make tabbing between fields work
+    
+    #warning TODO: TextField: make text truncation work, including arrow keys to change left position
+    
+    #warning TODO: TextField: filter printable characters better
+    
+    #warning TODO: TextField: make enter key work
+    
+    #warning TODO: TextField: don't lose content when resizing window
+    
+    #warning TODO: TextField: make clicking to reposition cursor work
+    
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
     #warning TODO: implement 7-day trial
