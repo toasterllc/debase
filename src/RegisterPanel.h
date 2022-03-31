@@ -19,8 +19,8 @@ public:
         _email = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
-            .wantsActive = [&] (TextField& field) {
-                _fieldWantsActive(field);
+            .wantsFocus = [&] (TextField& field) {
+                _fieldWantsFocus(field);
             },
         });
         offY += 2;
@@ -28,13 +28,13 @@ public:
         _code = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
-            .wantsActive = [&] (TextField& field) {
-                _fieldWantsActive(field);
+            .wantsFocus = [&] (TextField& field) {
+                _fieldWantsFocus(field);
             },
         });
         offY += 2;
         
-        _email->active(true);
+        _email->focus(true);
     }
     
     void draw() override {
@@ -48,7 +48,7 @@ public:
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
         
-        _email->draw(shared_from_this());
+        _email->draw(*this);
         offY += 2;
         
         // Draw code field
@@ -57,7 +57,7 @@ public:
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
         
-        _code->draw(shared_from_this());
+        _code->draw(*this);
         offY += 2;
         
 //        char buf[128];
@@ -72,8 +72,9 @@ public:
         if (ev.type == Event::Type::KeyCtrlC) return ev;
         if (ev.type == Event::Type::KeyCtrlD) return ev;
         
-        if (_email->active())     _email->handleEvent(ev);
-        else if (_code->active()) _code->handleEvent(ev);
+        Event e = ev;
+        if (e) e = _email->handleEvent(ev);
+        if (e) e = _code->handleEvent(ev);
         drawNeeded(true);
         return {};
         
@@ -127,10 +128,10 @@ private:
         return opts;
     }
     
-    void _fieldWantsActive(TextField& field) {
-        _email->active(false);
-        _code->active(false);
-        field.active(true);
+    void _fieldWantsFocus(TextField& field) {
+        _email->focus(false);
+        _code->focus(false);
+        field.focus(true);
     }
     
     TextFieldPtr _email;

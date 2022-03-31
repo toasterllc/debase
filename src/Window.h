@@ -235,9 +235,19 @@ public:
         return HitTest(frame(), p);
     }
     
+    // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
     Point convert(const Point& p) {
         Point r = p;
         r -= frame().point;
+        return r;
+    }
+    
+    // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
+    Event convert(const Event& p) {
+        Event r = p;
+        if (r.type == Event::Type::Mouse) {
+            r.mouse.point = convert(r.mouse.point);
+        }
         return r;
     }
     

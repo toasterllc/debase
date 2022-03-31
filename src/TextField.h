@@ -17,8 +17,8 @@ public:
     //    bool highlight = false;
     //    bool mouseActive = false;
         Rect frame;
-        std::function<void(TextField&)> wantsActive;
-    //    bool active = false;
+        std::function<void(TextField&)> wantsFocus;
+    //    bool focus = false;
     };
     
     static auto Make(const Options& opts) {
@@ -31,16 +31,16 @@ public:
         return UI::HitTest(_opts.frame, p, expand);
     }
     
-    void draw(Window win) {
-        UI::_Window::Attr underline = win->attr(A_UNDERLINE);
+    void draw(const _Window& win) {
+        UI::_Window::Attr underline = win.attr(A_UNDERLINE);
         UI::_Window::Attr color;
-        if (!_active) color = win->attr(_opts.colors.dimmed);
-        win->drawLineHoriz(_opts.frame.point, _opts.frame.size.x, ' ');
+        if (!_focus) color = win.attr(_opts.colors.dimmed);
+        win.drawLineHoriz(_opts.frame.point, _opts.frame.size.x, ' ');
         
-        win->drawText(_opts.frame.point, "%s", _value.c_str());
+        win.drawText(_opts.frame.point, "%s", _value.c_str());
         
-        if (_active) {
-            Point p = win->frame().point + _opts.frame.point;
+        if (_focus) {
+            Point p = win.frame().point + _opts.frame.point;
             
 //            std::string_view value = _value;
 //            CursorState a = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
@@ -51,12 +51,12 @@ public:
 //            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
         }
         
-//        if (_active) {
+//        if (_focus) {
 //            curs_set(1);
 //            wmove(*win, win->frame().point.y, win->frame().point.x);
 //        }
         
-//        if (_opts.active) {
+//        if (_opts.focus) {
 //            if (!_cursorVis) {
 //                _cursorVis = CursorVisibility(true);
 //            }
@@ -71,49 +71,54 @@ public:
     UI::Event handleEvent(const UI::Event& ev) {
         if (ev.type == UI::Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(_opts.frame, ev.mouse.point)) {
-                _opts.wantsActive(*this);
+                _opts.wantsFocus(*this);
+                return {};
             }
         
-        } else if (ev.type == UI::Event::Type::WindowResize) {
+        } else if (_focus) {
+            if (ev.type == UI::Event::Type::KeyDelete) {
+                auto cursor = _cursor();
+                if (cursor != _value.begin()) {
+                    auto eraseBegin = UTF8::Prev(cursor, _value.begin());
+                    size_t eraseSize = std::distance(eraseBegin, cursor);
+                    _value.erase(eraseBegin, cursor);
+                    _offCursor -= eraseSize;
+                }
+                return {};
             
-        
-        } else if (ev.type == UI::Event::Type::KeyDelete) {
-            auto cursor = _cursor();
-            if (cursor != _value.begin()) {
-                auto eraseBegin = UTF8::Prev(cursor, _value.begin());
-                size_t eraseSize = std::distance(eraseBegin, cursor);
-                _value.erase(eraseBegin, cursor);
-                _offCursor -= eraseSize;
+            } else if (ev.type == UI::Event::Type::KeyFnDelete) {
+                auto cursor = _cursor();
+                if (cursor != _value.end()) {
+                    auto eraseEnd = UTF8::Next(cursor, _value.end());
+                    _value.erase(cursor, eraseEnd);
+                }
+                return {};
+            
+            } else if (ev.type == UI::Event::Type::KeyLeft) {
+                auto cursor = _cursor();
+                if (cursor != _value.begin()) {
+                    auto it = UTF8::Prev(cursor, _value.begin());
+                    _offCursor = std::distance(_value.begin(), it);
+                }
+                return {};
+            
+            } else if (ev.type == UI::Event::Type::KeyRight) {
+                auto cursor = _cursor();
+                if (cursor != _value.end()) {
+                    auto it = UTF8::Next(cursor, _value.end());
+                    _offCursor = std::distance(_value.begin(), it);
+                }
+                return {};
+            
+            } else {
+    //            if (!iscntrl((int)ev.type)) {
+                _value.insert(_cursor(), (int)ev.type);
+                _offCursor++;
+                return {};
             }
-        
-        } else if (ev.type == UI::Event::Type::KeyFnDelete) {
-            auto cursor = _cursor();
-            if (cursor != _value.end()) {
-                auto eraseEnd = UTF8::Next(cursor, _value.end());
-                _value.erase(cursor, eraseEnd);
-            }
-        
-        } else if (ev.type == UI::Event::Type::KeyLeft) {
-            auto cursor = _cursor();
-            if (cursor != _value.begin()) {
-                auto it = UTF8::Prev(cursor, _value.begin());
-                _offCursor = std::distance(_value.begin(), it);
-            }
-        
-        } else if (ev.type == UI::Event::Type::KeyRight) {
-            auto cursor = _cursor();
-            if (cursor != _value.end()) {
-                auto it = UTF8::Next(cursor, _value.end());
-                _offCursor = std::distance(_value.begin(), it);
-            }
-        
-        } else {
-//            if (!iscntrl((int)ev.type)) {
-            _value.insert(_cursor(), (int)ev.type);
-            _offCursor++;
         }
         
-        return {};
+        return ev;
     }
     
     const std::string& value() const {
@@ -123,12 +128,12 @@ public:
     Options& options() { return _opts; }
     const Options& options() const { return _opts; }
     
-    bool active() const { return _active; }
-    void active(bool x) {
-        _active = x;
+    bool focus() const { return _focus; }
+    void focus(bool x) {
+        _focus = x;
         if (_cursorState) _cursorState.restore();
-//        if (_active && !_cursorState) _cursorState.set(true);
-//        else if (!_active && _cursorState) _cursorVis.restore();
+//        if (_focus && !_cursorState) _cursorState.set(true);
+//        else if (!_focus && _cursorState) _cursorVis.restore();
     }
     
 private:
@@ -140,7 +145,7 @@ private:
     std::string _value;
     size_t _offLeft = 0;
     size_t _offCursor = 0;
-    bool _active = false;
+    bool _focus = false;
     CursorState _cursorState;
 //    CursorVisibility _cursorVis;
 };

@@ -1148,10 +1148,10 @@ static void _EventLoop() {
         try {
             // If we have a modal panel, let it handle the event
             if (_MessagePanel) {
-                ev = _MessagePanel->handleEvent(ev);
+                ev = _MessagePanel->handleEvent(_MessagePanel->convert(ev));
             
             } else if (_RegisterPanel) {
-                ev = _RegisterPanel->handleEvent(ev);
+                ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
             }
             
             std::optional<Git::Op> gitOp;
