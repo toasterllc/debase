@@ -21,7 +21,7 @@ struct SnapshotButtonOptions {
 
 class _SnapshotButton : public _Button {
 public:
-    _SnapshotButton(const SnapshotButtonOptions& opts) : _opts(opts) {
+    _SnapshotButton(const ButtonOptions& opts, const SnapshotButtonOptions& snapOpts) : _Button(opts), _opts(snapOpts) {
         Git::Commit commit = State::Convert(_opts.repo, _opts.snapshot.head);
         Git::Signature sig = commit.author();
         

@@ -5,12 +5,30 @@
 #include "Color.h"
 #include "Attr.h"
 #include "MessagePanel.h"
+#include "TextField.h"
+#include "MakeShared.h"
 
 namespace UI {
 
 class _RegisterPanel : public _MessagePanel {
 public:
-    _RegisterPanel(const MessagePanelOptions& opts) : _MessagePanel(_AdjustedOptions(opts)) {}
+    _RegisterPanel(const MessagePanelOptions& opts) : _MessagePanel(_AdjustedOptions(opts)) {
+        Size s = size();
+        int offY = s.y-_FieldsExtraHeight-1;
+        int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
+        
+        _email = MakeShared<UI::TextField>(UI::TextFieldOptions{
+            .colors = opts.colors,
+            .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
+        });
+        offY += 2;
+        
+        _code = MakeShared<UI::TextField>(UI::TextFieldOptions{
+            .colors = opts.colors,
+            .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
+        });
+        offY += 2;
+    }
     
     void draw() override {
         const MessagePanelOptions& opts = options();
@@ -22,9 +40,8 @@ public:
             UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
-        {
-            drawText({_FieldValueInsetX, offY}, "%s", _email.c_str());
-        }
+        
+        _email->draw(shared_from_this());
         offY += 2;
         
         // Draw code field
@@ -32,9 +49,8 @@ public:
             UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
-        {
-            drawText({_FieldValueInsetX, offY}, "%s", _code.c_str());
-        }
+        
+        _code->draw(shared_from_this());
         offY += 2;
         
 //        char buf[128];
@@ -43,21 +59,34 @@ public:
     }
     
     virtual UI::Event handleEvent(const UI::Event& ev) override {
-        if (ev.type == UI::Event::Type::Mouse) {
-            
-        } else if (iscntrl((int)ev.type)) {
-            
-        } else if (ev.type == UI::Event::Type::WindowResize) {
-            
-        } else {
-            if (_active) {
-                _activePos = _active->insert(_activePos, (int)ev.type);
-                _activePos++;
-            }
-            
-            drawNeeded(true);
-//            if (_active)
-        }
+        // Let caller handle escape key
+        if (ev.type == UI::Event::Type::WindowResize) return ev;
+        // Let caller handle Ctrl-C/D
+        if (ev.type == UI::Event::Type::KeyCtrlC) return ev;
+        if (ev.type == UI::Event::Type::KeyCtrlD) return ev;
+        
+        UI::Event e = ev;
+        if (e) e = _email->handleEvent(ev);
+        if (e) e = _code->handleEvent(ev);
+        return {};
+        
+        
+//        if (ev.type == UI::Event::Type::Mouse) {
+//            
+//        } else if (iscntrl((int)ev.type)) {
+//            
+//        } else if (ev.type == UI::Event::Type::WindowResize) {
+//            
+//        } else {
+////            if (_active) {
+////                _activePos = _active->insert(_activePos, (int)ev.type);
+////                _activePos++;
+////            }
+//            
+//            drawNeeded(true);
+////            if (_active)
+//        }
+        
 //        switch (ev.type) {
 //        case UI::Event::Type::Mouse: {
 //            if (ev.mouseUp() && !HitTest(frame(), {ev.mouse.x, ev.mouse.y})) {
@@ -76,13 +105,14 @@ public:
 //            return true;
 //        }
 //        
-        return {};
+//        return {};
     }
     
 private:
     static constexpr int _FieldsExtraHeight = 5;
-    static constexpr int _FieldLabelInsetX = _MessageInsetX;
-    static constexpr int _FieldValueInsetX = _FieldLabelInsetX+8;
+    static constexpr int _FieldLabelInsetX  = _MessageInsetX;
+    static constexpr int _FieldLabelWidth   = 10;
+    static constexpr int _FieldValueInsetX  = _FieldLabelInsetX+_FieldLabelWidth;
     
     static MessagePanelOptions _AdjustedOptions(const MessagePanelOptions& x) {
         MessagePanelOptions opts = x;
@@ -90,11 +120,8 @@ private:
         return opts;
     }
     
-    std::string _email;
-    std::string _code;
-    
-    std::string* _active = &_email;
-    std::string::iterator _activePos = _email.begin();
+    UI::TextField _email;
+    UI::TextField _code;
 };
 
 using RegisterPanel = std::shared_ptr<_RegisterPanel>;

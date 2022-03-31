@@ -355,6 +355,7 @@ static void _Reload() {
         const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
         
         _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+            .colors         = _Colors,
             .color          = _Colors.menu,
             .width          = registerPanelWidth,
             .messageInsetY  = 1,
@@ -650,15 +651,15 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
 
 static UI::Button _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled) {
     constexpr int ContextMenuWidth = 12;
-    UI::Button b = MakeShared<UI::Button>();
-    UI::ButtonOptions& opts = b->options();
-    opts.colors = _Colors;
-    opts.label = label;
-    opts.key = key;
-    opts.enabled = enabled;
-    opts.insetX = 0;
-    opts.frame.size.x = ContextMenuWidth;
-    opts.frame.size.y = 1;
+    UI::Button b = MakeShared<UI::Button>(UI::ButtonOptions{
+        .colors         = _Colors,
+        .label          = std::string(label),
+        .key            = std::string(key),
+        .enabled        = enabled,
+        .insetX         = 0,
+        .frame.size.x   = ContextMenuWidth,
+        .frame.size.y   = 1,
+    });
     return b;
 }
 
@@ -786,6 +787,12 @@ constexpr int _SnapshotMenuWidth = 26;
 
 static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
     bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
+    
+    UI::ButtonOptions buttonOpts = {
+        .enabled = true,
+        .colors = _Colors,
+    };
+    
     UI::SnapshotButtonOptions snapButtonOpts = {
         .repo           = repo,
         .snapshot       = snap,
@@ -793,9 +800,7 @@ static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const St
         .activeSnapshot = activeSnapshot,
     };
     
-    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(snapButtonOpts);
-    b->options().enabled = true;
-    b->options().colors = _Colors;
+    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(buttonOpts, snapButtonOpts);
     return b;
 }
 
@@ -1269,6 +1274,7 @@ static void _EventLoop() {
             errorMsg[0] = toupper(errorMsg[0]);
             
             _MessagePanel = MakeShared<UI::MessagePanel>(UI::MessagePanelOptions{
+                .colors  = _Colors,
                 .color   = _Colors.error,
                 .width   = errorPanelWidth,
                 .center  = true,

@@ -6,7 +6,7 @@
 namespace UI {
 
 struct ButtonOptions {
-    ColorPalette colors;
+    const ColorPalette& colors;
     std::string label;
     std::string key;
     bool enabled = false;
@@ -20,7 +20,7 @@ struct ButtonOptions {
 
 class _Button : public std::enable_shared_from_this<_Button> {
 public:
-    _Button() {}
+    _Button(const ButtonOptions& opts) : _opts(opts) {}
     
     bool hitTest(const UI::Point& p, UI::Size expand={0,0}) {
         return UI::HitTest(_opts.frame, p, expand);

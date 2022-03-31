@@ -66,6 +66,8 @@ struct Event {
     Type type = Type::None;
     MEVENT mouse = {};
     
+    operator bool() const { return type!=Type::None; }
+    
     bool mouseDown(MouseButtons buttons=MouseButtons::Left) const {
         if (type != Type::Mouse) return false;
         return mouse.bstate & _DownMaskForButtons(buttons);

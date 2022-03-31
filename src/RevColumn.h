@@ -10,7 +10,7 @@ namespace UI {
 
 struct RevColumnOptions {
     UI::Window win;
-    ColorPalette colors;
+    const ColorPalette& colors;
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
@@ -104,39 +104,39 @@ public:
             Rect snapshotsFrame = {_opts.offset+Size{(_opts.width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
-                UI::ButtonOptions& opts = button->options();
-                opts.colors = _opts.colors;
-                opts.label = "Undo";
-                opts.enabled = _opts.undoEnabled;
-                opts.center = true;
-                opts.drawBorder = true;
-                opts.insetX = 1;
-                opts.frame = undoFrame;
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
+                    .colors = _opts.colors,
+                    .label = "Undo",
+                    .enabled = _opts.undoEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = undoFrame,
+                }));
             }
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
-                UI::ButtonOptions& opts = button->options();
-                opts.colors = _opts.colors;
-                opts.label = "Redo";
-                opts.enabled = _opts.redoEnabled;
-                opts.center = true;
-                opts.drawBorder = true;
-                opts.insetX = 1;
-                opts.frame = redoFrame;
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
+                    .colors = _opts.colors,
+                    .label = "Redo",
+                    .enabled = _opts.redoEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = redoFrame,
+                }));
             }
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>());
-                UI::ButtonOptions& opts = button->options();
-                opts.colors = _opts.colors;
-                opts.label = "Snapshots…";
-                opts.enabled = _opts.snapshotsEnabled;
-                opts.center = true;
-                opts.drawBorder = true;
-                opts.insetX = 1;
-                opts.frame = snapshotsFrame;
+                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
+                    .colors = _opts.colors,
+                    .label = "Snapshots…",
+                    .enabled = _opts.snapshotsEnabled,
+                    .center = true,
+                    .drawBorder = true,
+                    .insetX = 1,
+                    .frame = snapshotsFrame,
+                }));
             }
         }
     }

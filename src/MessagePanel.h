@@ -7,6 +7,7 @@
 namespace UI {
 
 struct MessagePanelOptions {
+    const ColorPalette& colors;
     Color color;
     int width = 0;
     int messageInsetY = 0;
