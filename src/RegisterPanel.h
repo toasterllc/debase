@@ -17,15 +17,21 @@ public:
         int offY = s.y-_FieldsExtraHeight-1;
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         
-        _email = MakeShared<UI::TextField>(UI::TextFieldOptions{
+        _email = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
+            .wantsActive = [&] (TextField& field) {
+                _fieldWantsActive(field);
+            },
         });
         offY += 2;
         
-        _code = MakeShared<UI::TextField>(UI::TextFieldOptions{
+        _code = TextField::Make({
             .colors = opts.colors,
             .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
+            .wantsActive = [&] (TextField& field) {
+                _fieldWantsActive(field);
+            },
         });
         offY += 2;
         
@@ -39,7 +45,7 @@ public:
         
         // Draw email field
         {
-            UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
+            Attr attr(shared_from_this(), opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
         
@@ -48,7 +54,7 @@ public:
         
         // Draw code field
         {
-            UI::Attr attr(shared_from_this(), opts.color|A_BOLD);
+            Attr attr(shared_from_this(), opts.color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
         
@@ -60,25 +66,24 @@ public:
 //        mvwgetnstr(*this, offY-2, _MessageInsetX, buf, sizeof(buf));
     }
     
-    virtual UI::Event handleEvent(const UI::Event& ev) override {
-        // Let caller handle escape key
-        if (ev.type == UI::Event::Type::WindowResize) return ev;
+    virtual Event handleEvent(const Event& ev) override {
+        // Let caller handle window resize
+        if (ev.type == Event::Type::WindowResize) return ev;
         // Let caller handle Ctrl-C/D
-        if (ev.type == UI::Event::Type::KeyCtrlC) return ev;
-        if (ev.type == UI::Event::Type::KeyCtrlD) return ev;
+        if (ev.type == Event::Type::KeyCtrlC) return ev;
+        if (ev.type == Event::Type::KeyCtrlD) return ev;
         
-        UI::Event e = ev;
-        if (e) e = _email->handleEvent(shared_from_this(), ev);
-        if (e) e = _code->handleEvent(shared_from_this(), ev);
+        if (_email->active())     _email->handleEvent(ev);
+        else if (_code->active()) _code->handleEvent(ev);
         drawNeeded(true);
         return {};
         
         
-//        if (ev.type == UI::Event::Type::Mouse) {
+//        if (ev.type == Event::Type::Mouse) {
 //            
 //        } else if (iscntrl((int)ev.type)) {
 //            
-//        } else if (ev.type == UI::Event::Type::WindowResize) {
+//        } else if (ev.type == Event::Type::WindowResize) {
 //            
 //        } else {
 ////            if (_active) {
@@ -91,7 +96,7 @@ public:
 //        }
         
 //        switch (ev.type) {
-//        case UI::Event::Type::Mouse: {
+//        case Event::Type::Mouse: {
 //            if (ev.mouseUp() && !HitTest(frame(), {ev.mouse.x, ev.mouse.y})) {
 //                // Dismiss when clicking outside of the panel
 //                return false;
@@ -99,7 +104,7 @@ public:
 //            return true;
 //        }
 //        
-//        case UI::Event::Type::KeyEscape: {
+//        case Event::Type::KeyEscape: {
 //            // Dismiss when clicking outside of the panel
 //            return false;
 //        }
@@ -123,8 +128,14 @@ private:
         return opts;
     }
     
-    UI::TextField _email;
-    UI::TextField _code;
+    void _fieldWantsActive(TextField& field) {
+        _email->active(false);
+        _code->active(false);
+        field.active(true);
+    }
+    
+    TextFieldPtr _email;
+    TextFieldPtr _code;
 };
 
 using RegisterPanel = std::shared_ptr<_RegisterPanel>;

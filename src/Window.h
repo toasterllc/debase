@@ -66,7 +66,10 @@ struct Event {
     };
     
     Type type = Type::None;
-    MEVENT mouse = {};
+    struct {
+        Point point;
+        mmask_t bstate = 0;
+    } mouse;
     
     operator bool() const { return type!=Type::None; }
     
@@ -208,6 +211,12 @@ public:
         return HitTest(frame(), p);
     }
     
+    Point convert(const Point& p) {
+        Point r = p;
+        r -= frame().point;
+        return r;
+    }
+    
     Event nextEvent() {
         // Wait for another mouse event
         for (;;) {
@@ -222,7 +231,10 @@ public:
                 if (ir != OK) continue;
                 return Event{
                     .type = Event::Type::Mouse,
-                    .mouse = mouse,
+                    .mouse = {
+                        .point = {mouse.x, mouse.y},
+                        .bstate = mouse.bstate,
+                    },
                 };
             }
             

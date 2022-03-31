@@ -6,21 +6,26 @@
 
 namespace UI {
 
-struct TextFieldOptions {
-    const ColorPalette& colors;
-//    bool enabled = false;
-//    bool center = false;
-//    bool drawBorder = false;
-//    int insetX = 0;
-//    bool highlight = false;
-//    bool mouseActive = false;
-    Rect frame;
-//    bool active = false;
-};
-
-class _TextField : public std::enable_shared_from_this<_TextField> {
+class TextField {
 public:
-    _TextField(const TextFieldOptions& opts) : _opts(opts) {}
+    struct Options {
+        const ColorPalette& colors;
+    //    bool enabled = false;
+    //    bool center = false;
+    //    bool drawBorder = false;
+    //    int insetX = 0;
+    //    bool highlight = false;
+    //    bool mouseActive = false;
+        Rect frame;
+        std::function<void(TextField&)> wantsActive;
+    //    bool active = false;
+    };
+    
+    static auto Make(const Options& opts) {
+        return std::make_shared<UI::TextField>(opts);
+    }
+    
+    TextField(const Options& opts) : _opts(opts) {}
     
     bool hitTest(const UI::Point& p, UI::Size expand={0,0}) {
         return UI::HitTest(_opts.frame, p, expand);
@@ -63,9 +68,11 @@ public:
 //        win->drawRect(_opts.frame);
     }
     
-    UI::Event handleEvent(Window win, const UI::Event& ev) {
+    UI::Event handleEvent(const UI::Event& ev) {
         if (ev.type == UI::Event::Type::Mouse) {
-            
+            if (ev.mouseDown() && HitTest(_opts.frame, ev.mouse.point)) {
+                _opts.wantsActive(*this);
+            }
         
         } else if (ev.type == UI::Event::Type::WindowResize) {
             
@@ -102,9 +109,8 @@ public:
         
         } else {
 //            if (!iscntrl((int)ev.type)) {
-                _value.insert(_cursor(), (int)ev.type);
-                _offCursor++;
-//            }
+            _value.insert(_cursor(), (int)ev.type);
+            _offCursor++;
         }
         
         return {};
@@ -114,8 +120,8 @@ public:
         return _value;
     }
     
-    TextFieldOptions& options() { return _opts; }
-    const TextFieldOptions& options() const { return _opts; }
+    Options& options() { return _opts; }
+    const Options& options() const { return _opts; }
     
     bool active() const { return _active; }
     void active(bool x) {
@@ -130,7 +136,7 @@ private:
     std::string::iterator _cursor() { return _value.begin()+_offCursor; }
     
     static constexpr int KeySpacing = 2;
-    TextFieldOptions _opts;
+    Options _opts;
     std::string _value;
     size_t _offLeft = 0;
     size_t _offCursor = 0;
@@ -139,6 +145,6 @@ private:
 //    CursorVisibility _cursorVis;
 };
 
-using TextField = std::shared_ptr<_TextField>;
+using TextFieldPtr = std::shared_ptr<TextField>;
 
 } // namespace UI

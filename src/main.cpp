@@ -408,10 +408,7 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
 // Handles clicking/dragging a set of CommitPanels
 static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-    const UI::Size delta = {
-        mouseDownPanelFrame.point.x-mouseDownEvent.mouse.x,
-        mouseDownPanelFrame.point.y-mouseDownEvent.mouse.y,
-    };
+    const UI::Size delta = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
     const UI::Rect rootWinBounds = _RootWindow->bounds();
     const auto doubleClickStatePrev = _DoubleClickState;
@@ -440,9 +437,10 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
         assert(!_Selection.commits.empty());
         UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
         
-        const UI::Point p = {ev.mouse.x, ev.mouse.y};
-        const int w = std::abs(mouseDownEvent.mouse.x - p.x);
-        const int h = std::abs(mouseDownEvent.mouse.y - p.y);
+        const UI::Point p = ev.mouse.point;
+        const UI::Size delta = mouseDownEvent.mouse.point-p;
+        const int w = std::abs(delta.x);
+        const int h = std::abs(delta.y);
         // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
         const bool allow = UI::HitTest(rootWinBounds, p, {-3,-3});
         mouseDragged |= w>1 || h>1;
@@ -594,10 +592,10 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
     UI::Event ev = mouseDownEvent;
     
     for (;;) {
-        const int x = std::min(mouseDownEvent.mouse.x, ev.mouse.x);
-        const int y = std::min(mouseDownEvent.mouse.y, ev.mouse.y);
-        const int w = std::abs(mouseDownEvent.mouse.x - ev.mouse.x);
-        const int h = std::abs(mouseDownEvent.mouse.y - ev.mouse.y);
+        const int x = std::min(mouseDownEvent.mouse.point.x, ev.mouse.point.x);
+        const int y = std::min(mouseDownEvent.mouse.point.y, ev.mouse.point.y);
+        const int w = std::abs(mouseDownEvent.mouse.point.x - ev.mouse.point.x);
+        const int h = std::abs(mouseDownEvent.mouse.point.y - ev.mouse.point.y);
         const bool dragStart = w>1 || h>1;
         
         // Mouse-down outside of a commit:
@@ -701,7 +699,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     _ContextMenu = MakeShared<UI::Menu>(UI::MenuOptions{
         .colors = _Colors,
         .parentWindow = _RootWindow,
-        .position = {mouseDownEvent.mouse.x, mouseDownEvent.mouse.y},
+        .position = mouseDownEvent.mouse.point,
         .buttons = buttons
     });
     
@@ -710,7 +708,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     bool abort = false;
     for (;;) {
         if (ev.type == UI::Event::Type::Mouse) {
-            menuButton = _ContextMenu->updateMouse({ev.mouse.x, ev.mouse.y});
+            menuButton = _ContextMenu->updateMouse(ev.mouse.point);
         } else {
             menuButton = nullptr;
         }
@@ -846,7 +844,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         abort = (ev.type != UI::Event::Type::Mouse);
         
         if (ev.type == UI::Event::Type::Mouse) {
-            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->updateMouse({ev.mouse.x, ev.mouse.y}));
+            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
         } else {
             menuButton = nullptr;
         }
@@ -894,7 +892,7 @@ static void _TrackMouseInsideButton(const UI::Event& mouseDownEvent, UI::RevColu
     
     for (;;) {
         if (ev.type == UI::Event::Type::Mouse) {
-            hit = column->updateMouse({ev.mouse.x, ev.mouse.y});
+            hit = column->updateMouse(ev.mouse.point);
         } else {
             hit = {};
         }
@@ -1167,7 +1165,7 @@ static void _EventLoop() {
                     break;
                 }
                 
-                const _HitTestResult hitTest = _HitTest({ev.mouse.x, ev.mouse.y});
+                const _HitTestResult hitTest = _HitTest(ev.mouse.point);
                 if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
                     const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
                     if (hitTest && !shift) {

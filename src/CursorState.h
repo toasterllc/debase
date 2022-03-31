@@ -121,9 +121,9 @@ private:
     }
     
     static void _Remove(_Id id) {
-        for (auto it=_States.rbegin(); it!=_States.rend(); it++) {
+        for (auto it=_States.begin(); it!=_States.end(); it++) {
             if ((*it).id == id) {
-                _States.erase(std::next(it).base());
+                _States.erase(it);
                 _Update();
                 return;
             }
