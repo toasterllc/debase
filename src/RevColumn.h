@@ -1,7 +1,7 @@
 #pragma once
 #include "Git.h"
 #include "Panel.h"
-#include "CommitPanel.h"
+#include "CommitPanelPtr.h"
 #include "MakeShared.h"
 #include "Color.h"
 #include "UTF8.h"
@@ -29,7 +29,7 @@ enum class RevColumnButton : int {
 };
 
 struct RevColumnHitTestResult {
-    CommitPanel panel;
+    CommitPanelPtr panel;
     RevColumnButton button = RevColumnButton::None;
     bool buttonEnabled = false;
     
@@ -77,7 +77,7 @@ public:
             while (commit) {
                 if (!skip) {
                     Point p = _opts.offset + Size{0,offY};
-                    UI::CommitPanel panel = MakeShared<UI::CommitPanel>(_opts.colors, false, _opts.width, commit);
+                    UI::CommitPanelPtr panel = MakeShared<UI::CommitPanelPtr>(_opts.colors, false, _opts.width, commit);
                     UI::Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
                     if (Intersection(_opts.containerBounds, frame) != frame) break;
@@ -153,7 +153,7 @@ public:
             win.drawText(p, "%s", immutableText);
         }
         
-        for (UI::CommitPanel p : _panels) {
+        for (UI::CommitPanelPtr p : _panels) {
             p->drawIfNeeded();
         }
         
@@ -167,7 +167,7 @@ public:
             button->highlight = false;
         }
         
-        for (UI::CommitPanel panel : _panels) {
+        for (UI::CommitPanelPtr panel : _panels) {
             if (panel->hitTest(p)) return RevColumnHitTestResult{ .panel = panel };
         }
         

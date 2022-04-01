@@ -17,7 +17,7 @@
 #include "Window.h"
 #include "Panel.h"
 #include "xterm-256color.h"
-#include "CommitPanel.h"
+#include "CommitPanelPtr.h"
 #include "BorderedPanel.h"
 #include "Menu.h"
 #include "RevColumn.h"
@@ -57,7 +57,7 @@ static UI::WindowPtr _RootWindow;
 static std::vector<UI::RevColumnPtr> _Columns;
 
 static struct {
-    UI::CommitPanel titlePanel;
+    UI::CommitPanelPtr titlePanel;
     std::vector<UI::BorderedPanel> shadowPanels;
     std::optional<UI::Rect> insertionMarker;
     bool copy = false;
@@ -88,13 +88,13 @@ enum class _SelectState {
     Similar,
 };
 
-static _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanel panel) {
+static _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
     bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
     if (!similar) return _SelectState::False;
     return (col->rev()==_Selection.rev ? _SelectState::True : _SelectState::Similar);
 }
 
-static bool _Selected(UI::RevColumnPtr col, UI::CommitPanel panel) {
+static bool _Selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
     return _SelectStateGet(col, panel) == _SelectState::True;
 }
 
@@ -114,7 +114,7 @@ static void _Draw() {
         bool dragging = (bool)_Drag.titlePanel;
         bool copying = _Drag.copy;
         for (UI::RevColumnPtr col : _Columns) {
-            for (UI::CommitPanel panel : col->panels()) {
+            for (UI::CommitPanelPtr panel : col->panels()) {
                 bool visible = false;
                 std::optional<UI::Color> borderColor;
                 _SelectState selectState = _SelectStateGet(col, panel);
@@ -271,7 +271,7 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
         const int endY = lastFrame.point.y + lastFrame.size.y;
         
         for (auto it=panels.begin();; it++) {
-            UI::CommitPanel panel = (it!=panels.end() ? *it : nullptr);
+            UI::CommitPanelPtr panel = (it!=panels.end() ? *it : nullptr);
             const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
             const int y = (panel ? panel->frame().point.y : endY);
             int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
@@ -293,7 +293,7 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     UI::CommitPanelVec& icolPanels = icol->panels();
     for (;;) {
         if (iiter == icolPanels.begin()) break;
-        UI::CommitPanel prevPanel = *std::prev(iiter);
+        UI::CommitPanelPtr prevPanel = *std::prev(iiter);
         if (!_Selected(icol, prevPanel)) break;
         iiter--;
     }
@@ -309,8 +309,8 @@ static UI::RevColumnPtr _ColumnForRev(Git::Rev rev) {
     abort();
 }
 
-static UI::CommitPanel _PanelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
-    for (UI::CommitPanel panel : col->panels()) {
+static UI::CommitPanelPtr _PanelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
+    for (UI::CommitPanelPtr panel : col->panels()) {
         if (panel->commit() == commit) return panel;
     }
     // Programmer error if it doesn't exist
@@ -397,7 +397,7 @@ static void _UndoRedo(UI::RevColumnPtr col, bool undo) {
 
 // _TrackMouseInsideCommitPanel
 // Handles clicking/dragging a set of CommitPanels
-static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
     const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
     const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
@@ -441,8 +441,8 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
         
         if (!_Drag.titlePanel && mouseDragged && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
-            UI::CommitPanel titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanel>(_Colors, true, titlePanel->frame().size.x, titleCommit);
+            UI::CommitPanelPtr titlePanel = _PanelForCommit(selectionColumn, titleCommit);
+            _Drag.titlePanel = MakeShared<UI::CommitPanelPtr>(_Colors, true, titlePanel->frame().size.x, titleCommit);
             
             // Create shadow panels
             UI::Size shadowSize = _Drag.titlePanel->frame().size;
@@ -601,7 +601,7 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
         {
             struct _Selection selectionNew;
             for (UI::RevColumnPtr col : _Columns) {
-                for (UI::CommitPanel panel : col->panels()) {
+                for (UI::CommitPanelPtr panel : col->panels()) {
                     if (!Empty(Intersection(selectionRect, panel->frame()))) {
                         selectionNew.rev = col->rev();
                         selectionNew.commits.insert(panel->commit());
@@ -656,7 +656,7 @@ static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_
     return b;
 }
 
-static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
     auto mouseDownTime = std::chrono::steady_clock::now();
     UI::Event ev = mouseDownEvent;
     
