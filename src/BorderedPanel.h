@@ -7,8 +7,8 @@ namespace UI {
 
 class BorderedPanel : public Panel {
 public:
-    BorderedPanel(const Size& size) {
-        setSize(size);
+    BorderedPanel(const Size& s) {
+        size(s);
     }
     
     void setBorderColor(std::optional<Color> x) {

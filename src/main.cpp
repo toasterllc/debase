@@ -146,15 +146,11 @@ static void _Draw() {
         }
         
         if (_ContextMenu) {
-            _ContextMenu->containerSize = _RootWindow->bounds().size;
             _ContextMenu->orderFront();
-            _ContextMenu->layout();
         }
         
         if (_SnapshotsMenu) {
-            _SnapshotsMenu->containerSize = _RootWindow->bounds().size;
             _SnapshotsMenu->orderFront();
-            _SnapshotsMenu->layout();
         }
         
         if (_MessagePanel) {
@@ -166,12 +162,14 @@ static void _Draw() {
             };
             _MessagePanel->setPosition(p);
             _MessagePanel->orderFront();
+            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
             _MessagePanel->layout();
         }
         
         if (_RegisterPanel) {
             constexpr int RegisterPanelWidth = 50;
             _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+            _RegisterPanel->size(_RegisterPanel->sizeIntrinsic());
             
             UI::Size ps = _RegisterPanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
@@ -413,6 +411,14 @@ static void _TrackSnapshotsMenu(UI::RevColumn& col) {
 //    _SnapshotsMenu->dismissAction = [&] (UI::Menu& menu) {
 //        _SnapshotsMenu = nullptr;
 //    };
+//
+//    NEW CODE:
+//    _ContextMenu->containerSize = _RootWindow->bounds().size;
+//    _ContextMenu->buttons = buttons;
+//    _ContextMenu->size(_ContextMenu->sizeIntrinsic());
+//    _ContextMenu->layout();
+//    _ContextMenu->setPosition(mouseDownEvent.mouse.point);
+//
 //    _SnapshotsMenu->setPosition({px, 2});
 //    
 //    UI::SnapshotButtonPtr menuButton;
@@ -815,7 +821,10 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     _ContextMenu = MakeShared<UI::MenuPtr>(_Colors);
     Defer(_ContextMenu = nullptr);
     
+    _ContextMenu->containerSize = _RootWindow->bounds().size;
     _ContextMenu->buttons = buttons;
+    _ContextMenu->size(_ContextMenu->sizeIntrinsic());
+    _ContextMenu->layout();
     _ContextMenu->setPosition(mouseDownEvent.mouse.point);
     
     _Draw();
@@ -1153,14 +1162,14 @@ static void _EventLoop() {
     
     
     
-    {
-        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-        _RegisterPanel->color           = _Colors.menu;
-        _RegisterPanel->messageInsetY   = 1;
-        _RegisterPanel->center          = false;
-        _RegisterPanel->title           = "Register";
-        _RegisterPanel->message         = "Please register debase";
-    }
+//    {
+//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+//        _RegisterPanel->color           = _Colors.menu;
+//        _RegisterPanel->messageInsetY   = 1;
+//        _RegisterPanel->center          = false;
+//        _RegisterPanel->title           = "Register";
+//        _RegisterPanel->message         = "Please register debase";
+//    }
     
     
     

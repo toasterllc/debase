@@ -24,7 +24,7 @@ public:
         _author = sig.name();
         _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, _commit.message());
         
-        setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
+        size({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
     }
     
     void setBorderColor(std::optional<Color> x) {

@@ -11,7 +11,7 @@ public:
         
         // Give ourself an initial size (otherwise setPosition
         // doesn't work until the size is set)
-        setSize({1,1});
+        size({1,1});
     }
     
     ~Panel() {

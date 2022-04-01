@@ -16,7 +16,7 @@ public:
         _offUpdate();
         
         if (_focus) {
-            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
+//            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
             
             Point p = win.frame().point + frame.point;
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());

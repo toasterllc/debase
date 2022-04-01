@@ -179,10 +179,6 @@ public:
         _win = nullptr;
     }
     
-    void setSize(const Size& s) {
-        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
-    }
-    
     void drawBorder() const {
         ::box(*this, 0, 0);
     }
@@ -219,9 +215,20 @@ public:
         ::werase(*this);
     }
     
-    Size size() const {
-        return { getmaxx(_win), getmaxy(_win) };
+    Size size() const { return { getmaxx(_win), getmaxy(_win) }; }
+    void size(const Size& s) {
+        // Short-circuit if the size hasn't changed
+        // We need to compare against the last size we set (_sizePrev) *and* our current size(),
+        // because ncurses can change our size underneath us, due to terminal resizing clipping
+        // the window.
+        if (s==_sizePrev && s==size()) return;
+        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
+        _sizePrev = s;
+        layoutNeeded = true;
+        drawNeeded = true;
     }
+    
+    virtual Size sizeIntrinsic() { return size(); }
     
     Rect bounds() const {
         return Rect{ .size = size() };
@@ -295,11 +302,15 @@ public:
         }
     }
     
-    virtual void layout() {}
+    bool layoutNeeded = true;
+    virtual void layout() {
+        assert(layoutNeeded); // For debugging unnecessary layout
+        layoutNeeded = false;
+    }
     
     bool drawNeeded = true;
     virtual void draw() {
-        assert(drawNeeded);
+        assert(drawNeeded); // For debugging unnecessary drawing
         drawNeeded = false;
     }
     
@@ -309,6 +320,7 @@ public:
     
 private:
     WINDOW* _win = nullptr;
+    Size _sizePrev;
 };
 
 using WindowPtr = std::shared_ptr<Window>;

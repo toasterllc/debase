@@ -15,32 +15,41 @@ public:
     
     Menu(const ColorPalette& colors) : colors(colors) {}
     
-    void layout() override {
-        // Short-circuit if layout isn't needed
-        if (!_layoutNeeded) return;
-        _layoutNeeded = false;
+    Size sizeIntrinsic() override {
+        // First button sets the width
+        const int width = (!buttons.empty() ? buttons[0]->frame.size.x : 0) + Padding().x;
         
-        // Find the longest button to set our width
-        int width = 0;
+        // Calculate the height by iterating over every button until no more fit in `sizeMax`
+        const Size sizeMax = containerSize-frame().point;
+        int height = Padding().y;
+        int rem = sizeMax.y;
+        bool first = true;
         for (ButtonPtr button : buttons) {
-            width = std::max(width, button->frame.size.x);
+            const int add = (!first ? _SeparatorHeight : 0) + button->frame.size.y;
+            // Bail if the button won't fit in the available height
+//            if (allowTruncate && add>rem) break;
+            height += add;
+            rem -= add;
+            first = false;
         }
         
-        width += Padding().x;
+        return {width, height};
+    }
+    
+    void layout() override {
+        // Short-circuit if layout isn't needed
+        if (!layoutNeeded) return;
+        Panel::layout();
         
-        const Size sizeMax = containerSize-frame().point;
+        const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
-        int height = Padding().y;
-        size_t idx = 0;
+        
+        buttonsVisible.clear();
         for (ButtonPtr button : buttons) {
-            int newHeight = height;
             // Add space for separator
             // If we're not the first button, add space for the separator at the top of the button
-            if (idx) {
-                y += _SeparatorHeight;
-                newHeight += _SeparatorHeight;
-            }
+            if (!buttonsVisible.empty()) y += _SeparatorHeight;
             
             // Set button position (after separator)
             Rect& f = button->frame;
@@ -48,21 +57,15 @@ public:
             
             // Add space for button
             y += f.size.y;
-            newHeight += f.size.y;
             
             // Set the expanded hit test size so that the menu doesn't have any dead zones
-            if (!idx) button->hitTestExpand.t = 1;
+            if (buttonsVisible.empty()) button->hitTestExpand.t = 1;
             button->hitTestExpand.b = 1;
             
-            // Bail if the button won't fit in the available height
-            if (allowTruncate && newHeight>sizeMax.y) break;
-            
-            height = newHeight;
-            idx++;
+            // Bail if the bottom of the bottom extends beyond our max y
+//            if (allowTruncate && y>ymax) break;
+            buttonsVisible.push_back(button);
         }
-        _buttonCount = idx;
-        
-        setSize({width, height});
     }
     
     void draw() override {
@@ -75,12 +78,11 @@ public:
         
         const int width = bounds().size.x;
         
-        for (size_t i=0; i<_buttonCount; i++) {
-            ButtonPtr button = buttons[i];
+        for (ButtonPtr button : buttonsVisible) {
             button->draw(*this);
             
             // Draw separator
-            if (i != _buttonCount-1) {
+            if (button != buttonsVisible.back()) {
                 Window::Attr color = attr(colors.menu);
                 drawLineHoriz({0, button->frame.ymax()+1}, width);
             }
@@ -111,7 +113,7 @@ public:
             ev = nextEvent();
             
             // See if any of the buttons want the event
-            for (ButtonPtr button : buttons) {
+            for (ButtonPtr button : buttonsVisible) {
                 Event e = button->handleEvent(*this, ev, sensitive);
                 if (!e) {
                     if (dismissAction) dismissAction(*this);
@@ -122,7 +124,7 @@ public:
             if (ev.type == Event::Type::Mouse) {
                 // Update the mouseActive state for all of our buttons
                 bool inside = HitTest(bounds(), ev.mouse.point);
-                for (ButtonPtr button : buttons) {
+                for (ButtonPtr button : buttonsVisible) {
                     button->mouseActive(inside);
                 }
                 
@@ -158,8 +160,9 @@ public:
     const ColorPalette& colors;
     Size containerSize;
     std::string title;
-    std::vector<ButtonPtr> buttons;
     bool allowTruncate = false;
+    std::vector<ButtonPtr> buttons;
+    std::vector<ButtonPtr> buttonsVisible;
     std::function<void(Menu&)> dismissAction;
     
 private:
@@ -172,13 +175,12 @@ private:
     static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
     bool _drawNeeded() const {
-        for (ButtonPtr button : buttons) {
+        for (ButtonPtr button : buttonsVisible) {
             if (button->drawNeeded) return true;
         }
         return false;
     }
     
-    bool _layoutNeeded = true;
     size_t _buttonCount = 0;
 };
 

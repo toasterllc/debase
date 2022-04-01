@@ -9,7 +9,19 @@ class MessagePanel : public Panel {
 public:
     MessagePanel(const ColorPalette& colors) : colors(colors) {}
     
-    Size intrinsicSize() {
+//    bool layoutNeeded() {
+//        if (_layoutNeeded) return true;
+//        
+//        if (width <= 0) return false;
+//        Size sizeCur = size();
+//        Size sizeNew = _calcSize();
+//        if (sizeNew==_sizePrev && sizeNew==sizeCur) return false;
+//        
+//        _layoutNeeded = true;
+//        return true;
+//    }
+    
+    Size sizeIntrinsic() override {
         std::vector<std::string> messageLines = _createMessageLines();
         return {
             .x = width,
@@ -17,27 +29,11 @@ public:
         };
     }
     
-    bool layoutNeeded() {
-        if (_layoutNeeded) return true;
-        
-        if (width <= 0) return false;
-        Size sizeCur = size();
-        Size sizeNew = _calcSize();
-        if (sizeNew==_sizePrev && sizeNew==sizeCur) return false;
-        
-        _layoutNeeded = true;
-        return true;
-    }
-    
     void layout() override {
-        if (!layoutNeeded()) return;
+        if (!layoutNeeded) return;
+        Panel::layout();
         
         _messageLines = _createMessageLines();
-        Size sizeNew = _calcSize();
-        setSize(sizeNew);
-        _sizePrev = sizeNew;
-        _layoutNeeded = false;
-        drawNeeded = true;
     }
     
     void draw() override {
@@ -99,20 +95,20 @@ protected:
     static constexpr int _MessageInsetY = 2;
     
 private:
-    Size _calcSize() {
-        std::vector<std::string> messageLines = _createMessageLines();
-        return {
-            .x = width,
-            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
-        };
-    }
+//    Size _calcSize() {
+//        std::vector<std::string> messageLines = _createMessageLines();
+//        return {
+//            .x = width,
+//            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
+//        };
+//    }
     
     std::vector<std::string> _createMessageLines() const {
         return LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);;
     }
     
-    bool _layoutNeeded = false;
-    Size _sizePrev;
+//    bool _layoutNeeded = false;
+//    Size _sizePrev;
     std::vector<std::string> _messageLines;
 };
 
