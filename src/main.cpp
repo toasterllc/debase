@@ -1438,6 +1438,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: get reg panel working again
+    
     #warning TODO: get snapshots menu working again
     
     #warning TODO: verify that ctrl-c still works with RegPanel visible

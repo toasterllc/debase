@@ -29,26 +29,22 @@ public:
     }
     
     void layout() override {
-        if (!layoutNeeded()) {
-            _email.layout(*this);
-            _code.layout(*this);
-            return;
-        }
+        if (!layoutNeeded()) return;
         MessagePanel::layout();
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         int offY = s.y-_FieldsExtraHeight-1;
         _email.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _email.layout(*this);
+        _email.layout();
         offY += 2;
         _code.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _code.layout(*this);
+        _code.layout();
         offY += 2;
     }
     
     void draw() override {
-//        drawNeeded = true;
+        drawNeeded = true;
         if (!drawNeeded) return;
         MessagePanel::draw();
         
