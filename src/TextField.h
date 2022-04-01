@@ -127,94 +127,56 @@ public:
         } else if (_focus) {
             if (ev.type == UI::Event::Type::KeyDelete) {
                 auto cursor = _cursor();
-                if (cursor != value.begin()) {
-//                    if (_cursorMax() == value.end()) {
-//                        auto left = _left();
-//                        if (left != value.begin()) {
-//                            left = UTF8::Prev(left, value.begin());
-//                            _offLeft = std::distance(value.begin(), left);
-//                        }
-//                    }
-                    
-                    
-                    
-//                    auto eraseBegin = UTF8::Prev(cursor, value.begin());
-//                    value.erase(eraseBegin, cursor);
-                    
-//                    _offUpdate();
-                    
-//                    _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
-//                    _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
-                    
-                    auto eraseBegin = UTF8::Prev(cursor, value.begin());
-                    size_t eraseSize = std::distance(eraseBegin, cursor);
-                    value.erase(eraseBegin, cursor);
-                    _offCursor -= eraseSize;
-                    
-                    _offUpdate();
-                }
+                if (cursor == value.begin()) return {};
+                
+                auto eraseBegin = UTF8::Prev(cursor, value.begin());
+                size_t eraseSize = std::distance(eraseBegin, cursor);
+                value.erase(eraseBegin, cursor);
+                _offCursor -= eraseSize;
+                _offUpdate();
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
-                if (cursor != value.end()) {
-//                    if (_cursorMax() == value.end()) {
-//                        auto left = _left();
-//                        if (left != value.begin()) {
-//                            left = UTF8::Prev(left, value.begin());
-//                            _offLeft = std::distance(value.begin(), left);
-//                        }
-//                    }
-                    
-//                    // If the cursor's at the display-end, move it left
-//                    auto cursor = _cursor();
-//                    if (cursor == _cursorMax()) {
-//                        cursor = UTF8::Prev(cursor, value.end());
-//                        _offCursor = std::distance(value.begin(), cursor);
-//                    }
-                    
-                    auto eraseEnd = UTF8::Next(cursor, value.end());
-                    value.erase(cursor, eraseEnd);
-                    
-                    _offUpdate();
-                    
-//                    auto cursor = _cursor();
-                }
+                if (cursor == value.end()) return {};
+                
+                auto eraseEnd = UTF8::Next(cursor, value.end());
+                value.erase(cursor, eraseEnd);
+                _offUpdate();
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyLeft) {
                 auto cursor = _cursor();
-                if (cursor != value.begin()) {
-                    // If the cursor's at the display-beginning, shift view left
-                    if (cursor == _cursorMin()) {
-                        auto left = _left();
-                        if (left != value.begin()) {
-                            left = UTF8::Prev(left, value.begin());
-                            _offLeft = std::distance(value.begin(), left);
-                        }
+                if (cursor == value.begin()) return {};
+                
+                // If the cursor's at the display-beginning, shift view left
+                if (cursor == _cursorMin()) {
+                    auto left = _left();
+                    if (left != value.begin()) {
+                        left = UTF8::Prev(left, value.begin());
+                        _offLeft = std::distance(value.begin(), left);
                     }
-                    
-                    auto it = UTF8::Prev(cursor, value.begin());
-                    _offCursor = std::distance(value.begin(), it);
                 }
+                
+                auto it = UTF8::Prev(cursor, value.begin());
+                _offCursor = std::distance(value.begin(), it);
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyRight) {
                 auto cursor = _cursor();
-                if (cursor != value.end()) {
-                    // If the cursor's at the display-end, shift view right
-                    if (cursor == _cursorMax()) {
-                        auto left = _left();
-                        if (left != value.end()) {
-                            left = UTF8::Next(left, value.end());
-                            _offLeft = std::distance(value.begin(), left);
-                        }
+                if (cursor == value.end()) return {};
+                
+                // If the cursor's at the display-end, shift view right
+                if (cursor == _cursorMax()) {
+                    auto left = _left();
+                    if (left != value.end()) {
+                        left = UTF8::Next(left, value.end());
+                        _offLeft = std::distance(value.begin(), left);
                     }
-                    
-                    auto it = UTF8::Next(cursor, value.end());
-                    _offCursor = std::distance(value.begin(), it);
                 }
-                return {};
+                
+                auto it = UTF8::Next(cursor, value.end());
+                _offCursor = std::distance(value.begin(), it);
             
             } else if (ev.type == UI::Event::Type::KeyTab) {
                 releaseFocus(*this, false);
@@ -248,18 +210,18 @@ public:
 ////                    }
 //                }
                 
-                const int width = frame.size.x;
-                if (UTF8::Strlen(_left(), _cursor()) >= width) {
-                    auto cursor = _cursor();
-                    // If the cursor's at the display-end, shift view right
-                    if (cursor == _cursorMax()) {
-                        auto left = _left();
-                        if (left != value.end()) {
-                            left = UTF8::Next(left, value.end());
-                            _offLeft = std::distance(value.begin(), left);
-                        }
-                    }
-                }
+//                const int width = frame.size.x;
+//                if (UTF8::Strlen(_left(), _cursor()) >= width) {
+//                    auto cursor = _cursor();
+//                    // If the cursor's at the display-end, shift view right
+//                    if (cursor == _cursorMax()) {
+//                        auto left = _left();
+//                        if (left != value.end()) {
+//                            left = UTF8::Next(left, value.end());
+//                            _offLeft = std::distance(value.begin(), left);
+//                        }
+//                    }
+//                }
                 
                 const int c = (int)ev.type;
                 // If this is a valid UTF8 value...
@@ -295,7 +257,11 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     
-    std::string::iterator _left() { return value.begin()+_offLeft; }
+    std::string::iterator _left() {
+        assert(_offLeft <= value.size());
+        return value.begin()+_offLeft;
+    }
+    
     std::string::iterator _leftMin() { return value.begin(); }
     std::string::iterator _leftMax() {
         int width = frame.size.x;
@@ -307,7 +273,11 @@ private:
         return it;
     }
     
-    std::string::iterator _cursor() { return value.begin()+_offCursor; }
+    std::string::iterator _cursor() {
+        assert(_offCursor <= value.size());
+        return value.begin()+_offCursor;
+    }
+    
     std::string::iterator _cursorMin() { return _left(); }
     std::string::iterator _cursorMax() {
         const int width = frame.size.x;
