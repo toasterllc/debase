@@ -27,8 +27,11 @@ public:
         _email.focus(true);
     }
     
-    virtual bool layout() override {
-        if (!MessagePanel::layout()) return false;
+    virtual void layout() override {
+        Size sizeBefore = frame().size;
+        MessagePanel::layout();
+        Size sizeAfter = frame().size;
+        if (sizeBefore == sizeAfter) return;
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
@@ -39,8 +42,6 @@ public:
         _code.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
         _code.layout();
         offY += 2;
-        
-        return true;
     }
     
     void draw() override {
@@ -64,10 +65,6 @@ public:
         
         _code.draw(*this);
         offY += 2;
-        
-//        char buf[128];
-//        wgetnstr(*this, buf, sizeof(buf));
-//        mvwgetnstr(*this, offY-2, _MessageInsetX, buf, sizeof(buf));
     }
     
     virtual Event handleEvent(const Event& ev) override {
@@ -82,43 +79,6 @@ public:
         if (e) e = _code.handleEvent(ev);
         drawNeeded(true);
         return {};
-        
-        
-//        if (ev.type == Event::Type::Mouse) {
-//            
-//        } else if (iscntrl((int)ev.type)) {
-//            
-//        } else if (ev.type == Event::Type::WindowResize) {
-//            
-//        } else {
-////            if (_active) {
-////                _activePos = _active->insert(_activePos, (int)ev.type);
-////                _activePos++;
-////            }
-//            
-//            drawNeeded(true);
-////            if (_active)
-//        }
-        
-//        switch (ev.type) {
-//        case Event::Type::Mouse: {
-//            if (ev.mouseUp() && !HitTest(frame(), {ev.mouse.x, ev.mouse.y})) {
-//                // Dismiss when clicking outside of the panel
-//                return false;
-//            }
-//            return true;
-//        }
-//        
-//        case Event::Type::KeyEscape: {
-//            // Dismiss when clicking outside of the panel
-//            return false;
-//        }
-//        
-//        default:
-//            return true;
-//        }
-//        
-//        return {};
     }
     
 private:
@@ -160,20 +120,6 @@ private:
                 _email.focus(true);
             }
         }
-        
-        
-//        if (!done || !fieldsFilled) {
-//            // Tab behavior
-//            if (&field == &*_email) {
-//                _code.focus(true);
-//            } else if (&field == &*_code) {
-//                _email.focus(true);
-//            }
-//        
-//        } else {
-//            // Return behavior
-//            beep();
-//        }
     }
     
     TextField _email;

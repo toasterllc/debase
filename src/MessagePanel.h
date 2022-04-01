@@ -1,6 +1,5 @@
 #pragma once
 #include <optional>
-//#include <os/log.h>
 #include "Panel.h"
 #include "Color.h"
 
@@ -10,8 +9,8 @@ class MessagePanel : public Panel {
 public:
     MessagePanel(const ColorPalette& colors) : colors(colors) {}
     
-    virtual bool layout() {
-        if (width <= 0) return false;
+    void layout() override {
+        if (width <= 0) return;
         
         std::vector<std::string> messageLines = LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);
         Size sizeCur = size();
@@ -20,21 +19,15 @@ public:
             .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
         };
         
-        if (sizeNew==_sizePrev && sizeNew==sizeCur) {
-//            os_log(OS_LOG_DEFAULT, "sizeCur={%d,%d} sizeNew={%d,%d} DENY", sizeCur.x, sizeCur.y, sizeNew.x, sizeNew.y);
-            return false;
-        }
-        
-//        os_log(OS_LOG_DEFAULT, "sizeCur={%d,%d} sizeNew={%d,%d} ALLOW", sizeCur.x, sizeCur.y, sizeNew.x, sizeNew.y);
+        if (sizeNew==_sizePrev && sizeNew==sizeCur) return;
         
         _messageLines = messageLines;
         setSize(sizeNew);
         _sizePrev = sizeNew;
         _drawNeeded = true;
-        return true;
     }
     
-    virtual void draw() {
+    void draw() override {
         erase();
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border

@@ -142,10 +142,14 @@ static void _Draw() {
         }
         
         if (_ContextMenu) {
+            _ContextMenu->containerSize = _RootWindow->bounds().size;
+            _ContextMenu->layout();
             _ContextMenu->orderFront();
         }
         
         if (_SnapshotsMenu) {
+            _SnapshotsMenu->containerSize = _RootWindow->bounds().size;
+            _SnapshotsMenu->layout();
             _SnapshotsMenu->orderFront();
         }
         
@@ -685,12 +689,9 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
     UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
     std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
-    _ContextMenu = MakeShared<UI::MenuPtr>(UI::MenuOptions{
-        .colors = _Colors,
-        .parentWindow = _RootWindow,
-        .position = mouseDownEvent.mouse.point,
-        .buttons = buttons
-    });
+    _ContextMenu = MakeShared<UI::MenuPtr>(_Colors);
+    _ContextMenu->buttons = buttons;
+    _ContextMenu->setPosition(mouseDownEvent.mouse.point);
     
     UI::ButtonPtr menuButton = nullptr;
     UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
@@ -815,15 +816,11 @@ static void _TrackSnapshotsMenu(UI::RevColumnPtr column) {
     
     const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
     const int px = column->opts().offset.x + (column->opts().width-width)/2;
-    UI::MenuOptions menuOpts = {
-        .colors = _Colors,
-        .parentWindow = _RootWindow,
-        .position = {px, 2},
-        .title = "Session Start",
-        .buttons = buttons,
-        .allowTruncate = true,
-    };
-    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(menuOpts);
+    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(_Colors);
+    _SnapshotsMenu->title = "Session Start";
+    _SnapshotsMenu->buttons = buttons;
+    _SnapshotsMenu->allowTruncate = true;
+    _SnapshotsMenu->setPosition({px, 2});
     
     UI::SnapshotButtonPtr menuButton;
     bool abort = false;

@@ -289,6 +289,9 @@ public:
         }
     }
     
+    virtual void layout() {}
+    virtual void draw() {}
+    
     operator WINDOW*() const { return _win; }
     
 private:
