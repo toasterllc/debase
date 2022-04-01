@@ -28,6 +28,31 @@ public:
     
     TextField(const ColorPalette& colors) : Control(colors) {}
     
+    void layout() override {
+        // If the cursor offset is past our width, adjust `_leftOff` so that the cursor is within our frame
+        size_t cursorOff = UTF8::Strlen(_left(), _cursor());
+        if (cursorOff > frame.size.x) {
+            beep();
+            size_t add = cursorOff-(size_t)frame.size.x;
+            auto left = _left();
+            while (add && left!=value.end()) {
+                left = UTF8::Next(left, value.end());
+                add--;
+            }
+            _offLeft += std::distance(_left(), left);
+        
+        }
+//        else if () {
+//            if (_cursor() == value.end()) {
+//                auto left = _left();
+//                if (left != value.begin()) {
+//                    left = UTF8::Prev(left, value.begin());
+//                    _offLeft = std::distance(value.begin(), left);
+//                }
+//            }
+//        }
+    }
+    
     void draw(const _Window& win) override {
         UI::_Window::Attr underline = win.attr(A_UNDERLINE);
         UI::_Window::Attr color;
@@ -252,7 +277,24 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     
-    std::string::iterator _left() { return value.begin()+_offLeft; }
+    std::string::iterator _left() {
+        return value.begin()+_offLeft;
+    }
+    
+    std::string::iterator _leftMin() {
+        return value.begin();
+    }
+    
+    std::string::iterator _leftMax() {
+        const int width = frame.size.x;
+        auto it = value.end();
+        while (width && it!=value.begin()) {
+            it = UTF8::Prev(it, value.begin());
+            width--;
+        }
+        return it;
+    }
+    
     std::string::iterator _cursor() { return value.begin()+_offCursor; }
     
     std::string::iterator _cursorMin() { return _left(); }

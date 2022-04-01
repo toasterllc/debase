@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+//#include <os/log.h>
 #include "Panel.h"
 #include "Color.h"
 
@@ -29,10 +30,17 @@ public:
             .x = _opts.width,
             .y = 2*_MessageInsetY + _opts.messageInsetY + (int)message.size() + _opts.extraHeight,
         };
-        if (sizeNew == sizeCur) return false;
+        
+        if (sizeNew==_sizePrev && sizeNew==sizeCur) {
+//            os_log(OS_LOG_DEFAULT, "sizeCur={%d,%d} sizeNew={%d,%d} DENY", sizeCur.x, sizeCur.y, sizeNew.x, sizeNew.y);
+            return false;
+        }
+        
+//        os_log(OS_LOG_DEFAULT, "sizeCur={%d,%d} sizeNew={%d,%d} ALLOW", sizeCur.x, sizeCur.y, sizeNew.x, sizeNew.y);
         
         _message = message;
         setSize(sizeNew);
+        _sizePrev = sizeNew;
         _drawNeeded = true;
         return true;
     }
@@ -98,6 +106,7 @@ protected:
     
 private:
     MessagePanelOptions _opts;
+    Size _sizePrev;
     std::vector<std::string> _message;
     bool _drawNeeded = false;
 };
