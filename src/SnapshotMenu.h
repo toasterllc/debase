@@ -6,7 +6,7 @@
 
 namespace UI {
 
-class _SnapshotMenu : public _Menu {
+class SnapshotMenu : public _Menu {
 public:
     using _Menu::_Menu;
     
@@ -27,6 +27,6 @@ public:
     }
 };
 
-using SnapshotMenu = std::shared_ptr<_SnapshotMenu>;
+using SnapshotMenuPtr = std::shared_ptr<SnapshotMenu>;
 
 } // namespace UI

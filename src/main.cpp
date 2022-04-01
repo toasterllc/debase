@@ -75,7 +75,7 @@ static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
 static UI::Menu _ContextMenu;
-static UI::SnapshotMenu _SnapshotsMenu;
+static UI::SnapshotMenuPtr _SnapshotsMenu;
 
 static UI::MessagePanelPtr _MessagePanel;
 static UI::RegisterPanelPtr _RegisterPanel;
@@ -813,7 +813,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         } catch (...) {}
     }
     
-    const int width = _SnapshotMenuWidth+UI::_SnapshotMenu::Padding().x;
+    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
     const int px = column->opts().offset.x + (column->opts().width-width)/2;
     UI::MenuOptions menuOpts = {
         .colors = _Colors,
@@ -823,7 +823,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         .buttons = buttons,
         .allowTruncate = true,
     };
-    _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(menuOpts);
+    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(menuOpts);
     
     UI::SnapshotButtonPtr menuButton;
     bool abort = false;
