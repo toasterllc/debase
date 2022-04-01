@@ -27,7 +27,7 @@ public:
         for (ButtonPtr button : buttons) {
             const int add = (!first ? _SeparatorHeight : 0) + button->frame.size.y;
             // Bail if the button won't fit in the available height
-//            if (allowTruncate && add>rem) break;
+            if (allowTruncate && add>rem) break;
             height += add;
             rem -= add;
             first = false;
@@ -63,7 +63,7 @@ public:
             button->hitTestExpand.b = 1;
             
             // Bail if the bottom of the bottom extends beyond our max y
-//            if (allowTruncate && y>ymax) break;
+            if (allowTruncate && y>ymax) break;
             buttonsVisible.push_back(button);
         }
     }
@@ -102,7 +102,7 @@ public:
         }
     }
     
-    void track(const Event& mouseDownEvent) {
+    void track(Event mouseDownEvent) override {
         auto mouseDownTime = std::chrono::steady_clock::now();
         UI::Event ev = mouseDownEvent;
         Event::MouseButtons sensitive = Event::MouseButtons::Right;
@@ -114,8 +114,8 @@ public:
             
             // See if any of the buttons want the event
             for (ButtonPtr button : buttonsVisible) {
-                Event e = button->handleEvent(*this, ev, sensitive);
-                if (!e) {
+                bool handled = button->handleEvent(*this, ev, sensitive);
+                if (handled) {
                     if (dismissAction) dismissAction(*this);
                     return;
                 }

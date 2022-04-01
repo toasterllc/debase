@@ -43,13 +43,11 @@ public:
         win.drawText(frame.point, "%s", substr.c_str());
     }
     
-    Event handleEvent(const Window& win, const Event& ev) override {
-        Event e = _handleEvent(win, ev);
-        if (!e) {
-            drawNeeded = true;
-            return {};
-        }
-        return e;
+    bool handleEvent(const Window& win, const Event& ev) override {
+        bool handled = _handleEvent(win, ev);
+        if (!handled) return false;
+        drawNeeded = true;
+        return true;
     }
     
     bool focus() const { return _focus; }
@@ -109,7 +107,7 @@ private:
         _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
     }
     
-    Event _handleEvent(const Window& win, const Event& ev) {
+    bool _handleEvent(const Window& win, const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(frame, ev.mouse.point)) {
                 if (!_focus) {
@@ -122,33 +120,33 @@ private:
                     _offCursor = std::distance(value.begin(), offIt);
                 }
                 
-                return {};
+                return true;
             }
         
         } else if (_focus) {
             if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
-                if (cursor == value.begin()) return {};
+                if (cursor == value.begin()) return true;
                 
                 auto eraseBegin = UTF8::Prev(cursor, value.begin());
                 size_t eraseSize = std::distance(eraseBegin, cursor);
                 value.erase(eraseBegin, cursor);
                 _offCursor -= eraseSize;
                 _offUpdate();
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
-                if (cursor == value.end()) return {};
+                if (cursor == value.end()) return true;
                 
                 auto eraseEnd = UTF8::Next(cursor, value.end());
                 value.erase(cursor, eraseEnd);
                 _offUpdate();
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyLeft) {
                 auto cursor = _cursor();
-                if (cursor == value.begin()) return {};
+                if (cursor == value.begin()) return true;
                 
                 // If the cursor's at the display-beginning, shift view left
                 if (cursor == _cursorMin()) {
@@ -158,11 +156,11 @@ private:
                 
                 auto it = UTF8::Prev(cursor, value.begin());
                 _offCursor = std::distance(value.begin(), it);
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyRight) {
                 auto cursor = _cursor();
-                if (cursor == value.end()) return {};
+                if (cursor == value.end()) return true;
                 
                 // If the cursor's at the display-end, shift view right
                 if (cursor == _cursorMax()) {
@@ -172,19 +170,19 @@ private:
                 
                 auto it = UTF8::Next(cursor, value.end());
                 _offCursor = std::distance(value.begin(), it);
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
                 releaseFocus(*this, false);
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
                 releaseFocus(*this, false);
-                return {};
+                return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
                 releaseFocus(*this, true);
-                return {};
+                return true;
             
             } else {
                 // If the cursor's at the display-end, shift view right
@@ -204,11 +202,11 @@ private:
                 }
                 
                 _offUpdate();
-                return {};
+                return true;
             }
         }
         
-        return ev;
+        return false;
     }
     
     ssize_t _offLeft = 0;

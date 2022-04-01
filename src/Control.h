@@ -29,8 +29,8 @@ public:
         drawNeeded = false;
     }
     
-    virtual Event handleEvent(const Window& win, const Event& ev) {
-        return ev;
+    virtual bool handleEvent(const Window& win, const Event& ev) {
+        return false;
     }
     
     const ColorPalette& colors;

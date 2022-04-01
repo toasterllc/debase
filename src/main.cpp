@@ -25,7 +25,7 @@
 #include "GitOp.h"
 #include "MakeShared.h"
 #include "Bitfield.h"
-#include "MessagePanel.h"
+#include "ModalPanel.h"
 #include "RegisterPanel.h"
 #include "State.h"
 #include "StateDir.h"
@@ -77,7 +77,7 @@ static std::optional<UI::Rect> _SelectionRect;
 static UI::MenuPtr _ContextMenu;
 static UI::SnapshotMenuPtr _SnapshotsMenu;
 
-static UI::MessagePanelPtr _MessagePanel;
+static UI::ModalPanelPtr _MessagePanel;
 static UI::RegisterPanelPtr _RegisterPanel;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
@@ -151,19 +151,6 @@ static void _Draw() {
         
         if (_SnapshotsMenu) {
             _SnapshotsMenu->orderFront();
-        }
-        
-        if (_MessagePanel) {
-            UI::Size ps = _MessagePanel->frame().size;
-            UI::Size rs = _RootWindow->frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _MessagePanel->setPosition(p);
-            _MessagePanel->orderFront();
-            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
-            _MessagePanel->layout();
         }
         
         if (_RegisterPanel) {
@@ -1326,17 +1313,29 @@ static void _EventLoop() {
         }
         
         if (!errorMsg.empty()) {
-            constexpr int MessagePanelWidth = 35;
-            const int errorPanelWidth = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
-            
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _MessagePanel = MakeShared<UI::MessagePanelPtr>(_Colors);
+            _MessagePanel = MakeShared<UI::ModalPanelPtr>(_Colors);
             _MessagePanel->color    = _Colors.error;
-            _MessagePanel->width    = errorPanelWidth;
             _MessagePanel->center   = true;
             _MessagePanel->title    = "Error";
             _MessagePanel->message  = errorMsg;
+            
+            constexpr int MessagePanelWidth = 35;
+            _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
+            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
+            
+            UI::Size ps = _MessagePanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _MessagePanel->setPosition(p);
+            _MessagePanel->orderFront();
+            _MessagePanel->layout();
+            
+            _MessagePanel->track();
         }
     }
 }

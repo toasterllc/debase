@@ -5,9 +5,9 @@
 
 namespace UI {
 
-class MessagePanel : public Panel {
+class ModalPanel : public Panel {
 public:
-    MessagePanel(const ColorPalette& colors) : colors(colors) {}
+    ModalPanel(const ColorPalette& colors) : colors(colors) {}
     
 //    bool layoutNeeded() {
 //        if (_layoutNeeded) return true;
@@ -67,18 +67,13 @@ public:
         }
     }
     
-    Event handleEvent(const Event& ev) override {
-        // Let caller handle mouse-up's
-        if (ev.mouseUp()) return ev;
-        // Let caller handle escape key
-        if (ev.type == Event::Type::KeyEscape) return ev;
-//        // Let caller handle escape key
-//        if (ev.type == Event::Type::WindowResize) return ev;
-//        // Let caller handle Ctrl-C/D
-//        if (ev.type == Event::Type::KeyCtrlC) return ev;
-//        if (ev.type == Event::Type::KeyCtrlD) return ev;
+    bool handleEvent(const Event& ev) override {
+        // Dismiss upon mouse-up
+        if (ev.mouseUp()) return false;
+        // Dismiss upon escape key
+        if (ev.type == Event::Type::KeyEscape) return false;
         // Eat all other events
-        return {};
+        return true;
     }
     
     const ColorPalette& colors;
@@ -112,6 +107,6 @@ private:
     std::vector<std::string> _messageLines;
 };
 
-using MessagePanelPtr = std::shared_ptr<MessagePanel>;
+using ModalPanelPtr = std::shared_ptr<ModalPanel>;
 
 } // namespace UI

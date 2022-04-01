@@ -166,13 +166,12 @@ public:
         }
     }
     
-    Event handleEvent(const Window& win, const Event& ev) {
-        Event e = ev;
+    bool handleEvent(const Window& win, const Event& ev) {
         for (ButtonPtr button : _buttons) {
-            e = button->handleEvent(win, ev);
-            if (!e) return {};
+            bool handled = button->handleEvent(win, ev);
+            if (handled) return true;
         }
-        return e;
+        return false;
     }
     
     CommitPanelPtr hitTest(const Point& p) {

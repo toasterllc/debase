@@ -302,6 +302,17 @@ public:
         }
     }
     
+    virtual bool handleEvent(const Event& ev) { return false; }
+    
+    virtual void track(Event ev={}) {
+        for (;;) {
+            draw();
+            bool handled = handleEvent(nextEvent());
+            // Continue until an event isn't handled
+            if (!handled) break;
+        }
+    }
+    
     bool layoutNeeded = true;
     virtual void layout() {
         assert(layoutNeeded); // For debugging unnecessary layout
@@ -313,8 +324,6 @@ public:
         assert(drawNeeded); // For debugging unnecessary drawing
         drawNeeded = false;
     }
-    
-    virtual Event handleEvent(const Event& ev) { return ev; }
     
     operator WINDOW*() const { return _win; }
     

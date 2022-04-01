@@ -3,17 +3,17 @@
 #include <ctype.h>
 #include "Panel.h"
 #include "Color.h"
-#include "MessagePanel.h"
+#include "ModalPanel.h"
 #include "TextField.h"
 #include "MakeShared.h"
 #include <os/log.h>
 
 namespace UI {
 
-class RegisterPanel : public MessagePanel {
+class RegisterPanel : public ModalPanel {
 public:
     RegisterPanel(const ColorPalette& colors) :
-    MessagePanel(colors), _email(colors), _code(colors) {
+    ModalPanel(colors), _email(colors), _code(colors) {
         extraHeight = _FieldsExtraHeight;
         
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
@@ -29,7 +29,7 @@ public:
     }
     
     void layout() override {
-        MessagePanel::layout();
+        ModalPanel::layout();
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
@@ -48,7 +48,7 @@ public:
         
         os_log(OS_LOG_DEFAULT, "RegisterPanel::draw()");
         
-        MessagePanel::draw();
+        ModalPanel::draw();
         
         int offY = size().y-_FieldsExtraHeight-1;
         
@@ -71,20 +71,19 @@ public:
         offY += 2;
     }
     
-    Event handleEvent(const Event& ev) override {
+    bool handleEvent(const Event& ev) override {
 //        // Let caller handle window resize
 //        if (ev.type == Event::Type::WindowResize) return ev;
 //        // Let caller handle Ctrl-C/D
 //        if (ev.type == Event::Type::KeyCtrlC) return ev;
 //        if (ev.type == Event::Type::KeyCtrlD) return ev;
         
-        Event e = ev;
-        if (e) e = _email.handleEvent(*this, ev);
-        if (e) e = _code.handleEvent(*this, ev);
-        
+        bool handled = false;
+        if (!handled) handled |= _email.handleEvent(*this, ev);
+        if (!handled) handled |= _code.handleEvent(*this, ev);
         // If we handled an event, we need to draw
-        if (!e) drawNeeded = true;
-        return {};
+        if (handled) drawNeeded = true;
+        return true;
     }
     
 private:

@@ -60,7 +60,7 @@ public:
         }
     }
     
-    Event handleEvent(const Window& win, const Event& ev, Event::MouseButtons sensitive) {
+    bool handleEvent(const Window& win, const Event& ev, Event::MouseButtons sensitive) {
         if (ev.type == Event::Type::Mouse && enabled) {
             if (hitTest(ev.mouse.point)) {
                 highlighted(true);
@@ -72,16 +72,16 @@ public:
                 if (ev.mouseDown(sensitive) || ev.mouseUp(sensitive)) {
                     // Track mouse
                     _trackMouse(win, ev, sensitive);
-                    return {};
+                    return true;
                 }
             } else {
                 highlighted(false);
             }
         }
-        return ev;
+        return false;
     }
     
-    Event handleEvent(const Window& win, const Event& ev) override {
+    bool handleEvent(const Window& win, const Event& ev) override {
         return handleEvent(win, ev, Event::MouseButtons::Left);
     }
     
