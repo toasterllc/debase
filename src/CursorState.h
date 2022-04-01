@@ -6,6 +6,13 @@ namespace UI {
 
 class CursorState {
 public:
+    static void Draw() {
+        if (_States.empty()) return;
+        const _CursorState& state = _States.back();
+        ::curs_set(state.visible);
+        ::move(state.position.y, state.position.x);
+    }
+    
     CursorState(bool visible, Point pos={}) : _id(_IdCurrent) {
         _IdCurrent++;
         
@@ -16,7 +23,6 @@ public:
         };
         
         _States.push_back(state);
-        _Update();
     }
     
     CursorState() {}
@@ -57,18 +63,10 @@ private:
     static inline _Id _IdCurrent = 1;
     static inline std::list<_CursorState> _States;
     
-    static void _Update() {
-        if (_States.empty()) return;
-        const _CursorState& state = _States.back();
-        ::curs_set(state.visible);
-        ::move(state.position.y, state.position.x);
-    }
-    
     static void _Remove(_Id id) {
         for (auto it=_States.begin(); it!=_States.end(); it++) {
             if ((*it).id == id) {
                 _States.erase(it);
-                _Update();
                 return;
             }
         }

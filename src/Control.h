@@ -21,7 +21,7 @@ public:
         return HitTest(f, p);
     }
     
-    virtual void layout() {}
+    virtual void layout(const Window& win) {}
     
     bool drawNeeded = true;
     virtual void draw(const Window& win) {

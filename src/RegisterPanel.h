@@ -6,6 +6,7 @@
 #include "MessagePanel.h"
 #include "TextField.h"
 #include "MakeShared.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -28,24 +29,26 @@ public:
     }
     
     void layout() override {
-        Size sizeBefore = frame().size;
+        if (!layoutNeeded()) {
+            _email.layout(*this);
+            _code.layout(*this);
+            return;
+        }
         MessagePanel::layout();
-        Size sizeAfter = frame().size;
-        // Short-circuit if the superclass didn't change our size
-        if (sizeBefore == sizeAfter) return;
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         int offY = s.y-_FieldsExtraHeight-1;
         _email.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _email.layout();
+        _email.layout(*this);
         offY += 2;
         _code.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _code.layout();
+        _code.layout(*this);
         offY += 2;
     }
     
     void draw() override {
+//        drawNeeded = true;
         if (!drawNeeded) return;
         MessagePanel::draw();
         

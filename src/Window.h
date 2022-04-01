@@ -132,7 +132,7 @@ inline bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
     return !Empty(Intersection(Inset(r, {-expand.x,-expand.y}), {p, {1,1}}));
 }
 
-inline void Redraw() {
+inline void Draw() {
     ::update_panels();
     ::refresh();
 //    ::doupdate();

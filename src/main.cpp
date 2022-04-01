@@ -229,11 +229,13 @@ static void _Draw() {
             _RegisterPanel->draw();
         }
         
+        UI::CursorState::Draw();
+        
 //        curs_set(1);
 //        move(5, 5);
 ////        wmove(*_RootWindow, 5, 5);
         
-        UI::Redraw();
+        UI::Draw();
     }
 }
 
@@ -1152,14 +1154,14 @@ static void _EventLoop() {
     
     
     
-//    {
-//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-//        _RegisterPanel->color           = _Colors.menu;
-//        _RegisterPanel->messageInsetY   = 1;
-//        _RegisterPanel->center          = false;
-//        _RegisterPanel->title           = "Register";
-//        _RegisterPanel->message         = "Please register debase";
-//    }
+    {
+        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+        _RegisterPanel->color           = _Colors.menu;
+        _RegisterPanel->messageInsetY   = 1;
+        _RegisterPanel->center          = false;
+        _RegisterPanel->title           = "Register";
+        _RegisterPanel->message         = "Please register debase";
+    }
     
     
     
@@ -1438,11 +1440,7 @@ static void _PrintUsage() {
 int main(int argc, const char* argv[]) {
     #warning TODO: get snapshots menu working again
     
-    #warning TODO: get expanded hit-testing of menu buttons working again
-    
     #warning TODO: verify that ctrl-c still works with RegPanel visible
-    
-    #warning TODO: switch Menu to follow TextField handleEvent() model
     
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
@@ -1463,6 +1461,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: switch Menu to follow TextField handleEvent() model
+//
+//    #warning TODO: get expanded hit-testing of menu buttons working again
+//
 //    #warning TODO: switch Button to follow TextField handleEvent() model
 //
 //    #warning TODO: switch classes to not be shared_ptr where possible. particularly Window.

@@ -9,21 +9,26 @@ class MessagePanel : public Panel {
 public:
     MessagePanel(const ColorPalette& colors) : colors(colors) {}
     
-    void layout() override {
-        if (width <= 0) return;
+    bool layoutNeeded() {
+        if (_layoutNeeded) return true;
         
-        std::vector<std::string> messageLines = LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);
+        if (width <= 0) return false;
         Size sizeCur = size();
-        Size sizeNew = {
-            .x = width,
-            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
-        };
+        Size sizeNew = _calcSize();
+        if (sizeNew==_sizePrev && sizeNew==sizeCur) return false;
         
-        if (sizeNew==_sizePrev && sizeNew==sizeCur) return;
+        _layoutNeeded = true;
+        return true;
+    }
+    
+    void layout() override {
+        if (!layoutNeeded()) return;
         
-        _messageLines = messageLines;
+        _messageLines = _createMessageLines();
+        Size sizeNew = _calcSize();
         setSize(sizeNew);
         _sizePrev = sizeNew;
+        _layoutNeeded = false;
         drawNeeded = true;
     }
     
@@ -86,6 +91,19 @@ protected:
     static constexpr int _MessageInsetY = 2;
     
 private:
+    Size _calcSize() {
+        std::vector<std::string> messageLines = _createMessageLines();
+        return {
+            .x = width,
+            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
+        };
+    }
+    
+    std::vector<std::string> _createMessageLines() const {
+        return LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);;
+    }
+    
+    bool _layoutNeeded = false;
     Size _sizePrev;
     std::vector<std::string> _messageLines;
 };

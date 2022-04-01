@@ -4,6 +4,7 @@
 #include "UTF8.h"
 #include "CursorState.h"
 #include "Control.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -11,11 +12,18 @@ class TextField : public Control {
 public:
     TextField(const ColorPalette& colors) : Control(colors) {}
     
-    void layout() override {
+    void layout(const Window& win) override {
         _offUpdate();
+        os_log(OS_LOG_DEFAULT, "TextField::layout");
+        if (_focus) {
+            Point p = win.frame().point + frame.point;
+            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
+            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
+        }
     }
     
     void draw(const Window& win) override {
+//        drawNeeded = true;
         if (!drawNeeded) return;
         Control::draw(win);
         
@@ -31,15 +39,75 @@ public:
         
         std::string substr(left, right);
         win.drawText(frame.point, "%s", substr.c_str());
-        
-        if (_focus) {
-            Point p = win.frame().point + frame.point;
-            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
-            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
-        }
     }
     
     Event handleEvent(const Window& win, const Event& ev) override {
+        Event e = _handleEvent(win, ev);
+        if (!e) {
+            drawNeeded = true;
+            return {};
+        }
+        return e;
+    }
+    
+    bool focus() const { return _focus; }
+    void focus(bool x) {
+        _focus = x;
+        if (_cursorState) _cursorState.restore();
+    }
+    
+    std::function<void(TextField&)> requestFocus;
+    std::function<void(TextField&, bool)> releaseFocus;
+    std::string value;
+    
+private:
+    static constexpr int KeySpacing = 2;
+    
+    std::string::iterator _left() {
+        assert(_offLeft <= value.size());
+        return value.begin()+_offLeft;
+    }
+    
+    std::string::iterator _leftMin() { return value.begin(); }
+    std::string::iterator _leftMax() {
+        int width = frame.size.x;
+        auto it = value.end();
+        while (width && it!=value.begin()) {
+            it = UTF8::Prev(it, value.begin());
+            width--;
+        }
+        return it;
+    }
+    
+    std::string::iterator _cursor() {
+        assert(_offCursor <= value.size());
+        return value.begin()+_offCursor;
+    }
+    
+    std::string::iterator _cursorMin() { return _left(); }
+    std::string::iterator _cursorMax() {
+        const int width = frame.size.x;
+        auto left = _cursorMin();
+        auto right = left;
+        int len = 0;
+        while (len<width && right!=value.end()) {
+            right = UTF8::Next(right, value.end());
+            len++;
+        }
+        return right;
+    }
+    
+    ssize_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
+    ssize_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
+    ssize_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
+    ssize_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
+    
+    void _offUpdate() {
+        _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
+        _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
+    }
+    
+    Event _handleEvent(const Window& win, const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(frame, ev.mouse.point)) {
                 if (!_focus) {
@@ -133,69 +201,11 @@ public:
                 }
                 
                 _offUpdate();
-                
                 return {};
             }
         }
         
         return ev;
-    }
-    
-    bool focus() const { return _focus; }
-    void focus(bool x) {
-        _focus = x;
-        if (_cursorState) _cursorState.restore();
-    }
-    
-    std::function<void(TextField&)> requestFocus;
-    std::function<void(TextField&, bool)> releaseFocus;
-    std::string value;
-    
-private:
-    static constexpr int KeySpacing = 2;
-    
-    std::string::iterator _left() {
-        assert(_offLeft <= value.size());
-        return value.begin()+_offLeft;
-    }
-    
-    std::string::iterator _leftMin() { return value.begin(); }
-    std::string::iterator _leftMax() {
-        int width = frame.size.x;
-        auto it = value.end();
-        while (width && it!=value.begin()) {
-            it = UTF8::Prev(it, value.begin());
-            width--;
-        }
-        return it;
-    }
-    
-    std::string::iterator _cursor() {
-        assert(_offCursor <= value.size());
-        return value.begin()+_offCursor;
-    }
-    
-    std::string::iterator _cursorMin() { return _left(); }
-    std::string::iterator _cursorMax() {
-        const int width = frame.size.x;
-        auto left = _cursorMin();
-        auto right = left;
-        int len = 0;
-        while (len<width && right!=value.end()) {
-            right = UTF8::Next(right, value.end());
-            len++;
-        }
-        return right;
-    }
-    
-    ssize_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
-    ssize_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
-    ssize_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
-    ssize_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
-    
-    void _offUpdate() {
-        _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
-        _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
     }
     
     ssize_t _offLeft = 0;
