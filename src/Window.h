@@ -102,6 +102,7 @@ private:
 };
 
 struct ExitRequest : std::exception {};
+struct WindowResize : std::exception {};
 
 inline Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.point.x, b.point.x);
@@ -238,14 +239,14 @@ public:
     }
     
     // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
-    Point convert(const Point& p) {
+    Point convert(const Point& p) const {
         Point r = p;
         r -= frame().point;
         return r;
     }
     
     // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
-    Event convert(const Event& p) {
+    Event convert(const Event& p) const {
         Event r = p;
         if (r.type == Event::Type::Mouse) {
             r.mouse.point = convert(r.mouse.point);
@@ -269,13 +270,15 @@ public:
                 MEVENT mouse = {};
                 int ir = ::getmouse(&mouse);
                 if (ir != OK) continue;
-                return Event{
-                    .type = Event::Type::Mouse,
-                    .mouse = {
-                        .point = {mouse.x, mouse.y},
-                        .bstate = mouse.bstate,
-                    },
+                ev.mouse = {
+                    .point = {mouse.x, mouse.y},
+                    .bstate = mouse.bstate,
                 };
+                break;
+            }
+            
+            case Event::Type::WindowResize: {
+                throw WindowResize();
             }
             
             case Event::Type::KeyCtrlC:
@@ -284,8 +287,11 @@ public:
             }
             
             default: {
-                return ev;
+                break;
             }}
+            
+            ev = convert(ev);
+            return ev;
         }
     }
     

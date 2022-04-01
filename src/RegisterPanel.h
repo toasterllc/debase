@@ -71,11 +71,11 @@ public:
     }
     
     Event handleEvent(const Event& ev) override {
-        // Let caller handle window resize
-        if (ev.type == Event::Type::WindowResize) return ev;
-        // Let caller handle Ctrl-C/D
-        if (ev.type == Event::Type::KeyCtrlC) return ev;
-        if (ev.type == Event::Type::KeyCtrlD) return ev;
+//        // Let caller handle window resize
+//        if (ev.type == Event::Type::WindowResize) return ev;
+//        // Let caller handle Ctrl-C/D
+//        if (ev.type == Event::Type::KeyCtrlC) return ev;
+//        if (ev.type == Event::Type::KeyCtrlD) return ev;
         
         Event e = ev;
         if (e) e = _email.handleEvent(*this, ev);

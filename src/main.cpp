@@ -11,6 +11,7 @@
 #include <map>
 #include <filesystem>
 #include <spawn.h>
+#include <os/log.h>
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/Defer.h"
 #include "Git.h"
@@ -69,7 +70,6 @@ static struct {
 } _DoubleClickState;
 
 static constexpr std::chrono::milliseconds _DoubleClickThresh(300);
-static constexpr std::chrono::milliseconds _ContextMenuStayOpenThresh(300);
 
 static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
@@ -388,77 +388,81 @@ static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn& col) {
-    Git::Ref ref = col.rev.ref;
-    std::vector<UI::ButtonPtr> buttons = {
-        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
-    };
-    
-    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
-    for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
-        // Creating the button will throw if we can't get the commit for the snapshot
-        // If that happens, just don't shown the button representing the snapshot
-        try {
-            buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
-        } catch (...) {}
-    }
-    
-    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
-    const int px = col.offset.x + (col.width-width)/2;
-    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(_Colors);
-    _SnapshotsMenu->title = "Session Start";
-    _SnapshotsMenu->buttons = buttons;
-    _SnapshotsMenu->allowTruncate = true;
-    _SnapshotsMenu->setPosition({px, 2});
-    
-    UI::SnapshotButtonPtr menuButton;
-    bool abort = false;
-    for (;;) {
-        _Draw();
-        
-        UI::Event ev = _RootWindow->nextEvent();
-        abort = (ev.type != UI::Event::Type::Mouse);
-        
-        if (ev.type == UI::Event::Type::Mouse) {
-            menuButton = std::dynamic_pointer_cast<UI::SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
-        } else {
-            menuButton = nullptr;
-        }
-        
-        // Check if we should abort
-        if (abort) {
-            break;
-        
-        // Handle mouse up
-        } else if (ev.mouseUp()) {
-            // Close the menu only if clicking outside of the menu, or clicking on an
-            // enabled menu button.
-            // In other words, don't close the menu when clicking on a disabled menu
-            // button.
-            if (!menuButton || menuButton->enabled) {
-                break;
-            }
-        }
-    }
-    
-    if (!abort && menuButton) {
-        State::History& h = _RepoState.history(ref);
-        State::Commit commitNew = menuButton->snapshot.head;
-        State::Commit commitCur = h.get().head;
-        
-        if (commitNew != commitCur) {
-            Git::Commit commit = Convert(_Repo, commitNew);
-            h.push(State::RefState{.head = commitNew});
-            _Repo.refReplace(ref, commit);
-            // Clear the selection when restoring a snapshot
-            _Selection = {};
-            _Reload();
-        }
-    }
-    
-    // Reset state
-    {
-        _SnapshotsMenu = nullptr;
-    }
+//    Git::Ref ref = col.rev.ref;
+//    std::vector<UI::ButtonPtr> buttons = {
+//        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
+//    };
+//    
+//    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
+//    for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
+//        // Creating the button will throw if we can't get the commit for the snapshot
+//        // If that happens, just don't shown the button representing the snapshot
+//        try {
+//            buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
+//        } catch (...) {}
+//    }
+//    
+//    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
+//    const int px = col.offset.x + (col.width-width)/2;
+//    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(_Colors);
+//    Defer(_SnapshotsMenu = nullptr);
+//    _SnapshotsMenu->title = "Session Start";
+//    _SnapshotsMenu->buttons = buttons;
+//    _SnapshotsMenu->allowTruncate = true;
+//    _SnapshotsMenu->dismissAction = [&] (UI::Menu& menu) {
+//        _SnapshotsMenu = nullptr;
+//    };
+//    _SnapshotsMenu->setPosition({px, 2});
+//    
+//    UI::SnapshotButtonPtr menuButton;
+//    bool abort = false;
+//    for (;;) {
+//        _Draw();
+//        
+//        UI::Event ev = _RootWindow->nextEvent();
+//        abort = (ev.type != UI::Event::Type::Mouse);
+//        
+//        if (ev.type == UI::Event::Type::Mouse) {
+//            menuButton = std::dynamic_pointer_cast<UI::SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
+//        } else {
+//            menuButton = nullptr;
+//        }
+//        
+//        // Check if we should abort
+//        if (abort) {
+//            break;
+//        
+//        // Handle mouse up
+//        } else if (ev.mouseUp()) {
+//            // Close the menu only if clicking outside of the menu, or clicking on an
+//            // enabled menu button.
+//            // In other words, don't close the menu when clicking on a disabled menu
+//            // button.
+//            if (!menuButton || menuButton->enabled) {
+//                break;
+//            }
+//        }
+//    }
+//    
+//    if (!abort && menuButton) {
+//        State::History& h = _RepoState.history(ref);
+//        State::Commit commitNew = menuButton->snapshot.head;
+//        State::Commit commitCur = h.get().head;
+//        
+//        if (commitNew != commitCur) {
+//            Git::Commit commit = Convert(_Repo, commitNew);
+//            h.push(State::RefState{.head = commitNew});
+//            _Repo.refReplace(ref, commit);
+//            // Clear the selection when restoring a snapshot
+//            _Selection = {};
+//            _Reload();
+//        }
+//    }
+//    
+//    // Reset state
+//    {
+//        _SnapshotsMenu = nullptr;
+//    }
 }
 
 static void _Reload() {
@@ -801,90 +805,93 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", combineEnabled);
     UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
     UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
+    UI::ButtonPtr menuButton = nullptr;
+    combineButton->action = [&] (UI::Button&) { menuButton = combineButton; };
+    editButton->action = [&] (UI::Button&) { menuButton = editButton; };
+    deleteButton->action = [&] (UI::Button&) { menuButton = deleteButton; };
+    
     std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
     _ContextMenu = MakeShared<UI::MenuPtr>(_Colors);
+    Defer(_ContextMenu = nullptr);
+    
     _ContextMenu->buttons = buttons;
     _ContextMenu->setPosition(mouseDownEvent.mouse.point);
     
-    UI::ButtonPtr menuButton = nullptr;
-    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
-    bool abort = false;
-    for (;;) {
-        if (ev.type == UI::Event::Type::Mouse) {
-            menuButton = _ContextMenu->updateMouse(ev.mouse.point);
-        } else {
-            menuButton = nullptr;
-        }
-        
-        _Draw();
-        ev = _RootWindow->nextEvent();
-        abort = (ev.type != UI::Event::Type::Mouse);
-        
-        // Check if we should abort
-        if (abort) {
-            break;
-        
-        // Handle mouse up
-        } else if (ev.mouseUp(mouseUpButtons)) {
-            if (!(mouseUpButtons & UI::Event::MouseButtons::Left)) {
-                // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
-                // stay open and we should start listening for left-mouse-down events.
-                // If the right-mouse-up occurs af
-                auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-                if (duration >= _ContextMenuStayOpenThresh) break;
-                
-                // Start listening for left mouse up
-                mouseUpButtons |= UI::Event::MouseButtons::Left;
-                
-                // Right mouse up, but menu stays open
-                // Now start tracking both left+right mouse down
-            } else {
-                // Close the menu only if clicking outside of the menu, or clicking on an
-                // enabled menu button.
-                // In other words, don't close the menu when clicking on a disabled menu
-                // button.
-                if (!menuButton || menuButton->enabled) {
-                    break;
-                }
-            }
-        }
-    }
+    _Draw();
+    _ContextMenu->track(mouseDownEvent);
+    
+//    UI::ButtonPtr menuButton = nullptr;
+//    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
+//    bool abort = false;
+//    for (;;) {
+//        if (ev.type == UI::Event::Type::Mouse) {
+//            menuButton = _ContextMenu->updateMouse(ev.mouse.point);
+//        } else {
+//            menuButton = nullptr;
+//        }
+//        
+//        _Draw();
+//        ev = _RootWindow->nextEvent();
+//        abort = (ev.type != UI::Event::Type::Mouse);
+//        
+//        // Check if we should abort
+//        if (abort) {
+//            break;
+//        
+//        // Handle mouse up
+//        } else if (ev.mouseUp(mouseUpButtons)) {
+//            if (!(mouseUpButtons & UI::Event::MouseButtons::Left)) {
+//                // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
+//                // stay open and we should start listening for left-mouse-down events.
+//                // If the right-mouse-up occurs af
+//                auto duration = std::chrono::steady_clock::now()-mouseDownTime;
+//                if (duration >= _ContextMenuStayOpenThresh) break;
+//                
+//                // Start listening for left mouse up
+//                mouseUpButtons |= UI::Event::MouseButtons::Left;
+//                
+//                // Right mouse up, but menu stays open
+//                // Now start tracking both left+right mouse down
+//            } else {
+//                // Close the menu only if clicking outside of the menu, or clicking on an
+//                // enabled menu button.
+//                // In other words, don't close the menu when clicking on a disabled menu
+//                // button.
+//                if (!menuButton || menuButton->enabled) {
+//                    break;
+//                }
+//            }
+//        }
+//    }
     
     // Handle the clicked button
     std::optional<Git::Op> gitOp;
-    if (!abort) {
-        if (menuButton == combineButton) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Combine,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-        
-        } else if (menuButton == editButton) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Edit,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-        
-        } else if (menuButton == deleteButton) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Delete,
-                .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
-                },
-            };
-        }
-    }
+    if (menuButton == combineButton) {
+        gitOp = Git::Op{
+            .type = Git::Op::Type::Combine,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
     
-    // Reset state
-    {
-        _ContextMenu = nullptr;
+    } else if (menuButton == editButton) {
+        gitOp = Git::Op{
+            .type = Git::Op::Type::Edit,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
+    
+    } else if (menuButton == deleteButton) {
+        gitOp = Git::Op{
+            .type = Git::Op::Type::Delete,
+            .src = {
+                .rev = _Selection.rev,
+                .commits = _Selection.commits,
+            },
+        };
     }
     
     return gitOp;
@@ -1163,15 +1170,24 @@ static void _EventLoop() {
     for (;;) {
         std::string errorMsg;
         _Draw();
-        UI::Event ev = _RootWindow->nextEvent();
         
         try {
-            // If we have a modal panel, let it handle the event
+            UI::Event ev = _RootWindow->nextEvent();
+            
+            assert(!_ContextMenu);
+            assert(!_SnapshotsMenu);
+            
             if (_MessagePanel) {
                 ev = _MessagePanel->handleEvent(_MessagePanel->convert(ev));
             
             } else if (_RegisterPanel) {
                 ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
+            
+//            } else if (_ContextMenu) {
+//                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
+//            
+//            } else if (_SnapshotsMenu) {
+//                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
             
             } else {
                 // Let every column handle the event
@@ -1271,11 +1287,6 @@ static void _EventLoop() {
                 break;
             }
             
-            case UI::Event::Type::WindowResize: {
-                _Reload();
-                break;
-            }
-            
             default: {
                 break;
             }}
@@ -1293,6 +1304,9 @@ static void _EventLoop() {
                 errorMsg = e.what();
                 break;
             }
+        
+        } catch (const UI::WindowResize&) {
+            _Reload();
         
         } catch (const UI::ExitRequest&) {
             throw;
@@ -1422,6 +1436,12 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: get snapshots menu working again
+    
+    #warning TODO: get expanded hit-testing of menu buttons working again
+    
+    #warning TODO: verify that ctrl-c still works with RegPanel visible
+    
     #warning TODO: switch Menu to follow TextField handleEvent() model
     
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?

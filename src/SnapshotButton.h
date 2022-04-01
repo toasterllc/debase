@@ -30,6 +30,9 @@ public:
     }
     
     void draw(const Window& win) override {
+        if (!drawNeeded) return;
+        Button::draw(win);
+        
         const int width = frame.size.x;
         const Point off = frame.point;
         const Size offTextX = Size{_TextInsetX, 0};
@@ -47,7 +50,7 @@ public:
         {
             Window::Attr bold = win.attr(A_BOLD);
             Window::Attr color;
-            if (highlight() || (activeSnapshot && !mouseActive)) {
+            if (highlight() || (activeSnapshot && !mouseActive())) {
                 color = win.attr(colors.menu);
             }
             win.drawText(offText, "%s", _commit.id.c_str());
@@ -75,7 +78,7 @@ public:
                 win.drawText(off + offTextY, "%s", "●");
             
             } else if (activeSnapshot) {
-                if (mouseActive) {
+                if (mouseActive()) {
                     win.drawText(off + offTextY, "%s", "○");
                 } else {
                     Window::Attr color = win.attr(colors.menu|A_BOLD);

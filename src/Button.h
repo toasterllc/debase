@@ -78,10 +78,26 @@ public:
         return ev;
     }
     
+    Event trigger(const Event& ev, Event::MouseButtons buttons=Event::MouseButtons::Left) {
+        if (enabled && HitTest(frame, ev.mouse.point) && ev.mouseUp(buttons)) {
+            if (action) action(*this);
+            // Consume event
+            return {};
+        }
+        return ev;
+    }
+    
     bool highlight() { return _highlight; }
     void highlight(bool x) {
         if (_highlight == x) return;
         _highlight = x;
+        drawNeeded = true;
+    }
+    
+    bool mouseActive() { return _mouseActive; }
+    void mouseActive(bool x) {
+        if (_mouseActive == x) return;
+        _mouseActive = x;
         drawNeeded = true;
     }
     
@@ -91,7 +107,6 @@ public:
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
-    bool mouseActive = false;
     std::function<void(Button&)> action;
     
 private:
@@ -106,16 +121,13 @@ private:
             }
             
             draw(win);
-            ev = win.nextEvent();
-            if (ev.mouseUp()) break;
-        }
-        
-        if (_highlight) {
-            if (action) action(*this);
+            ev = trigger(win.nextEvent());
+            if (!ev) break;
         }
     }
     
     bool _highlight = false;
+    bool _mouseActive = false;
 };
 
 using ButtonPtr = std::shared_ptr<Button>;

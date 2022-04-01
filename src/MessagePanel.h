@@ -63,11 +63,11 @@ public:
         if (ev.mouseUp()) return ev;
         // Let caller handle escape key
         if (ev.type == Event::Type::KeyEscape) return ev;
-        // Let caller handle escape key
-        if (ev.type == Event::Type::WindowResize) return ev;
-        // Let caller handle Ctrl-C/D
-        if (ev.type == Event::Type::KeyCtrlC) return ev;
-        if (ev.type == Event::Type::KeyCtrlD) return ev;
+//        // Let caller handle escape key
+//        if (ev.type == Event::Type::WindowResize) return ev;
+//        // Let caller handle Ctrl-C/D
+//        if (ev.type == Event::Type::KeyCtrlC) return ev;
+//        if (ev.type == Event::Type::KeyCtrlD) return ev;
         // Eat all other events
         return {};
     }
