@@ -51,9 +51,9 @@ struct RevColumnHitTestResult {
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
-class _RevColumn {
+class RevColumn {
 public:
-    _RevColumn(const RevColumnOptions& opts) : _opts(opts) {
+    RevColumn(const RevColumnOptions& opts) : _opts(opts) {
         // Set our column name
         {
             _name = _opts.rev.displayName();
@@ -204,6 +204,6 @@ private:
     std::vector<UI::ButtonPtr> _buttons;
 };
 
-using RevColumn = std::shared_ptr<_RevColumn>;
+using RevColumnPtr = std::shared_ptr<RevColumn>;
 
 } // namespace UI

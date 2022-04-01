@@ -54,7 +54,7 @@ static std::vector<Git::Rev> _Revs;
 //static std::map<Git::Ref,RefHistory> _RefHistory;
 
 static UI::WindowPtr _RootWindow;
-static std::vector<UI::RevColumn> _Columns;
+static std::vector<UI::RevColumnPtr> _Columns;
 
 static struct {
     UI::CommitPanel titlePanel;
@@ -88,13 +88,13 @@ enum class _SelectState {
     Similar,
 };
 
-static _SelectState _SelectStateGet(UI::RevColumn col, UI::CommitPanel panel) {
+static _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanel panel) {
     bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
     if (!similar) return _SelectState::False;
     return (col->rev()==_Selection.rev ? _SelectState::True : _SelectState::Similar);
 }
 
-static bool _Selected(UI::RevColumn col, UI::CommitPanel panel) {
+static bool _Selected(UI::RevColumnPtr col, UI::CommitPanel panel) {
     return _SelectStateGet(col, panel) == _SelectState::True;
 }
 
@@ -113,7 +113,7 @@ static void _Draw() {
         
         bool dragging = (bool)_Drag.titlePanel;
         bool copying = _Drag.copy;
-        for (UI::RevColumn col : _Columns) {
+        for (UI::RevColumnPtr col : _Columns) {
             for (UI::CommitPanel panel : col->panels()) {
                 bool visible = false;
                 std::optional<UI::Color> borderColor;
@@ -201,7 +201,7 @@ static void _Draw() {
             _RootWindow->drawRect(*_SelectionRect);
         }
         
-        for (UI::RevColumn col : _Columns) {
+        for (UI::RevColumnPtr col : _Columns) {
             col->draw(*_RootWindow);
         }
         
@@ -230,7 +230,7 @@ static void _Draw() {
 }
 
 struct _HitTestResult {
-    UI::RevColumn column;
+    UI::RevColumnPtr column;
     UI::RevColumnHitTestResult hitTest;
     operator bool() const {
         return (bool)column;
@@ -241,7 +241,7 @@ static _HitTestResult _HitTest(const UI::Point& p) {
     // Don't bail when we get a hit -- we need to update the UI for all
     // columns (by calling hitTest) before returning
     _HitTestResult hit;
-    for (UI::RevColumn col : _Columns) {
+    for (UI::RevColumnPtr col : _Columns) {
         UI::RevColumnHitTestResult h = col->updateMouse(p);
         if (h) {
             hit = _HitTestResult{
@@ -254,15 +254,15 @@ static _HitTestResult _HitTest(const UI::Point& p) {
 }
 
 struct _InsertionPosition {
-    UI::RevColumn col;
+    UI::RevColumnPtr col;
     UI::CommitPanelVecIter iter;
 };
 
 static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
-    UI::RevColumn icol;
+    UI::RevColumnPtr icol;
     UI::CommitPanelVecIter iiter;
     std::optional<int> leastDistance;
-    for (UI::RevColumn col : _Columns) {
+    for (UI::RevColumnPtr col : _Columns) {
         UI::CommitPanelVec& panels = col->panels();
         // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
         if (panels.empty()) continue;
@@ -301,15 +301,15 @@ static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point&
     return _InsertionPosition{icol, iiter};
 }
 
-static UI::RevColumn _ColumnForRev(Git::Rev rev) {
-    for (UI::RevColumn col : _Columns) {
+static UI::RevColumnPtr _ColumnForRev(Git::Rev rev) {
+    for (UI::RevColumnPtr col : _Columns) {
         if (col->rev() == rev) return col;
     }
     // Programmer error if it doesn't exist
     abort();
 }
 
-static UI::CommitPanel _PanelForCommit(UI::RevColumn col, Git::Commit commit) {
+static UI::CommitPanel _PanelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
     for (UI::CommitPanel panel : col->panels()) {
         if (panel->commit() == commit) return panel;
     }
@@ -358,12 +358,12 @@ static void _Reload() {
             .redoEnabled        = (h ? !h->end() : false),
             .snapshotsEnabled   = true,
         };
-        _Columns.push_back(MakeShared<UI::RevColumn>(opts));
+        _Columns.push_back(MakeShared<UI::RevColumnPtr>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
     }
 }
 
-static void _UndoRedo(UI::RevColumn col, bool undo) {
+static void _UndoRedo(UI::RevColumnPtr col, bool undo) {
     Git::Rev rev = col->rev();
     State::History& h = _RepoState.history(col->rev().ref);
     State::RefState refStatePrev = h.get();
@@ -397,7 +397,7 @@ static void _UndoRedo(UI::RevColumn col, bool undo) {
 
 // _TrackMouseInsideCommitPanel
 // Handles clicking/dragging a set of CommitPanels
-static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
     const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
     const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
@@ -426,7 +426,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
     bool mouseDragged = false;
     for (;;) {
         assert(!_Selection.commits.empty());
-        UI::RevColumn selectionColumn = _ColumnForRev(_Selection.rev);
+        UI::RevColumnPtr selectionColumn = _ColumnForRev(_Selection.rev);
         
         const UI::Point p = ev.mouse.point;
         const UI::Size delta = mouseDownEvent.mouse.point-p;
@@ -600,7 +600,7 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
         // Update selection
         {
             struct _Selection selectionNew;
-            for (UI::RevColumn col : _Columns) {
+            for (UI::RevColumnPtr col : _Columns) {
                 for (UI::CommitPanel panel : col->panels()) {
                     if (!Empty(Intersection(selectionRect, panel->frame()))) {
                         selectionNew.rev = col->rev();
@@ -656,7 +656,7 @@ static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_
     return b;
 }
 
-static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumn mouseDownColumn, UI::CommitPanel mouseDownPanel) {
+static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanel mouseDownPanel) {
     auto mouseDownTime = std::chrono::steady_clock::now();
     UI::Event ev = mouseDownEvent;
     
@@ -798,7 +798,7 @@ static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const
     return b;
 }
 
-static void _TrackSnapshotsMenu(UI::RevColumn column) {
+static void _TrackSnapshotsMenu(UI::RevColumnPtr column) {
     Git::Ref ref = column->rev().ref;
     std::vector<UI::ButtonPtr> buttons = {
         _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
@@ -876,7 +876,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     }
 }
 
-static void _TrackMouseInsideButton(const UI::Event& mouseDownEvent, UI::RevColumn column, const UI::RevColumnHitTestResult& mouseDownHitTest) {
+static void _TrackMouseInsideButton(const UI::Event& mouseDownEvent, UI::RevColumnPtr column, const UI::RevColumnHitTestResult& mouseDownHitTest) {
     UI::RevColumnHitTestResult hit;
     UI::Event ev = mouseDownEvent;
     
