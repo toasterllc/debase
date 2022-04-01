@@ -50,7 +50,7 @@ public:
         {
             Window::Attr bold = win.attr(A_BOLD);
             Window::Attr color;
-            if (highlight() || (activeSnapshot && !mouseActive())) {
+            if (highlighted() || (activeSnapshot && !mouseActive())) {
                 color = win.attr(colors.menu);
             }
             win.drawText(offText, "%s", _commit.id.c_str());
@@ -73,7 +73,7 @@ public:
         
         // Draw highlight
         {
-            if (highlight()) {
+            if (highlighted()) {
                 Window::Attr color = win.attr(colors.menu|A_BOLD);
                 win.drawText(off + offTextY, "%s", "●");
             

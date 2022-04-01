@@ -47,9 +47,9 @@ public:
         {
             Window::Attr bold;
             Window::Attr color;
-            if (enabled)                bold = win.attr(A_BOLD);
-            if (_highlight && enabled)  color = win.attr(colors.menu);
-            else if (!enabled)          color = win.attr(colors.dimmed);
+            if (enabled)                 bold = win.attr(A_BOLD);
+            if (_highlighted && enabled) color = win.attr(colors.menu);
+            else if (!enabled)           color = win.attr(colors.dimmed);
             win.drawText(plabel, "%s", label.c_str());
         }
         
@@ -62,9 +62,9 @@ public:
     
     Event handleEvent(const Window& win, const Event& ev) override {
         if (ev.type == Event::Type::Mouse) {
-            bool hit = HitTest(frame, ev.mouse.point);
+            bool hit = hitTest(ev.mouse.point);
             if (enabled && hit) {
-                highlight(true);
+                highlighted(true);
                 
                 if (ev.mouseDown()) {
                     // Track mouse
@@ -72,14 +72,14 @@ public:
                     return {};
                 }
             } else {
-                highlight(false);
+                highlighted(false);
             }
         }
         return ev;
     }
     
     Event trigger(const Event& ev, Event::MouseButtons buttons=Event::MouseButtons::Left) {
-        if (enabled && HitTest(frame, ev.mouse.point) && ev.mouseUp(buttons)) {
+        if (enabled && hitTest(ev.mouse.point) && ev.mouseUp(buttons)) {
             if (action) action(*this);
             // Consume event
             return {};
@@ -87,10 +87,10 @@ public:
         return ev;
     }
     
-    bool highlight() { return _highlight; }
-    void highlight(bool x) {
-        if (_highlight == x) return;
-        _highlight = x;
+    bool highlighted() { return _highlighted; }
+    void highlighted(bool x) {
+        if (_highlighted == x) return;
+        _highlighted = x;
         drawNeeded = true;
     }
     
@@ -117,7 +117,7 @@ private:
         
         for (;;) {
             if (ev.type == Event::Type::Mouse) {
-                highlight(HitTest(frame, ev.mouse.point));
+                highlighted(hitTest(ev.mouse.point));
             }
             
             draw(win);
@@ -126,7 +126,7 @@ private:
         }
     }
     
-    bool _highlight = false;
+    bool _highlighted = false;
     bool _mouseActive = false;
 };
 

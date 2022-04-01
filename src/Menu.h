@@ -70,6 +70,10 @@ public:
             y += f.size.y;
             newHeight += f.size.y;
             
+            // Set the expanded hit test size so that the menu doesn't have any dead zones
+            if (!idx) button->hitTestExpand.t = 1;
+            button->hitTestExpand.b = 1;
+            
             // Bail if the button won't fit in the available height
             if (allowTruncate && newHeight>sizeMax.y) break;
             
@@ -172,6 +176,15 @@ public:
                     return;
                 }
             }
+            
+//            // Ensure that only a single button is highlighted
+//            {
+//                bool found = false;
+//                for (ButtonPtr button : buttons) {
+//                    if (!found) found = (button->enabled && button->highlighted());
+//                    else        button->highlighted(false);
+//                }
+//            }
             
             if (ev.type == Event::Type::Mouse) {
                 // Update the mouseActive state for all of our buttons

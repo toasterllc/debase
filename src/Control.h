@@ -7,8 +7,18 @@ class Control {
 public:
     Control(const ColorPalette& colors) : colors(colors) {}
     
-    virtual bool hitTest(const Point& p, Size expand={0,0}) const {
-        return HitTest(frame, p, expand);
+    virtual bool hitTest(const Point& p) const {
+        Rect f = frame;
+        f.point.x -= hitTestExpand.l;
+        f.size.x  += hitTestExpand.l;
+        
+        f.size.x  += hitTestExpand.r;
+        
+        f.point.y -= hitTestExpand.t;
+        f.size.y  += hitTestExpand.t;
+        
+        f.size.y  += hitTestExpand.b;
+        return HitTest(f, p);
     }
     
     virtual void layout() {}
@@ -25,6 +35,12 @@ public:
     
     const ColorPalette& colors;
     Rect frame;
+    struct {
+        int l = 0;
+        int r = 0;
+        int t = 0;
+        int b = 0;
+    } hitTestExpand;
 };
 
 } // namespace UI
