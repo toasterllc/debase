@@ -24,10 +24,13 @@ public:
         _messageLines = messageLines;
         setSize(sizeNew);
         _sizePrev = sizeNew;
-        _drawNeeded = true;
+        drawNeeded = true;
     }
     
     void draw() override {
+        if (!drawNeeded) return;
+        Panel::draw();
+        
         erase();
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border
@@ -53,20 +56,9 @@ public:
             drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
             offY++;
         }
-        
-        _drawNeeded = false;
     }
     
-    void drawIfNeeded() {
-//        if (_drawNeeded) {
-            draw();
-//        }
-    }
-    
-    bool drawNeeded() const { return _drawNeeded; }
-    void drawNeeded(bool x) { _drawNeeded = x; }
-    
-    virtual UI::Event handleEvent(const UI::Event& ev) {
+    Event handleEvent(const UI::Event& ev) override {
         // Let caller handle mouse-up's
         if (ev.mouseUp()) return ev;
         // Let caller handle escape key
@@ -96,7 +88,6 @@ protected:
 private:
     Size _sizePrev;
     std::vector<std::string> _messageLines;
-    bool _drawNeeded = false;
 };
 
 using MessagePanelPtr = std::shared_ptr<MessagePanel>;

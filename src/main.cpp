@@ -191,7 +191,7 @@ static void _Draw() {
         _RootWindow->erase();
         
         if (_Drag.titlePanel) {
-            _Drag.titlePanel->drawIfNeeded();
+            _Drag.titlePanel->draw();
             
             // Draw insertion marker
             if (_Drag.insertionMarker) {
@@ -201,7 +201,7 @@ static void _Draw() {
         }
         
         for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
-            panel->drawIfNeeded();
+            panel->draw();
         }
         
         if (_SelectionRect) {
@@ -222,11 +222,11 @@ static void _Draw() {
         }
         
         if (_MessagePanel) {
-            _MessagePanel->drawIfNeeded();
+            _MessagePanel->draw();
         }
         
         if (_RegisterPanel) {
-            _RegisterPanel->drawIfNeeded();
+            _RegisterPanel->draw();
         }
         
 //        curs_set(1);

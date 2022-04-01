@@ -16,8 +16,8 @@ public:
     }
     
     void draw(const Window& win) override {
-        UI::Window::Attr underline = win.attr(A_UNDERLINE);
-        UI::Window::Attr color;
+        Window::Attr underline = win.attr(A_UNDERLINE);
+        Window::Attr color;
         if (!_focus) color = win.attr(colors.dimmed);
         win.drawLineHoriz(frame.point, frame.size.x, ' ');
         
@@ -36,8 +36,8 @@ public:
         }
     }
     
-    UI::Event handleEvent(const UI::Event& ev) {
-        if (ev.type == UI::Event::Type::Mouse) {
+    Event handleEvent(const Event& ev) {
+        if (ev.type == Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(frame, ev.mouse.point)) {
                 if (!_focus) {
                     requestFocus(*this);
@@ -53,7 +53,7 @@ public:
             }
         
         } else if (_focus) {
-            if (ev.type == UI::Event::Type::KeyDelete) {
+            if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor == value.begin()) return {};
                 
@@ -64,7 +64,7 @@ public:
                 _offUpdate();
                 return {};
             
-            } else if (ev.type == UI::Event::Type::KeyFnDelete) {
+            } else if (ev.type == Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
                 if (cursor == value.end()) return {};
                 
@@ -73,7 +73,7 @@ public:
                 _offUpdate();
                 return {};
             
-            } else if (ev.type == UI::Event::Type::KeyLeft) {
+            } else if (ev.type == Event::Type::KeyLeft) {
                 auto cursor = _cursor();
                 if (cursor == value.begin()) return {};
                 
@@ -87,7 +87,7 @@ public:
                 _offCursor = std::distance(value.begin(), it);
                 return {};
             
-            } else if (ev.type == UI::Event::Type::KeyRight) {
+            } else if (ev.type == Event::Type::KeyRight) {
                 auto cursor = _cursor();
                 if (cursor == value.end()) return {};
                 
@@ -100,15 +100,15 @@ public:
                 auto it = UTF8::Next(cursor, value.end());
                 _offCursor = std::distance(value.begin(), it);
             
-            } else if (ev.type == UI::Event::Type::KeyTab) {
+            } else if (ev.type == Event::Type::KeyTab) {
                 releaseFocus(*this, false);
                 return {};
             
-            } else if (ev.type == UI::Event::Type::KeyBackTab) {
+            } else if (ev.type == Event::Type::KeyBackTab) {
                 releaseFocus(*this, false);
                 return {};
             
-            } else if (ev.type == UI::Event::Type::KeyReturn) {
+            } else if (ev.type == Event::Type::KeyReturn) {
                 releaseFocus(*this, true);
                 return {};
             

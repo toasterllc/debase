@@ -147,7 +147,7 @@ public:
         }
         
         for (UI::CommitPanelPtr p : panels) {
-            p->drawIfNeeded();
+            p->draw();
         }
         
         for (UI::ButtonPtr button : _buttons) {

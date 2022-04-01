@@ -46,8 +46,10 @@ public:
     }
     
     void draw() override {
-        int offY = size().y-_FieldsExtraHeight-1;
+        if (!drawNeeded) return;
         MessagePanel::draw();
+        
+        int offY = size().y-_FieldsExtraHeight-1;
         
         // Draw email field
         {
@@ -68,7 +70,7 @@ public:
         offY += 2;
     }
     
-    virtual Event handleEvent(const Event& ev) override {
+    Event handleEvent(const Event& ev) override {
         // Let caller handle window resize
         if (ev.type == Event::Type::WindowResize) return ev;
         // Let caller handle Ctrl-C/D
@@ -78,7 +80,7 @@ public:
         Event e = ev;
         if (e) e = _email.handleEvent(ev);
         if (e) e = _code.handleEvent(ev);
-        drawNeeded(true);
+        drawNeeded = true;
         return {};
     }
     

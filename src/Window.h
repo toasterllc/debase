@@ -290,7 +290,14 @@ public:
     }
     
     virtual void layout() {}
-    virtual void draw() {}
+    
+    bool drawNeeded = true;
+    virtual void draw() {
+        assert(drawNeeded);
+        drawNeeded = false;
+    }
+    
+    virtual UI::Event handleEvent(const UI::Event& ev) { return ev; }
     
     operator WINDOW*() const { return _win; }
     

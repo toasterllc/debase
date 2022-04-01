@@ -25,23 +25,25 @@ public:
         _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, _commit.message());
         
         setSize({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
-        _drawNeeded = true;
     }
     
     void setBorderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;
-        _drawNeeded = true;
+        drawNeeded = true;
     }
     
     void setHeaderLabel(std::string_view x) {
         assert(_header);
         if (_headerLabel == x) return;
         _headerLabel = x;
-        _drawNeeded = true;
+        drawNeeded = true;
     }
     
     void draw() {
+        if (!drawNeeded) return;
+        Panel::draw();
+        
         const int offY = (_header ? 1 : 0);
         
         int i = 0;
@@ -83,14 +85,6 @@ public:
             UI::Window::Attr color = attr(_colors.dimmed);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
-        
-        _drawNeeded = false;
-    }
-    
-    void drawIfNeeded() {
-        if (_drawNeeded) {
-            draw();
-        }
     }
     
     const Git::Commit commit() const { return _commit; }
@@ -108,7 +102,6 @@ private:
     std::string _author;
     std::vector<std::string> _message;
     std::optional<Color> _borderColor;
-    bool _drawNeeded = false;
 };
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;
