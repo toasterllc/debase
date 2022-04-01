@@ -8,6 +8,10 @@ public:
     Panel() {
         _panel = ::new_panel(*this);
         assert(_panel);
+        
+        // Give ourself an initial size (otherwise setPosition
+        // doesn't work until the size is set)
+        setSize({1,1});
     }
     
     ~Panel() {
