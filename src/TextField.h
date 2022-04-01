@@ -29,19 +29,21 @@ public:
     TextField(const ColorPalette& colors) : Control(colors) {}
     
     void layout() override {
-        // If the cursor offset is past our width, adjust `_leftOff` so that the cursor is within our frame
-        size_t cursorOff = UTF8::Strlen(_left(), _cursor());
-        if (cursorOff > frame.size.x) {
-            beep();
-            size_t add = cursorOff-(size_t)frame.size.x;
-            auto left = _left();
-            while (add && left!=value.end()) {
-                left = UTF8::Next(left, value.end());
-                add--;
-            }
-            _offLeft += std::distance(_left(), left);
+        _offUpdate();
         
-        }
+//        // If the cursor offset is past our width, adjust `_leftOff` so that the cursor is within our frame
+//        size_t cursorOff = UTF8::Strlen(_left(), _cursor());
+//        if (cursorOff > frame.size.x) {
+//            beep();
+//            size_t add = cursorOff-(size_t)frame.size.x;
+//            auto left = _left();
+//            while (add && left!=value.end()) {
+//                left = UTF8::Next(left, value.end());
+//                add--;
+//            }
+//            _offLeft += std::distance(_left(), left);
+//        
+//        }
 //        else if () {
 //            if (_cursor() == value.end()) {
 //                auto left = _left();
@@ -126,31 +128,43 @@ public:
             if (ev.type == UI::Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor != value.begin()) {
-                    if (_cursorMax() == value.end()) {
-                        auto left = _left();
-                        if (left != value.begin()) {
-                            left = UTF8::Prev(left, value.begin());
-                            _offLeft = std::distance(value.begin(), left);
-                        }
-                    }
+//                    if (_cursorMax() == value.end()) {
+//                        auto left = _left();
+//                        if (left != value.begin()) {
+//                            left = UTF8::Prev(left, value.begin());
+//                            _offLeft = std::distance(value.begin(), left);
+//                        }
+//                    }
+                    
+                    
+                    
+//                    auto eraseBegin = UTF8::Prev(cursor, value.begin());
+//                    value.erase(eraseBegin, cursor);
+                    
+//                    _offUpdate();
+                    
+//                    _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
+//                    _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
                     
                     auto eraseBegin = UTF8::Prev(cursor, value.begin());
                     size_t eraseSize = std::distance(eraseBegin, cursor);
                     value.erase(eraseBegin, cursor);
                     _offCursor -= eraseSize;
+                    
+                    _offUpdate();
                 }
                 return {};
             
             } else if (ev.type == UI::Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
                 if (cursor != value.end()) {
-                    if (_cursorMax() == value.end()) {
-                        auto left = _left();
-                        if (left != value.begin()) {
-                            left = UTF8::Prev(left, value.begin());
-                            _offLeft = std::distance(value.begin(), left);
-                        }
-                    }
+//                    if (_cursorMax() == value.end()) {
+//                        auto left = _left();
+//                        if (left != value.begin()) {
+//                            left = UTF8::Prev(left, value.begin());
+//                            _offLeft = std::distance(value.begin(), left);
+//                        }
+//                    }
                     
 //                    // If the cursor's at the display-end, move it left
 //                    auto cursor = _cursor();
@@ -161,6 +175,8 @@ public:
                     
                     auto eraseEnd = UTF8::Next(cursor, value.end());
                     value.erase(cursor, eraseEnd);
+                    
+                    _offUpdate();
                     
 //                    auto cursor = _cursor();
                 }
@@ -255,6 +271,8 @@ public:
                     }
                 }
                 
+                _offUpdate();
+                
                 return {};
             }
         }
@@ -277,16 +295,10 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     
-    std::string::iterator _left() {
-        return value.begin()+_offLeft;
-    }
-    
-    std::string::iterator _leftMin() {
-        return value.begin();
-    }
-    
+    std::string::iterator _left() { return value.begin()+_offLeft; }
+    std::string::iterator _leftMin() { return value.begin(); }
     std::string::iterator _leftMax() {
-        const int width = frame.size.x;
+        int width = frame.size.x;
         auto it = value.end();
         while (width && it!=value.begin()) {
             it = UTF8::Prev(it, value.begin());
@@ -296,7 +308,6 @@ private:
     }
     
     std::string::iterator _cursor() { return value.begin()+_offCursor; }
-    
     std::string::iterator _cursorMin() { return _left(); }
     std::string::iterator _cursorMax() {
         const int width = frame.size.x;
@@ -308,6 +319,16 @@ private:
             len++;
         }
         return right;
+    }
+    
+    size_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
+    size_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
+    size_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
+    size_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
+    
+    void _offUpdate() {
+        _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
+        _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
     }
     
 //    std::string::const_iterator _cleft() const { return value.cbegin()+_offLeft; }
