@@ -38,7 +38,6 @@ inline T_Iter NextN(T_Iter it, T_Iter end, ssize_t n) {
             it++;
             if (CodepointStart(*it)) n--;
         }
-        return it;
     
     } else if (n < 0) {
         while (n) {
@@ -46,8 +45,8 @@ inline T_Iter NextN(T_Iter it, T_Iter end, ssize_t n) {
             it--;
             if (CodepointStart(*it)) n++;
         }
-        return it;
     }
+    return it;
 }
 
 template <typename T_Iter>

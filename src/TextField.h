@@ -210,7 +210,8 @@ public:
                 
                 // If the cursor's at the display-end, shift view right
                 if (_cursor() == _cursorMax()) {
-                    _leftShift(1);
+                    auto left = UTF8::Next(_left(), value.end());
+                    _offLeft = std::distance(value.begin(), left);
                 }
                 
                 const int c = (int)ev.type;
@@ -295,28 +296,28 @@ private:
 //    T_Iter _add(T_Iter ) {
 //        
 //    }
-    
-    void _leftShift(ssize_t delta) {
-        if (delta > 0) {
-            auto left = _left();
-            auto it = left;
-            while (delta && it!=value.end()) {
-                it = UTF8::Next(it, value.end());
-                delta--;
-            }
-            _offLeft += std::distance(left, it);
-        
-        } else if (delta < 0) {
-            auto left = _left();
-            auto it = left;
-            while (delta && it!=value.begin()) {
-                it = UTF8::Prev(it, value.begin());
-                delta++;
-            }
-            _offLeft -= std::distance(it, left);
-        }
-    }
-    
+//    
+//    void _leftShift(ssize_t delta) {
+//        if (delta > 0) {
+//            auto left = _left();
+//            auto it = left;
+//            while (delta && it!=value.end()) {
+//                it = UTF8::Next(it, value.end());
+//                delta--;
+//            }
+//            _offLeft += std::distance(left, it);
+//        
+//        } else if (delta < 0) {
+//            auto left = _left();
+//            auto it = left;
+//            while (delta && it!=value.begin()) {
+//                it = UTF8::Prev(it, value.begin());
+//                delta++;
+//            }
+//            _offLeft -= std::distance(it, left);
+//        }
+//    }
+//    
 //    std::string::const_iterator _cleft() const { return value.cbegin()+_offLeft; }
 //    std::string::const_iterator _ccursor() const { return value.cbegin()+_offCursor; }
 //    
