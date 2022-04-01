@@ -15,26 +15,6 @@ public:
     
     Menu(const ColorPalette& colors) : colors(colors) {}
     
-//    ButtonPtr updateMouse(const Point& p) {
-//        Rect frame = Panel::frame();
-//        Point off = p-frame.point;
-//        bool mouseActive = HitTest(frame, p);
-//        
-//        ButtonPtr mouseOverButton = nullptr;
-//        for (ButtonPtr button : buttons) {
-//            button->mouseActive = mouseActive;
-//            bool hit = button->hitTest(off, {1,1});
-//            if (hit && !mouseOverButton) {
-//                button->highlight(true);
-//                mouseOverButton = button;
-//            } else {
-//                button->highlight(false);
-//            }
-//        }
-//        
-//        return mouseOverButton;
-//    }
-    
     void layout() override {
         // Short-circuit if layout isn't needed
         if (!_layoutNeeded) return;
@@ -117,74 +97,23 @@ public:
         }
     }
     
-//    Event handleEvent(const Event& ev) override {
-//        // Let caller handle window resize
-//        if (ev.type == Event::Type::WindowResize) return ev;
-//        
-//        if (ev.type == Event::Type::Mouse) {
-//            bool hit = HitTest(frame(), ev.mouse.point);
-//            
-//            // Update the mouseActive state for all of our buttons
-//            for (ButtonPtr button : buttons) {
-//                button->mouseActive(hit);
-//            }
-//            
-//            if (ev.mouseDown() && !hit) {
-////                assert(dismissAction);
-//                if (dismissAction) dismissAction(*this);
-//                return {};
-//            }
-//        
-//        } else if (ev.type == Event::Type::KeyEscape) {
-////            assert(dismissAction);
-//            if (dismissAction) dismissAction(*this);
-//            return {};
-//        }
-//        
-//        // See if any of the buttons want the event
-//        for (ButtonPtr button : buttons) {
-//            Event e = button->handleEvent(*this, ev);
-//            if (!e) {
-////                assert(dismissAction);
-//                if (dismissAction) dismissAction(*this);
-//                return {};
-//            }
-//        }
-//        
-//        return {};
-//    }
-    
     void track(const Event& mouseDownEvent) {
         auto mouseDownTime = std::chrono::steady_clock::now();
         UI::Event ev = mouseDownEvent;
         Event::MouseButtons mouseUpButtons = Event::MouseButtons::Right;
-//        bool abort = false;
         
         for (;;) {
             draw();
             ev = nextEvent();
             
-//            // Let caller handle window resize
-//            if (ev.type == Event::Type::WindowResize) return ev;
-            
             // See if any of the buttons want the event
             for (ButtonPtr button : buttons) {
                 Event e = button->handleEvent(*this, ev);
                 if (!e) {
-    //                assert(dismissAction);
                     if (dismissAction) dismissAction(*this);
                     return;
                 }
             }
-            
-//            // Ensure that only a single button is highlighted
-//            {
-//                bool found = false;
-//                for (ButtonPtr button : buttons) {
-//                    if (!found) found = (button->enabled && button->highlighted());
-//                    else        button->highlighted(false);
-//                }
-//            }
             
             if (ev.type == Event::Type::Mouse) {
                 // Update the mouseActive state for all of our buttons
@@ -195,7 +124,6 @@ public:
                 
                 // Handle mouse down
                 if (ev.mouseDown()) {
-    //                assert(dismissAction);
                     if (dismissAction) dismissAction(*this);
                     return;
                 
@@ -220,53 +148,13 @@ public:
                             }
                             return;
                         }
-                        
-                        // Start listening for left mouse up
-                        mouseUpButtons |= Event::MouseButtons::Left;
-                        
-                        // Right mouse up, but menu stays open
-                        // Now start tracking both left+right mouse down
-                    
                     }
                 }
             
             } else if (ev.type == Event::Type::KeyEscape) {
-    //            assert(dismissAction);
                 if (dismissAction) dismissAction(*this);
                 return;
             }
-            
-            
-//            abort = (ev.type != Event::Type::Mouse);
-            
-//            // Check if we should abort
-//            if (abort) {
-//                break;
-//            
-//            // Handle mouse up
-//            } else if (ev.mouseUp(mouseUpButtons)) {
-//                if (!(mouseUpButtons & Event::MouseButtons::Left)) {
-//                    // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
-//                    // stay open and we should start listening for left-mouse-down events.
-//                    // If the right-mouse-up occurs af
-//                    auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-//                    if (duration >= _StayOpenThresh) break;
-//                    
-//                    // Start listening for left mouse up
-//                    mouseUpButtons |= Event::MouseButtons::Left;
-//                    
-//                    // Right mouse up, but menu stays open
-//                    // Now start tracking both left+right mouse down
-//                } else {
-//                    // Close the menu only if clicking outside of the menu, or clicking on an
-//                    // enabled menu button.
-//                    // In other words, don't close the menu when clicking on a disabled menu
-//                    // button.
-//                    if (!menuButton || menuButton->enabled) {
-//                        break;
-//                    }
-//                }
-//            }
         }
     }
     
