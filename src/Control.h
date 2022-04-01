@@ -23,7 +23,11 @@ public:
     
     virtual void layout() {}
     
-    virtual void draw(const Window& win) {}
+    bool drawNeeded = true;
+    virtual void draw(const Window& win) {
+        assert(drawNeeded);
+        drawNeeded = false;
+    }
     
     virtual Event handleEvent(const Window& win, const Event& ev) {
         return ev;

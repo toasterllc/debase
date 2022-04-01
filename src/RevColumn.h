@@ -160,6 +160,8 @@ public:
         }
         
         for (ButtonPtr button : _buttons) {
+            // Draws are always needed because _RootWindow is cleared upon each draw cycle
+            button->drawNeeded = true;
             button->draw(win);
         }
     }
