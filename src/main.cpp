@@ -1401,11 +1401,9 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: TextField: don't lose content when resizing window
-    
     #warning TODO: switch Button to follow TextField handleEvent() model
     
-    #warning TODO: switch classes to not be shared_ptr where possible. particularly Window.
+    #warning TODO: switch Menu to follow TextField handleEvent() model
     
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
@@ -1426,6 +1424,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: switch classes to not be shared_ptr where possible. particularly Window.
+//
+//    #warning TODO: TextField: don't lose content when resizing window
+//
 //    #warning TODO: TextField: filter printable characters better
 //
 //    #warning TODO: TextField: make clicking to reposition cursor work

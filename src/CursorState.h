@@ -19,29 +19,6 @@ public:
         _Update();
     }
     
-    
-//    static CursorState Set(bool visible, Point pos={}) {
-//        _Id id = _IdCurrent;
-//        _IdCurrent++;
-//        
-//        _CursorState state = {
-//            .id = id,
-//            .visible = visible,
-//            .position = pos,
-//        };
-//        
-//        _States.push_back(state);
-//        _Update();
-//        return CursorState(id);
-//    }
-    
-//    CursorState(bool visible, const Point& pos) :
-//    _visible(visible), _position(pos) {}
-//    
-//    CursorState(bool visible) {
-//        set(visible);
-//    }
-    
     CursorState() {}
     CursorState(const CursorState& x) = delete;
     CursorState(CursorState&& x) {
@@ -67,39 +44,6 @@ public:
         _Remove(_id);
         _id = 0;
     }
-    
-//    CursorState(bool visible, const Point& pos) :
-//    _visible(visible), _position(pos) {}
-//    
-//    CursorState(bool visible) {
-//        set(visible);
-//    }
-//    
-//    CursorState(const CursorState& x) = delete;
-//    CursorState(CursorState&& x) = delete;
-//    
-//    ~CursorState() {
-//        if (_prev) {
-//            restore();
-//        }
-//    }
-//    
-//    void set(bool visible) {
-//        assert(!_prev);
-//        _prev = curs_set(visible ? 1 : 0);
-//    }
-//    
-//    void restore() {
-//        assert(_prev);
-//        curs_set(*_prev);
-//        _prev = std::nullopt;
-//    }
-//    
-//    operator bool() { return _prev.has_value(); }
-//    
-//private:
-//    bool _visible = false;
-//    Point _position;
     
 private:
     using _Id = uint64_t;
