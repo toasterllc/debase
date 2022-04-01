@@ -74,7 +74,7 @@ static constexpr std::chrono::milliseconds _ContextMenuStayOpenThresh(300);
 static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
-static UI::Menu _ContextMenu;
+static UI::MenuPtr _ContextMenu;
 static UI::SnapshotMenuPtr _SnapshotsMenu;
 
 static UI::MessagePanelPtr _MessagePanel;
@@ -685,7 +685,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
     UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
     std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
-    _ContextMenu = MakeShared<UI::Menu>(UI::MenuOptions{
+    _ContextMenu = MakeShared<UI::MenuPtr>(UI::MenuOptions{
         .colors = _Colors,
         .parentWindow = _RootWindow,
         .position = mouseDownEvent.mouse.point,

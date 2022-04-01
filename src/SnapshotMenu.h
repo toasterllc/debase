@@ -6,13 +6,13 @@
 
 namespace UI {
 
-class SnapshotMenu : public _Menu {
+class SnapshotMenu : public Menu {
 public:
-    using _Menu::_Menu;
+    using Menu::Menu;
     
     void draw() {
         const MenuOptions& opts = options();
-        _Menu::draw();
+        Menu::draw();
         const int width = bounds().size.x;
         
         // Draw separator

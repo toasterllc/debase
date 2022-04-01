@@ -15,14 +15,14 @@ struct MenuOptions {
     bool allowTruncate = false;
 };
 
-class _Menu : public Panel, public std::enable_shared_from_this<_Menu> {
+class Menu : public Panel, public std::enable_shared_from_this<Menu> {
 public:
     // Padding(): the additional width/height on top of the size of the buttons
     static constexpr Size Padding() {
         return Size{2*(_BorderSize+_InsetX), 2*_BorderSize};
     }
     
-    _Menu(const MenuOptions& opts) : _opts(opts) {
+    Menu(const MenuOptions& opts) : _opts(opts) {
         // Find the longest button to set our width
         int width = 0;
         for (ButtonPtr button : _opts.buttons) {
@@ -127,6 +127,6 @@ private:
     size_t _buttonCount = 0;
 };
 
-using Menu = std::shared_ptr<_Menu>;
+using MenuPtr = std::shared_ptr<Menu>;
 
 } // namespace UI
