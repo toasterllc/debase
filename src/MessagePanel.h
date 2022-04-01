@@ -17,7 +17,7 @@ struct MessagePanelOptions {
     std::string message;
 };
 
-class MessagePanel : public Panel, public std::enable_shared_from_this<MessagePanel> {
+class MessagePanel : public Panel {
 public:
     MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {}
     

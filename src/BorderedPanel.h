@@ -5,7 +5,7 @@
 
 namespace UI {
 
-class BorderedPanel : public Panel, public std::enable_shared_from_this<BorderedPanel> {
+class BorderedPanel : public Panel {
 public:
     BorderedPanel(const Size& size) {
         setSize(size);

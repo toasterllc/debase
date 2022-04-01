@@ -15,7 +15,7 @@ struct MenuOptions {
     bool allowTruncate = false;
 };
 
-class Menu : public Panel, public std::enable_shared_from_this<Menu> {
+class Menu : public Panel {
 public:
     // Padding(): the additional width/height on top of the size of the buttons
     static constexpr Size Padding() {
