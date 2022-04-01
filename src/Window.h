@@ -297,7 +297,7 @@ public:
         drawNeeded = false;
     }
     
-    virtual UI::Event handleEvent(const UI::Event& ev) { return ev; }
+    virtual Event handleEvent(const Event& ev) { return ev; }
     
     operator WINDOW*() const { return _win; }
     

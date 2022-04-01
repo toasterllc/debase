@@ -58,16 +58,16 @@ public:
         }
     }
     
-    Event handleEvent(const UI::Event& ev) override {
+    Event handleEvent(const Event& ev) override {
         // Let caller handle mouse-up's
         if (ev.mouseUp()) return ev;
         // Let caller handle escape key
-        if (ev.type == UI::Event::Type::KeyEscape) return ev;
+        if (ev.type == Event::Type::KeyEscape) return ev;
         // Let caller handle escape key
-        if (ev.type == UI::Event::Type::WindowResize) return ev;
+        if (ev.type == Event::Type::WindowResize) return ev;
         // Let caller handle Ctrl-C/D
-        if (ev.type == UI::Event::Type::KeyCtrlC) return ev;
-        if (ev.type == UI::Event::Type::KeyCtrlD) return ev;
+        if (ev.type == Event::Type::KeyCtrlC) return ev;
+        if (ev.type == Event::Type::KeyCtrlD) return ev;
         // Eat all other events
         return {};
     }
