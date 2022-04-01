@@ -66,7 +66,7 @@ public:
     }
     
     void draw() override {
-        drawNeeded = _drawNeeded();
+        drawNeeded |= _drawNeeded();
         if (!drawNeeded) return;
         Panel::draw();
         

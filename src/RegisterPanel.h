@@ -44,8 +44,11 @@ public:
     }
     
     void draw() override {
-        drawNeeded = true;
+//        drawNeeded = true;
         if (!drawNeeded) return;
+        
+        os_log(OS_LOG_DEFAULT, "RegisterPanel::draw()");
+        
         MessagePanel::draw();
         
         int offY = size().y-_FieldsExtraHeight-1;
@@ -79,7 +82,9 @@ public:
         Event e = ev;
         if (e) e = _email.handleEvent(*this, ev);
         if (e) e = _code.handleEvent(*this, ev);
-        drawNeeded = true;
+        
+        // If we handled an event, we need to draw
+        if (!e) drawNeeded = true;
         return {};
     }
     
