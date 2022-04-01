@@ -8,81 +8,74 @@
 
 namespace UI {
 
-struct RevColumnOptions {
-    const ColorPalette& colors;
-    Rect containerBounds;
-    Git::Repo repo;
-    Git::Rev rev;
-    bool head = false;
-    Point offset;
-    int width = 0;
-    bool undoEnabled = false;
-    bool redoEnabled = false;
-    bool snapshotsEnabled = false;
-};
-
-enum class RevColumnButton : int {
-    None,
-    Undo,
-    Redo,
-    Snapshots,
-};
-
-struct RevColumnHitTestResult {
-    CommitPanelPtr panel;
-    RevColumnButton button = RevColumnButton::None;
-    bool buttonEnabled = false;
-    
-    operator bool() const {
-        return panel || button!=RevColumnButton::None;
-    }
-    
-    bool operator==(const RevColumnHitTestResult& x) const {
-        if (panel != x.panel) return false;
-        if (button != x.button) return false;
-        if (buttonEnabled != x.buttonEnabled) return false;
-        return true;
-    }
-    
-    bool operator!=(const RevColumnHitTestResult& x) const {
-        return !(*this==x);
-    }
-};
-
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
 class RevColumn {
 public:
-    RevColumn(const RevColumnOptions& opts) : _opts(opts) {
+    enum class Button : int {
+        None,
+        Undo,
+        Redo,
+        Snapshots,
+    };
+
+    struct HitTestResult {
+        CommitPanelPtr panel;
+        Button button = Button::None;
+        bool buttonEnabled = false;
+        
+        operator bool() const {
+            return panel || button!=Button::None;
+        }
+        
+        bool operator==(const HitTestResult& x) const {
+            if (panel != x.panel) return false;
+            if (button != x.button) return false;
+            if (buttonEnabled != x.buttonEnabled) return false;
+            return true;
+        }
+        
+        bool operator!=(const HitTestResult& x) const {
+            return !(*this==x);
+        }
+    };
+    
+    RevColumn(const ColorPalette& colors) : colors(colors) {}
+    
+    void layout() {
+        // Short-circuit if layout isn't needed
+        if (!_layoutNeeded) return;
+        _layoutNeeded = false;
+        
         // Set our column name
         {
-            _name = _opts.rev.displayName();
+            _name = rev.displayName();
             
-            if (_opts.head && _name!="HEAD") {
+            if (head && _name!="HEAD") {
                 _name = _name + " (HEAD)";
             }
             
             // Truncate the name to our width
-            _name.erase(std::min(UTF8::Strlen(_name), (size_t)_opts.width));
+            _name.erase(std::min(UTF8::Strlen(_name), (size_t)width));
         }
         
         // Create our CommitPanels
-        UI::Rect nameFrame = {_opts.offset, {_opts.width, 1}};
-        _truncated = Intersection(_opts.containerBounds, nameFrame) != nameFrame;
+        UI::Rect nameFrame = {offset, {width, 1}};
+        _truncated = Intersection(containerBounds, nameFrame) != nameFrame;
         if (!_truncated) {
             // Create panels for each commit
             int offY = _CommitsInsetY;
-            Git::Commit commit = _opts.rev.commit;
-            size_t skip = _opts.rev.skip;
+            Git::Commit commit = rev.commit;
+            size_t skip = rev.skip;
             while (commit) {
                 if (!skip) {
-                    Point p = _opts.offset + Size{0,offY};
-                    UI::CommitPanelPtr panel = MakeShared<UI::CommitPanelPtr>(_opts.colors, false, _opts.width, commit);
+                    Point p = offset + Size{0,offY};
+                    UI::CommitPanelPtr panel = MakeShared<UI::CommitPanelPtr>(colors, false, width, commit);
                     UI::Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
-                    if (Intersection(_opts.containerBounds, frame) != frame) break;
+                    if (Intersection(containerBounds, frame) != frame) break;
                     panel->setPosition(p);
-                    _panels.push_back(panel);
+                    panels.push_back(panel);
                     offY += panel->frame().size.y + _CommitSpacing;
                 
                 } else {
@@ -94,19 +87,19 @@ public:
         }
         
         // Create our undo/redo buttons
-        if (_opts.rev.isMutable()) {
+        if (rev.isMutable()) {
             constexpr int UndoWidth      = 8;
             constexpr int RedoWidth      = 8;
             constexpr int SnapshotsWidth = 16;
             
-            Rect undoFrame = {_opts.offset+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
-            Rect redoFrame = {_opts.offset+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
-            Rect snapshotsFrame = {_opts.offset+Size{(_opts.width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
+            Rect undoFrame = {offset+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
+            Rect redoFrame = {offset+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
+            Rect snapshotsFrame = {offset+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
             
             {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Undo";
-                button->enabled = _opts.undoEnabled;
+                button->enabled = undoEnabled;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
@@ -114,9 +107,9 @@ public:
             }
             
             {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Redo";
-                button->enabled = _opts.redoEnabled;
+                button->enabled = redoEnabled;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
@@ -124,9 +117,9 @@ public:
             }
             
             {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Snapshots…";
-                button->enabled = _opts.snapshotsEnabled;
+                button->enabled = snapshotsEnabled;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
@@ -142,18 +135,18 @@ public:
         // Draw branch name
         {
             UI::Window::Attr bold = win.attr(A_BOLD);
-            const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
+            const Point p = offset + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
         }
         
-        if (!_opts.rev.isMutable()) {
-            UI::Window::Attr color = win.attr(_opts.colors.error);
+        if (!rev.isMutable()) {
+            UI::Window::Attr color = win.attr(colors.error);
             const char immutableText[] = "read-only";
-            const Point p = _opts.offset + Size{std::max(0, (_opts.width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+            const Point p = offset + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, "%s", immutableText);
         }
         
-        for (UI::CommitPanelPtr p : _panels) {
+        for (UI::CommitPanelPtr p : panels) {
             p->drawIfNeeded();
         }
         
@@ -162,21 +155,21 @@ public:
         }
     }
     
-    RevColumnHitTestResult updateMouse(const UI::Point& p) {
+    HitTestResult updateMouse(const UI::Point& p) {
         for (UI::ButtonPtr button : _buttons) {
             button->highlight = false;
         }
         
-        for (UI::CommitPanelPtr panel : _panels) {
-            if (panel->hitTest(p)) return RevColumnHitTestResult{ .panel = panel };
+        for (UI::CommitPanelPtr panel : panels) {
+            if (panel->hitTest(p)) return HitTestResult{ .panel = panel };
         }
         
-        int bnum = (int)RevColumnButton::None+1;
+        int bnum = (int)Button::None+1;
         for (UI::ButtonPtr& button : _buttons) {
             if (button->hitTest(p)) {
                 button->highlight = true;
-                return RevColumnHitTestResult{
-                    .button = (RevColumnButton)bnum,
+                return HitTestResult{
+                    .button = (Button)bnum,
                     .buttonEnabled = button->enabled,
                 };
             }
@@ -186,9 +179,18 @@ public:
         return {};
     }
     
-    Git::Rev rev() { return _opts.rev; }
-    UI::CommitPanelVec& panels() { return _panels; }
-    const RevColumnOptions& opts() { return _opts; }
+    const ColorPalette& colors;
+    Rect containerBounds;
+    Git::Repo repo;
+    Git::Rev rev;
+    bool head = false;
+    Point offset;
+    int width = 0;
+    bool undoEnabled = false;
+    bool redoEnabled = false;
+    bool snapshotsEnabled = false;
+    
+    UI::CommitPanelVec panels;
     
 private:
     static constexpr int _TitleInsetY    = 0;
@@ -197,10 +199,10 @@ private:
     static constexpr int _CommitsInsetY  = 5;
     static constexpr int _ButtonWidth    = 8;
     static constexpr int _CommitSpacing  = 1;
-    RevColumnOptions _opts;
+    
+    bool _layoutNeeded = true;
     std::string _name;
     bool _truncated = false;
-    UI::CommitPanelVec _panels;
     std::vector<UI::ButtonPtr> _buttons;
 };
 
