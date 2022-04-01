@@ -164,7 +164,7 @@ static void _Draw() {
         
         if (_RegisterPanel) {
             constexpr int RegisterPanelWidth = 50;
-            _RegisterPanel->options().width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+            _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
             _RegisterPanel->layout();
             
             UI::Size ps = _RegisterPanel->frame().size;
@@ -1132,15 +1132,12 @@ static void _EventLoop() {
     
     
     {
-        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(UI::MessagePanelOptions{
-            .colors         = _Colors,
-            .color          = _Colors.menu,
-            .width          = 50,
-            .messageInsetY  = 1,
-            .center         = false,
-            .title          = "Register",
-            .message        = "Please register debase",
-        });
+        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+        _RegisterPanel->color           = _Colors.menu;
+        _RegisterPanel->messageInsetY   = 1;
+        _RegisterPanel->center          = false;
+        _RegisterPanel->title           = "Register";
+        _RegisterPanel->message         = "Please register debase";
     }
     
     
@@ -1292,14 +1289,12 @@ static void _EventLoop() {
             
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _MessagePanel = MakeShared<UI::MessagePanelPtr>(UI::MessagePanelOptions{
-                .colors  = _Colors,
-                .color   = _Colors.error,
-                .width   = errorPanelWidth,
-                .center  = true,
-                .title   = "Error",
-                .message = errorMsg,
-            });
+            _MessagePanel = MakeShared<UI::MessagePanelPtr>(_Colors);
+            _MessagePanel->color    = _Colors.error;
+            _MessagePanel->width    = errorPanelWidth;
+            _MessagePanel->center   = true;
+            _MessagePanel->title    = "Error";
+            _MessagePanel->message  = errorMsg;
         }
     }
 }

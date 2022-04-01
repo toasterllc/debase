@@ -11,20 +11,20 @@ namespace UI {
 
 class RegisterPanel : public MessagePanel {
 public:
-    RegisterPanel(const MessagePanelOptions& opts) : MessagePanel(_AdjustedOptions(opts)) {
+    RegisterPanel(const ColorPalette& colors) :
+    MessagePanel(colors), _email(colors), _code(colors) {
+        extraHeight = _FieldsExtraHeight;
+        
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email = std::make_shared<TextField>(opts.colors);
-        _code = std::make_shared<TextField>(opts.colors);
+        _email.requestFocus = requestFocus;
+        _email.releaseFocus = releaseFocus;
         
-        _email->requestFocus = requestFocus;
-        _email->releaseFocus = releaseFocus;
+        _code.requestFocus = requestFocus;
+        _code.releaseFocus = releaseFocus;
         
-        _code->requestFocus = requestFocus;
-        _code->releaseFocus = releaseFocus;
-        
-        _email->focus(true);
+        _email.focus(true);
     }
     
     virtual bool layout() override {
@@ -33,37 +33,36 @@ public:
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         int offY = s.y-_FieldsExtraHeight-1;
-        _email->frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _email->layout();
+        _email.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        _email.layout();
         offY += 2;
-        _code->frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
-        _code->layout();
+        _code.frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        _code.layout();
         offY += 2;
         
         return true;
     }
     
     void draw() override {
-        const MessagePanelOptions& opts = options();
         int offY = size().y-_FieldsExtraHeight-1;
         MessagePanel::draw();
         
         // Draw email field
         {
-            Attr color = attr(opts.color|A_BOLD);
+            Attr style = attr(color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
         
-        _email->draw(*this);
+        _email.draw(*this);
         offY += 2;
         
         // Draw code field
         {
-            Attr color = attr(opts.color|A_BOLD);
+            Attr style = attr(color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }
         
-        _code->draw(*this);
+        _code.draw(*this);
         offY += 2;
         
 //        char buf[128];
@@ -79,8 +78,8 @@ public:
         if (ev.type == Event::Type::KeyCtrlD) return ev;
         
         Event e = ev;
-        if (e) e = _email->handleEvent(ev);
-        if (e) e = _code->handleEvent(ev);
+        if (e) e = _email.handleEvent(ev);
+        if (e) e = _code.handleEvent(ev);
         drawNeeded(true);
         return {};
         
@@ -128,23 +127,17 @@ private:
     static constexpr int _FieldLabelWidth   = 10;
     static constexpr int _FieldValueInsetX  = _FieldLabelInsetX+_FieldLabelWidth;
     
-    static MessagePanelOptions _AdjustedOptions(const MessagePanelOptions& x) {
-        MessagePanelOptions opts = x;
-        opts.extraHeight = _FieldsExtraHeight;
-        return opts;
-    }
-    
     void _fieldRequestFocus(TextField& field) {
-        _email->focus(false);
-        _code->focus(false);
+        _email.focus(false);
+        _code.focus(false);
         field.focus(true);
     }
     
     void _fieldReleaseFocus(TextField& field, bool done) {
-        _email->focus(false);
-        _code->focus(false);
+        _email.focus(false);
+        _code.focus(false);
         
-        bool fieldsFilled = !_email->value.empty() && !_code->value.empty();
+        bool fieldsFilled = !_email.value.empty() && !_code.value.empty();
         if (done) {
             if (fieldsFilled) {
                 beep();
@@ -154,17 +147,17 @@ private:
                     field.focus(true);
                 
                 } else {
-                    if (_email->value.empty())     _email->focus(true);
-                    else if (_code->value.empty()) _code->focus(true);
+                    if (_email.value.empty())     _email.focus(true);
+                    else if (_code.value.empty()) _code.focus(true);
                 }
             }
         
         } else {
             // Tab behavior
-            if (&field == &*_email) {
-                _code->focus(true);
-            } else if (&field == &*_code) {
-                _email->focus(true);
+            if (&field == &_email) {
+                _code.focus(true);
+            } else if (&field == &_code) {
+                _email.focus(true);
             }
         }
         
@@ -172,9 +165,9 @@ private:
 //        if (!done || !fieldsFilled) {
 //            // Tab behavior
 //            if (&field == &*_email) {
-//                _code->focus(true);
+//                _code.focus(true);
 //            } else if (&field == &*_code) {
-//                _email->focus(true);
+//                _email.focus(true);
 //            }
 //        
 //        } else {
@@ -183,8 +176,8 @@ private:
 //        }
     }
     
-    TextFieldPtr _email;
-    TextFieldPtr _code;
+    TextField _email;
+    TextField _code;
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;
