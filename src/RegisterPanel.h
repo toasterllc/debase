@@ -78,8 +78,8 @@ public:
         if (ev.type == Event::Type::KeyCtrlD) return ev;
         
         Event e = ev;
-        if (e) e = _email.handleEvent(ev);
-        if (e) e = _code.handleEvent(ev);
+        if (e) e = _email.handleEvent(*this, ev);
+        if (e) e = _code.handleEvent(*this, ev);
         drawNeeded = true;
         return {};
     }

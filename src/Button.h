@@ -9,7 +9,7 @@ namespace UI {
 class Button : public Control {
 public:
 //    static auto Make(const ColorPalette& colors) {
-//        return std::make_shared<UI::Button>(colors);
+//        return std::make_shared<Button>(colors);
 //    }
     
     Button(const ColorPalette& colors) : Control(colors) {}
@@ -22,7 +22,7 @@ public:
         size_t keyLen = UTF8::Strlen(key);
         
         if (drawBorder) {
-            UI::Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
+            Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
             win.drawRect(frame);
         }
         
@@ -45,19 +45,44 @@ public:
         }
         
         {
-            UI::Window::Attr bold;
-            UI::Window::Attr color;
-            if (enabled)                      bold = win.attr(A_BOLD);
-            if (highlight && enabled) color = win.attr(colors.menu);
-            else if (!enabled)                color = win.attr(colors.dimmed);
+            Window::Attr bold;
+            Window::Attr color;
+            if (enabled)                bold = win.attr(A_BOLD);
+            if (_highlight && enabled)  color = win.attr(colors.menu);
+            else if (!enabled)          color = win.attr(colors.dimmed);
             win.drawText(plabel, "%s", label.c_str());
         }
         
         // Draw button key
         {
-            UI::Window::Attr color = win.attr(colors.dimmed);
+            Window::Attr color = win.attr(colors.dimmed);
             win.drawText(pkey, "%s", key.c_str());
         }
+    }
+    
+    Event handleEvent(const Window& win, const Event& ev) override {
+        if (ev.type == Event::Type::Mouse) {
+            bool hit = HitTest(frame, ev.mouse.point);
+            if (enabled && hit) {
+                highlight(true);
+                
+                if (ev.mouseDown()) {
+                    // Track mouse
+                    _trackMouse(win, ev);
+                    return {};
+                }
+            } else {
+                highlight(false);
+            }
+        }
+        return ev;
+    }
+    
+    bool highlight() { return _highlight; }
+    void highlight(bool x) {
+        if (_highlight == x) return;
+        _highlight = x;
+        drawNeeded = true;
     }
     
     std::string label;
@@ -66,11 +91,31 @@ public:
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
-    bool highlight = false;
     bool mouseActive = false;
+    std::function<void(Button&)> action;
     
 private:
     static constexpr int KeySpacing = 2;
+    
+    void _trackMouse(const Window& win, const Event& mouseDownEvent) {
+        Event ev = mouseDownEvent;
+        
+        for (;;) {
+            if (ev.type == Event::Type::Mouse) {
+                highlight(HitTest(frame, ev.mouse.point));
+            }
+            
+            draw(win);
+            ev = win.nextEvent();
+            if (ev.mouseUp()) break;
+        }
+        
+        if (_highlight) {
+            if (action) action(*this);
+        }
+    }
+    
+    bool _highlight = false;
 };
 
 using ButtonPtr = std::shared_ptr<Button>;

@@ -21,7 +21,7 @@ public:
         if (!drawNeeded) return;
         Panel::draw();
         
-        UI::Window::Attr color;
+        Window::Attr color;
         if (_borderColor) color = attr(*_borderColor);
         drawBorder();
     }

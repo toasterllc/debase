@@ -35,13 +35,13 @@ public:
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border
         {
-            UI::Window::Attr style = attr(color);
+            Window::Attr style = attr(color);
             drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
         }
         
         {
-            UI::Window::Attr style = attr(color|A_BOLD);
+            Window::Attr style = attr(color|A_BOLD);
             drawText({_MessageInsetX, offY}, " %s ", title.c_str());
             offY++;
         }

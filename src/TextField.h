@@ -39,7 +39,7 @@ public:
         }
     }
     
-    Event handleEvent(const Event& ev) {
+    Event handleEvent(const Window& win, const Event& ev) override {
         if (ev.type == Event::Type::Mouse) {
             if (ev.mouseDown() && HitTest(frame, ev.mouse.point)) {
                 if (!_focus) {

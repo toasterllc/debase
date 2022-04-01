@@ -257,7 +257,7 @@ public:
         return Attr(*this, attr);
     }
     
-    Event nextEvent() {
+    Event nextEvent() const {
         // Wait for another mouse event
         for (;;) {
             int ch = ::wgetch(*this);

@@ -25,10 +25,10 @@ public:
             button->mouseActive = mouseActive;
             bool hit = button->hitTest(off, {1,1});
             if (hit && !mouseOverButton) {
-                button->highlight = true;
+                button->highlight(true);
                 mouseOverButton = button;
             } else {
-                button->highlight = false;
+                button->highlight(false);
             }
         }
         
@@ -91,19 +91,19 @@ public:
             
             // Draw separator
             if (i != _buttonCount-1) {
-                UI::Window::Attr color = attr(colors.menu);
+                Window::Attr color = attr(colors.menu);
                 drawLineHoriz({0, button->frame.ymax()+1}, width);
             }
         }
         
         // Draw border
         {
-            UI::Window::Attr color = attr(colors.menu);
+            Window::Attr color = attr(colors.menu);
             drawBorder();
             
             // Draw title
             if (!title.empty()) {
-                UI::Window::Attr bold = attr(A_BOLD);
+                Window::Attr bold = attr(A_BOLD);
                 int offX = (width-(int)UTF8::Strlen(title))/2;
                 drawText({offX,0}, " %s ", title.c_str());
             }

@@ -53,7 +53,7 @@ public:
         }
         
         {
-            UI::Window::Attr color;
+            Window::Attr color;
             if (_borderColor) color = attr(*_borderColor);
             drawBorder();
             
@@ -63,8 +63,8 @@ public:
         }
         
         {
-            UI::Window::Attr bold = attr(A_BOLD);
-            UI::Window::Attr color;
+            Window::Attr bold = attr(A_BOLD);
+            Window::Attr color;
             if (!_header && _borderColor) color = attr(*_borderColor);
             drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
@@ -76,13 +76,13 @@ public:
         }
         
         if (_header) {
-            UI::Window::Attr color;
+            Window::Attr color;
             if (_borderColor) color = attr(*_borderColor);
             drawText({3, 0}, " %s ", _headerLabel.c_str());
         }
         
         {
-            UI::Window::Attr color = attr(_colors.dimmed);
+            Window::Attr color = attr(_colors.dimmed);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
     }

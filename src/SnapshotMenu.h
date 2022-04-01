@@ -16,8 +16,8 @@ public:
         
         // Draw separator
         if (buttons.size() > 1) {
-            UI::ButtonPtr button0 = buttons[0];
-            UI::Window::Attr color = attr(colors.menu);
+            ButtonPtr button0 = buttons[0];
+            Window::Attr color = attr(colors.menu);
             Point p = {1, button0->frame.ymax()+1};
             int len = width-2;
             cchar_t c = { .chars = L"╍" };

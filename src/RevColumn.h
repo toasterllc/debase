@@ -60,7 +60,7 @@ public:
         }
         
         // Create our CommitPanels
-        UI::Rect nameFrame = {offset, {width, 1}};
+        Rect nameFrame = {offset, {width, 1}};
         _truncated = Intersection(containerBounds, nameFrame) != nameFrame;
         if (!_truncated) {
             // Create panels for each commit
@@ -70,8 +70,8 @@ public:
             while (commit) {
                 if (!skip) {
                     Point p = offset + Size{0,offY};
-                    UI::CommitPanelPtr panel = MakeShared<UI::CommitPanelPtr>(colors, false, width, commit);
-                    UI::Rect frame = {p, panel->frame().size};
+                    CommitPanelPtr panel = MakeShared<CommitPanelPtr>(colors, false, width, commit);
+                    Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
                     if (Intersection(containerBounds, frame) != frame) break;
                     panel->setPosition(p);
@@ -99,31 +99,40 @@ public:
             {
                 auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Undo";
-                button->enabled = undoEnabled;
+                button->enabled = (bool)undoAction;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
                 button->frame = undoFrame;
+                if (undoAction) {
+                    button->action = [&] (UI::Button&) { undoAction(*this); };
+                }
             }
             
             {
                 auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Redo";
-                button->enabled = redoEnabled;
+                button->enabled = (bool)redoAction;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
                 button->frame = redoFrame;
+                if (redoAction) {
+                    button->action = [&] (UI::Button&) { redoAction(*this); };
+                }
             }
             
             {
                 auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
                 button->label = "Snapshots…";
-                button->enabled = snapshotsEnabled;
+                button->enabled = (bool)snapshotsAction;
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
                 button->frame = snapshotsFrame;
+                if (snapshotsAction) {
+                    button->action = [&] (UI::Button&) { snapshotsAction(*this); };
+                }
             }
         }
     }
@@ -134,51 +143,43 @@ public:
         
         // Draw branch name
         {
-            UI::Window::Attr bold = win.attr(A_BOLD);
+            Window::Attr bold = win.attr(A_BOLD);
             const Point p = offset + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
         }
         
         if (!rev.isMutable()) {
-            UI::Window::Attr color = win.attr(colors.error);
+            Window::Attr color = win.attr(colors.error);
             const char immutableText[] = "read-only";
             const Point p = offset + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, "%s", immutableText);
         }
         
-        for (UI::CommitPanelPtr p : panels) {
+        for (CommitPanelPtr p : panels) {
             p->draw();
         }
         
-        for (UI::ButtonPtr button : _buttons) {
+        for (ButtonPtr button : _buttons) {
             // Draws are always needed because _RootWindow is cleared upon each draw cycle
             button->drawNeeded = true;
             button->draw(win);
         }
     }
     
-    HitTestResult updateMouse(const UI::Point& p) {
-        for (UI::ButtonPtr button : _buttons) {
-            button->highlight = false;
+    Event handleEvent(const Window& win, const Event& ev) {
+        Event e = ev;
+        for (ButtonPtr button : _buttons) {
+            e = button->handleEvent(win, ev);
+            if (!e) return {};
         }
-        
-        for (UI::CommitPanelPtr panel : panels) {
-            if (panel->hitTest(p)) return HitTestResult{ .panel = panel };
+        return e;
+    }
+    
+    CommitPanelPtr hitTest(const Point& p) {
+        for (CommitPanelPtr panel : panels) {
+            if (panel->hitTest(p)) return panel;
         }
-        
-        int bnum = (int)Button::None+1;
-        for (UI::ButtonPtr& button : _buttons) {
-            if (button->hitTest(p)) {
-                button->highlight = true;
-                return HitTestResult{
-                    .button = (Button)bnum,
-                    .buttonEnabled = button->enabled,
-                };
-            }
-            bnum++;
-        }
-        
-        return {};
+        return nullptr;
     }
     
     const ColorPalette& colors;
@@ -188,11 +189,10 @@ public:
     bool head = false;
     Point offset;
     int width = 0;
-    bool undoEnabled = false;
-    bool redoEnabled = false;
-    bool snapshotsEnabled = false;
-    
-    UI::CommitPanelVec panels;
+    std::function<void(RevColumn&)> undoAction;
+    std::function<void(RevColumn&)> redoAction;
+    std::function<void(RevColumn&)> snapshotsAction;
+    CommitPanelVec panels;
     
 private:
     static constexpr int _TitleInsetY    = 0;
@@ -205,7 +205,7 @@ private:
     bool _layoutNeeded = true;
     std::string _name;
     bool _truncated = false;
-    std::vector<UI::ButtonPtr> _buttons;
+    std::vector<ButtonPtr> _buttons;
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;
