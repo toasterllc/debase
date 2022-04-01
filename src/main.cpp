@@ -53,7 +53,7 @@ static Git::Rev _Head;
 static std::vector<Git::Rev> _Revs;
 //static std::map<Git::Ref,RefHistory> _RefHistory;
 
-static UI::Window _RootWindow;
+static UI::WindowPtr _RootWindow;
 static std::vector<UI::RevColumn> _Columns;
 
 static struct {
@@ -1125,7 +1125,7 @@ static void _EventLoop() {
     _CursesInit();
     Defer(_CursesDeinit());
     
-    _RootWindow = MakeShared<UI::Window>(::stdscr);
+    _RootWindow = MakeShared<UI::WindowPtr>(::stdscr);
     
     
     

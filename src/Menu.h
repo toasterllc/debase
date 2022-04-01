@@ -8,7 +8,7 @@ namespace UI {
 
 struct MenuOptions {
     const ColorPalette& colors;
-    Window parentWindow;
+    WindowPtr parentWindow;
     Point position;
     std::string title;
     std::vector<ButtonPtr> buttons;

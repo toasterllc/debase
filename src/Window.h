@@ -295,6 +295,6 @@ private:
     WINDOW* _win = nullptr;
 };
 
-using Window = std::shared_ptr<_Window>;
+using WindowPtr = std::shared_ptr<_Window>;
 
 } // namespace UI
