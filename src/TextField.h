@@ -172,6 +172,7 @@ private:
                 
                 auto it = UTF8::Next(cursor, value.end());
                 _offCursor = std::distance(value.begin(), it);
+                return {};
             
             } else if (ev.type == Event::Type::KeyTab) {
                 releaseFocus(*this, false);
