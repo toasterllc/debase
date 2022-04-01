@@ -12,29 +12,36 @@ namespace UI {
 class _RegisterPanel : public _MessagePanel {
 public:
     _RegisterPanel(const MessagePanelOptions& opts) : _MessagePanel(_AdjustedOptions(opts)) {
-        Size s = size();
-        int offY = s.y-_FieldsExtraHeight-1;
-        int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
         _email = TextField::Make({
             .colors = opts.colors,
-            .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
             .requestFocus = requestFocus,
             .releaseFocus = releaseFocus,
         });
-        offY += 2;
         
         _code = TextField::Make({
             .colors = opts.colors,
-            .frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}},
             .requestFocus = requestFocus,
             .releaseFocus = releaseFocus,
         });
-        offY += 2;
         
         _email->focus(true);
+    }
+    
+    virtual bool layout() override {
+        if (!_MessagePanel::layout()) return false;
+        
+        Size s = size();
+        int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
+        int offY = s.y-_FieldsExtraHeight-1;
+        _email->options().frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        offY += 2;
+        _code->options().frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        offY += 2;
+        
+        return true;
     }
     
     void draw() override {

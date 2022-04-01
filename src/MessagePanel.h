@@ -18,11 +18,23 @@ struct MessagePanelOptions {
 
 class _MessagePanel : public _Panel, public std::enable_shared_from_this<_MessagePanel> {
 public:
-    _MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {
-        _message = LineWrap::Wrap(SIZE_MAX, _opts.width-2*_MessageInsetX, _opts.message);
-        int height = 2*_MessageInsetY + _opts.messageInsetY + (int)_message.size() + _opts.extraHeight;
-        setSize({_opts.width, height});
+    _MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {}
+    
+    virtual bool layout() {
+        if (_opts.width <= 0) return false;
+        
+        std::vector<std::string> message = LineWrap::Wrap(SIZE_MAX, _opts.width-2*_MessageInsetX, _opts.message);
+        Size sizeCur = size();
+        Size sizeNew = {
+            .x = _opts.width,
+            .y = 2*_MessageInsetY + _opts.messageInsetY + (int)message.size() + _opts.extraHeight,
+        };
+        if (sizeNew == sizeCur) return false;
+        
+        _message = message;
+        setSize(sizeNew);
         _drawNeeded = true;
+        return true;
     }
     
     virtual void draw() {
@@ -56,9 +68,9 @@ public:
     }
     
     void drawIfNeeded() {
-        if (_drawNeeded) {
+//        if (_drawNeeded) {
             draw();
-        }
+//        }
     }
     
     bool drawNeeded() const { return _drawNeeded; }
@@ -78,7 +90,7 @@ public:
         return {};
     }
     
-    const MessagePanelOptions& options() { return _opts; }
+    MessagePanelOptions& options() { return _opts; }
     
 protected:
     static constexpr int _MessageInsetX = 5;

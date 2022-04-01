@@ -150,6 +150,8 @@ static void _Draw() {
         }
         
         if (_MessagePanel) {
+            _MessagePanel->layout();
+            
             UI::Size ps = _MessagePanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
             UI::Point p = {
@@ -161,6 +163,10 @@ static void _Draw() {
         }
         
         if (_RegisterPanel) {
+            constexpr int RegisterPanelWidth = 50;
+            _RegisterPanel->options().width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+            _RegisterPanel->layout();
+            
             UI::Size ps = _RegisterPanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
             UI::Point p = {
@@ -354,21 +360,6 @@ static void _Reload() {
         };
         _Columns.push_back(MakeShared<UI::RevColumn>(opts));
         OffsetX += ColumnWidth+ColumnSpacing;
-    }
-    
-    {
-        constexpr int RegisterPanelWidth = 50;
-        const int registerPanelWidth = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
-        
-        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
-            .colors         = _Colors,
-            .color          = _Colors.menu,
-            .width          = registerPanelWidth,
-            .messageInsetY  = 1,
-            .center         = false,
-            .title          = "Register",
-            .message        = "Please register debase",
-        });
     }
 }
 
@@ -1136,8 +1127,27 @@ static void _EventLoop() {
     Defer(_CursesDeinit());
     
     _RootWindow = MakeShared<UI::Window>(::stdscr);
-//    ::leaveok(*_RootWindow, true);
-//    
+    
+    
+    
+    
+    
+    {
+        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+            .colors         = _Colors,
+            .color          = _Colors.menu,
+            .width          = 50,
+            .messageInsetY  = 1,
+            .center         = false,
+            .title          = "Register",
+            .message        = "Please register debase",
+        });
+    }
+    
+    
+    
+    
+    
     _Reload();
     
     for (;;) {
