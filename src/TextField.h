@@ -9,50 +9,10 @@ namespace UI {
 
 class TextField : public Control {
 public:
-//    struct Options {
-//    //    bool enabled = false;
-//    //    bool center = false;
-//    //    bool drawBorder = false;
-//    //    int insetX = 0;
-//    //    bool highlight = false;
-//    //    bool mouseActive = false;
-////        Rect frame;
-//        std::function<void(TextField&)> requestFocus;
-//        std::function<void(TextField&, bool)> releaseFocus;
-//    //    bool focus = false;
-//    };
-//    
-//    static auto Make(const ColorPalette& colors) {
-//        return std::make_shared<UI::TextField>(colors);
-//    }
-    
     TextField(const ColorPalette& colors) : Control(colors) {}
     
     void layout() override {
         _offUpdate();
-        
-//        // If the cursor offset is past our width, adjust `_leftOff` so that the cursor is within our frame
-//        size_t cursorOff = UTF8::Strlen(_left(), _cursor());
-//        if (cursorOff > frame.size.x) {
-//            beep();
-//            size_t add = cursorOff-(size_t)frame.size.x;
-//            auto left = _left();
-//            while (add && left!=value.end()) {
-//                left = UTF8::Next(left, value.end());
-//                add--;
-//            }
-//            _offLeft += std::distance(_left(), left);
-//        
-//        }
-//        else if () {
-//            if (_cursor() == value.end()) {
-//                auto left = _left();
-//                if (left != value.begin()) {
-//                    left = UTF8::Prev(left, value.begin());
-//                    _offLeft = std::distance(value.begin(), left);
-//                }
-//            }
-//        }
     }
     
     void draw(const _Window& win) override {
@@ -71,32 +31,9 @@ public:
         
         if (_focus) {
             Point p = win.frame().point + frame.point;
-            
-//            std::string_view value = value;
-//            CursorState a = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
-//            size_t lenBytes = std::distance(value.begin(), _posCursor);
-//            size_t lenRunes = UTF8::Strlen(_left(), _cursor());
-//            assert(lenRunes <= width); // Programmer error
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
-//            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
         }
-        
-//        if (_focus) {
-//            curs_set(1);
-//            wmove(*win, win->frame().point.y, win->frame().point.x);
-//        }
-        
-//        if (_opts.focus) {
-//            if (!_cursorVis) {
-//                _cursorVis = CursorVisibility(true);
-//            }
-//        
-//        } else {
-//            _cursorVis = std::nullopt;
-//        }
-//        
-//        win->drawRect(frame);
     }
     
     UI::Event handleEvent(const UI::Event& ev) {
@@ -177,38 +114,6 @@ public:
             
             } else {
                 // If the cursor's at the display-end, shift view right
-//                auto cursor = _cursor();
-//                if (cursor == _cursorMax()) {
-//                    auto left = _left();
-//                    if (left != value.end()) {
-//                        left = UTF8::Next(left, value.end());
-//                        _offLeft = std::distance(value.begin(), left);
-//                    }
-//                    
-////                    beep();
-//                    
-////                    _offLeftUpdate();
-////                    auto left = _left();
-////                    if (left != value.end()) {
-////                        left = UTF8::Next(left, value.end());
-////                        _offLeft = std::distance(value.begin(), left);
-////                    }
-//                }
-                
-//                const int width = frame.size.x;
-//                if (UTF8::Strlen(_left(), _cursor()) >= width) {
-//                    auto cursor = _cursor();
-//                    // If the cursor's at the display-end, shift view right
-//                    if (cursor == _cursorMax()) {
-//                        auto left = _left();
-//                        if (left != value.end()) {
-//                            left = UTF8::Next(left, value.end());
-//                            _offLeft = std::distance(value.begin(), left);
-//                        }
-//                    }
-//                }
-                
-                // If the cursor's at the display-end, shift view right
                 if (_cursor() == _cursorMax()) {
                     auto left = UTF8::Next(_left(), value.end());
                     _offLeft = std::distance(value.begin(), left);
@@ -237,8 +142,6 @@ public:
     void focus(bool x) {
         _focus = x;
         if (_cursorState) _cursorState.restore();
-//        if (_focus && !_cursorState) _cursorState.set(true);
-//        else if (!_focus && _cursorState) _cursorVis.restore();
     }
     
     std::function<void(TextField&)> requestFocus;
@@ -292,70 +195,10 @@ private:
         _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
     }
     
-//    template <typename T_Iter>
-//    T_Iter _add(T_Iter ) {
-//        
-//    }
-//    
-//    void _leftShift(ssize_t delta) {
-//        if (delta > 0) {
-//            auto left = _left();
-//            auto it = left;
-//            while (delta && it!=value.end()) {
-//                it = UTF8::Next(it, value.end());
-//                delta--;
-//            }
-//            _offLeft += std::distance(left, it);
-//        
-//        } else if (delta < 0) {
-//            auto left = _left();
-//            auto it = left;
-//            while (delta && it!=value.begin()) {
-//                it = UTF8::Prev(it, value.begin());
-//                delta++;
-//            }
-//            _offLeft -= std::distance(it, left);
-//        }
-//    }
-//    
-//    std::string::const_iterator _cleft() const { return value.cbegin()+_offLeft; }
-//    std::string::const_iterator _ccursor() const { return value.cbegin()+_offCursor; }
-//    
-//    void _offLeftUpdate() {
-//        const int width = frame.size.x;
-//        auto right = _cursor();
-//        auto left = right;
-//        int len = 0;
-//        while (len<width && left!=value.begin()) {
-//            left = UTF8::Prev(left, value.begin());
-//            len++;
-//        }
-//        _offLeft = std::distance(value.begin(), left);
-//    }
-//    
-//    void _offCursorUpdate() {
-//        const int width = frame.size.x;
-//        auto left = _left();
-//        auto right = left;
-//        int len = 0;
-//        while (len<width && right!=value.end()) {
-//            right = UTF8::Next(right, value.end());
-//            len++;
-//        }
-//        _offCursor = std::distance(value.begin(), right);
-//    }
-//    
-//    // _cursorDisplayOffset(): returns the offset of the cursor within the
-//    // text field, as visible to the user
-//    size_t _cursorDisplayOffset() const {
-//        return UTF8::Strlen(_cleft(), _ccursor());
-//    }
-    
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
     bool _focus = false;
     CursorState _cursorState;
-//    CursorVisibility _cursorVis;
 };
 
 using TextFieldPtr = std::shared_ptr<TextField>;
