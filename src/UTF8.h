@@ -31,21 +31,33 @@ inline size_t Strlen(T_Iter start, T_Iter end) {
 }
 
 template <typename T_Iter>
-inline T_Iter Next(T_Iter it, T_Iter end) {
-    for (;;) {
-        if (it == end) return it;
-        it++;
-        if (CodepointStart(*it)) return it;
+inline T_Iter NextN(T_Iter it, T_Iter end, ssize_t n) {
+    if (n > 0) {
+        while (n) {
+            if (it == end) return it;
+            it++;
+            if (CodepointStart(*it)) n--;
+        }
+        return it;
+    
+    } else if (n < 0) {
+        while (n) {
+            if (it == end) return it;
+            it--;
+            if (CodepointStart(*it)) n++;
+        }
+        return it;
     }
 }
 
 template <typename T_Iter>
-inline T_Iter Prev(T_Iter it, T_Iter begin) {
-    for (;;) {
-        if (it == begin) return it;
-        it--;
-        if (CodepointStart(*it)) return it;
-    }
+inline T_Iter Next(T_Iter it, T_Iter end) {
+    return NextN(it, end, 1);
+}
+
+template <typename T_Iter>
+inline T_Iter Prev(T_Iter it, T_Iter end) {
+    return NextN(it, end, -1);
 }
 
 } // namespace UTF8

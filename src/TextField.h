@@ -64,12 +64,7 @@ public:
         // Print as many runes as will fit our width
         const int width = frame.size.x;
         auto left = _left();
-        auto right = left;
-        int len = 0;
-        while (len<width && right!=value.end()) {
-            right = UTF8::Next(right, value.end());
-            len++;
-        }
+        auto right = UTF8::NextN(left, value.end(), width);
         
         std::string substr(left, right);
         win.drawText(frame.point, "%s", substr.c_str());
@@ -82,7 +77,7 @@ public:
 //            size_t lenBytes = std::distance(value.begin(), _posCursor);
 //            size_t lenRunes = UTF8::Strlen(_left(), _cursor());
 //            assert(lenRunes <= width); // Programmer error
-            size_t cursorOff = UTF8::Strlen(_left(), _cursor());
+            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
 //            _cursorState = CursorState::Push(true, {win->frame().point.x, win->frame().point.y});
         }
@@ -113,12 +108,8 @@ public:
                 } else {
                     // Update the cursor position to the clicked point
                     int offX = ev.mouse.point.x-frame.point.x;
-                    auto it = _left();
-                    while (offX && it!=value.end()) {
-                        it = UTF8::Next(it, value.end());
-                        offX--;
-                    }
-                    _offCursor = std::distance(value.begin(), it);
+                    auto offIt = UTF8::NextN(_left(), value.end(), offX);
+                    _offCursor = std::distance(value.begin(), offIt);
                 }
                 
                 return {};
@@ -151,11 +142,8 @@ public:
                 
                 // If the cursor's at the display-beginning, shift view left
                 if (cursor == _cursorMin()) {
-                    auto left = _left();
-                    if (left != value.begin()) {
-                        left = UTF8::Prev(left, value.begin());
-                        _offLeft = std::distance(value.begin(), left);
-                    }
+                    auto left = UTF8::Prev(_left(), value.begin());
+                    _offLeft = std::distance(value.begin(), left);
                 }
                 
                 auto it = UTF8::Prev(cursor, value.begin());
@@ -168,11 +156,8 @@ public:
                 
                 // If the cursor's at the display-end, shift view right
                 if (cursor == _cursorMax()) {
-                    auto left = _left();
-                    if (left != value.end()) {
-                        left = UTF8::Next(left, value.end());
-                        _offLeft = std::distance(value.begin(), left);
-                    }
+                    auto left = UTF8::Next(_left(), value.end());
+                    _offLeft = std::distance(value.begin(), left);
                 }
                 
                 auto it = UTF8::Next(cursor, value.end());
@@ -222,6 +207,11 @@ public:
 //                        }
 //                    }
 //                }
+                
+                // If the cursor's at the display-end, shift view right
+                if (_cursor() == _cursorMax()) {
+                    _leftShift(1);
+                }
                 
                 const int c = (int)ev.type;
                 // If this is a valid UTF8 value...
@@ -291,14 +281,40 @@ private:
         return right;
     }
     
-    size_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
-    size_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
-    size_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
-    size_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
+    ssize_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
+    ssize_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
+    ssize_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
+    ssize_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
     
     void _offUpdate() {
         _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
         _offCursor = std::clamp(_offCursor, _offCursorMin(), _offCursorMax());
+    }
+    
+//    template <typename T_Iter>
+//    T_Iter _add(T_Iter ) {
+//        
+//    }
+    
+    void _leftShift(ssize_t delta) {
+        if (delta > 0) {
+            auto left = _left();
+            auto it = left;
+            while (delta && it!=value.end()) {
+                it = UTF8::Next(it, value.end());
+                delta--;
+            }
+            _offLeft += std::distance(left, it);
+        
+        } else if (delta < 0) {
+            auto left = _left();
+            auto it = left;
+            while (delta && it!=value.begin()) {
+                it = UTF8::Prev(it, value.begin());
+                delta++;
+            }
+            _offLeft -= std::distance(it, left);
+        }
     }
     
 //    std::string::const_iterator _cleft() const { return value.cbegin()+_offLeft; }
@@ -334,8 +350,8 @@ private:
 //        return UTF8::Strlen(_cleft(), _ccursor());
 //    }
     
-    size_t _offLeft = 0;
-    size_t _offCursor = 0;
+    ssize_t _offLeft = 0;
+    ssize_t _offCursor = 0;
     bool _focus = false;
     CursorState _cursorState;
 //    CursorVisibility _cursorVis;
