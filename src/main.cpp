@@ -77,8 +77,8 @@ static std::optional<UI::Rect> _SelectionRect;
 static UI::Menu _ContextMenu;
 static UI::SnapshotMenu _SnapshotsMenu;
 
-static UI::MessagePanel _MessagePanel;
-static UI::RegisterPanel _RegisterPanel;
+static UI::MessagePanelPtr _MessagePanel;
+static UI::RegisterPanelPtr _RegisterPanel;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
 
@@ -1132,7 +1132,7 @@ static void _EventLoop() {
     
     
     {
-        _RegisterPanel = MakeShared<UI::RegisterPanel>(UI::MessagePanelOptions{
+        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(UI::MessagePanelOptions{
             .colors         = _Colors,
             .color          = _Colors.menu,
             .width          = 50,
@@ -1292,7 +1292,7 @@ static void _EventLoop() {
             
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _MessagePanel = MakeShared<UI::MessagePanel>(UI::MessagePanelOptions{
+            _MessagePanel = MakeShared<UI::MessagePanelPtr>(UI::MessagePanelOptions{
                 .colors  = _Colors,
                 .color   = _Colors.error,
                 .width   = errorPanelWidth,

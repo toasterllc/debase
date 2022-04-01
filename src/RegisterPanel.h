@@ -9,9 +9,9 @@
 
 namespace UI {
 
-class _RegisterPanel : public _MessagePanel {
+class RegisterPanel : public MessagePanel {
 public:
-    _RegisterPanel(const MessagePanelOptions& opts) : _MessagePanel(_AdjustedOptions(opts)) {
+    RegisterPanel(const MessagePanelOptions& opts) : MessagePanel(_AdjustedOptions(opts)) {
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
@@ -28,7 +28,7 @@ public:
     }
     
     virtual bool layout() override {
-        if (!_MessagePanel::layout()) return false;
+        if (!MessagePanel::layout()) return false;
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
@@ -46,7 +46,7 @@ public:
     void draw() override {
         const MessagePanelOptions& opts = options();
         int offY = size().y-_FieldsExtraHeight-1;
-        _MessagePanel::draw();
+        MessagePanel::draw();
         
         // Draw email field
         {
@@ -187,6 +187,6 @@ private:
     TextFieldPtr _code;
 };
 
-using RegisterPanel = std::shared_ptr<_RegisterPanel>;
+using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;
 
 } // namespace UI

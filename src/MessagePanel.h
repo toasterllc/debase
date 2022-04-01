@@ -17,9 +17,9 @@ struct MessagePanelOptions {
     std::string message;
 };
 
-class _MessagePanel : public _Panel, public std::enable_shared_from_this<_MessagePanel> {
+class MessagePanel : public _Panel, public std::enable_shared_from_this<MessagePanel> {
 public:
-    _MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {}
+    MessagePanel(const MessagePanelOptions& opts) : _opts(opts) {}
     
     virtual bool layout() {
         if (_opts.width <= 0) return false;
@@ -111,6 +111,6 @@ private:
     bool _drawNeeded = false;
 };
 
-using MessagePanel = std::shared_ptr<_MessagePanel>;
+using MessagePanelPtr = std::shared_ptr<MessagePanel>;
 
 } // namespace UI
