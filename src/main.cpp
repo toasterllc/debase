@@ -147,19 +147,17 @@ static void _Draw() {
         
         if (_ContextMenu) {
             _ContextMenu->containerSize = _RootWindow->bounds().size;
-            _ContextMenu->layout();
             _ContextMenu->orderFront();
+            _ContextMenu->layout();
         }
         
         if (_SnapshotsMenu) {
             _SnapshotsMenu->containerSize = _RootWindow->bounds().size;
-            _SnapshotsMenu->layout();
             _SnapshotsMenu->orderFront();
+            _SnapshotsMenu->layout();
         }
         
         if (_MessagePanel) {
-            _MessagePanel->layout();
-            
             UI::Size ps = _MessagePanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
             UI::Point p = {
@@ -168,12 +166,12 @@ static void _Draw() {
             };
             _MessagePanel->setPosition(p);
             _MessagePanel->orderFront();
+            _MessagePanel->layout();
         }
         
         if (_RegisterPanel) {
             constexpr int RegisterPanelWidth = 50;
             _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
-            _RegisterPanel->layout();
             
             UI::Size ps = _RegisterPanel->frame().size;
             UI::Size rs = _RootWindow->frame().size;
@@ -183,6 +181,7 @@ static void _Draw() {
             };
             _RegisterPanel->setPosition(p);
             _RegisterPanel->orderFront();
+            _RegisterPanel->layout();
         }
     }
     
@@ -1154,15 +1153,15 @@ static void _EventLoop() {
     
     
     
-//    {
-//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-//        _RegisterPanel->color           = _Colors.menu;
-//        _RegisterPanel->messageInsetY   = 1;
-//        _RegisterPanel->center          = false;
-//        _RegisterPanel->title           = "Register";
-//        _RegisterPanel->message         = "Please register debase";
-//    }
-//    
+    {
+        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+        _RegisterPanel->color           = _Colors.menu;
+        _RegisterPanel->messageInsetY   = 1;
+        _RegisterPanel->center          = false;
+        _RegisterPanel->title           = "Register";
+        _RegisterPanel->message         = "Please register debase";
+    }
+    
     
     
     
@@ -1438,8 +1437,6 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: figure out a way to not redraw Menu every cycle, but support button highlight on hover
-    
     #warning TODO: get reg panel working again
     
     #warning TODO: get snapshots menu working again
@@ -1465,6 +1462,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: figure out a way to not redraw Menu every cycle, but support button highlight on hover
+//
 //    #warning TODO: switch Menu to follow TextField handleEvent() model
 //
 //    #warning TODO: get expanded hit-testing of menu buttons working again

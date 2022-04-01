@@ -12,8 +12,16 @@ class TextField : public Control {
 public:
     TextField(const ColorPalette& colors) : Control(colors) {}
     
-    void layout() override {
+    void layout(const Window& win) override {
         _offUpdate();
+        
+        if (_focus) {
+            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
+            
+            Point p = win.frame().point + frame.point;
+            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
+            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
+        }
     }
     
     void draw(const Window& win) override {
@@ -33,14 +41,6 @@ public:
         
         std::string substr(left, right);
         win.drawText(frame.point, "%s", substr.c_str());
-        
-        if (_focus) {
-            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
-            
-            Point p = win.frame().point + frame.point;
-            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
-            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
-        }
     }
     
     Event handleEvent(const Window& win, const Event& ev) override {

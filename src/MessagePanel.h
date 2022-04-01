@@ -9,6 +9,14 @@ class MessagePanel : public Panel {
 public:
     MessagePanel(const ColorPalette& colors) : colors(colors) {}
     
+    Size intrinsicSize() {
+        std::vector<std::string> messageLines = _createMessageLines();
+        return {
+            .x = width,
+            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
+        };
+    }
+    
     bool layoutNeeded() {
         if (_layoutNeeded) return true;
         
