@@ -135,19 +135,19 @@ public:
         }
     }
     
-    void draw(const _Window& win) {
+    void draw(const Window& win) {
         // Don't draw anything if our column is truncated
         if (_truncated) return;
         
         // Draw branch name
         {
-            UI::_Window::Attr bold = win.attr(A_BOLD);
+            UI::Window::Attr bold = win.attr(A_BOLD);
             const Point p = _opts.offset + Size{(_opts.width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
         }
         
         if (!_opts.rev.isMutable()) {
-            UI::_Window::Attr color = win.attr(_opts.colors.error);
+            UI::Window::Attr color = win.attr(_opts.colors.error);
             const char immutableText[] = "read-only";
             const Point p = _opts.offset + Size{std::max(0, (_opts.width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, "%s", immutableText);

@@ -29,7 +29,7 @@ public:
         frame.size = {width, 3};
     }
     
-    void draw(const _Window& win) override {
+    void draw(const Window& win) override {
         const int width = frame.size.x;
         const Point off = frame.point;
         const Size offTextX = Size{_TextInsetX, 0};
@@ -38,15 +38,15 @@ public:
         
         // Draw time
         {
-            UI::_Window::Attr color = win.attr(colors.dimmed);
+            UI::Window::Attr color = win.attr(colors.dimmed);
             int offX = width - (int)UTF8::Strlen(_time);
             win.drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
         
         // Draw commit id
         {
-            UI::_Window::Attr bold = win.attr(A_BOLD);
-            UI::_Window::Attr color;
+            UI::Window::Attr bold = win.attr(A_BOLD);
+            UI::Window::Attr color;
             if (highlight || (activeSnapshot && !mouseActive)) {
                 color = win.attr(colors.menu);
             }
@@ -55,7 +55,7 @@ public:
         
         // Draw author name
         {
-            UI::_Window::Attr color = win.attr(colors.dimmed);
+            UI::Window::Attr color = win.attr(colors.dimmed);
             win.drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
@@ -71,14 +71,14 @@ public:
         // Draw highlight
         {
             if (highlight) {
-                UI::_Window::Attr color = win.attr(colors.menu|A_BOLD);
+                UI::Window::Attr color = win.attr(colors.menu|A_BOLD);
                 win.drawText(off + offTextY, "%s", "●");
             
             } else if (activeSnapshot) {
                 if (mouseActive) {
                     win.drawText(off + offTextY, "%s", "○");
                 } else {
-                    UI::_Window::Attr color = win.attr(colors.menu|A_BOLD);
+                    UI::Window::Attr color = win.attr(colors.menu|A_BOLD);
                     win.drawText(off + offTextY, "%s", "●");
                 }
             }

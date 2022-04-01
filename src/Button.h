@@ -14,12 +14,12 @@ public:
     
     Button(const ColorPalette& colors) : Control(colors) {}
     
-    virtual void draw(const _Window& win) override {
+    virtual void draw(const Window& win) override {
         size_t labelLen = UTF8::Strlen(label);
         size_t keyLen = UTF8::Strlen(key);
         
         if (drawBorder) {
-            UI::_Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
+            UI::Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
             win.drawRect(frame);
         }
         
@@ -42,8 +42,8 @@ public:
         }
         
         {
-            UI::_Window::Attr bold;
-            UI::_Window::Attr color;
+            UI::Window::Attr bold;
+            UI::Window::Attr color;
             if (enabled)                      bold = win.attr(A_BOLD);
             if (highlight && enabled) color = win.attr(colors.menu);
             else if (!enabled)                color = win.attr(colors.dimmed);
@@ -52,7 +52,7 @@ public:
         
         // Draw button key
         {
-            UI::_Window::Attr color = win.attr(colors.dimmed);
+            UI::Window::Attr color = win.attr(colors.dimmed);
             win.drawText(pkey, "%s", key.c_str());
         }
     }

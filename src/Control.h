@@ -12,7 +12,7 @@ public:
     }
     
     virtual void layout() {}
-    virtual void draw(const _Window& win) {}
+    virtual void draw(const Window& win) {}
     
     const ColorPalette& colors;
     Rect frame;

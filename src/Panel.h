@@ -3,7 +3,7 @@
 
 namespace UI {
 
-class _Panel : public _Window {
+class _Panel : public Window {
 public:
     _Panel() {
         _panel = ::new_panel(*this);

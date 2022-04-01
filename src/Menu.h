@@ -95,19 +95,19 @@ public:
             
             // Draw separator
             if (i != _buttonCount-1) {
-                UI::_Window::Attr color = attr(_opts.colors.menu);
+                UI::Window::Attr color = attr(_opts.colors.menu);
                 drawLineHoriz({0, button->frame.ymax()+1}, width);
             }
         }
         
         // Draw border
         {
-            UI::_Window::Attr color = attr(_opts.colors.menu);
+            UI::Window::Attr color = attr(_opts.colors.menu);
             drawBorder();
             
             // Draw title
             if (!_opts.title.empty()) {
-                UI::_Window::Attr bold = attr(A_BOLD);
+                UI::Window::Attr bold = attr(A_BOLD);
                 int offX = (width-(int)UTF8::Strlen(_opts.title))/2;
                 drawText({offX,0}, " %s ", _opts.title.c_str());
             }

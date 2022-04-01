@@ -187,7 +187,7 @@ static void _Draw() {
             
             // Draw insertion marker
             if (_Drag.insertionMarker) {
-                UI::_Window::Attr color = _RootWindow->attr(selectionColor);
+                UI::Window::Attr color = _RootWindow->attr(selectionColor);
                 _RootWindow->drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
             }
         }
@@ -197,7 +197,7 @@ static void _Draw() {
         }
         
         if (_SelectionRect) {
-            UI::_Window::Attr color = _RootWindow->attr(_Colors.selection);
+            UI::Window::Attr color = _RootWindow->attr(_Colors.selection);
             _RootWindow->drawRect(*_SelectionRect);
         }
         

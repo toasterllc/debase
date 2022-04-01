@@ -15,9 +15,9 @@ public:
         _offUpdate();
     }
     
-    void draw(const _Window& win) override {
-        UI::_Window::Attr underline = win.attr(A_UNDERLINE);
-        UI::_Window::Attr color;
+    void draw(const Window& win) override {
+        UI::Window::Attr underline = win.attr(A_UNDERLINE);
+        UI::Window::Attr color;
         if (!_focus) color = win.attr(colors.dimmed);
         win.drawLineHoriz(frame.point, frame.size.x, ' ');
         

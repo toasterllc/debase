@@ -137,12 +137,12 @@ inline void Redraw() {
 //    ::doupdate();
 }
 
-class _Window {
+class Window {
 public:
     class Attr {
     public:
         Attr() {}
-        Attr(const _Window& win, int attr) : _s({.win=&win, .attr=attr}) {
+        Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
             wattron(*_s.win, _s.attr);
         }
         
@@ -158,12 +158,12 @@ public:
     
     private:
         struct {
-            const _Window* win = nullptr;
+            const Window* win = nullptr;
             int attr = 0;
         } _s;
     };
     
-    _Window(WINDOW* win=nullptr) : _win(win) {
+    Window(WINDOW* win=nullptr) : _win(win) {
         if (!_win) {
             _win = ::newwin(0, 0, 0, 0);
             assert(_win);
@@ -173,7 +173,7 @@ public:
         ::meta(_win, true);
     }
     
-    ~_Window() {
+    ~Window() {
         ::delwin(_win);
         _win = nullptr;
     }
@@ -295,6 +295,6 @@ private:
     WINDOW* _win = nullptr;
 };
 
-using WindowPtr = std::shared_ptr<_Window>;
+using WindowPtr = std::shared_ptr<Window>;
 
 } // namespace UI

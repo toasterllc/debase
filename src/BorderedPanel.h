@@ -19,7 +19,7 @@ public:
     }
     
     void draw() {
-        UI::_Window::Attr color;
+        UI::Window::Attr color;
         if (_borderColor) color = attr(*_borderColor);
         drawBorder();
         _drawNeeded = false;
