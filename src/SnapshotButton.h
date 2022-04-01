@@ -8,42 +8,37 @@
 
 namespace UI {
 
-struct SnapshotButtonOptions {
-    // Required (by constructor)
-    Git::Repo repo;
-    State::Snapshot snapshot;
-    int width = 0;
-    
-    // Optional
-    bool activeSnapshot = false;
-};
-
-class _SnapshotButton : public _Button {
+class SnapshotButton : public Button {
 public:
-    _SnapshotButton(const ButtonOptions& opts, const SnapshotButtonOptions& snapOpts) : _Button(opts), _opts(snapOpts) {
-        Git::Commit commit = State::Convert(_opts.repo, _opts.snapshot.head);
+//    template <typename T, typename ...Args>
+//    static auto Make(const ColorPalette& colors, Git::Repo repo, State::Snapshot snapshot, int width) {
+//        return std::make_shared<UI::SnapshotButton>(colors, opts);
+//    }
+    
+    SnapshotButton(const ColorPalette& colors, Git::Repo repo, const State::Snapshot& snapshot, int width) :
+    Button(colors), repo(repo), snapshot(snapshot) {
+        
+        Git::Commit commit = State::Convert(repo, snapshot.head);
         Git::Signature sig = commit.author();
         
-        _time = Time::RelativeTimeDisplayString(_opts.snapshot.creationTime);
+        _time = Time::RelativeTimeDisplayString(snapshot.creationTime);
         _commit.id = Git::DisplayStringForId(commit.id());
         _commit.author = sig.name();
-        _commit.message = LineWrap::Wrap(1, _opts.width-_TextInsetX, commit.message());
+        _commit.message = LineWrap::Wrap(1, width-_TextInsetX, commit.message());
         
-        options().frame.size = {_opts.width, 3};
+        frame.size = {width, 3};
     }
     
-    void draw(const _Window& win) const override {
-        const ButtonOptions& opts = options();
-        const ColorPalette& colors = opts.colors;
-        const int width = opts.frame.size.x;
-        const Point off = opts.frame.point;
+    void draw(const _Window& win) override {
+        const int width = frame.size.x;
+        const Point off = frame.point;
         const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;
         
         // Draw time
         {
-            UI::_Window::Attr color = win.attr(opts.colors.dimmed);
+            UI::_Window::Attr color = win.attr(colors.dimmed);
             int offX = width - (int)UTF8::Strlen(_time);
             win.drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
         }
@@ -52,7 +47,7 @@ public:
         {
             UI::_Window::Attr bold = win.attr(A_BOLD);
             UI::_Window::Attr color;
-            if (opts.highlight || (_opts.activeSnapshot && !opts.mouseActive)) {
+            if (highlight || (activeSnapshot && !mouseActive)) {
                 color = win.attr(colors.menu);
             }
             win.drawText(offText, "%s", _commit.id.c_str());
@@ -60,7 +55,7 @@ public:
         
         // Draw author name
         {
-            UI::_Window::Attr color = win.attr(opts.colors.dimmed);
+            UI::_Window::Attr color = win.attr(colors.dimmed);
             win.drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
         }
         
@@ -75,12 +70,12 @@ public:
         
         // Draw highlight
         {
-            if (opts.highlight) {
+            if (highlight) {
                 UI::_Window::Attr color = win.attr(colors.menu|A_BOLD);
                 win.drawText(off + offTextY, "%s", "●");
             
-            } else if (_opts.activeSnapshot) {
-                if (opts.mouseActive) {
+            } else if (activeSnapshot) {
+                if (mouseActive) {
                     win.drawText(off + offTextY, "%s", "○");
                 } else {
                     UI::_Window::Attr color = win.attr(colors.menu|A_BOLD);
@@ -90,12 +85,13 @@ public:
         }
     }
     
-    const SnapshotButtonOptions& snapshotOptions() { return _opts; }
+    Git::Repo repo;
+    State::Snapshot snapshot;
+    bool activeSnapshot = false;
     
 private:
     static constexpr int _TextInsetX = 2;
     
-    SnapshotButtonOptions _opts;
     std::string _time;
     struct {
         std::string id;
@@ -104,6 +100,6 @@ private:
     } _commit;
 };
 
-using SnapshotButton = std::shared_ptr<_SnapshotButton>;
+using SnapshotButtonPtr = std::shared_ptr<SnapshotButton>;
 
 } // namespace UI

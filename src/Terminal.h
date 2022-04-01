@@ -199,7 +199,7 @@ inline Background BackgroundGet() {
         // Keep reading until we get a 0x07 (BELL) character
         for (;;) {
             if (off >= sizeof(resp)) throw Toastbox::RuntimeError("too many characters in control sequence response");
-            size_t sr = Toastbox::Read(STDIN_FILENO, resp+off, 1, deadline);
+            sr = Toastbox::Read(STDIN_FILENO, resp+off, 1, deadline);
             if (sr != 1) throw Toastbox::RuntimeError("timeout receiving control sequence response");
             off++;
             

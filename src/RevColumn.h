@@ -104,39 +104,33 @@ public:
             Rect snapshotsFrame = {_opts.offset+Size{(_opts.width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
-                    .colors = _opts.colors,
-                    .label = "Undo",
-                    .enabled = _opts.undoEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = undoFrame,
-                }));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                button->label = "Undo";
+                button->enabled = _opts.undoEnabled;
+                button->center = true;
+                button->drawBorder = true;
+                button->insetX = 1;
+                button->frame = undoFrame;
             }
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
-                    .colors = _opts.colors,
-                    .label = "Redo",
-                    .enabled = _opts.redoEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = redoFrame,
-                }));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                button->label = "Redo";
+                button->enabled = _opts.redoEnabled;
+                button->center = true;
+                button->drawBorder = true;
+                button->insetX = 1;
+                button->frame = redoFrame;
             }
             
             {
-                auto button = _buttons.emplace_back(MakeShared<UI::Button>(UI::ButtonOptions{
-                    .colors = _opts.colors,
-                    .label = "Snapshots…",
-                    .enabled = _opts.snapshotsEnabled,
-                    .center = true,
-                    .drawBorder = true,
-                    .insetX = 1,
-                    .frame = snapshotsFrame,
-                }));
+                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(_opts.colors));
+                button->label = "Snapshots…";
+                button->enabled = _opts.snapshotsEnabled;
+                button->center = true;
+                button->drawBorder = true;
+                button->insetX = 1;
+                button->frame = snapshotsFrame;
             }
         }
     }
@@ -163,14 +157,14 @@ public:
             p->drawIfNeeded();
         }
         
-        for (UI::Button button : _buttons) {
+        for (UI::ButtonPtr button : _buttons) {
             button->draw(win);
         }
     }
     
     RevColumnHitTestResult updateMouse(const UI::Point& p) {
-        for (UI::Button button : _buttons) {
-            button->options().highlight = false;
+        for (UI::ButtonPtr button : _buttons) {
+            button->highlight = false;
         }
         
         for (UI::CommitPanel panel : _panels) {
@@ -178,12 +172,12 @@ public:
         }
         
         int bnum = (int)RevColumnButton::None+1;
-        for (UI::Button& button : _buttons) {
+        for (UI::ButtonPtr& button : _buttons) {
             if (button->hitTest(p)) {
-                button->options().highlight = true;
+                button->highlight = true;
                 return RevColumnHitTestResult{
                     .button = (RevColumnButton)bnum,
-                    .buttonEnabled = button->options().enabled,
+                    .buttonEnabled = button->enabled,
                 };
             }
             bnum++;
@@ -207,7 +201,7 @@ private:
     std::string _name;
     bool _truncated = false;
     UI::CommitPanelVec _panels;
-    std::vector<UI::Button> _buttons;
+    std::vector<UI::ButtonPtr> _buttons;
 };
 
 using RevColumn = std::shared_ptr<_RevColumn>;

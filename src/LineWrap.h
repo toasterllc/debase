@@ -18,9 +18,9 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
             if (line.empty()) continue;
             
             Line& lineInput = linesInput.emplace_back();
-            std::istringstream stream(line);
+            std::istringstream linestream(line);
             std::string word;
-            while (stream >> word) lineInput.push_back(word);
+            while (linestream >> word) lineInput.push_back(word);
         }
     }
     

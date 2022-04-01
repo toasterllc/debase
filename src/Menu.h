@@ -11,7 +11,7 @@ struct MenuOptions {
     Window parentWindow;
     Point position;
     std::string title;
-    std::vector<Button> buttons;
+    std::vector<ButtonPtr> buttons;
     bool allowTruncate = false;
 };
 
@@ -25,8 +25,8 @@ public:
     _Menu(const MenuOptions& opts) : _opts(opts) {
         // Find the longest button to set our width
         int width = 0;
-        for (Button button : _opts.buttons) {
-            width = std::max(width, button->options().frame.size.x);
+        for (ButtonPtr button : _opts.buttons) {
+            width = std::max(width, button->frame.size.x);
         }
         
         width += Padding().x;
@@ -36,8 +36,7 @@ public:
         int y = _BorderSize;
         int height = Padding().y;
         size_t idx = 0;
-        for (Button button : _opts.buttons) {
-            ButtonOptions& opts = button->options();
+        for (ButtonPtr button : _opts.buttons) {
             int newHeight = height;
             // Add space for separator
             // If we're not the first button, add space for the separator at the top of the button
@@ -47,11 +46,12 @@ public:
             }
             
             // Set button position (after separator)
-            opts.frame.point = {x,y};
+            Rect& f = button->frame;
+            f.point = {x,y};
             
             // Add space for button
-            y += opts.frame.size.y;
-            newHeight += opts.frame.size.y;
+            y += f.size.y;
+            newHeight += f.size.y;
             
             // Bail if the button won't fit in the available height
             if (_opts.allowTruncate && newHeight>sizeMax.y) break;
@@ -65,21 +65,20 @@ public:
         setPosition(_opts.position);
     }
     
-    Button updateMouse(const Point& p) {
+    ButtonPtr updateMouse(const Point& p) {
         Rect frame = _Panel::frame();
         Point off = p-frame.point;
         bool mouseActive = HitTest(frame, p);
         
-        Button mouseOverButton = nullptr;
-        for (Button button : _opts.buttons) {
-            ButtonOptions& opts = button->options();
-            opts.mouseActive = mouseActive;
+        ButtonPtr mouseOverButton = nullptr;
+        for (ButtonPtr button : _opts.buttons) {
+            button->mouseActive = mouseActive;
             bool hit = button->hitTest(off, {1,1});
             if (hit && !mouseOverButton) {
-                opts.highlight = true;
+                button->highlight = true;
                 mouseOverButton = button;
             } else {
-                opts.highlight = false;
+                button->highlight = false;
             }
         }
         
@@ -91,13 +90,13 @@ public:
         erase();
         
         for (size_t i=0; i<_buttonCount; i++) {
-            Button button = _opts.buttons[i];
+            ButtonPtr button = _opts.buttons[i];
             button->draw(*this);
             
             // Draw separator
             if (i != _buttonCount-1) {
                 UI::_Window::Attr color = attr(_opts.colors.menu);
-                drawLineHoriz({0, button->options().frame.ymax()+1}, width);
+                drawLineHoriz({0, button->frame.ymax()+1}, width);
             }
         }
         

@@ -480,9 +480,9 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
                 
                 // Position shadowPanels
                 int off = 1;
-                for (UI::Panel p : _Drag.shadowPanels) {
+                for (UI::Panel panel : _Drag.shadowPanels) {
                     const UI::Point pos = pos0+off;
-                    p->setPosition(pos);
+                    panel->setPosition(pos);
                     off++;
                 }
             }
@@ -644,17 +644,15 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
     }
 }
 
-static UI::Button _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled) {
+static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled) {
     constexpr int ContextMenuWidth = 12;
-    UI::Button b = MakeShared<UI::Button>(UI::ButtonOptions{
-        .colors         = _Colors,
-        .label          = std::string(label),
-        .key            = std::string(key),
-        .enabled        = enabled,
-        .insetX         = 0,
-        .frame.size.x   = ContextMenuWidth,
-        .frame.size.y   = 1,
-    });
+    UI::ButtonPtr b = std::make_shared<UI::Button>(_Colors);
+    b->label          = std::string(label);
+    b->key            = std::string(key);
+    b->enabled        = enabled;
+    b->insetX         = 0;
+    b->frame.size.x   = ContextMenuWidth;
+    b->frame.size.y   = 1;
     return b;
 }
 
@@ -683,10 +681,10 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
     bool editEnabled    = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
     bool deleteEnabled  = _Selection.rev.isMutable();
-    UI::Button combineButton = _MakeContextMenuButton("Combine", "c", combineEnabled);
-    UI::Button editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
-    UI::Button deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
-    std::vector<UI::Button> buttons = { combineButton, editButton, deleteButton };
+    UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", combineEnabled);
+    UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
+    UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
+    std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
     _ContextMenu = MakeShared<UI::Menu>(UI::MenuOptions{
         .colors = _Colors,
         .parentWindow = _RootWindow,
@@ -694,7 +692,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
         .buttons = buttons
     });
     
-    UI::Button menuButton = nullptr;
+    UI::ButtonPtr menuButton = nullptr;
     UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
     bool abort = false;
     for (;;) {
@@ -731,7 +729,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
                 // enabled menu button.
                 // In other words, don't close the menu when clicking on a disabled menu
                 // button.
-                if (!menuButton || menuButton->options().enabled) {
+                if (!menuButton || menuButton->enabled) {
                     break;
                 }
             }
@@ -780,28 +778,29 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
 
 constexpr int _SnapshotMenuWidth = 26;
 
-static UI::Button _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
+static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
     bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
     
-    UI::ButtonOptions buttonOpts = {
-        .enabled = true,
-        .colors = _Colors,
-    };
+//    UI::Button::Options buttonOpts = {
+//        .enabled = true,
+//    };
+//    
+//    UI::SnapshotButton::Options snapButtonOpts = {
+//        .repo           = repo,
+//        .snapshot       = snap,
+//        .width          = _SnapshotMenuWidth,
+//        .activeSnapshot = activeSnapshot,
+//    };
     
-    UI::SnapshotButtonOptions snapButtonOpts = {
-        .repo           = repo,
-        .snapshot       = snap,
-        .width          = _SnapshotMenuWidth,
-        .activeSnapshot = activeSnapshot,
-    };
-    
-    UI::SnapshotButton b = MakeShared<UI::SnapshotButton>(buttonOpts, snapButtonOpts);
+    UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_Colors, repo, snap, _SnapshotMenuWidth);
+    b->enabled = true;
+    b->activeSnapshot = activeSnapshot;
     return b;
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn column) {
     Git::Ref ref = column->rev().ref;
-    std::vector<UI::Button> buttons = {
+    std::vector<UI::ButtonPtr> buttons = {
         _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
     };
     
@@ -826,7 +825,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     };
     _SnapshotsMenu = MakeShared<UI::SnapshotMenu>(menuOpts);
     
-    UI::SnapshotButton menuButton = nullptr;
+    UI::SnapshotButtonPtr menuButton;
     bool abort = false;
     for (;;) {
         _Draw();
@@ -835,7 +834,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
         abort = (ev.type != UI::Event::Type::Mouse);
         
         if (ev.type == UI::Event::Type::Mouse) {
-            menuButton = std::dynamic_pointer_cast<UI::_SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
+            menuButton = std::dynamic_pointer_cast<UI::SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
         } else {
             menuButton = nullptr;
         }
@@ -850,7 +849,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
             // enabled menu button.
             // In other words, don't close the menu when clicking on a disabled menu
             // button.
-            if (!menuButton || menuButton->options().enabled) {
+            if (!menuButton || menuButton->enabled) {
                 break;
             }
         }
@@ -858,7 +857,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn column) {
     
     if (!abort && menuButton) {
         State::History& h = _RepoState.history(ref);
-        State::Commit commitNew = menuButton->snapshotOptions().snapshot.head;
+        State::Commit commitNew = menuButton->snapshot.head;
         State::Commit commitCur = h.get().head;
         
         if (commitNew != commitCur) {

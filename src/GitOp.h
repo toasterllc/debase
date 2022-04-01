@@ -524,8 +524,8 @@ inline _Argv _CreateArgv(Repo repo, std::string_view filePath) {
     // Constructing `argv` must be a separate loop from constructing `args`,
     // because modifying `args` can invalidate all its elements, including
     // the c_str's that we'd get from each element
-    for (const std::string& arg : args) {
-        argv.push_back(arg.c_str());
+    for (const std::string& a : args) {
+        argv.push_back(a.c_str());
     }
     argv.push_back(nullptr);
     return _Argv{args, argv};

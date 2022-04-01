@@ -15,17 +15,14 @@ public:
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email = TextField::Make({
-            .colors = opts.colors,
-            .requestFocus = requestFocus,
-            .releaseFocus = releaseFocus,
-        });
+        _email = std::make_shared<TextField>(opts.colors);
+        _code = std::make_shared<TextField>(opts.colors);
         
-        _code = TextField::Make({
-            .colors = opts.colors,
-            .requestFocus = requestFocus,
-            .releaseFocus = releaseFocus,
-        });
+        _email->requestFocus = requestFocus;
+        _email->releaseFocus = releaseFocus;
+        
+        _code->requestFocus = requestFocus;
+        _code->releaseFocus = releaseFocus;
         
         _email->focus(true);
     }
@@ -36,9 +33,9 @@ public:
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
         int offY = s.y-_FieldsExtraHeight-1;
-        _email->options().frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        _email->frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
         offY += 2;
-        _code->options().frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
+        _code->frame = {{_FieldValueInsetX, offY}, {fieldWidth, 1}};
         offY += 2;
         
         return true;
@@ -145,18 +142,18 @@ private:
         _email->focus(false);
         _code->focus(false);
         
-        bool fieldsFilled = !_email->value().empty() && !_code->value().empty();
+        bool fieldsFilled = !_email->value.empty() && !_code->value.empty();
         if (done) {
             if (fieldsFilled) {
                 beep();
             
             } else {
-                if (field.value().empty()) {
+                if (field.value.empty()) {
                     field.focus(true);
                 
                 } else {
-                    if (_email->value().empty())     _email->focus(true);
-                    else if (_code->value().empty()) _code->focus(true);
+                    if (_email->value.empty())     _email->focus(true);
+                    else if (_code->value.empty()) _code->focus(true);
                 }
             }
         

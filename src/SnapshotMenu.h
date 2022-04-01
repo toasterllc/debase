@@ -17,9 +17,9 @@ public:
         
         // Draw separator
         if (opts.buttons.size() > 1) {
-            UI::Button button0 = opts.buttons[0];
+            UI::ButtonPtr button0 = opts.buttons[0];
             UI::_Window::Attr color = attr(opts.colors.menu);
-            Point p = {1, button0->options().frame.ymax()+1};
+            Point p = {1, button0->frame.ymax()+1};
             int len = width-2;
             cchar_t c = { .chars = L"╍" };
             mvwhline_set(*this, p.y, p.x, &c, len);
