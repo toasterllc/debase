@@ -1438,6 +1438,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: figure out a way to not redraw Menu every cycle, but support button highlight on hover
+    
     #warning TODO: get reg panel working again
     
     #warning TODO: get snapshots menu working again
