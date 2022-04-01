@@ -30,7 +30,6 @@ public:
     }
     
     void draw(const Window& win) override {
-        if (!drawNeeded) return;
         Button::draw(win);
         
         const int width = frame.size.x;
@@ -50,7 +49,7 @@ public:
         {
             Window::Attr bold = win.attr(A_BOLD);
             Window::Attr color;
-            if (highlighted() || (activeSnapshot && !mouseActive())) {
+            if (highlighted || (activeSnapshot && !mouseActive)) {
                 color = win.attr(colors.menu);
             }
             win.drawText(offText, "%s", _commit.id.c_str());
@@ -73,12 +72,12 @@ public:
         
         // Draw highlight
         {
-            if (highlighted()) {
+            if (highlighted) {
                 Window::Attr color = win.attr(colors.menu|A_BOLD);
                 win.drawText(off + offTextY, "%s", "●");
             
             } else if (activeSnapshot) {
-                if (mouseActive()) {
+                if (mouseActive) {
                     win.drawText(off + offTextY, "%s", "○");
                 } else {
                     Window::Attr color = win.attr(colors.menu|A_BOLD);

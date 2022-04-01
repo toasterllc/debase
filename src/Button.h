@@ -15,7 +15,6 @@ public:
     Button(const ColorPalette& colors) : Control(colors) {}
     
     void draw(const Window& win) override {
-        if (!drawNeeded) return;
         Control::draw(win);
         
         size_t labelLen = UTF8::Strlen(label);
@@ -48,7 +47,7 @@ public:
             Window::Attr bold;
             Window::Attr color;
             if (enabled)                 bold = win.attr(A_BOLD);
-            if (_highlighted && enabled) color = win.attr(colors.menu);
+            if (highlighted && enabled)  color = win.attr(colors.menu);
             else if (!enabled)           color = win.attr(colors.dimmed);
             win.drawText(plabel, "%s", label.c_str());
         }
@@ -64,7 +63,7 @@ public:
         if (ev.type == Event::Type::Mouse) {
             bool hit = hitTest(ev.mouse.point);
             if (enabled && hit) {
-                highlighted(true);
+                highlighted = true;
                 
                 if (ev.mouseDown()) {
                     // Track mouse
@@ -72,7 +71,7 @@ public:
                     return {};
                 }
             } else {
-                highlighted(false);
+                highlighted = false;
             }
         }
         return ev;
@@ -87,26 +86,14 @@ public:
         return ev;
     }
     
-    bool highlighted() { return _highlighted; }
-    void highlighted(bool x) {
-        if (_highlighted == x) return;
-        _highlighted = x;
-        drawNeeded = true;
-    }
-    
-    bool mouseActive() { return _mouseActive; }
-    void mouseActive(bool x) {
-        if (_mouseActive == x) return;
-        _mouseActive = x;
-        drawNeeded = true;
-    }
-    
     std::string label;
     std::string key;
     bool enabled = false;
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
+    bool highlighted = false;
+    bool mouseActive = false;
     std::function<void(Button&)> action;
     
 private:
@@ -117,7 +104,7 @@ private:
         
         for (;;) {
             if (ev.type == Event::Type::Mouse) {
-                highlighted(hitTest(ev.mouse.point));
+                highlighted = hitTest(ev.mouse.point);
             }
             
             draw(win);
@@ -125,9 +112,6 @@ private:
             if (!ev) break;
         }
     }
-    
-    bool _highlighted = false;
-    bool _mouseActive = false;
 };
 
 using ButtonPtr = std::shared_ptr<Button>;

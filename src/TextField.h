@@ -17,8 +17,6 @@ public:
     }
     
     void draw(const Window& win) override {
-        drawNeeded = true;
-        if (!drawNeeded) return;
         Control::draw(win);
         
         Window::Attr underline = win.attr(A_UNDERLINE);
@@ -35,7 +33,7 @@ public:
         win.drawText(frame.point, "%s", substr.c_str());
         
         if (_focus) {
-            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
+//            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
             
             Point p = win.frame().point + frame.point;
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
@@ -45,10 +43,7 @@ public:
     
     Event handleEvent(const Window& win, const Event& ev) override {
         Event e = _handleEvent(win, ev);
-        if (!e) {
-            drawNeeded = true;
-            return {};
-        }
+        if (!e) return {};
         return e;
     }
     

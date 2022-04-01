@@ -66,7 +66,6 @@ public:
     }
     
     void draw() override {
-        drawNeeded = _drawNeeded();
         if (!drawNeeded) return;
         Panel::draw();
         
@@ -119,7 +118,7 @@ public:
                 // Update the mouseActive state for all of our buttons
                 bool inside = HitTest(bounds(), ev.mouse.point);
                 for (ButtonPtr button : buttons) {
-                    button->mouseActive(inside);
+                    button->mouseActive = inside;
                 }
                 
                 // Handle mouse down
@@ -173,13 +172,6 @@ private:
     static constexpr int _RowHeight       = 2;
     
     static constexpr auto _StayOpenThresh = std::chrono::milliseconds(300);
-    
-    bool _drawNeeded() const {
-        for (ButtonPtr button : buttons) {
-            if (button->drawNeeded) return true;
-        }
-        return false;
-    }
     
     bool _layoutNeeded = true;
     size_t _buttonCount = 0;
