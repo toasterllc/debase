@@ -68,6 +68,9 @@ public:
     void draw() override {
         drawNeeded |= _drawNeeded();
         if (!drawNeeded) return;
+        
+        os_log(OS_LOG_DEFAULT, "Menu::draw()");
+        
         Panel::draw();
         
         const int width = bounds().size.x;
@@ -100,7 +103,8 @@ public:
     void track(const Event& mouseDownEvent) {
         auto mouseDownTime = std::chrono::steady_clock::now();
         UI::Event ev = mouseDownEvent;
-        Event::MouseButtons mouseUpButtons = Event::MouseButtons::Right;
+        Event::MouseButtons sensitive = Event::MouseButtons::Right;
+        bool stayOpen = false;
         
         for (;;) {
             draw();
@@ -108,7 +112,7 @@ public:
             
             // See if any of the buttons want the event
             for (ButtonPtr button : buttons) {
-                Event e = button->handleEvent(*this, ev);
+                Event e = button->handleEvent(*this, ev, sensitive);
                 if (!e) {
                     if (dismissAction) dismissAction(*this);
                     return;
@@ -123,32 +127,52 @@ public:
                 }
                 
                 // Handle mouse down
-                if (ev.mouseDown()) {
+                if (ev.mouseDown() && !inside) {
                     if (dismissAction) dismissAction(*this);
                     return;
                 
                 // Handle mouse up
-                } else if (ev.mouseUp(mouseUpButtons)) {
-                    if (!(mouseUpButtons & Event::MouseButtons::Left)) {
-                        // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
-                        // stay open and we should start listening for left-mouse-down events.
-                        auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-                        if (duration < _StayOpenThresh) {
-                            // Start listening for left mouse up
-                            mouseUpButtons |= Event::MouseButtons::Left;
-                        
-                        } else {
-                            // Right-mouse-up occurred long after right-mouse-down, so trigger
-                            // the button that the mouse is over (if any)
-                            // We have to call the button action manually because handleEvent()
-                            // doesn't work with only a mouse-up event.
-                            for (ButtonPtr button : buttons) {
-                                Event e = button->trigger(ev, mouseUpButtons);
-                                if (!e) break;
-                            }
-                            return;
-                        }
+                } else if (ev.mouseUp(sensitive)) {
+                    auto duration = std::chrono::steady_clock::now()-mouseDownTime;
+                    
+                    // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
+                    //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
+                    ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
+                    if ((!stayOpen && duration>=_StayOpenExpiration) || (stayOpen && !inside)) {
+                        if (dismissAction) dismissAction(*this);
+                        return;
                     }
+                    
+                    // Start listening for left mouse up
+                    sensitive |= Event::MouseButtons::Left;
+                    stayOpen = true;
+                    
+//                    if (!leftListen) {
+//                        // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
+//                        // stay open and we should start listening for left-mouse-down events.
+//                        auto duration = std::chrono::steady_clock::now()-mouseDownTime;
+//                        if (duration >= _CloseThresh) {
+//                            if (dismissAction) dismissAction(*this);
+//                            return;
+//                        }
+//                        
+//                        // Start listening for left mouse up
+//                        sensitive |= Event::MouseButtons::Left;
+//                    
+//                    } else {
+//                        if (dismissAction) dismissAction(*this);
+//                        return;
+//                    }
+//                    
+//                    // Right-mouse-up occurred long after right-mouse-down, so trigger
+//                    // the button that the mouse is over (if any)
+//                    // We have to call the button action manually because handleEvent()
+//                    // doesn't work with only a mouse-up event.
+//                    for (ButtonPtr button : buttons) {
+//                        Event e = button->trigger(ev, sensitive);
+//                        if (!e) break;
+//                    }
+//                    return;
                 }
             
             } else if (ev.type == Event::Type::KeyEscape) {
@@ -172,7 +196,7 @@ private:
     static constexpr int _KeySpacing      = 2;
     static constexpr int _RowHeight       = 2;
     
-    static constexpr auto _StayOpenThresh = std::chrono::milliseconds(300);
+    static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
     bool _drawNeeded() const {
         for (ButtonPtr button : buttons) {

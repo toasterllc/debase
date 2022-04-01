@@ -60,15 +60,18 @@ public:
         }
     }
     
-    Event handleEvent(const Window& win, const Event& ev) override {
-        if (ev.type == Event::Type::Mouse) {
-            bool hit = hitTest(ev.mouse.point);
-            if (enabled && hit) {
+    Event handleEvent(const Window& win, const Event& ev, Event::MouseButtons sensitive) {
+        if (ev.type == Event::Type::Mouse && enabled) {
+            if (hitTest(ev.mouse.point)) {
                 highlighted(true);
                 
-                if (ev.mouseDown()) {
+                // We allow both mouse-down and mouse-up events to trigger tracking.
+                // Mouse-up events are to allow Menu to use this function for context
+                // menus: right-mouse-down opens the menu, while the right-mouse-up
+                // triggers the Button action via this function.
+                if (ev.mouseDown(sensitive) || ev.mouseUp(sensitive)) {
                     // Track mouse
-                    _trackMouse(win, ev);
+                    _trackMouse(win, ev, sensitive);
                     return {};
                 }
             } else {
@@ -78,13 +81,8 @@ public:
         return ev;
     }
     
-    Event trigger(const Event& ev, Event::MouseButtons buttons=Event::MouseButtons::Left) {
-        if (enabled && hitTest(ev.mouse.point) && ev.mouseUp(buttons)) {
-            if (action) action(*this);
-            // Consume event
-            return {};
-        }
-        return ev;
+    Event handleEvent(const Window& win, const Event& ev) override {
+        return handleEvent(win, ev, Event::MouseButtons::Left);
     }
     
     bool highlighted() { return _highlighted; }
@@ -112,7 +110,18 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     
-    void _trackMouse(const Window& win, const Event& mouseDownEvent) {
+    Event _trigger(const Event& ev, Event::MouseButtons sensitive) {
+        if (ev.mouseUp(sensitive)) {
+            if (enabled && hitTest(ev.mouse.point) && action) {
+                action(*this);
+            }
+            // Consume event
+            return {};
+        }
+        return ev;
+    }
+    
+    void _trackMouse(const Window& win, const Event& mouseDownEvent, Event::MouseButtons sensitive) {
         Event ev = mouseDownEvent;
         
         for (;;) {
@@ -121,8 +130,10 @@ private:
             }
             
             draw(win);
-            ev = trigger(win.nextEvent());
+            ev = _trigger(ev, sensitive);
             if (!ev) break;
+            
+            ev = win.nextEvent();
         }
     }
     

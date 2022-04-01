@@ -1154,15 +1154,15 @@ static void _EventLoop() {
     
     
     
-    {
-        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-        _RegisterPanel->color           = _Colors.menu;
-        _RegisterPanel->messageInsetY   = 1;
-        _RegisterPanel->center          = false;
-        _RegisterPanel->title           = "Register";
-        _RegisterPanel->message         = "Please register debase";
-    }
-    
+//    {
+//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+//        _RegisterPanel->color           = _Colors.menu;
+//        _RegisterPanel->messageInsetY   = 1;
+//        _RegisterPanel->center          = false;
+//        _RegisterPanel->title           = "Register";
+//        _RegisterPanel->message         = "Please register debase";
+//    }
+//    
     
     
     
