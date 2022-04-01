@@ -27,10 +27,11 @@ public:
         _email.focus(true);
     }
     
-    virtual void layout() override {
+    void layout() override {
         Size sizeBefore = frame().size;
         MessagePanel::layout();
         Size sizeAfter = frame().size;
+        // Short-circuit if the superclass didn't change our size
         if (sizeBefore == sizeAfter) return;
         
         Size s = size();

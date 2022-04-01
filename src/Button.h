@@ -14,7 +14,7 @@ public:
     
     Button(const ColorPalette& colors) : Control(colors) {}
     
-    virtual void draw(const Window& win) override {
+    void draw(const Window& win) override {
         size_t labelLen = UTF8::Strlen(label);
         size_t keyLen = UTF8::Strlen(key);
         
