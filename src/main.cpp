@@ -1446,7 +1446,7 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: get reg panel working again
+    #warning TODO: have message panel implement track() like menu does
     
     #warning TODO: get snapshots menu working again
     
@@ -1471,6 +1471,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: get reg panel working again
+//
 //    #warning TODO: figure out a way to not redraw Menu every cycle, but support button highlight on hover
 //
 //    #warning TODO: switch Menu to follow TextField handleEvent() model
