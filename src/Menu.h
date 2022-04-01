@@ -146,33 +146,6 @@ public:
                     // Start listening for left mouse up
                     sensitive |= Event::MouseButtons::Left;
                     stayOpen = true;
-                    
-//                    if (!leftListen) {
-//                        // If the right-mouse-up occurs soon enough after right-mouse-down, the menu should
-//                        // stay open and we should start listening for left-mouse-down events.
-//                        auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-//                        if (duration >= _CloseThresh) {
-//                            if (dismissAction) dismissAction(*this);
-//                            return;
-//                        }
-//                        
-//                        // Start listening for left mouse up
-//                        sensitive |= Event::MouseButtons::Left;
-//                    
-//                    } else {
-//                        if (dismissAction) dismissAction(*this);
-//                        return;
-//                    }
-//                    
-//                    // Right-mouse-up occurred long after right-mouse-down, so trigger
-//                    // the button that the mouse is over (if any)
-//                    // We have to call the button action manually because handleEvent()
-//                    // doesn't work with only a mouse-up event.
-//                    for (ButtonPtr button : buttons) {
-//                        Event e = button->trigger(ev, sensitive);
-//                        if (!e) break;
-//                    }
-//                    return;
                 }
             
             } else if (ev.type == Event::Type::KeyEscape) {
