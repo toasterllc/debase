@@ -16,6 +16,9 @@ public:
     }
     
     void draw(const Window& win) override {
+        if (!drawNeeded) return;
+        Control::draw(win);
+        
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
         if (!_focus) color = win.attr(colors.dimmed);
