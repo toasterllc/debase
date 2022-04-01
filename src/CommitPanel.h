@@ -11,7 +11,7 @@ namespace UI {
 // CommitPanel: a Panel representing a particular git commit
 // CommitPanel contains an index indicating the index of the panel/commit within
 // its containing branch, where the top/first CommitPanel is index 0
-class _CommitPanel : public _Panel, public std::enable_shared_from_this<_CommitPanel> {
+class _CommitPanel : public Panel, public std::enable_shared_from_this<_CommitPanel> {
 public:
     _CommitPanel(const ColorPalette& colors, bool header, int width, Git::Commit commit) :
     _colors(colors) {

@@ -15,7 +15,7 @@ struct MenuOptions {
     bool allowTruncate = false;
 };
 
-class _Menu : public _Panel, public std::enable_shared_from_this<_Menu> {
+class _Menu : public Panel, public std::enable_shared_from_this<_Menu> {
 public:
     // Padding(): the additional width/height on top of the size of the buttons
     static constexpr Size Padding() {
@@ -66,7 +66,7 @@ public:
     }
     
     ButtonPtr updateMouse(const Point& p) {
-        Rect frame = _Panel::frame();
+        Rect frame = Panel::frame();
         Point off = p-frame.point;
         bool mouseActive = HitTest(frame, p);
         

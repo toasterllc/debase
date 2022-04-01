@@ -480,7 +480,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
                 
                 // Position shadowPanels
                 int off = 1;
-                for (UI::Panel panel : _Drag.shadowPanels) {
+                for (UI::PanelPtr panel : _Drag.shadowPanels) {
                     const UI::Point pos = pos0+off;
                     panel->setPosition(pos);
                     off++;

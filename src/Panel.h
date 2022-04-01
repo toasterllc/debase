@@ -3,14 +3,14 @@
 
 namespace UI {
 
-class _Panel : public Window {
+class Panel : public Window {
 public:
-    _Panel() {
+    Panel() {
         _panel = ::new_panel(*this);
         assert(_panel);
     }
     
-    ~_Panel() {
+    ~Panel() {
         ::del_panel(_panel);
         _panel = nullptr;
     }
@@ -46,6 +46,6 @@ private:
     bool _visible = true;
 };
 
-using Panel = std::shared_ptr<_Panel>;
+using PanelPtr = std::shared_ptr<Panel>;
 
 } // namespace UI
