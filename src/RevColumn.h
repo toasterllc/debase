@@ -1,7 +1,7 @@
 #pragma once
 #include "Git.h"
 #include "Panel.h"
-#include "CommitPanelPtr.h"
+#include "CommitPanel.h"
 #include "MakeShared.h"
 #include "Color.h"
 #include "UTF8.h"

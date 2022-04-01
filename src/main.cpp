@@ -17,7 +17,7 @@
 #include "Window.h"
 #include "Panel.h"
 #include "xterm-256color.h"
-#include "CommitPanelPtr.h"
+#include "CommitPanel.h"
 #include "BorderedPanel.h"
 #include "Menu.h"
 #include "RevColumn.h"
@@ -58,7 +58,7 @@ static std::vector<UI::RevColumnPtr> _Columns;
 
 static struct {
     UI::CommitPanelPtr titlePanel;
-    std::vector<UI::BorderedPanel> shadowPanels;
+    std::vector<UI::BorderedPanelPtr> shadowPanels;
     std::optional<UI::Rect> insertionMarker;
     bool copy = false;
 } _Drag;
@@ -106,7 +106,7 @@ static void _Draw() {
         if (_Drag.titlePanel) {
             _Drag.titlePanel->setBorderColor(selectionColor);
             
-            for (UI::BorderedPanel panel : _Drag.shadowPanels) {
+            for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
                 panel->setBorderColor(selectionColor);
             }
         }
@@ -192,7 +192,7 @@ static void _Draw() {
             }
         }
         
-        for (UI::BorderedPanel panel : _Drag.shadowPanels) {
+        for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
             panel->drawIfNeeded();
         }
         
@@ -447,7 +447,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
             // Create shadow panels
             UI::Size shadowSize = _Drag.titlePanel->frame().size;
             for (size_t i=0; i<_Selection.commits.size()-1; i++) {
-                _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanel>(shadowSize));
+                _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanelPtr>(shadowSize));
             }
             
             // Order all the title panel and shadow panels

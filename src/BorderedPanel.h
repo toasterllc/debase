@@ -5,9 +5,9 @@
 
 namespace UI {
 
-class _BorderedPanel : public Panel, public std::enable_shared_from_this<_BorderedPanel> {
+class BorderedPanel : public Panel, public std::enable_shared_from_this<BorderedPanel> {
 public:
-    _BorderedPanel(const Size& size) {
+    BorderedPanel(const Size& size) {
         setSize(size);
         _drawNeeded = true;
     }
@@ -36,6 +36,6 @@ private:
     bool _drawNeeded = false;
 };
 
-using BorderedPanel = std::shared_ptr<_BorderedPanel>;
+using BorderedPanelPtr = std::shared_ptr<BorderedPanel>;
 
 } // namespace UI
