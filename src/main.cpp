@@ -1148,15 +1148,15 @@ static void _EventLoop() {
     
     
     
-    
-    {
-        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-        _RegisterPanel->color           = _Colors.menu;
-        _RegisterPanel->messageInsetY   = 1;
-        _RegisterPanel->center          = false;
-        _RegisterPanel->title           = "Register";
-        _RegisterPanel->message         = "Please register debase";
-    }
+//    
+//    {
+//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
+//        _RegisterPanel->color           = _Colors.menu;
+//        _RegisterPanel->messageInsetY   = 1;
+//        _RegisterPanel->center          = false;
+//        _RegisterPanel->title           = "Register";
+//        _RegisterPanel->message         = "Please register debase";
+//    }
     
     
     
@@ -1169,137 +1169,168 @@ static void _EventLoop() {
         _Draw();
         
         try {
-            UI::Event ev = _RootWindow->nextEvent();
-            
-            assert(!_ContextMenu);
-            assert(!_SnapshotsMenu);
-            
-            if (_MessagePanel) {
-                ev = _MessagePanel->handleEvent(_MessagePanel->convert(ev));
-            
-            } else if (_RegisterPanel) {
-                ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
-            
-//            } else if (_ContextMenu) {
-//                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
-//            
-//            } else if (_SnapshotsMenu) {
-//                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
-            
-            } else {
+            try {
+                const UI::Event ev = _RootWindow->nextEvent();
+                
+                assert(!_ContextMenu);
+                assert(!_SnapshotsMenu);
+                assert(!_MessagePanel);
+                assert(!_RegisterPanel);
+                
+                if (_MessagePanel) {
+                    _MessagePanel->track(_MessagePanel->convert(ev));
+                
+                } else if (_RegisterPanel) {
+                    ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
+                
+    //            } else if (_ContextMenu) {
+    //                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
+    //            
+    //            } else if (_SnapshotsMenu) {
+    //                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
+                
+                } else {
+                    // Let every column handle the event
+                    for (UI::RevColumnPtr col : _Columns) {
+                        ev = col->handleEvent(*_RootWindow, ev);
+                        if (!ev) break;
+                    }
+                }
+                
                 // Let every column handle the event
                 for (UI::RevColumnPtr col : _Columns) {
-                    ev = col->handleEvent(*_RootWindow, ev);
-                    if (!ev) break;
-                }
-            }
-            
-            std::optional<Git::Op> gitOp;
-            switch (ev.type) {
-            case UI::Event::Type::Mouse: {
-                // If _MessagePanel is displayed, the first click should dismiss the error
-                // Note that _MessagePanel eats all mouse events except mouse-up, so we
-                // don't have to check for the type
-                if (_MessagePanel) {
-                    _MessagePanel = nullptr;
-                    break;
+                    bool handled = col->handleEvent(*_RootWindow, ev);
+                    if (handled) break;
                 }
                 
-                const _HitTestResult hitTest = _HitTest(ev.mouse.point);
-                if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
-                    const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
-                    if (hitTest && !shift) {
-                        if (hitTest.panel) {
-                            // Mouse down inside of a CommitPanel, without shift key
-                            gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                std::optional<Git::Op> gitOp;
+                switch (ev.type) {
+                case UI::Event::Type::Mouse: {
+                    const _HitTestResult hitTest = _HitTest(ev.mouse.point);
+                    if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                        const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
+                        if (hitTest && !shift) {
+                            if (hitTest.panel) {
+                                // Mouse down inside of a CommitPanel, without shift key
+                                gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                            }
+                        
+                        } else {
+                            // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                            _TrackMouseOutsideCommitPanel(ev);
                         }
                     
-                    } else {
-                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _TrackMouseOutsideCommitPanel(ev);
-                    }
-                
-                } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
-                    if (hitTest) {
-                        if (hitTest.panel) {
-                            gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
+                    } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
+                        if (hitTest) {
+                            if (hitTest.panel) {
+                                gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
+                            }
                         }
                     }
-                }
-                break;
-            }
-            
-            case UI::Event::Type::KeyEscape: {
-                // Dismiss _MessagePanel if it's open
-                _MessagePanel = nullptr;
-                break;
-            }
-            
-            case UI::Event::Type::KeyDelete:
-            case UI::Event::Type::KeyFnDelete: {
-                if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
-                    beep();
                     break;
                 }
                 
-                gitOp = {
-                    .type = Git::Op::Type::Delete,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-                break;
-            }
-            
-            case UI::Event::Type::KeyC: {
-                if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
-                    beep();
+                case UI::Event::Type::KeyDelete:
+                case UI::Event::Type::KeyFnDelete: {
+                    if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
+                        beep();
+                        break;
+                    }
+                    
+                    gitOp = {
+                        .type = Git::Op::Type::Delete,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
                     break;
                 }
                 
-                gitOp = {
-                    .type = Git::Op::Type::Combine,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-                break;
-            }
-            
-            case UI::Event::Type::KeyReturn: {
-                if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
-                    beep();
+                case UI::Event::Type::KeyC: {
+                    if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
+                        beep();
+                        break;
+                    }
+                    
+                    gitOp = {
+                        .type = Git::Op::Type::Combine,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
                     break;
                 }
                 
-                gitOp = {
-                    .type = Git::Op::Type::Edit,
-                    .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
-                    },
-                };
-                break;
-            }
+                case UI::Event::Type::KeyReturn: {
+                    if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
+                        beep();
+                        break;
+                    }
+                    
+                    gitOp = {
+                        .type = Git::Op::Type::Edit,
+                        .src = {
+                            .rev = _Selection.rev,
+                            .commits = _Selection.commits,
+                        },
+                    };
+                    break;
+                }
+                
+                default: {
+                    break;
+                }}
+                
+                if (gitOp) _ExecGitOp(*gitOp);
             
-            default: {
-                break;
-            }}
+            } catch (const Git::Error& e) {
+                switch (e.error) {
+                case GIT_EUNMERGED:
+                case GIT_EMERGECONFLICT:
+                    errorMsg = "a merge conflict occurred";
+                    break;
+                
+                default:
+                    errorMsg = e.what();
+                    break;
+                }
             
-            if (gitOp) _ExecGitOp(*gitOp);
-        
-        } catch (const Git::Error& e) {
-            switch (e.error) {
-            case GIT_EUNMERGED:
-            case GIT_EMERGECONFLICT:
-                errorMsg = "a merge conflict occurred";
-                break;
+            } catch (const UI::WindowResize&) {
+                throw; // Bubble up
             
-            default:
+            } catch (const UI::ExitRequest&) {
+                throw; // Bubble up
+            
+            } catch (const std::exception& e) {
                 errorMsg = e.what();
-                break;
+            }
+            
+            if (!errorMsg.empty()) {
+                errorMsg[0] = toupper(errorMsg[0]);
+                
+                _MessagePanel = MakeShared<UI::ModalPanelPtr>(_Colors);
+                _MessagePanel->color    = _Colors.error;
+                _MessagePanel->center   = true;
+                _MessagePanel->title    = "Error";
+                _MessagePanel->message  = errorMsg;
+                
+                constexpr int MessagePanelWidth = 35;
+                _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
+                _MessagePanel->size(_MessagePanel->sizeIntrinsic());
+                
+                UI::Size ps = _MessagePanel->frame().size;
+                UI::Size rs = _RootWindow->frame().size;
+                UI::Point p = {
+                    (rs.x-ps.x)/2,
+                    (rs.y-ps.y)/3,
+                };
+                _MessagePanel->setPosition(p);
+                _MessagePanel->orderFront();
+                _MessagePanel->layout();
+                _MessagePanel->track();
+                _MessagePanel = nullptr;
             }
         
         } catch (const UI::WindowResize&) {
@@ -1307,35 +1338,6 @@ static void _EventLoop() {
         
         } catch (const UI::ExitRequest&) {
             throw;
-        
-        } catch (const std::exception& e) {
-            errorMsg = e.what();
-        }
-        
-        if (!errorMsg.empty()) {
-            errorMsg[0] = toupper(errorMsg[0]);
-            
-            _MessagePanel = MakeShared<UI::ModalPanelPtr>(_Colors);
-            _MessagePanel->color    = _Colors.error;
-            _MessagePanel->center   = true;
-            _MessagePanel->title    = "Error";
-            _MessagePanel->message  = errorMsg;
-            
-            constexpr int MessagePanelWidth = 35;
-            _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
-            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
-            
-            UI::Size ps = _MessagePanel->frame().size;
-            UI::Size rs = _RootWindow->frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _MessagePanel->setPosition(p);
-            _MessagePanel->orderFront();
-            _MessagePanel->layout();
-            
-            _MessagePanel->track();
         }
     }
 }
