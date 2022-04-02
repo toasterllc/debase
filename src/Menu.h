@@ -102,7 +102,7 @@ public:
         }
     }
     
-    void track(Event mouseDownEvent) override {
+    void track(Event mouseDownEvent) {
         auto mouseDownTime = std::chrono::steady_clock::now();
         UI::Event ev = mouseDownEvent;
         Event::MouseButtons sensitive = Event::MouseButtons::Right;

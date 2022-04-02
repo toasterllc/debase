@@ -23,7 +23,6 @@
 #include "Menu.h"
 #include "RevColumn.h"
 #include "GitOp.h"
-#include "MakeShared.h"
 #include "Bitfield.h"
 #include "ModalPanel.h"
 #include "RegisterPanel.h"
@@ -390,7 +389,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn& col) {
 //    
 //    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
 //    const int px = col.offset.x + (col.width-width)/2;
-//    _SnapshotsMenu = MakeShared<UI::SnapshotMenuPtr>(_Colors);
+//    _SnapshotsMenu = std::make_shared<UI::SnapshotMenu>(_Colors);
 //    Defer(_SnapshotsMenu = nullptr);
 //    _SnapshotsMenu->title = "Session Start";
 //    _SnapshotsMenu->buttons = buttons;
@@ -494,7 +493,7 @@ static void _Reload() {
         
         snapshotsAction = [&] (UI::RevColumn& col) { _TrackSnapshotsMenu(col); };
         
-        UI::RevColumnPtr col = MakeShared<UI::RevColumnPtr>(_Colors);
+        UI::RevColumnPtr col = std::make_shared<UI::RevColumn>(_Colors);
         col->containerBounds    = _RootWindow->bounds();
         col->repo               = _Repo;
         col->rev                = rev;
@@ -557,12 +556,12 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
         if (!_Drag.titlePanel && mouseDragged && allow) {
             Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
             UI::CommitPanelPtr titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-            _Drag.titlePanel = MakeShared<UI::CommitPanelPtr>(_Colors, true, titlePanel->frame().size.x, titleCommit);
+            _Drag.titlePanel = std::make_shared<UI::CommitPanel>(_Colors, true, titlePanel->frame().size.x, titleCommit);
             
             // Create shadow panels
             UI::Size shadowSize = _Drag.titlePanel->frame().size;
             for (size_t i=0; i<_Selection.commits.size()-1; i++) {
-                _Drag.shadowPanels.push_back(MakeShared<UI::BorderedPanelPtr>(shadowSize));
+                _Drag.shadowPanels.push_back(std::make_shared<UI::BorderedPanel>(shadowSize));
             }
             
             // Order all the title panel and shadow panels
@@ -805,7 +804,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     deleteButton->action = [&] (UI::Button&) { menuButton = deleteButton; };
     
     std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
-    _ContextMenu = MakeShared<UI::MenuPtr>(_Colors);
+    _ContextMenu = std::make_shared<UI::Menu>(_Colors);
     Defer(_ContextMenu = nullptr);
     
     _ContextMenu->containerSize = _RootWindow->bounds().size;
@@ -1143,20 +1142,20 @@ static void _EventLoop() {
     _CursesInit();
     Defer(_CursesDeinit());
     
-    _RootWindow = MakeShared<UI::WindowPtr>(::stdscr);
+    _RootWindow = std::make_shared<UI::Window>(::stdscr);
     
     
     
     
-//    
-//    {
-//        _RegisterPanel = MakeShared<UI::RegisterPanelPtr>(_Colors);
-//        _RegisterPanel->color           = _Colors.menu;
-//        _RegisterPanel->messageInsetY   = 1;
-//        _RegisterPanel->center          = false;
-//        _RegisterPanel->title           = "Register";
-//        _RegisterPanel->message         = "Please register debase";
-//    }
+    
+    {
+        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
+        _RegisterPanel->color           = _Colors.menu;
+        _RegisterPanel->messageInsetY   = 1;
+        _RegisterPanel->center          = false;
+        _RegisterPanel->title           = "Register";
+        _RegisterPanel->message         = "Please register debase";
+    }
     
     
     
@@ -1170,38 +1169,56 @@ static void _EventLoop() {
         
         try {
             try {
-                const UI::Event ev = _RootWindow->nextEvent();
-                
-                assert(!_ContextMenu);
-                assert(!_SnapshotsMenu);
-                assert(!_MessagePanel);
-                assert(!_RegisterPanel);
-                
                 if (_MessagePanel) {
-                    _MessagePanel->track(_MessagePanel->convert(ev));
-                
-                } else if (_RegisterPanel) {
-                    ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
-                
-    //            } else if (_ContextMenu) {
-    //                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
-    //            
-    //            } else if (_SnapshotsMenu) {
-    //                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
-                
-                } else {
-                    // Let every column handle the event
-                    for (UI::RevColumnPtr col : _Columns) {
-                        ev = col->handleEvent(*_RootWindow, ev);
-                        if (!ev) break;
-                    }
+                    _MessagePanel->track();
+                    _MessagePanel = nullptr;
+                    continue;
                 }
+                
+                if (_RegisterPanel) {
+                    _RegisterPanel->track();
+                    _RegisterPanel = nullptr;
+                    continue;
+                }
+                
+                const UI::Event ev = _RootWindow->nextEvent();
                 
                 // Let every column handle the event
                 for (UI::RevColumnPtr col : _Columns) {
                     bool handled = col->handleEvent(*_RootWindow, ev);
                     if (handled) break;
                 }
+                
+//                assert(!_ContextMenu);
+//                assert(!_SnapshotsMenu);
+//                assert(!_MessagePanel);
+//                assert(!_RegisterPanel);
+//                
+//                if (_MessagePanel) {
+//                    _MessagePanel->track(_MessagePanel->convert(ev));
+//                
+//                } else if (_RegisterPanel) {
+//                    ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
+//                
+//    //            } else if (_ContextMenu) {
+//    //                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
+//    //            
+//    //            } else if (_SnapshotsMenu) {
+//    //                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
+//                
+//                } else {
+//                    // Let every column handle the event
+//                    for (UI::RevColumnPtr col : _Columns) {
+//                        ev = col->handleEvent(*_RootWindow, ev);
+//                        if (!ev) break;
+//                    }
+//                }
+//                
+//                // Let every column handle the event
+//                for (UI::RevColumnPtr col : _Columns) {
+//                    bool handled = col->handleEvent(*_RootWindow, ev);
+//                    if (handled) break;
+//                }
                 
                 std::optional<Git::Op> gitOp;
                 switch (ev.type) {
@@ -1310,7 +1327,7 @@ static void _EventLoop() {
             if (!errorMsg.empty()) {
                 errorMsg[0] = toupper(errorMsg[0]);
                 
-                _MessagePanel = MakeShared<UI::ModalPanelPtr>(_Colors);
+                _MessagePanel = std::make_shared<UI::ModalPanel>(_Colors);
                 _MessagePanel->color    = _Colors.error;
                 _MessagePanel->center   = true;
                 _MessagePanel->title    = "Error";

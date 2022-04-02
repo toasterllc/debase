@@ -304,14 +304,12 @@ public:
     
     virtual bool handleEvent(const Event& ev) { return false; }
     
-    virtual void track(const Event& ev) {
-        Event e = ev;
+    virtual void track() {
         for (;;) {
-            draw();
-            bool handled = handleEvent(ev);
+            bool handled = handleEvent(nextEvent());
             // Continue until an event isn't handled
             if (!handled) break;
-            e = nextEvent();
+            draw();
         }
     }
     

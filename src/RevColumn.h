@@ -2,7 +2,6 @@
 #include "Git.h"
 #include "Panel.h"
 #include "CommitPanel.h"
-#include "MakeShared.h"
 #include "Color.h"
 #include "UTF8.h"
 
@@ -70,7 +69,7 @@ public:
             while (commit) {
                 if (!skip) {
                     Point p = offset + Size{0,offY};
-                    CommitPanelPtr panel = MakeShared<CommitPanelPtr>(colors, false, width, commit);
+                    CommitPanelPtr panel = std::make_shared<CommitPanel>(colors, false, width, commit);
                     Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
                     if (Intersection(containerBounds, frame) != frame) break;

@@ -5,7 +5,6 @@
 #include "Color.h"
 #include "ModalPanel.h"
 #include "TextField.h"
-#include "MakeShared.h"
 #include <os/log.h>
 
 namespace UI {
