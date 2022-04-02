@@ -97,147 +97,6 @@ static bool _Selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
     return _SelectStateGet(col, panel) == _SelectState::True;
 }
 
-static void _Draw() {
-    const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
-    
-    // Update panels
-    {
-        if (_Drag.titlePanel) {
-            _Drag.titlePanel->borderColor(selectionColor);
-            
-            for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
-                panel->setBorderColor(selectionColor);
-            }
-        }
-        
-        for (UI::RevColumnPtr col : _Columns) {
-            col->layout();
-        }
-        
-        bool dragging = (bool)_Drag.titlePanel;
-        bool copying = _Drag.copy;
-        for (UI::RevColumnPtr col : _Columns) {
-            for (UI::CommitPanelPtr panel : col->panels) {
-                bool visible = false;
-                std::optional<UI::Color> borderColor;
-                _SelectState selectState = _SelectStateGet(col, panel);
-                if (selectState == _SelectState::True) {
-                    visible = !dragging || copying;
-                    if (dragging) borderColor = _Colors.selectionSimilar;
-                    else          borderColor = _Colors.selection;
-                
-                } else {
-                    visible = true;
-                    if (!dragging && selectState==_SelectState::Similar) borderColor = _Colors.selectionSimilar;
-                }
-                
-                panel->visible(visible);
-                panel->borderColor(borderColor);
-            }
-        }
-        
-        // Order all the title panel and shadow panels
-        if (dragging) {
-            for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
-                (*it)->orderFront();
-            }
-            _Drag.titlePanel->orderFront();
-        }
-        
-        if (_ContextMenu) {
-            _ContextMenu->orderFront();
-        }
-        
-        if (_SnapshotsMenu) {
-            _SnapshotsMenu->orderFront();
-        }
-        
-        if (_MessagePanel) {
-            constexpr int MessagePanelWidth = 40;
-            _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
-            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
-            
-            UI::Size ps = _MessagePanel->frame().size;
-            UI::Size rs = _RootWindow->frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _MessagePanel->position(p);
-            _MessagePanel->orderFront();
-            _MessagePanel->layout();
-        }
-        
-        if (_RegisterPanel) {
-            constexpr int RegisterPanelWidth = 50;
-            _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
-            _RegisterPanel->size(_RegisterPanel->sizeIntrinsic());
-            
-            UI::Size ps = _RegisterPanel->frame().size;
-            UI::Size rs = _RootWindow->frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _RegisterPanel->position(p);
-            _RegisterPanel->orderFront();
-            _RegisterPanel->layout();
-        }
-    }
-    
-    // Draw everything
-    {
-        _RootWindow->erase();
-        
-        if (_Drag.titlePanel) {
-            _Drag.titlePanel->draw();
-            
-            // Draw insertion marker
-            if (_Drag.insertionMarker) {
-                UI::Window::Attr color = _RootWindow->attr(selectionColor);
-                _RootWindow->drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
-            }
-        }
-        
-        for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
-            panel->draw();
-        }
-        
-        if (_SelectionRect) {
-            UI::Window::Attr color = _RootWindow->attr(_Colors.selection);
-            _RootWindow->drawRect(*_SelectionRect);
-        }
-        
-        for (UI::RevColumnPtr col : _Columns) {
-            col->draw(*_RootWindow);
-        }
-        
-        if (_ContextMenu) {
-            _ContextMenu->draw();
-        }
-        
-        if (_SnapshotsMenu) {
-            _SnapshotsMenu->draw();
-        }
-        
-        if (_MessagePanel) {
-            _MessagePanel->draw();
-        }
-        
-        if (_RegisterPanel) {
-            _RegisterPanel->draw();
-        }
-        
-        UI::CursorState::Draw();
-        
-//        curs_set(1);
-//        move(5, 5);
-////        wmove(*_RootWindow, 5, 5);
-        
-        UI::Draw();
-    }
-}
-
 struct _HitTestResult {
     UI::RevColumnPtr column;
     UI::CommitPanelPtr panel;
@@ -422,7 +281,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn& col) {
     _SnapshotsMenu->size(_SnapshotsMenu->sizeIntrinsic(heightMax));
     _SnapshotsMenu->position(p);
     _SnapshotsMenu->layout();
-//    _SnapshotsMenu->track();
+    _SnapshotsMenu->track(_SnapshotsMenu->convert(_RootWindow->eventCurrent));
     
     if (menuButton) {
         State::History& h = _RepoState.history(ref);
@@ -601,7 +460,7 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
             }
         }
         
-        _Draw();
+        _RootWindow->refresh();
         ev = _RootWindow->nextEvent();
         abort = (ev.type != UI::Event::Type::Mouse);
         // Check if we should abort
@@ -726,7 +585,7 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
             }
         }
         
-        _Draw();
+        _RootWindow->refresh();
         ev = _RootWindow->nextEvent();
         // Check if we should abort
         if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
@@ -783,7 +642,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     assert(!_Selection.commits.empty());
     
     // Draw once before we open the context menu, so that the selection is updated
-    _Draw();
+    _RootWindow->refresh();
     
     UI::Button* menuButton = nullptr;
     UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", _SelectionCanCombine(), menuButton);
@@ -798,7 +657,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     _ContextMenu->size(_ContextMenu->sizeIntrinsic());
     _ContextMenu->position(mouseDownEvent.mouse.point);
     _ContextMenu->layout();
-    _ContextMenu->track(mouseDownEvent);
+    _ContextMenu->track(_ContextMenu->convert(mouseDownEvent));
     
 //    UI::ButtonPtr menuButton = nullptr;
 //    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
@@ -1122,11 +981,302 @@ static void _ExecGitOp(const Git::Op& gitOp) {
     _Reload();
 }
 
+class RootWindow : public UI::Window {
+public:
+    using Window::Window;
+    
+    void layout() override {
+        layoutNeeded = true;
+        if (!layoutNeeded) return;
+        Window::layout();
+        
+        const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
+        
+        if (_Drag.titlePanel) {
+            _Drag.titlePanel->borderColor(selectionColor);
+            
+            for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
+                panel->setBorderColor(selectionColor);
+            }
+        }
+        
+        for (UI::RevColumnPtr col : _Columns) {
+            col->layout();
+        }
+        
+        bool dragging = (bool)_Drag.titlePanel;
+        bool copying = _Drag.copy;
+        for (UI::RevColumnPtr col : _Columns) {
+            for (UI::CommitPanelPtr panel : col->panels) {
+                bool visible = false;
+                std::optional<UI::Color> borderColor;
+                _SelectState selectState = _SelectStateGet(col, panel);
+                if (selectState == _SelectState::True) {
+                    visible = !dragging || copying;
+                    if (dragging) borderColor = _Colors.selectionSimilar;
+                    else          borderColor = _Colors.selection;
+                
+                } else {
+                    visible = true;
+                    if (!dragging && selectState==_SelectState::Similar) borderColor = _Colors.selectionSimilar;
+                }
+                
+                panel->visible(visible);
+                panel->borderColor(borderColor);
+            }
+        }
+        
+        // Order all the title panel and shadow panels
+        if (dragging) {
+            for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
+                (*it)->orderFront();
+            }
+            _Drag.titlePanel->orderFront();
+        }
+        
+        if (_ContextMenu) {
+            _ContextMenu->orderFront();
+        }
+        
+        if (_SnapshotsMenu) {
+            _SnapshotsMenu->orderFront();
+        }
+        
+        if (_MessagePanel) {
+            constexpr int MessagePanelWidth = 40;
+            _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
+            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
+            
+            UI::Size ps = _MessagePanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _MessagePanel->position(p);
+            _MessagePanel->orderFront();
+            _MessagePanel->layout();
+        }
+        
+        if (_RegisterPanel) {
+            constexpr int RegisterPanelWidth = 50;
+            _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
+            _RegisterPanel->size(_RegisterPanel->sizeIntrinsic());
+            
+            UI::Size ps = _RegisterPanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _RegisterPanel->position(p);
+            _RegisterPanel->orderFront();
+            _RegisterPanel->layout();
+        }
+    }
+    
+    void draw() override {
+        drawNeeded = true;
+        if (!drawNeeded) return;
+        Window::draw();
+        
+        const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
+        
+        erase();
+        
+        if (_Drag.titlePanel) {
+            _Drag.titlePanel->draw();
+            
+            // Draw insertion marker
+            if (_Drag.insertionMarker) {
+                UI::Window::Attr color = _RootWindow->attr(selectionColor);
+                _RootWindow->drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
+            }
+        }
+        
+        for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
+            panel->draw();
+        }
+        
+        if (_SelectionRect) {
+            UI::Window::Attr color = _RootWindow->attr(_Colors.selection);
+            _RootWindow->drawRect(*_SelectionRect);
+        }
+        
+        for (UI::RevColumnPtr col : _Columns) {
+            col->draw(*_RootWindow);
+        }
+        
+        if (_ContextMenu) {
+            _ContextMenu->draw();
+        }
+        
+        if (_SnapshotsMenu) {
+            _SnapshotsMenu->draw();
+        }
+        
+        if (_MessagePanel) {
+            _MessagePanel->draw();
+        }
+        
+        if (_RegisterPanel) {
+            _RegisterPanel->draw();
+        }
+    }
+    
+    bool handleEvent(const UI::Event& ev) override {
+        std::string errorMsg;
+        try {
+            if (_MessagePanel) {
+                bool handled = _MessagePanel->handleEvent(ev);
+                if (!handled) {
+                    _MessagePanel = nullptr;
+                    return false;
+                }
+                return true;
+            }
+            
+            if (_RegisterPanel) {
+                bool handled = _RegisterPanel->handleEvent(ev);
+                if (!handled) {
+                    _RegisterPanel = nullptr;
+                    return false;
+                }
+                return true;
+            }
+            
+            // Let every column handle the event
+            for (UI::RevColumnPtr col : _Columns) {
+                bool handled = col->handleEvent(*_RootWindow, ev);
+                if (handled) return true;
+            }
+            
+            switch (ev.type) {
+            case UI::Event::Type::Mouse: {
+                const _HitTestResult hitTest = _HitTest(ev.mouse.point);
+                if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                    const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
+                    if (hitTest && !shift) {
+                        if (hitTest.panel) {
+                            // Mouse down inside of a CommitPanel, without shift key
+                            std::optional<Git::Op> gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                            if (gitOp) _ExecGitOp(*gitOp);
+                        }
+                    
+                    } else {
+                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                        _TrackMouseOutsideCommitPanel(ev);
+                    }
+                
+                } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
+                    if (hitTest) {
+                        if (hitTest.panel) {
+                            std::optional<Git::Op> gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
+                            if (gitOp) _ExecGitOp(*gitOp);
+                        }
+                    }
+                }
+                break;
+            }
+            
+            case UI::Event::Type::KeyDelete:
+            case UI::Event::Type::KeyFnDelete: {
+                if (!_SelectionCanDelete()) {
+                    beep();
+                    break;
+                }
+                
+                Git::Op gitOp = {
+                    .type = Git::Op::Type::Delete,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                _ExecGitOp(gitOp);
+                break;
+            }
+            
+            case UI::Event::Type::KeyC: {
+                if (!_SelectionCanCombine()) {
+                    beep();
+                    break;
+                }
+                
+                Git::Op gitOp = {
+                    .type = Git::Op::Type::Combine,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                _ExecGitOp(gitOp);
+                break;
+            }
+            
+            case UI::Event::Type::KeyReturn: {
+                if (!_SelectionCanEdit()) {
+                    beep();
+                    break;
+                }
+                
+                Git::Op gitOp = {
+                    .type = Git::Op::Type::Edit,
+                    .src = {
+                        .rev = _Selection.rev,
+                        .commits = _Selection.commits,
+                    },
+                };
+                _ExecGitOp(gitOp);
+                break;
+            }
+            
+            default: {
+                break;
+            }}
+        
+        } catch (const Git::Error& e) {
+            switch (e.error) {
+            case GIT_EUNMERGED:
+            case GIT_EMERGECONFLICT:
+                errorMsg = "a merge conflict occurred";
+                break;
+            
+            default:
+                errorMsg = e.what();
+                break;
+            }
+        
+        } catch (const UI::WindowResize&) {
+            throw; // Bubble up
+        
+        } catch (const UI::ExitRequest&) {
+            throw; // Bubble up
+        
+        } catch (const std::exception& e) {
+            errorMsg = e.what();
+        }
+        
+        if (!errorMsg.empty()) {
+            errorMsg[0] = toupper(errorMsg[0]);
+            
+            _MessagePanel = std::make_shared<UI::ModalPanel>(_Colors);
+            _MessagePanel->color    = _Colors.error;
+            _MessagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
+            _MessagePanel->title    = "Error";
+            _MessagePanel->message  = errorMsg;
+        }
+        
+        return true;
+    }
+};
+
+
 static void _EventLoop() {
     _CursesInit();
     Defer(_CursesDeinit());
     
-    _RootWindow = std::make_shared<UI::Window>(::stdscr);
+    _RootWindow = std::make_shared<RootWindow>(::stdscr);
     
     
     
@@ -1141,192 +1291,25 @@ static void _EventLoop() {
 //    }
 //    
     
-    
-    
-    
-    _Reload();
-    
     for (;;) {
-        std::string errorMsg;
-        _Draw();
+        _Reload();
         
         try {
-            try {
-                if (_MessagePanel) {
-                    _MessagePanel->track();
-                    _MessagePanel = nullptr;
-                    continue;
-                }
-                
-                if (_RegisterPanel) {
-                    _RegisterPanel->track();
-                    _RegisterPanel = nullptr;
-                    continue;
-                }
-                
-                const UI::Event ev = _RootWindow->nextEvent();
-                bool handled = false;
-                
-                // Let every column handle the event
-                for (UI::RevColumnPtr col : _Columns) {
-                    handled = col->handleEvent(*_RootWindow, ev);
-                    if (handled) break;
-                }
-                
-//                assert(!_ContextMenu);
-//                assert(!_SnapshotsMenu);
-//                assert(!_MessagePanel);
-//                assert(!_RegisterPanel);
-//                
-//                if (_MessagePanel) {
-//                    _MessagePanel->track(_MessagePanel->convert(ev));
-//                
-//                } else if (_RegisterPanel) {
-//                    ev = _RegisterPanel->handleEvent(_RegisterPanel->convert(ev));
-//                
-//    //            } else if (_ContextMenu) {
-//    //                ev = _ContextMenu->handleEvent(_ContextMenu->convert(ev));
-//    //            
-//    //            } else if (_SnapshotsMenu) {
-//    //                ev = _SnapshotsMenu->handleEvent(_SnapshotsMenu->convert(ev));
-//                
-//                } else {
-//                    // Let every column handle the event
-//                    for (UI::RevColumnPtr col : _Columns) {
-//                        ev = col->handleEvent(*_RootWindow, ev);
-//                        if (!ev) break;
-//                    }
-//                }
-//                
-//                // Let every column handle the event
-//                for (UI::RevColumnPtr col : _Columns) {
-//                    bool handled = col->handleEvent(*_RootWindow, ev);
-//                    if (handled) break;
-//                }
-                
-                if (!handled) {
-                    std::optional<Git::Op> gitOp;
-                    switch (ev.type) {
-                    case UI::Event::Type::Mouse: {
-                        const _HitTestResult hitTest = _HitTest(ev.mouse.point);
-                        if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
-                            const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
-                            if (hitTest && !shift) {
-                                if (hitTest.panel) {
-                                    // Mouse down inside of a CommitPanel, without shift key
-                                    gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
-                                }
-                            
-                            } else {
-                                // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                                _TrackMouseOutsideCommitPanel(ev);
-                            }
-                        
-                        } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
-                            if (hitTest) {
-                                if (hitTest.panel) {
-                                    gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
-                                }
-                            }
-                        }
-                        break;
-                    }
-                    
-                    case UI::Event::Type::KeyDelete:
-                    case UI::Event::Type::KeyFnDelete: {
-                        if (!_SelectionCanDelete()) {
-                            beep();
-                            break;
-                        }
-                        
-                        gitOp = {
-                            .type = Git::Op::Type::Delete,
-                            .src = {
-                                .rev = _Selection.rev,
-                                .commits = _Selection.commits,
-                            },
-                        };
-                        break;
-                    }
-                    
-                    case UI::Event::Type::KeyC: {
-                        if (!_SelectionCanCombine()) {
-                            beep();
-                            break;
-                        }
-                        
-                        gitOp = {
-                            .type = Git::Op::Type::Combine,
-                            .src = {
-                                .rev = _Selection.rev,
-                                .commits = _Selection.commits,
-                            },
-                        };
-                        break;
-                    }
-                    
-                    case UI::Event::Type::KeyReturn: {
-                        if (!_SelectionCanEdit()) {
-                            beep();
-                            break;
-                        }
-                        
-                        gitOp = {
-                            .type = Git::Op::Type::Edit,
-                            .src = {
-                                .rev = _Selection.rev,
-                                .commits = _Selection.commits,
-                            },
-                        };
-                        break;
-                    }
-                    
-                    default: {
-                        break;
-                    }}
-                    
-                    if (gitOp) _ExecGitOp(*gitOp);
-                }
-            
-            } catch (const Git::Error& e) {
-                switch (e.error) {
-                case GIT_EUNMERGED:
-                case GIT_EMERGECONFLICT:
-                    errorMsg = "a merge conflict occurred";
-                    break;
-                
-                default:
-                    errorMsg = e.what();
-                    break;
-                }
-            
-            } catch (const UI::WindowResize&) {
-                throw; // Bubble up
-            
-            } catch (const UI::ExitRequest&) {
-                throw; // Bubble up
-            
-            } catch (const std::exception& e) {
-                errorMsg = e.what();
-            }
-            
-            if (!errorMsg.empty()) {
-                errorMsg[0] = toupper(errorMsg[0]);
-                
-                _MessagePanel = std::make_shared<UI::ModalPanel>(_Colors);
-                _MessagePanel->color    = _Colors.error;
-                _MessagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
-                _MessagePanel->title    = "Error";
-                _MessagePanel->message  = errorMsg;
-            }
+            _RootWindow->track();
         
         } catch (const UI::WindowResize&) {
-            _Reload();
+            // Continue the loop, which automatically calls _Reload()
         
-        } catch (const UI::ExitRequest&) {
-            throw;
         }
     }
+    
+//    
+//    for (;;) {
+//        std::string errorMsg;
+//        _Draw();
+//        
+//
+//    }
 }
 
 static State::Theme _ThemeRead() {

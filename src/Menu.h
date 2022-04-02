@@ -105,29 +105,30 @@ public:
     
     bool handleEvent(const Event& ev) override {
         auto& ts = _trackState;
+        const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
+        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
         
-        if (ts.activated) {
-            // See if any of the buttons want the event
-            bool handled = false;
-            size_t handleCount = 0;
-            for (ButtonPtr button : buttonsVisible) {
-                bool h = button->handleEvent(*this, ev);
-                if (h) handleCount++;
-                handled |= h;
-            }
-            // Check assumption that one button max will handle the event
-            assert(handleCount==0 || handleCount==1);
+        // Don't allow buttons to receive events until _ActivateDuration
+        // has elapsed and the mouse has moved at least 1 px
+        if (ev.type==Event::Type::Mouse &&
+            duration>=_ActivateDuration &&
+            (delta.x || delta.y)) {
             
-            if (handled) {
-                if (dismissAction) dismissAction(*this);
-                return false;
+            ts.active |= true;
+        }
+        
+        if (ts.active) {
+            // See if any of the buttons want the event
+            for (ButtonPtr button : buttonsVisible) {
+                bool handled = button->handleEvent(*this, ev);
+                if (handled) {
+                    if (dismissAction) dismissAction(*this);
+                    return false;
+                }
             }
         }
         
         if (ev.type == Event::Type::Mouse) {
-            Size delta = ev.mouse.point-ts.startEvent.mouse.point;
-            ts.activated |= (delta.x && delta.y);
-            
             // Update the mouseActive state for all of our buttons
             bool inside = HitTest(bounds(), ev.mouse.point);
             for (ButtonPtr button : buttonsVisible) {
@@ -141,7 +142,6 @@ public:
             
             // Handle mouse up
             } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
-                auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
                 // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
                 //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
                 ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
@@ -179,6 +179,7 @@ private:
     static constexpr int _KeySpacing      = 2;
     static constexpr int _RowHeight       = 2;
     
+    static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
     static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
     bool _drawNeeded() const {
@@ -193,7 +194,7 @@ private:
     struct {
         Event startEvent;
         bool stayOpen = false;
-        bool activated = false;
+        bool active = false;
     } _trackState;
 };
 

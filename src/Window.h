@@ -178,12 +178,16 @@ public:
     
     virtual bool handleEvent(const Event& ev) { return false; }
     
+    void refresh() {
+        layout();
+        draw();
+        UI::CursorState::Draw();
+        UI::Draw();
+    }
+    
     virtual void track() {
         for (;;) {
-            layout();
-            draw();
-            UI::CursorState::Draw();
-            UI::Draw();
+            refresh();
             
             eventCurrent = nextEvent();
             bool handled = handleEvent(eventCurrent);
