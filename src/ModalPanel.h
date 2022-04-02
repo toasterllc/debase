@@ -46,6 +46,8 @@ public:
         if (!drawNeeded) return;
         Panel::draw();
         
+        // Erase needed to handle the case where our panel is resized (eg when the
+        // terminal window is being resized)
         erase();
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border

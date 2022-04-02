@@ -384,7 +384,7 @@ inline bool _StartsWith(std::string_view prefix, std::string_view str) {
 struct _CommitAuthor {
     std::string name;
     std::string email;
-    bool operator==(const _CommitAuthor& x) const {
+    bool operator ==(const _CommitAuthor& x) const {
         return name==x.name && email==x.email;
     }
 };
@@ -394,7 +394,7 @@ struct _CommitMessage {
     std::optional<Time> time;
     std::string message;
     
-    bool operator==(const _CommitMessage& x) const {
+    bool operator ==(const _CommitMessage& x) const {
         return author==x.author &&
                time==x.time &&
                message==x.message;

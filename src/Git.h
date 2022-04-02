@@ -38,7 +38,7 @@ struct Time {
     time_t time = 0;
     int offset = 0;
     
-    bool operator==(const Time& x) const {
+    bool operator ==(const Time& x) const {
         return time==x.time && offset==x.offset;
     }
 };
@@ -158,7 +158,7 @@ using Index = RefCounted<git_index*, git_index_free>;
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
     using RefCounted::RefCounted;
     
-    const git_status_entry* operator[](size_t i) {
+    const git_status_entry* operator [](size_t i) {
         return git_status_byindex(*get(), i);
     }
 };
@@ -183,9 +183,9 @@ using Buf = RefCounted<git_buf, _BufDelete>;
 struct Object : RefCounted<git_object*, git_object_free> {
     using RefCounted::RefCounted;
     const Id& id() const { return *git_object_id(*get()); }
-    bool operator==(const Object& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
-    bool operator!=(const Object& x) const { return !(*this==x); }
-    bool operator<(const Object& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
+    bool operator ==(const Object& x) const { return _Equal(*this, x, git_oid_cmp(&id(), &x.id())==0); }
+    bool operator !=(const Object& x) const { return !(*this==x); }
+    bool operator <(const Object& x) const { return _Less(*this, x, git_oid_cmp(&id(), &x.id())<0); }
 };
 
 struct Config : RefCounted<git_config*, git_config_free> {
@@ -225,10 +225,10 @@ struct Commit : Object {
     Commit(const git_commit* x) : Object((git_object*)x) {}
     
     git_commit** get() { return (git_commit**)Object::get(); }
-    git_commit*& operator*() { return *get(); }
+    git_commit*& operator *() { return *get(); }
     
     const git_commit** get() const { return (const git_commit**)Object::get(); }
-    const git_commit*& operator*() const { return *get(); }
+    const git_commit*& operator *() const { return *get(); }
     
     static Commit FromObject(Object obj) {
         git_commit* x = nullptr;
@@ -290,7 +290,7 @@ struct TagAnnotation : Object {
     using Object::Object;
     TagAnnotation(const git_tag* x) : Object((git_object*)x) {}
     const git_tag** get() const { return (const git_tag**)Object::get(); }
-    const git_tag*& operator*() const { return *get(); }
+    const git_tag*& operator *() const { return *get(); }
     
     Signature author() const {
         const git_signature* author = git_tag_tagger(*get());
@@ -312,9 +312,9 @@ struct TagAnnotation : Object {
 
 struct Ref : RefCounted<git_reference*, git_reference_free> {
     using RefCounted::RefCounted;
-    bool operator==(const Ref& x) const { return _Equal(*this, x, fullName()==x.fullName()); }
-    bool operator!=(const Ref& x) const { return !(*this==x); }
-    bool operator<(const Ref& x) const { return _Less(*this, x, fullName()<x.fullName()); }
+    bool operator ==(const Ref& x) const { return _Equal(*this, x, fullName()==x.fullName()); }
+    bool operator !=(const Ref& x) const { return !(*this==x); }
+    bool operator <(const Ref& x) const { return _Less(*this, x, fullName()<x.fullName()); }
     
     std::string name() const {
         return git_reference_shorthand(*get());
@@ -422,16 +422,16 @@ public:
     
     operator bool() const { return (bool)commit; }
     
-    bool operator==(const Rev& x) const {
+    bool operator ==(const Rev& x) const {
         if (commit != x.commit) return false;
         if (ref != x.ref) return false;
         if (skip != x.skip) return false;
         return true;
     }
     
-    bool operator!=(const Rev& x) const { return !(*this==x); }
+    bool operator !=(const Rev& x) const { return !(*this==x); }
     
-    bool operator<(const Rev& x) const {
+    bool operator <(const Rev& x) const {
         if (commit != x.commit) return commit<x.commit;
         if (ref != x.ref) return ref<x.ref;
         if (skip != x.skip) return skip<x.skip;

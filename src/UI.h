@@ -9,20 +9,20 @@ struct Vector {
     int x = 0;
     int y = 0;
     
-    bool operator==(const Vector& v) const { return x==v.x && y==v.y; }
-    bool operator!=(const Vector& v) const { return !(*this == v); }
+    bool operator ==(const Vector& v) const { return x==v.x && y==v.y; }
+    bool operator !=(const Vector& v) const { return !(*this == v); }
     
-    Vector operator+(const Vector& v) const { return {x+v.x, y+v.y}; }
-    template <typename T> Vector operator+(const T& t) const { return {x+t, y+t}; }
+    Vector operator +(const Vector& v) const { return {x+v.x, y+v.y}; }
+    template <typename T> Vector operator +(const T& t) const { return {x+t, y+t}; }
     
-    Vector& operator+=(const Vector& v) { x+=v.x; y+=v.y; return *this; }
-    template <typename T> Vector& operator+=(const T& t) { x+=t; y+=t; return *this; }
+    Vector& operator +=(const Vector& v) { x+=v.x; y+=v.y; return *this; }
+    template <typename T> Vector& operator +=(const T& t) { x+=t; y+=t; return *this; }
     
-    Vector operator-(const Vector& v) const { return {x-v.x, y-v.y}; }
-    template <typename T> Vector operator-(const T& t) const { return {x-t, y-t}; }
+    Vector operator -(const Vector& v) const { return {x-v.x, y-v.y}; }
+    template <typename T> Vector operator -(const T& t) const { return {x-t, y-t}; }
     
-    Vector& operator-=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
-    template <typename T> Vector& operator-=(const T& t) { x-=t; y-=t; return *this; }
+    Vector& operator -=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
+    template <typename T> Vector& operator -=(const T& t) { x-=t; y-=t; return *this; }
 };
 
 using Point = Vector;
@@ -32,8 +32,8 @@ struct Rect {
     Point point;
     Size size;
     
-    bool operator==(const Rect& x) const { return point==x.point && size==x.size; }
-    bool operator!=(const Rect& x) const { return !(*this == x); }
+    bool operator ==(const Rect& x) const { return point==x.point && size==x.size; }
+    bool operator !=(const Rect& x) const { return !(*this == x); }
     
     int xmin() const { return point.x; }
     int xmax() const { return point.x+size.x-1; }

@@ -37,7 +37,7 @@ public:
     }
     
     // Move assignment operator
-    CursorState& operator=(CursorState&& x) {
+    CursorState& operator =(CursorState&& x) {
         _swap(x);
         return *this;
     }

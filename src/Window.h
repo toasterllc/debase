@@ -19,7 +19,7 @@ public:
         
         Attr(const Attr& x) = delete;
         Attr(Attr&& x) { std::swap(_s, x._s); }
-        Attr& operator=(Attr&& x) { std::swap(_s, x._s); return *this; }
+        Attr& operator =(Attr&& x) { std::swap(_s, x._s); return *this; }
         
         ~Attr() {
             if (_s.win) {

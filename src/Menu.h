@@ -74,7 +74,6 @@ public:
         if (!drawNeeded) return;
         
         Panel::draw();
-//        erase();
         
         const int width = bounds().size.x;
         

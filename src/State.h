@@ -76,14 +76,14 @@ struct RefState {
     std::set<Commit> selection;
     std::set<Commit> selectionPrev;
     
-    bool operator==(const RefState& x) const {
+    bool operator ==(const RefState& x) const {
         if (head != x.head) return false;
         if (selection != x.selection) return false;
         if (selectionPrev != x.selectionPrev) return false;
         return true;
     }
     
-    bool operator!=(const RefState& x) const {
+    bool operator !=(const RefState& x) const {
         return !(*this==x);
     }
 };
@@ -95,19 +95,19 @@ struct Snapshot {
     Snapshot(Commit c) : creationTime(time(nullptr)), head(c) {}
     Snapshot(Git::Commit c) : Snapshot(Convert(c)) {}
     
-    bool operator<(const Snapshot& x) const {
+    bool operator <(const Snapshot& x) const {
         if (creationTime != x.creationTime) return creationTime < x.creationTime;
         if (head != x.head) return head < x.head;
         return false;
     }
     
-    bool operator==(const Snapshot& x) const {
+    bool operator ==(const Snapshot& x) const {
         if (creationTime != x.creationTime) return false;
         if (head != x.head) return false;
         return true;
     }
     
-    bool operator!=(const Snapshot& x) const {
+    bool operator !=(const Snapshot& x) const {
         return !(*this==x);
     }
     

@@ -351,7 +351,7 @@ public:
             Defer(_cursesDeinit());
             
             // Create our window now that ncurses is initialized
-            Window::operator=(Window(::stdscr));
+            Window::operator =(Window(::stdscr));
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);

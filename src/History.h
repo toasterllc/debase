@@ -53,14 +53,14 @@ public:
     bool begin() const { return _prev.empty(); }
     bool end() const { return _next.empty(); }
     
-    bool operator==(const T_History& x) const {
+    bool operator ==(const T_History& x) const {
         if (_current != x._current) return false;
         if (_prev != x._prev) return false;
         if (_next != x._next) return false;
         return true;
     }
     
-    bool operator!=(const T_History& x) const {
+    bool operator !=(const T_History& x) const {
         return !(*this==x);
     }
     
