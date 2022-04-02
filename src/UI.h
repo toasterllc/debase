@@ -66,6 +66,7 @@ struct Event {
     };
     
     Type type = Type::None;
+    std::chrono::steady_clock::time_point time = {};
     struct {
         Point point;
         mmask_t bstate = 0;

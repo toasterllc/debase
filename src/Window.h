@@ -142,7 +142,10 @@ public:
             int ch = ::wgetch(*this);
             if (ch == ERR) continue;
             
-            Event ev = { .type = (Event::Type)ch };
+            Event ev = {
+                .type = (Event::Type)ch,
+                .time = std::chrono::steady_clock::now(),
+            };
             switch (ev.type) {
             case Event::Type::Mouse: {
                 MEVENT mouse = {};
@@ -182,7 +185,10 @@ public:
             UI::CursorState::Draw();
             UI::Draw();
             
-            bool handled = handleEvent(nextEvent());
+            eventCurrent = nextEvent();
+            bool handled = handleEvent(eventCurrent);
+            eventCurrent = {};
+            
             // Continue until an event isn't handled
             if (!handled) break;
         }
@@ -199,6 +205,8 @@ public:
         assert(drawNeeded); // For debugging unnecessary drawing
         drawNeeded = false;
     }
+    
+    Event eventCurrent;
     
     operator WINDOW*() const { return _win; }
     

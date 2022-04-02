@@ -422,7 +422,7 @@ static void _TrackSnapshotsMenu(UI::RevColumn& col) {
     _SnapshotsMenu->size(_SnapshotsMenu->sizeIntrinsic(heightMax));
     _SnapshotsMenu->position(p);
     _SnapshotsMenu->layout();
-    _SnapshotsMenu->track();
+//    _SnapshotsMenu->track();
     
     if (menuButton) {
         State::History& h = _RepoState.history(ref);
@@ -798,7 +798,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     _ContextMenu->size(_ContextMenu->sizeIntrinsic());
     _ContextMenu->position(mouseDownEvent.mouse.point);
     _ContextMenu->layout();
-    _ContextMenu->track();
+    _ContextMenu->track(mouseDownEvent);
     
 //    UI::ButtonPtr menuButton = nullptr;
 //    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
