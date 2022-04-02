@@ -133,8 +133,10 @@ public:
         }
         
         for (ButtonPtr button : _buttons) {
-            // Draws are always needed because _MainWindow is cleared upon each draw cycle
-            button->drawNeeded = true;
+            // Force buttons to be redraw if the window was erased
+            if (win.erase()) {
+                button->drawNeeded = true;
+            }
             button->draw(win);
         }
     }

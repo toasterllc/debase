@@ -112,10 +112,6 @@ public:
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
-        if (_eraseNeeded) {
-            erase();
-        }
-        
         if (_drag.titlePanel) {
             _drag.titlePanel->draw();
             
@@ -146,8 +142,6 @@ public:
         if (_registerPanel) {
             _registerPanel->draw();
         }
-        
-        _eraseNeeded = false;
     }
     
     bool handleEvent(const UI::Event& ev) override {
@@ -787,7 +781,7 @@ private:
                 }
             }
             
-            _eraseNeeded = true; // Need to erase the insertion marker
+            erase(true); // Need to erase the insertion marker
             refresh();
             ev = nextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
@@ -852,7 +846,7 @@ private:
         }
         
         // Reset state
-        _eraseNeeded = true; // We need one more erase to erase the insertion marker
+        erase(true); // We need one more erase to erase the insertion marker
         _drag = {};
         
         return gitOp;
@@ -912,7 +906,7 @@ private:
                 }
             }
             
-            _eraseNeeded = true; // Need to erase the selection rect
+            erase(true); // Need to erase the selection rect
             refresh();
             ev = nextEvent();
             // Check if we should abort
@@ -922,7 +916,7 @@ private:
         }
         
         // Reset state
-        _eraseNeeded = true; // We need one more erase to erase the selection rect upon mouse-up
+        erase(true); // We need one more erase to erase the selection rect upon mouse-up
         _selectionRect = std::nullopt;
     }
     
@@ -1214,6 +1208,4 @@ private:
     
     UI::ModalPanelPtr _messagePanel;
     UI::RegisterPanelPtr _registerPanel;
-    
-    bool _eraseNeeded = false;
 };

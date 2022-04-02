@@ -14,7 +14,15 @@ public:
     public:
         Attr() {}
         Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
+            if (rand() % 2) {
+                wattron(*_s.win, A_REVERSE);
+            } else {
+                wattroff(*_s.win, A_REVERSE);
+            }
+            
             wattron(*_s.win, _s.attr);
+            
+//            wattron(*_s.win, _s.attr);
         }
         
         Attr(const Attr& x) = delete;
@@ -89,9 +97,8 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    void erase() const {
-        ::werase(*this);
-    }
+    void erase(bool x) { _s.erase = x; }
+    bool erase() const { return _s.erase; }
     
     Point position() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     
@@ -189,10 +196,17 @@ public:
     
     void refresh() {
         layout();
+        
+        // Erase ourself if needed
+        if (_s.erase) ::werase(*this);
+        
         draw();
         CursorState::Draw();
         ::update_panels();
         ::refresh();
+        
+        // Clear our `erase` flag, now that the window has been drawn
+        erase(false);
     }
     
     virtual void track() {
@@ -230,6 +244,8 @@ private:
         WINDOW* win = nullptr;
         Size sizePrev;
         Event eventCurrent;
+        // erase: tracks whether the window needs to be erased in the next refresh cycle
+        bool erase = true;
     } _s;
 };
 
