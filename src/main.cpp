@@ -68,8 +68,6 @@ static struct {
     std::chrono::steady_clock::time_point mouseUpTime;
 } _DoubleClickState;
 
-static constexpr std::chrono::milliseconds _DoubleClickThresh(300);
-
 static _Selection _Selection;
 static std::optional<UI::Rect> _SelectionRect;
 
@@ -80,205 +78,6 @@ static UI::ModalPanelPtr _MessagePanel;
 static UI::RegisterPanelPtr _RegisterPanel;
 
 static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
-
-enum class _SelectState {
-    False,
-    True,
-    Similar,
-};
-
-static _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
-    bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
-    if (!similar) return _SelectState::False;
-    return (col->rev==_Selection.rev ? _SelectState::True : _SelectState::Similar);
-}
-
-static bool _Selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
-    return _SelectStateGet(col, panel) == _SelectState::True;
-}
-
-struct _HitTestResult {
-    UI::RevColumnPtr column;
-    UI::CommitPanelPtr panel;
-    operator bool() const {
-        return (bool)column;
-    }
-};
-
-static _HitTestResult _HitTest(const UI::Point& p) {
-    for (UI::RevColumnPtr col : _Columns) {
-        UI::CommitPanelPtr panel = col->hitTest(p);
-        if (panel) {
-            return {
-                .column = col,
-                .panel = panel,
-            };
-        }
-    }
-    return {};
-}
-
-struct _InsertionPosition {
-    UI::RevColumnPtr col;
-    UI::CommitPanelVecIter iter;
-};
-
-static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
-    UI::RevColumnPtr icol;
-    UI::CommitPanelVecIter iiter;
-    std::optional<int> leastDistance;
-    for (UI::RevColumnPtr col : _Columns) {
-        UI::CommitPanelVec& panels = col->panels;
-        // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
-        if (panels.empty()) continue;
-        const UI::Rect lastFrame = panels.back()->frame();
-        const int midX = lastFrame.point.x + lastFrame.size.x/2;
-        const int endY = lastFrame.point.y + lastFrame.size.y;
-        
-        for (auto it=panels.begin();; it++) {
-            UI::CommitPanelPtr panel = (it!=panels.end() ? *it : nullptr);
-            const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
-            const int y = (panel ? panel->frame().point.y : endY);
-            int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
-            
-            if (!leastDistance || dist<leastDistance) {
-                icol = col;
-                iiter = it;
-                leastDistance = dist;
-            }
-            if (it==panels.end()) break;
-        }
-    }
-    
-    if (!icol) return std::nullopt;
-    // Ignore immutable columns
-    if (!icol->rev.isMutable()) return std::nullopt;
-    
-    // Adjust the insert point so that it doesn't occur within a selection
-    UI::CommitPanelVec& icolPanels = icol->panels;
-    for (;;) {
-        if (iiter == icolPanels.begin()) break;
-        UI::CommitPanelPtr prevPanel = *std::prev(iiter);
-        if (!_Selected(icol, prevPanel)) break;
-        iiter--;
-    }
-    
-    return _InsertionPosition{icol, iiter};
-}
-
-static UI::RevColumnPtr _ColumnForRev(Git::Rev rev) {
-    for (UI::RevColumnPtr col : _Columns) {
-        if (col->rev == rev) return col;
-    }
-    // Programmer error if it doesn't exist
-    abort();
-}
-
-static UI::CommitPanelPtr _PanelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
-    for (UI::CommitPanelPtr panel : col->panels) {
-        if (panel->commit() == commit) return panel;
-    }
-    // Programmer error if it doesn't exist
-    abort();
-}
-
-static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commit>& commits) {
-    while (head) {
-        if (commits.find(head) != commits.end()) return head;
-        head = head.parent();
-    }
-    // Programmer error if it doesn't exist
-    abort();
-}
-
-constexpr int _SnapshotMenuWidth = 26;
-
-static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
-    const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
-    
-    bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
-    
-//    UI::Button::Options buttonOpts = {
-//        .enabled = true,
-//    };
-//    
-//    UI::SnapshotButton::Options snapButtonOpts = {
-//        .repo           = repo,
-//        .snapshot       = snap,
-//        .width          = _SnapshotMenuWidth,
-//        .activeSnapshot = activeSnapshot,
-//    };
-    
-    UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_Colors, repo, snap, _SnapshotMenuWidth);
-    b->enabled        = true;
-    b->activeSnapshot = activeSnapshot;
-    b->action         = [&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; };
-    return b;
-}
-
-static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
-    constexpr int ContextMenuWidth = 12;
-    UI::ButtonPtr b = std::make_shared<UI::Button>(_Colors);
-    b->label        = std::string(label);
-    b->key          = std::string(key);
-    b->enabled      = enabled;
-    b->insetX       = 0;
-    b->action       = [&] (UI::Button& button) { chosen = &button; };
-    b->size({ContextMenuWidth, 1});
-    return b;
-}
-
-static bool _SelectionCanCombine() {
-    bool selectionContainsMerge = false;
-    for (Git::Commit commit : _Selection.commits) {
-        if (commit.isMerge()) {
-            selectionContainsMerge = true;
-            break;
-        }
-    }
-    return _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
-}
-
-static bool _SelectionCanEdit() {
-    return _Selection.rev.isMutable() && _Selection.commits.size() == 1;
-}
-
-static bool _SelectionCanDelete() {
-    return _Selection.rev.isMutable();
-}
-
-//static void _TrackMouseInsideButton(const UI::Event& mouseDownEvent, UI::RevColumnPtr column, const UI::RevColumn::HitTestResult& mouseDownHitTest) {
-//    UI::RevColumn::HitTestResult hit;
-//    UI::Event ev = mouseDownEvent;
-//    
-//    for (;;) {
-//        if (ev.type == UI::Event::Type::Mouse) {
-//            hit = column->updateMouse(ev.mouse.point);
-//        } else {
-//            hit = {};
-//        }
-//        
-//        _Draw();
-//        ev = _RootWindow->nextEvent();
-//        if (ev.mouseUp()) break;
-//    }
-//    
-//    if (hit.buttonEnabled && hit==mouseDownHitTest) {
-//        switch (hit.button) {
-//        case UI::RevColumn::Button::Undo:
-//            _UndoRedo(column, true);
-//            break;
-//        case UI::RevColumn::Button::Redo:
-//            _UndoRedo(column, false);
-//            break;
-//        case UI::RevColumn::Button::Snapshots:
-//            _TrackSnapshotsMenu(column);
-//            break;
-//        default:
-//            break;
-//        }
-//    }
-//}
 
 static UI::Color _ColorSet(const UI::Color& c) {
     UI::Color prev(c.idx);
@@ -1207,6 +1006,173 @@ public:
     }
     
 private:
+    enum class _SelectState {
+        False,
+        True,
+        Similar,
+    };
+    
+    static constexpr int _SnapshotMenuWidth = 26;
+    static constexpr auto _DoubleClickThresh = std::chrono::milliseconds(300);
+    
+    static _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
+        bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
+        if (!similar) return _SelectState::False;
+        return (col->rev==_Selection.rev ? _SelectState::True : _SelectState::Similar);
+    }
+    
+    static bool _Selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
+        return _SelectStateGet(col, panel) == _SelectState::True;
+    }
+    
+    struct _HitTestResult {
+        UI::RevColumnPtr column;
+        UI::CommitPanelPtr panel;
+        operator bool() const {
+            return (bool)column;
+        }
+    };
+    
+    static _HitTestResult _HitTest(const UI::Point& p) {
+        for (UI::RevColumnPtr col : _Columns) {
+            UI::CommitPanelPtr panel = col->hitTest(p);
+            if (panel) {
+                return {
+                    .column = col,
+                    .panel = panel,
+                };
+            }
+        }
+        return {};
+    }
+    
+    struct _InsertionPosition {
+        UI::RevColumnPtr col;
+        UI::CommitPanelVecIter iter;
+    };
+    
+    static std::optional<_InsertionPosition> _FindInsertionPosition(const UI::Point& p) {
+        UI::RevColumnPtr icol;
+        UI::CommitPanelVecIter iiter;
+        std::optional<int> leastDistance;
+        for (UI::RevColumnPtr col : _Columns) {
+            UI::CommitPanelVec& panels = col->panels;
+            // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
+            if (panels.empty()) continue;
+            const UI::Rect lastFrame = panels.back()->frame();
+            const int midX = lastFrame.point.x + lastFrame.size.x/2;
+            const int endY = lastFrame.point.y + lastFrame.size.y;
+            
+            for (auto it=panels.begin();; it++) {
+                UI::CommitPanelPtr panel = (it!=panels.end() ? *it : nullptr);
+                const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
+                const int y = (panel ? panel->frame().point.y : endY);
+                int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
+                
+                if (!leastDistance || dist<leastDistance) {
+                    icol = col;
+                    iiter = it;
+                    leastDistance = dist;
+                }
+                if (it==panels.end()) break;
+            }
+        }
+        
+        if (!icol) return std::nullopt;
+        // Ignore immutable columns
+        if (!icol->rev.isMutable()) return std::nullopt;
+        
+        // Adjust the insert point so that it doesn't occur within a selection
+        UI::CommitPanelVec& icolPanels = icol->panels;
+        for (;;) {
+            if (iiter == icolPanels.begin()) break;
+            UI::CommitPanelPtr prevPanel = *std::prev(iiter);
+            if (!_Selected(icol, prevPanel)) break;
+            iiter--;
+        }
+        
+        return _InsertionPosition{icol, iiter};
+    }
+    
+    static UI::RevColumnPtr _ColumnForRev(Git::Rev rev) {
+        for (UI::RevColumnPtr col : _Columns) {
+            if (col->rev == rev) return col;
+        }
+        // Programmer error if it doesn't exist
+        abort();
+    }
+    
+    static UI::CommitPanelPtr _PanelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
+        for (UI::CommitPanelPtr panel : col->panels) {
+            if (panel->commit() == commit) return panel;
+        }
+        // Programmer error if it doesn't exist
+        abort();
+    }
+    
+    static Git::Commit _FindLatestCommit(Git::Commit head, const std::set<Git::Commit>& commits) {
+        while (head) {
+            if (commits.find(head) != commits.end()) return head;
+            head = head.parent();
+        }
+        // Programmer error if it doesn't exist
+        abort();
+    }
+    
+    static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
+        const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
+        
+        bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
+        
+    //    UI::Button::Options buttonOpts = {
+    //        .enabled = true,
+    //    };
+    //    
+    //    UI::SnapshotButton::Options snapButtonOpts = {
+    //        .repo           = repo,
+    //        .snapshot       = snap,
+    //        .width          = _SnapshotMenuWidth,
+    //        .activeSnapshot = activeSnapshot,
+    //    };
+        
+        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_Colors, repo, snap, _SnapshotMenuWidth);
+        b->enabled        = true;
+        b->activeSnapshot = activeSnapshot;
+        b->action         = [&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; };
+        return b;
+    }
+
+    static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
+        constexpr int ContextMenuWidth = 12;
+        UI::ButtonPtr b = std::make_shared<UI::Button>(_Colors);
+        b->label        = std::string(label);
+        b->key          = std::string(key);
+        b->enabled      = enabled;
+        b->insetX       = 0;
+        b->action       = [&] (UI::Button& button) { chosen = &button; };
+        b->size({ContextMenuWidth, 1});
+        return b;
+    }
+
+    static bool _SelectionCanCombine() {
+        bool selectionContainsMerge = false;
+        for (Git::Commit commit : _Selection.commits) {
+            if (commit.isMerge()) {
+                selectionContainsMerge = true;
+                break;
+            }
+        }
+        return _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
+    }
+
+    static bool _SelectionCanEdit() {
+        return _Selection.rev.isMutable() && _Selection.commits.size() == 1;
+    }
+
+    static bool _SelectionCanDelete() {
+        return _Selection.rev.isMutable();
+    }
+    
     static void _Spawn(const char*const* argv) {
         // preserveTerminalCmds: these commands don't modify the terminal, and therefore
         // we don't want to deinit/reinit curses when calling them.
