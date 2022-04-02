@@ -299,12 +299,12 @@ public:
         _Theme = _ThemeRead();
         _head = _repo.head();
         
-        // Create _RepoState
+        // Create _repoState
         std::set<Git::Ref> refs;
         for (Git::Rev rev : _revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
-        State::RepoState _RepoState(StateDir(), _repo, refs);
+        _repoState = State::RepoState(StateDir(), _repo, refs);
         
         // Determine if we need to detach head.
         // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
@@ -364,7 +364,7 @@ public:
             throw;
         }
         
-        _RepoState.write();
+        _repoState.write();
     }
     
 private:
