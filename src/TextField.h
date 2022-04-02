@@ -3,7 +3,6 @@
 #include "Window.h"
 #include "UTF8.h"
 #include "Control.h"
-#include <os/log.h>
 
 namespace UI {
 
@@ -15,8 +14,6 @@ public:
         _offUpdate();
         
         if (_focus) {
-//            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
-            
             Point p = win.position() + position();
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});

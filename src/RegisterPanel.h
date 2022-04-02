@@ -5,7 +5,6 @@
 #include "Color.h"
 #include "ModalPanel.h"
 #include "TextField.h"
-#include <os/log.h>
 
 namespace UI {
 
@@ -44,8 +43,6 @@ public:
     void draw() override {
 //        drawNeeded = true;
         if (!drawNeeded) return;
-        
-        os_log(OS_LOG_DEFAULT, "RegisterPanel::draw()");
         
         ModalPanel::draw();
         

@@ -4,6 +4,7 @@
 #include "CommitPanel.h"
 #include "Color.h"
 #include "UTF8.h"
+#include "Button.h"
 
 namespace UI {
 

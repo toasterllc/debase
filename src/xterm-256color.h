@@ -1,3 +1,5 @@
+#pragma once
+
 // xterm_256color is generated using:
 //   $ ncurses/progs/tic -T -x -o <OutputDir> ncurses/misc/terminfo_57.src
 //

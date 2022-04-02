@@ -73,7 +73,6 @@ public:
         drawNeeded |= _drawNeeded();
         if (!drawNeeded) return;
         
-        os_log(OS_LOG_DEFAULT, "Menu::draw()");
         Panel::draw();
 //        erase();
         
