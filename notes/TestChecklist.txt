@@ -71,3 +71,6 @@ dark mode automatically detected
 setting theme=light works
 setting theme=dark works
 setting theme=auto works
+
+* Linux
+set_escdelay doesn't cause issues
