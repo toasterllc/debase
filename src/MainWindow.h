@@ -18,10 +18,10 @@ extern "C" {
 namespace UI {
 
 template <auto T_SpawnFn>
-class RootWindow : public UI::Window {
+class MainWindow : public UI::Window {
 public:
-    RootWindow(WINDOW* win, const ColorPalette& colors, State::RepoState& repoState, Git::Repo repo, Git::Rev head, const std::vector<Git::Rev>& revs) :
-    Window(win), _Colors(colors), _RepoState(repoState), _Repo(repo), _Head(head), _Revs(revs) {
+    MainWindow(const ColorPalette& colors, State::RepoState& repoState, Git::Repo repo, Git::Rev head, const std::vector<Git::Rev>& revs) :
+    Window(::stdscr), _colors(colors), _repoState(repoState), _repo(repo), _head(head), _revs(revs) {
         
     }
     
@@ -30,35 +30,35 @@ public:
         if (!layoutNeeded) return;
         Window::layout();
         
-        const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
+        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
-        if (_Drag.titlePanel) {
-            _Drag.titlePanel->borderColor(selectionColor);
+        if (_drag.titlePanel) {
+            _drag.titlePanel->borderColor(selectionColor);
             
-            for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
+            for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
                 panel->setBorderColor(selectionColor);
             }
         }
         
-        for (UI::RevColumnPtr col : _Columns) {
+        for (UI::RevColumnPtr col : _columns) {
             col->layout();
         }
         
-        bool dragging = (bool)_Drag.titlePanel;
-        bool copying = _Drag.copy;
-        for (UI::RevColumnPtr col : _Columns) {
+        bool dragging = (bool)_drag.titlePanel;
+        bool copying = _drag.copy;
+        for (UI::RevColumnPtr col : _columns) {
             for (UI::CommitPanelPtr panel : col->panels) {
                 bool visible = false;
                 std::optional<UI::Color> borderColor;
                 _SelectState selectState = _SelectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
                     visible = !dragging || copying;
-                    if (dragging) borderColor = _Colors.selectionSimilar;
-                    else          borderColor = _Colors.selection;
+                    if (dragging) borderColor = _colors.selectionSimilar;
+                    else          borderColor = _colors.selection;
                 
                 } else {
                     visible = true;
-                    if (!dragging && selectState==_SelectState::Similar) borderColor = _Colors.selectionSimilar;
+                    if (!dragging && selectState==_SelectState::Similar) borderColor = _colors.selectionSimilar;
                 }
                 
                 panel->visible(visible);
@@ -68,50 +68,50 @@ public:
         
         // Order all the title panel and shadow panels
         if (dragging) {
-            for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
+            for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
                 (*it)->orderFront();
             }
-            _Drag.titlePanel->orderFront();
+            _drag.titlePanel->orderFront();
         }
         
-        if (_ContextMenu) {
-            _ContextMenu->orderFront();
+        if (_contextMenu) {
+            _contextMenu->orderFront();
         }
         
-        if (_SnapshotsMenu) {
-            _SnapshotsMenu->orderFront();
+        if (_snapshotsMenu) {
+            _snapshotsMenu->orderFront();
         }
         
-        if (_MessagePanel) {
+        if (_messagePanel) {
             constexpr int MessagePanelWidth = 40;
-            _MessagePanel->width = std::min(MessagePanelWidth, bounds().size.x);
-            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
+            _messagePanel->width = std::min(MessagePanelWidth, bounds().size.x);
+            _messagePanel->size(_messagePanel->sizeIntrinsic());
             
-            UI::Size ps = _MessagePanel->frame().size;
+            UI::Size ps = _messagePanel->frame().size;
             UI::Size rs = frame().size;
             UI::Point p = {
                 (rs.x-ps.x)/2,
                 (rs.y-ps.y)/3,
             };
-            _MessagePanel->position(p);
-            _MessagePanel->orderFront();
-            _MessagePanel->layout();
+            _messagePanel->position(p);
+            _messagePanel->orderFront();
+            _messagePanel->layout();
         }
         
-        if (_RegisterPanel) {
+        if (_registerPanel) {
             constexpr int RegisterPanelWidth = 50;
-            _RegisterPanel->width = std::min(RegisterPanelWidth, bounds().size.x);
-            _RegisterPanel->size(_RegisterPanel->sizeIntrinsic());
+            _registerPanel->width = std::min(RegisterPanelWidth, bounds().size.x);
+            _registerPanel->size(_registerPanel->sizeIntrinsic());
             
-            UI::Size ps = _RegisterPanel->frame().size;
+            UI::Size ps = _registerPanel->frame().size;
             UI::Size rs = frame().size;
             UI::Point p = {
                 (rs.x-ps.x)/2,
                 (rs.y-ps.y)/3,
             };
-            _RegisterPanel->position(p);
-            _RegisterPanel->orderFront();
-            _RegisterPanel->layout();
+            _registerPanel->position(p);
+            _registerPanel->orderFront();
+            _registerPanel->layout();
         }
     }
     
@@ -120,73 +120,73 @@ public:
         if (!drawNeeded) return;
         Window::draw();
         
-        const UI::Color selectionColor = (_Drag.copy ? _Colors.selectionCopy : _Colors.selection);
+        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         erase();
         
-        if (_Drag.titlePanel) {
-            _Drag.titlePanel->draw();
+        if (_drag.titlePanel) {
+            _drag.titlePanel->draw();
             
             // Draw insertion marker
-            if (_Drag.insertionMarker) {
+            if (_drag.insertionMarker) {
                 UI::Window::Attr color = attr(selectionColor);
-                drawLineHoriz(_Drag.insertionMarker->point, _Drag.insertionMarker->size.x);
+                drawLineHoriz(_drag.insertionMarker->point, _drag.insertionMarker->size.x);
             }
         }
         
-        for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
+        for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
             panel->draw();
         }
         
-        if (_SelectionRect) {
-            UI::Window::Attr color = attr(_Colors.selection);
-            drawRect(*_SelectionRect);
+        if (_selectionRect) {
+            UI::Window::Attr color = attr(_colors.selection);
+            drawRect(*_selectionRect);
         }
         
-        for (UI::RevColumnPtr col : _Columns) {
+        for (UI::RevColumnPtr col : _columns) {
             col->draw(*this);
         }
         
-        if (_ContextMenu) {
-            _ContextMenu->draw();
+        if (_contextMenu) {
+            _contextMenu->draw();
         }
         
-        if (_SnapshotsMenu) {
-            _SnapshotsMenu->draw();
+        if (_snapshotsMenu) {
+            _snapshotsMenu->draw();
         }
         
-        if (_MessagePanel) {
-            _MessagePanel->draw();
+        if (_messagePanel) {
+            _messagePanel->draw();
         }
         
-        if (_RegisterPanel) {
-            _RegisterPanel->draw();
+        if (_registerPanel) {
+            _registerPanel->draw();
         }
     }
     
     bool handleEvent(const UI::Event& ev) override {
         std::string errorMsg;
         try {
-            if (_MessagePanel) {
-                bool handled = _MessagePanel->handleEvent(ev);
+            if (_messagePanel) {
+                bool handled = _messagePanel->handleEvent(ev);
                 if (!handled) {
-                    _MessagePanel = nullptr;
+                    _messagePanel = nullptr;
                     return false;
                 }
                 return true;
             }
             
-            if (_RegisterPanel) {
-                bool handled = _RegisterPanel->handleEvent(ev);
+            if (_registerPanel) {
+                bool handled = _registerPanel->handleEvent(ev);
                 if (!handled) {
-                    _RegisterPanel = nullptr;
+                    _registerPanel = nullptr;
                     return false;
                 }
                 return true;
             }
             
             // Let every column handle the event
-            for (UI::RevColumnPtr col : _Columns) {
+            for (UI::RevColumnPtr col : _columns) {
                 bool handled = col->handleEvent(*this, ev);
                 if (handled) return true;
             }
@@ -229,8 +229,8 @@ public:
                 Git::Op gitOp = {
                     .type = Git::Op::Type::Delete,
                     .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
+                        .rev = _selection.rev,
+                        .commits = _selection.commits,
                     },
                 };
                 _ExecGitOp(gitOp);
@@ -246,8 +246,8 @@ public:
                 Git::Op gitOp = {
                     .type = Git::Op::Type::Combine,
                     .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
+                        .rev = _selection.rev,
+                        .commits = _selection.commits,
                     },
                 };
                 _ExecGitOp(gitOp);
@@ -263,8 +263,8 @@ public:
                 Git::Op gitOp = {
                     .type = Git::Op::Type::Edit,
                     .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
+                        .rev = _selection.rev,
+                        .commits = _selection.commits,
                     },
                 };
                 _ExecGitOp(gitOp);
@@ -300,11 +300,11 @@ public:
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _MessagePanel = std::make_shared<UI::ModalPanel>(_Colors);
-            _MessagePanel->color    = _Colors.error;
-            _MessagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
-            _MessagePanel->title    = "Error";
-            _MessagePanel->message  = errorMsg;
+            _messagePanel = std::make_shared<UI::ModalPanel>(_colors);
+            _messagePanel->color    = _colors.error;
+            _messagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
+            _messagePanel->title    = "Error";
+            _messagePanel->message  = errorMsg;
         }
         
         return true;
@@ -327,20 +327,20 @@ public:
         constexpr int ColumnWidth = 32;
         constexpr int ColumnSpacing = 6;
         
-        if (_Head.ref) {
-            _Head = _Repo.revReload(_Head);
+        if (_head.ref) {
+            _head = _repo.revReload(_head);
         }
         
-        for (Git::Rev& rev : _Revs) {
+        for (Git::Rev& rev : _revs) {
             if (rev.ref) {
-                rev = _Repo.revReload(rev);
+                rev = _repo.revReload(rev);
             }
         }
         
-        _Columns.clear();
+        _columns.clear();
         int OffsetX = InsetX;
-        for (const Git::Rev& rev : _Revs) {
-            State::History* h = (rev.ref ? &_RepoState.history(rev.ref) : nullptr);
+        for (const Git::Rev& rev : _revs) {
+            State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
             
             std::function<void(UI::RevColumn&)> undoAction;
             std::function<void(UI::RevColumn&)> redoAction;
@@ -356,17 +356,17 @@ public:
             
             snapshotsAction = [&] (UI::RevColumn& col) { _TrackSnapshotsMenu(col); };
             
-            UI::RevColumnPtr col = std::make_shared<UI::RevColumn>(_Colors);
+            UI::RevColumnPtr col = std::make_shared<UI::RevColumn>(_colors);
             col->containerBounds    = bounds();
-            col->repo               = _Repo;
+            col->repo               = _repo;
             col->rev                = rev;
-            col->head               = (rev.displayHead() == _Head.commit);
+            col->head               = (rev.displayHead() == _head.commit);
             col->offset             = UI::Size{OffsetX, 0};
             col->width              = ColumnWidth;
             col->undoAction         = undoAction;
             col->redoAction         = redoAction;
             col->snapshotsAction    = snapshotsAction;
-            _Columns.push_back(col);
+            _columns.push_back(col);
             
             OffsetX += ColumnWidth+ColumnSpacing;
         }
@@ -375,13 +375,13 @@ public:
     std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_Selected(mouseDownColumn, mouseDownPanel)) {
-            _Selection = {
+            _selection = {
                 .rev = mouseDownColumn->rev,
                 .commits = {mouseDownPanel->commit()},
             };
         }
         
-        assert(!_Selection.commits.empty());
+        assert(!_selection.commits.empty());
         
         // Draw once before we open the context menu, so that the selection is updated
         refresh();
@@ -392,14 +392,14 @@ public:
         UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", _SelectionCanDelete(), menuButton);
         
         std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
-        _ContextMenu = std::make_shared<UI::Menu>(_Colors);
-        Defer(_ContextMenu = nullptr);
+        _contextMenu = std::make_shared<UI::Menu>(_colors);
+        Defer(_contextMenu = nullptr);
         
-        _ContextMenu->buttons = buttons;
-        _ContextMenu->size(_ContextMenu->sizeIntrinsic());
-        _ContextMenu->position(mouseDownEvent.mouse.point);
-        _ContextMenu->layout();
-        _ContextMenu->track(_ContextMenu->convert(mouseDownEvent));
+        _contextMenu->buttons = buttons;
+        _contextMenu->size(_contextMenu->sizeIntrinsic());
+        _contextMenu->position(mouseDownEvent.mouse.point);
+        _contextMenu->layout();
+        _contextMenu->track(_contextMenu->convert(mouseDownEvent));
         
         // Handle the clicked button
         std::optional<Git::Op> gitOp;
@@ -407,8 +407,8 @@ public:
             gitOp = Git::Op{
                 .type = Git::Op::Type::Combine,
                 .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
                 },
             };
         
@@ -416,8 +416,8 @@ public:
             gitOp = Git::Op{
                 .type = Git::Op::Type::Edit,
                 .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
                 },
             };
         
@@ -425,8 +425,8 @@ public:
             gitOp = Git::Op{
                 .type = Git::Op::Type::Delete,
                 .src = {
-                    .rev = _Selection.rev,
-                    .commits = _Selection.commits,
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
                 },
             };
         }
@@ -441,22 +441,22 @@ public:
         const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
         const bool wasSelected = _Selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
-        const auto doubleClickStatePrev = _DoubleClickState;
-        _DoubleClickState = {};
+        const auto doubleClickStatePrev = _doubleClickState;
+        _doubleClickState = {};
         
         // Reset the selection to solely contain the mouse-down CommitPanel if:
         //   - there's no selection; or
         //   - the mouse-down CommitPanel is in a different column than the current selection; or
         //   - an unselected CommitPanel was clicked
-        if (_Selection.commits.empty() || (_Selection.rev != mouseDownColumn->rev) || !wasSelected) {
-            _Selection = {
+        if (_selection.commits.empty() || (_selection.rev != mouseDownColumn->rev) || !wasSelected) {
+            _selection = {
                 .rev = mouseDownColumn->rev,
                 .commits = {mouseDownPanel->commit()},
             };
         
         } else {
-            assert(!_Selection.commits.empty() && (_Selection.rev == mouseDownColumn->rev));
-            _Selection.commits.insert(mouseDownPanel->commit());
+            assert(!_selection.commits.empty() && (_selection.rev == mouseDownColumn->rev));
+            _selection.commits.insert(mouseDownPanel->commit());
         }
         
         UI::Event ev = mouseDownEvent;
@@ -464,8 +464,8 @@ public:
         bool abort = false;
         bool mouseDragged = false;
         for (;;) {
-            assert(!_Selection.commits.empty());
-            UI::RevColumnPtr selectionColumn = _ColumnForRev(_Selection.rev);
+            assert(!_selection.commits.empty());
+            UI::RevColumnPtr selectionColumn = _ColumnForRev(_selection.rev);
             
             const UI::Point p = ev.mouse.point;
             const UI::Size delta = mouseDownEvent.mouse.point-p;
@@ -478,28 +478,28 @@ public:
             // Find insertion position
             ipos = _FindInsertionPosition(p);
             
-            if (!_Drag.titlePanel && mouseDragged && allow) {
-                Git::Commit titleCommit = _FindLatestCommit(_Selection.rev.commit, _Selection.commits);
+            if (!_drag.titlePanel && mouseDragged && allow) {
+                Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
                 UI::CommitPanelPtr titlePanel = _PanelForCommit(selectionColumn, titleCommit);
-                _Drag.titlePanel = std::make_shared<UI::CommitPanel>(_Colors, true, titlePanel->frame().size.x, titleCommit);
+                _drag.titlePanel = std::make_shared<UI::CommitPanel>(_colors, true, titlePanel->frame().size.x, titleCommit);
                 
                 // Create shadow panels
-                UI::Size shadowSize = _Drag.titlePanel->frame().size;
-                for (size_t i=0; i<_Selection.commits.size()-1; i++) {
-                    _Drag.shadowPanels.push_back(std::make_shared<UI::BorderedPanel>(shadowSize));
+                UI::Size shadowSize = _drag.titlePanel->frame().size;
+                for (size_t i=0; i<_selection.commits.size()-1; i++) {
+                    _drag.shadowPanels.push_back(std::make_shared<UI::BorderedPanel>(shadowSize));
                 }
                 
                 // Order all the title panel and shadow panels
-                for (auto it=_Drag.shadowPanels.rbegin(); it!=_Drag.shadowPanels.rend(); it++) {
+                for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
                     (*it)->orderFront();
                 }
-                _Drag.titlePanel->orderFront();
+                _drag.titlePanel->orderFront();
             
             } else if (!allow) {
-                _Drag = {};
+                _drag = {};
             }
             
-            if (_Drag.titlePanel) {
+            if (_drag.titlePanel) {
                 // Update _Drag.copy depending on whether the option key is held
                 {
                     // forceCopy: require copying if the source column isn't mutable (and therefore commits
@@ -507,19 +507,19 @@ public:
                     // the source column)
                     const bool forceCopy = !selectionColumn->rev.isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
-                    _Drag.copy = copy;
-                    _Drag.titlePanel->headerLabel(_Drag.copy ? "Copy" : "Move");
+                    _drag.copy = copy;
+                    _drag.titlePanel->headerLabel(_drag.copy ? "Copy" : "Move");
                 }
                 
                 // Position title panel / shadow panels
                 {
                     const UI::Point pos0 = p + mouseDownOffset;
                     
-                    _Drag.titlePanel->position(pos0);
+                    _drag.titlePanel->position(pos0);
                     
                     // Position shadowPanels
                     int off = 1;
-                    for (UI::PanelPtr panel : _Drag.shadowPanels) {
+                    for (UI::PanelPtr panel : _drag.shadowPanels) {
                         const UI::Point pos = pos0+off;
                         panel->position(pos);
                         off++;
@@ -534,13 +534,13 @@ public:
                     const int endY = lastFrame.point.y + lastFrame.size.y;
                     const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().point.y : endY+1);
                     
-                    _Drag.insertionMarker = {
+                    _drag.insertionMarker = {
                         .point = {lastFrame.point.x-InsertionExtraWidth/2, insertY-1},
                         .size = {lastFrame.size.x+InsertionExtraWidth, 0},
                     };
                 
                 } else {
-                    _Drag.insertionMarker = std::nullopt;
+                    _drag.insertionMarker = std::nullopt;
                 }
             }
             
@@ -555,13 +555,13 @@ public:
         
         std::optional<Git::Op> gitOp;
         if (!abort) {
-            if (_Drag.titlePanel && ipos) {
+            if (_drag.titlePanel && ipos) {
                 Git::Commit dstCommit = ((ipos->iter != ipos->col->panels.end()) ? (*ipos->iter)->commit() : nullptr);
                 gitOp = Git::Op{
-                    .type = (_Drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
+                    .type = (_drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
                     .src = {
-                        .rev = _Selection.rev,
-                        .commits = _Selection.commits,
+                        .rev = _selection.rev,
+                        .commits = _selection.commits,
                     },
                     .dst = {
                         .rev = ipos->col->rev,
@@ -572,26 +572,26 @@ public:
             // If this was a mouse-down + mouse-up without dragging in between,
             // set the selection to the commit that was clicked
             } else if (!mouseDragged) {
-                _Selection = {
+                _selection = {
                     .rev = mouseDownColumn->rev,
                     .commits = {mouseDownPanel->commit()},
                 };
                 
                 auto currentTime = std::chrono::steady_clock::now();
-                Git::Commit commit = *_Selection.commits.begin();
+                Git::Commit commit = *_selection.commits.begin();
                 const bool doubleClicked =
                     doubleClickStatePrev.commit &&
                     doubleClickStatePrev.commit==commit &&
                     currentTime-doubleClickStatePrev.mouseUpTime < _DoubleClickThresh;
-                const bool validTarget = _Selection.rev.isMutable();
+                const bool validTarget = _selection.rev.isMutable();
                 
                 if (doubleClicked) {
                     if (validTarget) {
                         gitOp = {
                             .type = Git::Op::Type::Edit,
                             .src = {
-                                .rev = _Selection.rev,
-                                .commits = _Selection.commits,
+                                .rev = _selection.rev,
+                                .commits = _selection.commits,
                             },
                         };
                     
@@ -600,8 +600,8 @@ public:
                     }
                 }
                 
-                _DoubleClickState = {
-                    .commit = *_Selection.commits.begin(),
+                _doubleClickState = {
+                    .commit = *_selection.commits.begin(),
                     .mouseUpTime = currentTime,
                 };
             }
@@ -609,7 +609,7 @@ public:
         
         // Reset state
         {
-            _Drag = {};
+            _drag = {};
         }
         
         return gitOp;
@@ -618,7 +618,7 @@ public:
     // _TrackMouseOutsideCommitPanel
     // Handles updating the selection rectangle / selection state
     void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
-        auto selectionOld = _Selection;
+        auto selectionOld = _selection;
         UI::Event ev = mouseDownEvent;
         
         for (;;) {
@@ -632,14 +632,14 @@ public:
             // Handle selection rect drawing / selecting commits
             const UI::Rect selectionRect = {{x,y}, {std::max(2,w),std::max(2,h)}};
             
-            if (_SelectionRect || dragStart) {
-                _SelectionRect = selectionRect;
+            if (_selectionRect || dragStart) {
+                _selectionRect = selectionRect;
             }
             
             // Update selection
             {
                 struct _Selection selectionNew;
-                for (UI::RevColumnPtr col : _Columns) {
+                for (UI::RevColumnPtr col : _columns) {
                     for (UI::CommitPanelPtr panel : col->panels) {
                         if (!Empty(Intersection(selectionRect, panel->frame()))) {
                             selectionNew.rev = col->rev;
@@ -662,10 +662,10 @@ public:
                         std::inserter(selection.commits, selection.commits.begin())
                     );
                     
-                    _Selection = selection;
+                    _selection = selection;
                 
                 } else {
-                    _Selection = selectionNew;
+                    _selection = selectionNew;
                 }
             }
             
@@ -679,7 +679,7 @@ public:
         
         // Reset state
         {
-            _SelectionRect = std::nullopt;
+            _selectionRect = std::nullopt;
         }
     }
     
@@ -687,46 +687,46 @@ public:
         UI::SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col.rev.ref;
         std::vector<UI::ButtonPtr> buttons = {
-            _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true, menuButton),
+            _MakeSnapshotMenuButton(_repo, ref, _repoState.initialSnapshot(ref), true, menuButton),
         };
         
-        const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
+        const std::vector<State::Snapshot>& snapshots = _repoState.snapshots(ref);
         for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
             // Creating the button will throw if we can't get the commit for the snapshot
             // If that happens, just don't shown the button representing the snapshot
             try {
-                buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false, menuButton));
+                buttons.push_back(_MakeSnapshotMenuButton(_repo, ref, *it, false, menuButton));
             } catch (...) {}
         }
         
         const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
         const int px = col.offset.x + (col.width-width)/2;
         
-        _SnapshotsMenu = std::make_shared<UI::SnapshotMenu>(_Colors);
-        Defer(_SnapshotsMenu = nullptr);
+        _snapshotsMenu = std::make_shared<UI::SnapshotMenu>(_colors);
+        Defer(_snapshotsMenu = nullptr);
         
-        _SnapshotsMenu->title = "Session Start";
-        _SnapshotsMenu->buttons = buttons;
+        _snapshotsMenu->title = "Session Start";
+        _snapshotsMenu->buttons = buttons;
         
         const UI::Point p = {px, 2};
         const int heightMax = size().y-p.y;
-        _SnapshotsMenu->buttons = buttons;
-        _SnapshotsMenu->size(_SnapshotsMenu->sizeIntrinsic(heightMax));
-        _SnapshotsMenu->position(p);
-        _SnapshotsMenu->layout();
-        _SnapshotsMenu->track(_SnapshotsMenu->convert(eventCurrent));
+        _snapshotsMenu->buttons = buttons;
+        _snapshotsMenu->size(_snapshotsMenu->sizeIntrinsic(heightMax));
+        _snapshotsMenu->position(p);
+        _snapshotsMenu->layout();
+        _snapshotsMenu->track(_snapshotsMenu->convert(eventCurrent));
         
         if (menuButton) {
-            State::History& h = _RepoState.history(ref);
+            State::History& h = _repoState.history(ref);
             State::Commit commitNew = menuButton->snapshot.head;
             State::Commit commitCur = h.get().head;
             
             if (commitNew != commitCur) {
-                Git::Commit commit = Convert(_Repo, commitNew);
+                Git::Commit commit = Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
-                _Repo.refReplace(ref, commit);
+                _repo.refReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
-                _Selection = {};
+                _selection = {};
                 _Reload();
             }
         }
@@ -734,21 +734,21 @@ public:
     
     void _UndoRedo(UI::RevColumn& col, bool undo) {
         Git::Rev rev = col.rev;
-        State::History& h = _RepoState.history(col.rev.ref);
+        State::History& h = _repoState.history(col.rev.ref);
         State::RefState refStatePrev = h.get();
         State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
         
         try {
             Git::Commit commit;
             try {
-                commit = State::Convert(_Repo, refState.head);
+                commit = State::Convert(_repo, refState.head);
             } catch (...) {
                 throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
             }
             
-            std::set<Git::Commit> selection = State::Convert(_Repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            rev = _Repo.revReplace(rev, commit);
-            _Selection = {
+            std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
+            rev = _repo.revReplace(rev, commit);
+            _selection = {
                 .rev = rev,
                 .commits = selection,
             };
@@ -765,7 +765,7 @@ public:
     }
     
     void _ExecGitOp(const Git::Op& gitOp) {
-        std::optional<Git::OpResult> opResult = Git::Exec<T_SpawnFn>(_Repo, gitOp);
+        std::optional<Git::OpResult> opResult = Git::Exec<T_SpawnFn>(_repo, gitOp);
         if (!opResult) return;
         
         Git::Rev srcRevPrev = gitOp.src.rev;
@@ -776,7 +776,7 @@ public:
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         
         if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            State::History& h = _RepoState.history(srcRev.ref);
+            State::History& h = _repoState.history(srcRev.ref);
             h.push({
                 .head = State::Convert(srcRev.commit),
                 .selection = State::Convert(opResult->src.selection),
@@ -785,7 +785,7 @@ public:
         }
         
         if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            State::History& h = _RepoState.history(dstRev.ref);
+            State::History& h = _repoState.history(dstRev.ref);
             h.push({
                 .head = State::Convert(dstRev.commit),
                 .selection = State::Convert(opResult->dst.selection),
@@ -795,13 +795,13 @@ public:
         
         // Update the selection
         if (opResult->dst.rev) {
-            _Selection = {
+            _selection = {
                 .rev = opResult->dst.rev,
                 .commits = opResult->dst.selection,
             };
         
         } else {
-            _Selection = {
+            _selection = {
                 .rev = opResult->src.rev,
                 .commits = opResult->src.selection,
             };
@@ -841,9 +841,9 @@ private:
     }
     
     _SelectState _SelectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
-        bool similar = _Selection.commits.find(panel->commit()) != _Selection.commits.end();
+        bool similar = _selection.commits.find(panel->commit()) != _selection.commits.end();
         if (!similar) return _SelectState::False;
-        return (col->rev==_Selection.rev ? _SelectState::True : _SelectState::Similar);
+        return (col->rev==_selection.rev ? _SelectState::True : _SelectState::Similar);
     }
     
     bool _Selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
@@ -859,7 +859,7 @@ private:
     };
     
     _HitTestResult _HitTest(const UI::Point& p) {
-        for (UI::RevColumnPtr col : _Columns) {
+        for (UI::RevColumnPtr col : _columns) {
             UI::CommitPanelPtr panel = col->hitTest(p);
             if (panel) {
                 return {
@@ -875,7 +875,7 @@ private:
         UI::RevColumnPtr icol;
         UI::CommitPanelVecIter iiter;
         std::optional<int> leastDistance;
-        for (UI::RevColumnPtr col : _Columns) {
+        for (UI::RevColumnPtr col : _columns) {
             UI::CommitPanelVec& panels = col->panels;
             // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
             if (panels.empty()) continue;
@@ -915,7 +915,7 @@ private:
     }
     
     UI::RevColumnPtr _ColumnForRev(Git::Rev rev) {
-        for (UI::RevColumnPtr col : _Columns) {
+        for (UI::RevColumnPtr col : _columns) {
             if (col->rev == rev) return col;
         }
         // Programmer error if it doesn't exist
@@ -946,16 +946,16 @@ private:
     //        .activeSnapshot = activeSnapshot,
     //    };
         
-        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_Colors, repo, snap, _SnapshotMenuWidth);
+        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_colors, repo, snap, _SnapshotMenuWidth);
         b->enabled        = true;
         b->activeSnapshot = activeSnapshot;
         b->action         = [&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; };
         return b;
     }
-
+    
     UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
         constexpr int ContextMenuWidth = 12;
-        UI::ButtonPtr b = std::make_shared<UI::Button>(_Colors);
+        UI::ButtonPtr b = std::make_shared<UI::Button>(_colors);
         b->label        = std::string(label);
         b->key          = std::string(key);
         b->enabled      = enabled;
@@ -964,54 +964,53 @@ private:
         b->size({ContextMenuWidth, 1});
         return b;
     }
-
+    
     bool _SelectionCanCombine() {
         bool selectionContainsMerge = false;
-        for (Git::Commit commit : _Selection.commits) {
+        for (Git::Commit commit : _selection.commits) {
             if (commit.isMerge()) {
                 selectionContainsMerge = true;
                 break;
             }
         }
-        return _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
-    }
-
-    bool _SelectionCanEdit() {
-        return _Selection.rev.isMutable() && _Selection.commits.size() == 1;
-    }
-
-    bool _SelectionCanDelete() {
-        return _Selection.rev.isMutable();
+        return _selection.rev.isMutable() && _selection.commits.size()>1 && !selectionContainsMerge;
     }
     
-    const UI::ColorPalette& _Colors;
-    State::RepoState& _RepoState;
-    Git::Repo _Repo;
-    Git::Rev _Head;
-    std::vector<Git::Rev> _Revs;
-    std::vector<UI::RevColumnPtr> _Columns;
-
+    bool _SelectionCanEdit() {
+        return _selection.rev.isMutable() && _selection.commits.size() == 1;
+    }
+    
+    bool _SelectionCanDelete() {
+        return _selection.rev.isMutable();
+    }
+    
+    const UI::ColorPalette& _colors;
+    State::RepoState& _repoState;
+    Git::Repo _repo;
+    Git::Rev _head;
+    std::vector<Git::Rev> _revs;
+    std::vector<UI::RevColumnPtr> _columns;
+    
     struct {
         UI::CommitPanelPtr titlePanel;
         std::vector<UI::BorderedPanelPtr> shadowPanels;
         std::optional<UI::Rect> insertionMarker;
         bool copy = false;
-    } _Drag;
-
+    } _drag;
+    
     struct {
         Git::Commit commit;
         std::chrono::steady_clock::time_point mouseUpTime;
-    } _DoubleClickState;
-
-    _Selection _Selection;
-    std::optional<UI::Rect> _SelectionRect;
-
-    UI::MenuPtr _ContextMenu;
-    UI::SnapshotMenuPtr _SnapshotsMenu;
-
-    UI::ModalPanelPtr _MessagePanel;
-    UI::RegisterPanelPtr _RegisterPanel;
-
+    } _doubleClickState;
+    
+    _Selection _selection;
+    std::optional<UI::Rect> _selectionRect;
+    
+    UI::MenuPtr _contextMenu;
+    UI::SnapshotMenuPtr _snapshotsMenu;
+    
+    UI::ModalPanelPtr _messagePanel;
+    UI::RegisterPanelPtr _registerPanel;
 };
 
 } // namespace UI

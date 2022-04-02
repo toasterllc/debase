@@ -1,6 +1,6 @@
 #include <iostream>
 #include <spawn.h>
-#include "RootWindow.h"
+#include "MainWindow.h"
 #include "StateDir.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
@@ -281,9 +281,9 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: RootWindow -> MainWindow
+    #warning TODO: MainWindow -> MainWindow
     
-    #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from RootWindow layout()/draw()
+    #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
     
     #warning TODO: have message panel implement track() like menu does
     
@@ -632,7 +632,7 @@ int main(int argc, const char* argv[]) {
             _CursesInit();
             Defer(_CursesDeinit());
             
-            UI::RootWindow<_Spawn> win(::stdscr, _Colors, _RepoState, repo, _Head, _Revs);
+            UI::MainWindow<_Spawn> win(_Colors, _RepoState, repo, _Head, _Revs);
             win.run();
             
         } catch (const UI::ExitRequest&) {
