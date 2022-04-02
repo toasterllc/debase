@@ -152,6 +152,22 @@ static void _Draw() {
             _SnapshotsMenu->orderFront();
         }
         
+        if (_MessagePanel) {
+            constexpr int MessagePanelWidth = 50;
+            _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
+            _MessagePanel->size(_MessagePanel->sizeIntrinsic());
+            
+            UI::Size ps = _MessagePanel->frame().size;
+            UI::Size rs = _RootWindow->frame().size;
+            UI::Point p = {
+                (rs.x-ps.x)/2,
+                (rs.y-ps.y)/3,
+            };
+            _MessagePanel->setPosition(p);
+            _MessagePanel->orderFront();
+            _MessagePanel->layout();
+        }
+        
         if (_RegisterPanel) {
             constexpr int RegisterPanelWidth = 50;
             _RegisterPanel->width = std::min(RegisterPanelWidth, _RootWindow->bounds().size.x);
@@ -1148,14 +1164,14 @@ static void _EventLoop() {
     
     
     
-    {
-        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
-        _RegisterPanel->color           = _Colors.menu;
-        _RegisterPanel->messageInsetY   = 1;
-        _RegisterPanel->center          = false;
-        _RegisterPanel->title           = "Register";
-        _RegisterPanel->message         = "Please register debase";
-    }
+//    {
+//        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
+//        _RegisterPanel->color           = _Colors.menu;
+//        _RegisterPanel->messageInsetY   = 1;
+//        _RegisterPanel->center          = false;
+//        _RegisterPanel->title           = "Register";
+//        _RegisterPanel->message         = "Please register debase";
+//    }
     
     
     
@@ -1182,10 +1198,11 @@ static void _EventLoop() {
                 }
                 
                 const UI::Event ev = _RootWindow->nextEvent();
+                bool handled = false;
                 
                 // Let every column handle the event
                 for (UI::RevColumnPtr col : _Columns) {
-                    bool handled = col->handleEvent(*_RootWindow, ev);
+                    handled = col->handleEvent(*_RootWindow, ev);
                     if (handled) break;
                 }
                 
@@ -1220,87 +1237,89 @@ static void _EventLoop() {
 //                    if (handled) break;
 //                }
                 
-                std::optional<Git::Op> gitOp;
-                switch (ev.type) {
-                case UI::Event::Type::Mouse: {
-                    const _HitTestResult hitTest = _HitTest(ev.mouse.point);
-                    if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
-                        const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
-                        if (hitTest && !shift) {
-                            if (hitTest.panel) {
-                                // Mouse down inside of a CommitPanel, without shift key
-                                gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                if (!handled) {
+                    std::optional<Git::Op> gitOp;
+                    switch (ev.type) {
+                    case UI::Event::Type::Mouse: {
+                        const _HitTestResult hitTest = _HitTest(ev.mouse.point);
+                        if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                            const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
+                            if (hitTest && !shift) {
+                                if (hitTest.panel) {
+                                    // Mouse down inside of a CommitPanel, without shift key
+                                    gitOp = _TrackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                                }
+                            
+                            } else {
+                                // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                                _TrackMouseOutsideCommitPanel(ev);
                             }
                         
-                        } else {
-                            // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                            _TrackMouseOutsideCommitPanel(ev);
-                        }
-                    
-                    } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
-                        if (hitTest) {
-                            if (hitTest.panel) {
-                                gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
+                        } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
+                            if (hitTest) {
+                                if (hitTest.panel) {
+                                    gitOp = _TrackRightMouse(ev, hitTest.column, hitTest.panel);
+                                }
                             }
                         }
-                    }
-                    break;
-                }
-                
-                case UI::Event::Type::KeyDelete:
-                case UI::Event::Type::KeyFnDelete: {
-                    if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
-                        beep();
                         break;
                     }
                     
-                    gitOp = {
-                        .type = Git::Op::Type::Delete,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
-                    break;
-                }
-                
-                case UI::Event::Type::KeyC: {
-                    if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
-                        beep();
+                    case UI::Event::Type::KeyDelete:
+                    case UI::Event::Type::KeyFnDelete: {
+                        if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
+                            beep();
+                            break;
+                        }
+                        
+                        gitOp = {
+                            .type = Git::Op::Type::Delete,
+                            .src = {
+                                .rev = _Selection.rev,
+                                .commits = _Selection.commits,
+                            },
+                        };
                         break;
                     }
                     
-                    gitOp = {
-                        .type = Git::Op::Type::Combine,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
-                    break;
-                }
-                
-                case UI::Event::Type::KeyReturn: {
-                    if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
-                        beep();
+                    case UI::Event::Type::KeyC: {
+                        if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
+                            beep();
+                            break;
+                        }
+                        
+                        gitOp = {
+                            .type = Git::Op::Type::Combine,
+                            .src = {
+                                .rev = _Selection.rev,
+                                .commits = _Selection.commits,
+                            },
+                        };
                         break;
                     }
                     
-                    gitOp = {
-                        .type = Git::Op::Type::Edit,
-                        .src = {
-                            .rev = _Selection.rev,
-                            .commits = _Selection.commits,
-                        },
-                    };
-                    break;
+                    case UI::Event::Type::KeyReturn: {
+                        if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
+                            beep();
+                            break;
+                        }
+                        
+                        gitOp = {
+                            .type = Git::Op::Type::Edit,
+                            .src = {
+                                .rev = _Selection.rev,
+                                .commits = _Selection.commits,
+                            },
+                        };
+                        break;
+                    }
+                    
+                    default: {
+                        break;
+                    }}
+                    
+                    if (gitOp) _ExecGitOp(*gitOp);
                 }
-                
-                default: {
-                    break;
-                }}
-                
-                if (gitOp) _ExecGitOp(*gitOp);
             
             } catch (const Git::Error& e) {
                 switch (e.error) {
@@ -1332,22 +1351,6 @@ static void _EventLoop() {
                 _MessagePanel->center   = true;
                 _MessagePanel->title    = "Error";
                 _MessagePanel->message  = errorMsg;
-                
-                constexpr int MessagePanelWidth = 35;
-                _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
-                _MessagePanel->size(_MessagePanel->sizeIntrinsic());
-                
-                UI::Size ps = _MessagePanel->frame().size;
-                UI::Size rs = _RootWindow->frame().size;
-                UI::Point p = {
-                    (rs.x-ps.x)/2,
-                    (rs.y-ps.y)/3,
-                };
-                _MessagePanel->setPosition(p);
-                _MessagePanel->orderFront();
-                _MessagePanel->layout();
-                _MessagePanel->track();
-                _MessagePanel = nullptr;
             }
         
         } catch (const UI::WindowResize&) {
