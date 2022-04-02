@@ -37,6 +37,7 @@ Edit commit disallowed
 Resize terminal
 Text field interactions (arrow keys, delete, forward delete)
 Registration works
+Click text fields
 
 * Error panel
 Resize terminal

@@ -150,7 +150,7 @@ public:
         std::string errorMsg;
         try {
             if (_messagePanel) {
-                bool handled = _messagePanel->handleEvent(ev);
+                bool handled = _messagePanel->handleEvent(_messagePanel->convert(ev));
                 if (!handled) {
                     _messagePanel = nullptr;
                     return false;
@@ -159,7 +159,7 @@ public:
             }
             
             if (_registerPanel) {
-                bool handled = _registerPanel->handleEvent(ev);
+                bool handled = _registerPanel->handleEvent(_registerPanel->convert(ev));
                 if (!handled) {
                     _registerPanel = nullptr;
                     return false;
@@ -348,6 +348,14 @@ public:
             
             // Create our window now that ncurses is initialized
             Window::operator=(Window(::stdscr));
+            
+            {
+                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+                _registerPanel->color           = _colors.menu;
+                _registerPanel->messageInsetY   = 1;
+                _registerPanel->title           = "Register";
+                _registerPanel->message         = "Please register debase";
+            }
             
             for (;;) {
                 _reload();

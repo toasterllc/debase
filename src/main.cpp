@@ -71,17 +71,11 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: MainWindow -> MainWindow
-    
     #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
     
-    #warning TODO: have message panel implement track() like menu does
-    
-    #warning TODO: get snapshots menu working again
+    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
     #warning TODO: verify that ctrl-c still works with RegPanel visible
-    
-    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
     
     #warning TODO: implement 7-day trial
     
@@ -100,6 +94,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: get snapshots menu working again
+//
+//    #warning TODO: have message panel implement track() like menu does
+//
+//    #warning TODO: MainWindow -> App
+//
 //    #warning TODO: get reg panel working again
 //
 //    #warning TODO: figure out a way to not redraw Menu every cycle, but support button highlight on hover
