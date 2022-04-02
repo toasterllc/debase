@@ -21,6 +21,12 @@ public:
 //        return true;
 //    }
     
+    enum class TextAlign {
+        Left,
+        Center,
+        CenterSingleLine
+    };
+    
     Size sizeIntrinsic() override {
         std::vector<std::string> messageLines = _createMessageLines();
         return {
@@ -59,7 +65,7 @@ public:
         
         for (const std::string& line : _messageLines) {
             int offX = 0;
-            if (center) {
+            if (align==TextAlign::Center || (align==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
                 offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
             }
             drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
@@ -69,7 +75,7 @@ public:
     
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
-        if (ev.mouseUp()) return false;
+        if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) return false;
         // Dismiss upon escape key
         if (ev.type == Event::Type::KeyEscape) return false;
         // Eat all other events
@@ -81,7 +87,7 @@ public:
     int width = 0;
     int messageInsetY = 0;
     int extraHeight = 0;
-    bool center = false;
+    TextAlign align = TextAlign::Left;
     std::string title;
     std::string message;
     

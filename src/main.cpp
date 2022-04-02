@@ -32,7 +32,7 @@
 #include "SnapshotMenu.h"
 #include "Terminal.h"
 #include "Debase.h"
-#include "CursorState.h"
+#include "UI.h"
 
 namespace fs = std::filesystem;
 
@@ -153,7 +153,7 @@ static void _Draw() {
         }
         
         if (_MessagePanel) {
-            constexpr int MessagePanelWidth = 50;
+            constexpr int MessagePanelWidth = 40;
             _MessagePanel->width = std::min(MessagePanelWidth, _RootWindow->bounds().size.x);
             _MessagePanel->size(_MessagePanel->sizeIntrinsic());
             
@@ -1164,14 +1164,13 @@ static void _EventLoop() {
     
     
     
-//    {
-//        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
-//        _RegisterPanel->color           = _Colors.menu;
-//        _RegisterPanel->messageInsetY   = 1;
-//        _RegisterPanel->center          = false;
-//        _RegisterPanel->title           = "Register";
-//        _RegisterPanel->message         = "Please register debase";
-//    }
+    {
+        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
+        _RegisterPanel->color           = _Colors.menu;
+        _RegisterPanel->messageInsetY   = 1;
+        _RegisterPanel->title           = "Register";
+        _RegisterPanel->message         = "Please register debase";
+    }
     
     
     
@@ -1348,7 +1347,7 @@ static void _EventLoop() {
                 
                 _MessagePanel = std::make_shared<UI::ModalPanel>(_Colors);
                 _MessagePanel->color    = _Colors.error;
-                _MessagePanel->center   = true;
+                _MessagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
                 _MessagePanel->title    = "Error";
                 _MessagePanel->message  = errorMsg;
             }

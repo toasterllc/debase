@@ -2,7 +2,6 @@
 #include <algorithm>
 #include "Window.h"
 #include "UTF8.h"
-#include "CursorState.h"
 #include "Control.h"
 #include <os/log.h>
 
