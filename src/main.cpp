@@ -417,35 +417,6 @@ extern "C" {
     extern char** environ;
 };
 
-static void _Spawn(const char*const* argv) {
-    // preserveTerminalCmds: these commands don't modify the terminal, and therefore
-    // we don't want to deinit/reinit curses when calling them.
-    // When invoking commands such as vi/pico, we need to deinit/reinit curses
-    // when calling out to them, because those commands reconfigure the terminal.
-    static const std::set<std::string> preserveTerminalCmds = {
-        "mate"
-    };
-    
-    const bool preserveTerminal = preserveTerminalCmds.find(argv[0]) != preserveTerminalCmds.end();
-    if (!preserveTerminal) _CursesDeinit();
-    
-    // Spawn the text editor and wait for it to exit
-    {
-        pid_t pid = -1;
-        int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
-        if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
-        
-        int status = 0;
-        ir = 0;
-        do ir = waitpid(pid, &status, 0);
-        while (ir==-1 && errno==EINTR);
-        if (ir == -1) throw Toastbox::RuntimeError("waitpid failed: %s", strerror(errno));
-        if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
-    }
-    
-    if (!preserveTerminal) _CursesInit();
-}
-
 class RootWindow : public UI::Window {
 public:
     using Window::Window;
@@ -1234,36 +1205,37 @@ public:
         
         _Reload();
     }
+    
+private:
+    static void _Spawn(const char*const* argv) {
+        // preserveTerminalCmds: these commands don't modify the terminal, and therefore
+        // we don't want to deinit/reinit curses when calling them.
+        // When invoking commands such as vi/pico, we need to deinit/reinit curses
+        // when calling out to them, because those commands reconfigure the terminal.
+        static const std::set<std::string> preserveTerminalCmds = {
+            "mate"
+        };
+        
+        const bool preserveTerminal = preserveTerminalCmds.find(argv[0]) != preserveTerminalCmds.end();
+        if (!preserveTerminal) _CursesDeinit();
+        
+        // Spawn the text editor and wait for it to exit
+        {
+            pid_t pid = -1;
+            int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
+            if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
+            
+            int status = 0;
+            ir = 0;
+            do ir = waitpid(pid, &status, 0);
+            while (ir==-1 && errno==EINTR);
+            if (ir == -1) throw Toastbox::RuntimeError("waitpid failed: %s", strerror(errno));
+            if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
+        }
+        
+        if (!preserveTerminal) _CursesInit();
+    }
 };
-
-
-//static void _EventLoop() {
-//    _CursesInit();
-//    Defer(_CursesDeinit());
-//    
-//    _RootWindow = std::make_shared<RootWindow>(::stdscr);
-//    
-//    
-//    
-//    
-//    
-////    {
-////        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
-////        _RegisterPanel->color           = _Colors.menu;
-////        _RegisterPanel->messageInsetY   = 1;
-////        _RegisterPanel->title           = "Register";
-////        _RegisterPanel->message         = "Please register debase";
-////    }
-////    
-//    
-////    
-////    for (;;) {
-////        std::string errorMsg;
-////        _Draw();
-////        
-////
-////    }
-//}
 
 static State::Theme _ThemeRead() {
     State::State state(StateDir());
@@ -1370,6 +1342,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: RootWindow -> MainWindow
+    
     #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from RootWindow layout()/draw()
     
     #warning TODO: have message panel implement track() like menu does
