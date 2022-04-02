@@ -56,19 +56,18 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
 }
 
 static void _PrintUsage() {
-    using namespace std;
-    cout << "debase version " DebaseVersionString "\n";
-    cout << "\n";
-    cout << "Usage:\n";
-    cout << "  -h, --help\n";
-    cout << "      Print this help message\n";
-    cout << "\n";
-    cout << "  --theme <auto|dark|light>\n";
-    cout << "      Set theme\n";
-    cout << "\n";
-    cout << "  [<rev>...]\n";
-    cout << "      Open the specified git revisions in debase\n";
-    cout << "\n";
+    std::cout << "debase version " DebaseVersionString "\n";
+    std::cout << "\n";
+    std::cout << "Usage:\n";
+    std::cout << "  -h, --help\n";
+    std::cout << "      Print this help message\n";
+    std::cout << "\n";
+    std::cout << "  --theme <auto|dark|light>\n";
+    std::cout << "      Set theme\n";
+    std::cout << "\n";
+    std::cout << "  [<rev>...]\n";
+    std::cout << "      Open the specified git revisions in debase\n";
+    std::cout << "\n";
 }
 
 int main(int argc, const char* argv[]) {
@@ -343,7 +342,7 @@ int main(int argc, const char* argv[]) {
         setlocale(LC_ALL, "");
         
         Git::Repo repo;
-        std::vector<Git::Rev> _revs;
+        std::vector<Git::Rev> revs;
         
         try {
             repo = Git::Repo::Open(".");
@@ -352,7 +351,7 @@ int main(int argc, const char* argv[]) {
         }
         
         if (args.normal.revs.empty()) {
-            _revs.emplace_back(repo.head());
+            revs.emplace_back(repo.head());
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
@@ -366,13 +365,13 @@ int main(int argc, const char* argv[]) {
                 }
                 
                 if (unique.find(rev) == unique.end()) {
-                    _revs.push_back(rev);
+                    revs.push_back(rev);
                     unique.insert(rev);
                 }
             }
         }
         
-        auto app = std::make_shared<UI::App>(repo, _revs);
+        auto app = std::make_shared<App>(repo, revs);
         app->run();
     
     } catch (const std::exception& e) {
