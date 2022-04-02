@@ -539,8 +539,8 @@ inline _Argv _CreateArgv(Repo repo, std::string_view filePath) {
     return _Argv{args, argv};
 }
 
-template <auto T_SpawnFn>
-inline std::optional<OpResult> _Exec_EditCommit(Repo repo, const Op& op) {
+template <typename T_SpawnFn>
+inline std::optional<OpResult> _Exec_EditCommit(Repo repo, const Op& op, T_SpawnFn spawnFn) {
     using File = RefCounted<int, close>;
     
     assert(op.src.commits.size() == 1); // Programmer error
@@ -561,7 +561,7 @@ inline std::optional<OpResult> _Exec_EditCommit(Repo repo, const Op& op) {
     
     // Spawn text editor
     _Argv argv = _CreateArgv(repo, tmpFilePath);
-    T_SpawnFn(argv.argv.data());
+    spawnFn(argv.argv.data());
     
     // Read back the edited commit message
     _CommitMessage newMsg = _CommitMessageRead(tmpFilePath);
@@ -599,15 +599,15 @@ inline std::optional<OpResult> _Exec_EditCommit(Repo repo, const Op& op) {
     };
 }
 
-template <auto T_SpawnFn>
-inline std::optional<OpResult> Exec(Repo repo, const Op& op) {
+template <typename T_SpawnFn>
+inline std::optional<OpResult> Exec(Repo repo, const Op& op, T_SpawnFn spawnFn) {
     switch (op.type) {
     case Op::Type::None:    return std::nullopt;
     case Op::Type::Move:    return _Exec_MoveCommits(repo, op);
     case Op::Type::Copy:    return _Exec_CopyCommits(repo, op);
     case Op::Type::Delete:  return _Exec_DeleteCommits(repo, op);
     case Op::Type::Combine: return _Exec_CombineCommits(repo, op);
-    case Op::Type::Edit:    return _Exec_EditCommit<T_SpawnFn>(repo, op);
+    case Op::Type::Edit:    return _Exec_EditCommit(repo, op, spawnFn);
     }
 }
 

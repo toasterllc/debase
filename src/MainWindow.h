@@ -10,6 +10,9 @@
 #include "SnapshotMenu.h"
 #include "ModalPanel.h"
 #include "RegisterPanel.h"
+#include "StateDir.h"
+#include "xterm-256color.h"
+#include "Terminal.h"
 
 extern "C" {
     extern char** environ;
@@ -17,11 +20,10 @@ extern "C" {
 
 namespace UI {
 
-template <auto T_SpawnFn>
 class MainWindow : public Window {
 public:
-    MainWindow(const ColorPalette& colors, State::RepoState& repoState, Git::Repo repo, Git::Rev head, const std::vector<Git::Rev>& revs) :
-    Window(::stdscr), _colors(colors), _repoState(repoState), _repo(repo), _head(head), _revs(revs) {
+    MainWindow(Git::Repo repo, const std::vector<Git::Rev>& revs) :
+    Window(::stdscr), _repo(repo), _revs(revs) {
         
     }
     
@@ -295,14 +297,75 @@ public:
     }
     
     void run() {
-        for (;;) {
-            _reload();
-            try {
-                track();
-            } catch (const WindowResize&) {
-                // Continue the loop, which calls _Reload()
-            }
+        namespace fs = std::filesystem;
+        
+        _Theme = _ThemeRead();
+        _head = _repo.head();
+        
+        // Create _RepoState
+        std::set<Git::Ref> refs;
+        for (Git::Rev rev : _revs) {
+            if (rev.ref) refs.insert(rev.ref);
         }
+        State::RepoState _RepoState(StateDir(), _repo, refs);
+        
+        // Determine if we need to detach head.
+        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
+        // In other words, we need to detach head when whatever is checked-out may be modified.
+        bool detachHead = _head.ref && std::find(_revs.begin(), _revs.end(), _head)!=_revs.end();
+        
+        if (detachHead && _repo.dirty()) {
+            throw Toastbox::RuntimeError("please commit or stash your outstanding changes before running debase on %s", _head.displayName().c_str());
+        }
+        
+        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
+        // we try to replace that ref.
+        if (detachHead) _repo.headDetach();
+        Defer(
+            if (detachHead) {
+                // Restore previous head on exit
+                std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
+                std::string err;
+                try {
+                    _repo.checkout(_head.ref);
+                } catch (const Git::ConflictError& e) {
+                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
+                    for (const fs::path& path : e.paths) {
+                        err += "  " + std::string(path) + "\n";
+                    }
+                    
+                    err += "\n";
+                    err += "Please move or delete them and run:\n";
+                    err += "  git checkout " + _head.ref.name() + "\n";
+                
+                } catch (const std::exception& e) {
+                    err = std::string("Error: ") + e.what();
+                }
+                
+                std::cout << (!err.empty() ? err : "Done") << std::endl;
+            }
+        );
+        
+        try {
+            _CursesInit();
+            Defer(_CursesDeinit());
+            
+            for (;;) {
+                _reload();
+                try {
+                    track();
+                } catch (const WindowResize&) {
+                    // Continue the loop, which calls _Reload()
+                }
+            }
+            
+        } catch (const UI::ExitRequest&) {
+            // Nothing to do
+        } catch (...) {
+            throw;
+        }
+        
+        _RepoState.write();
     }
     
 private:
@@ -904,7 +967,8 @@ private:
     }
     
     void _gitOpExec(const Git::Op& gitOp) {
-        std::optional<Git::OpResult> opResult = Git::Exec<T_SpawnFn>(_repo, gitOp);
+        auto spawnFn = [&] (const char*const* argv) { _spawn(argv); };
+        std::optional<Git::OpResult> opResult = Git::Exec(_repo, gitOp, spawnFn);
         if (!opResult) return;
         
         Git::Rev srcRevPrev = gitOp.src.rev;
@@ -949,12 +1013,236 @@ private:
         _reload();
     }
     
-    const ColorPalette& _colors;
-    State::RepoState& _repoState;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static UI::Color _ColorSet(const UI::Color& c) {
+        UI::Color prev(c.idx);
+        color_content(prev.idx, &prev.r, &prev.g, &prev.b);
+        ::init_color(c.idx, c.r, c.g, c.b);
+        return prev;
+    }
+
+    static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
+        UI::ColorPalette pcopy = p;
+        
+        // Set the values for the custom colors, and remember the old values
+        for (UI::Color& c : pcopy.custom()) {
+            c = _ColorSet(c);
+        }
+        
+        for (const UI::Color& c : p.colors()) {
+            ::init_pair(c.idx, c.idx, -1);
+        }
+        
+        return pcopy;
+    }
+
+    static UI::ColorPalette _ColorsCreate(State::Theme theme) {
+        const std::string termProg = getenv("TERM_PROGRAM");
+        const bool themeDark = (theme==State::Theme::None || theme == State::Theme::Dark);
+        
+        UI::ColorPalette colors;
+        UI::Color black;
+        UI::Color gray;
+        UI::Color purple;
+        UI::Color purpleLight;
+        UI::Color greenMint;
+        UI::Color red;
+        
+        if (termProg == "Apple_Terminal") {
+            // Colorspace: unknown
+            // There's no simple relation between these numbers and the resulting colors because Apple's
+            // Terminal.app applies some kind of filtering on top of these numbers. These values were
+            // manually chosen based on their appearance.
+            if (themeDark) {
+                colors.normal           = COLOR_BLACK;
+                colors.dimmed           = colors.add( 77,  77,  77);
+                colors.selection        = colors.add(  0,   2, 255);
+                colors.selectionSimilar = colors.add(140, 140, 255);
+                colors.selectionCopy    = colors.add(  0, 229, 130);
+                colors.menu             = colors.selectionCopy;
+                colors.error            = colors.add(194,   0,  71);
+            
+            } else {
+                colors.normal           = COLOR_BLACK;
+                colors.dimmed           = colors.add(128, 128, 128);
+                colors.selection        = colors.add(  0,   2, 255);
+                colors.selectionSimilar = colors.add(140, 140, 255);
+                colors.selectionCopy    = colors.add( 52, 167,   0);
+                colors.menu             = colors.add(194,   0,  71);
+                colors.error            = colors.menu;
+            }
+        
+        } else {
+            // Colorspace: sRGB
+            // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
+            
+            if (themeDark) {
+                colors.normal           = COLOR_BLACK;
+                colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
+                colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
+                colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
+                colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
+                colors.menu             = colors.selectionCopy;
+                colors.error            = colors.add(.969*255, .298*255, .435*255);
+            
+            } else {
+                colors.normal           = COLOR_BLACK;
+                colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
+                colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
+                colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
+                colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
+                colors.menu             = colors.add(.969*255, .298*255, .435*255);
+                colors.error            = colors.menu;
+            }
+        }
+        
+        return colors;
+    }
+
+    void _CursesInit() noexcept {
+        // Default Linux installs may not contain the /usr/share/terminfo database,
+        // so provide a fallback terminfo that usually works.
+        nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
+        
+        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
+        // in addition to the default mouse-down/up events.
+        //   kmous = the prefix used to detect/parse mouse events
+        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+        //           event mode; 1003=report mouse-moved events in addition to clicks)
+        setenv("TERM_KMOUS", "\x1b[<", true);
+        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+        
+        ::initscr();
+        ::noecho();
+        ::raw();
+        
+        ::use_default_colors();
+        ::start_color();
+        
+        if (can_change_color()) {
+            _colors = _ColorsCreate(_Theme);
+        }
+        
+        _ColorsPrev = _ColorsSet(_colors);
+        
+        _CursorState = UI::CursorState(false, {});
+        
+    //    // Hide cursor
+    //    ::curs_set(0);
+        
+        ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+        ::mouseinterval(0);
+        
+        ::set_escdelay(0);
+    }
+
+    void _CursesDeinit() noexcept {
+    //    ::mousemask(0, NULL);
+        
+        _CursorState.restore();
+        
+        _ColorsSet(_ColorsPrev);
+        ::endwin();
+        
+    //    sleep(1);
+    }
+
+    void _spawn(const char*const* argv) {
+        // preserveTerminalCmds: these commands don't modify the terminal, and therefore
+        // we don't want to deinit/reinit curses when calling them.
+        // When invoking commands such as vi/pico, we need to deinit/reinit curses
+        // when calling out to them, because those commands reconfigure the terminal.
+        static const std::set<std::string> preserveTerminalCmds = {
+            "mate"
+        };
+        
+        const bool preserveTerminal = preserveTerminalCmds.find(argv[0]) != preserveTerminalCmds.end();
+        if (!preserveTerminal) _CursesDeinit();
+        
+        // Spawn the text editor and wait for it to exit
+        {
+            pid_t pid = -1;
+            int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
+            if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
+            
+            int status = 0;
+            ir = 0;
+            do ir = waitpid(pid, &status, 0);
+            while (ir==-1 && errno==EINTR);
+            if (ir == -1) throw Toastbox::RuntimeError("waitpid failed: %s", strerror(errno));
+            if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
+        }
+        
+        if (!preserveTerminal) _CursesInit();
+    }
+
+    static State::Theme _ThemeRead() {
+        State::State state(StateDir());
+        State::Theme theme = state.theme();
+        if (theme != State::Theme::None) return theme;
+        
+        bool write = false;
+        // If a theme isn't set, ask the terminal for its background color,
+        // and we'll choose the theme based on that
+        Terminal::Background bg = Terminal::Background::Dark;
+        try {
+            bg = Terminal::BackgroundGet();
+        } catch (...) {
+            // We failed to get the terminal background color, so write the theme
+            // for the default background color to disk, so we don't try to get
+            // the background color again in the future. (This avoids a timeout
+            // delay in Terminal::BackgroundGet() that occurs if the terminal
+            // doesn't support querying the background color.)
+            write = true;
+        }
+        
+        switch (bg) {
+        case Terminal::Background::Dark:    theme = State::Theme::Dark; break;
+        case Terminal::Background::Light:   theme = State::Theme::Light; break;
+        }
+        
+        if (write) {
+            state.theme(theme);
+            state.write();
+        }
+        return theme;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Git::Repo _repo;
-    Git::Rev _head;
     std::vector<Git::Rev> _revs;
+    
+    ColorPalette _colors;
+    UI::ColorPalette _ColorsPrev;
+    State::RepoState _repoState;
+    Git::Rev _head;
     std::vector<RevColumnPtr> _columns;
+    UI::CursorState _CursorState;
+    State::Theme _Theme = State::Theme::None;
     
     struct {
         CommitPanelPtr titlePanel;
