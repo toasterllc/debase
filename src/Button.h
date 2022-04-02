@@ -12,6 +12,11 @@ public:
 //        return std::make_shared<Button>(colors);
 //    }
     
+    enum ActionTrigger {
+        MouseUp,
+        MouseDown,
+    };
+    
     Button(const ColorPalette& colors) : Control(colors) {}
     
     void draw(const Window& win) override {
@@ -61,7 +66,7 @@ public:
         }
     }
     
-    bool handleEvent(const Window& win, const Event& ev, Event::MouseButtons sensitive) {
+    bool handleEvent(const Window& win, const Event& ev) override {
         if (ev.type == Event::Type::Mouse && enabled) {
             if (hitTest(ev.mouse.point)) {
                 highlighted(true);
@@ -70,9 +75,9 @@ public:
                 // Mouse-up events are to allow Menu to use this function for context
                 // menus: right-mouse-down opens the menu, while the right-mouse-up
                 // triggers the Button action via this function.
-                if (ev.mouseDown(sensitive) || ev.mouseUp(sensitive)) {
+                if (ev.mouseDown(actionButtons) || ev.mouseUp(actionButtons)) {
                     // Track mouse
-                    _trackMouse(win, ev, sensitive);
+                    _trackMouse(win, ev);
                     return true;
                 }
             } else {
@@ -80,10 +85,6 @@ public:
             }
         }
         return false;
-    }
-    
-    bool handleEvent(const Window& win, const Event& ev) override {
-        return handleEvent(win, ev, Event::MouseButtons::Left);
     }
     
     bool highlighted() { return _highlighted; }
@@ -107,12 +108,16 @@ public:
     bool drawBorder = false;
     int insetX = 0;
     std::function<void(Button&)> action;
+    Event::MouseButtons actionButtons = Event::MouseButtons::Left;
+    ActionTrigger actionTrigger = ActionTrigger::MouseUp;
     
 private:
     static constexpr int KeySpacing = 2;
     
-    Event _trigger(const Event& ev, Event::MouseButtons sensitive) {
-        if (ev.mouseUp(sensitive)) {
+    Event _trigger(const Event& ev) {
+        if ((actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(actionButtons)) ||
+            (actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(actionButtons))) {
+            
             if (enabled && hitTest(ev.mouse.point) && action) {
                 action(*this);
             }
@@ -122,7 +127,7 @@ private:
         return ev;
     }
     
-    void _trackMouse(const Window& win, const Event& mouseDownEvent, Event::MouseButtons sensitive) {
+    void _trackMouse(const Window& win, const Event& mouseDownEvent) {
         Event ev = mouseDownEvent;
         
         for (;;) {
@@ -131,8 +136,15 @@ private:
             }
             
             draw(win);
-            ev = _trigger(ev, sensitive);
-            if (!ev) break;
+            
+            if ((actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(actionButtons)) ||
+                (actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(actionButtons))) {
+                
+                if (enabled && hitTest(ev.mouse.point) && action) {
+                    action(*this);
+                }
+                break;
+            }
             
             ev = win.nextEvent();
         }

@@ -61,6 +61,7 @@ public:
             button->hitTestExpand.l = _BorderSize+_InsetX;
             button->hitTestExpand.r = _BorderSize+_InsetX;
             button->hitTestExpand.b = 1;
+            button->actionButtons = Event::MouseButtons::Left|Event::MouseButtons::Right;
             
             // Bail if the bottom of the bottom extends beyond our max y
             if (y > ymax) break;
@@ -104,17 +105,19 @@ public:
     
     bool handleEvent(const Event& ev) override {
         auto& md = _mouseDown;
+        auto duration = std::chrono::steady_clock::now()-md.mouseDownTime;
+        
         // See if any of the buttons want the event
+        bool handled = false;
         size_t handleCount = 0;
         for (ButtonPtr button : buttonsVisible) {
-            bool handled = button->handleEvent(*this, ev, Event::MouseButtons::Left|Event::MouseButtons::Right);
+            handled |= button->handleEvent(*this, ev);
             if (handled) handleCount++;
         }
-        
         // Check assumption that one button max will handle the event
         assert(handleCount==0 || handleCount==1);
         
-        if (handleCount) {
+        if (handled) {
             if (dismissAction) dismissAction(*this);
             return false;
         }
@@ -133,8 +136,6 @@ public:
             
             // Handle mouse up
             } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
-                auto duration = std::chrono::steady_clock::now()-md.mouseDownTime;
-                
                 // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
                 //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
                 ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu

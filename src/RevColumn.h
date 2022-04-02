@@ -11,34 +11,6 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class RevColumn {
 public:
-    enum class Button : int {
-        None,
-        Undo,
-        Redo,
-        Snapshots,
-    };
-
-    struct HitTestResult {
-        CommitPanelPtr panel;
-        Button button = Button::None;
-        bool buttonEnabled = false;
-        
-        operator bool() const {
-            return panel || button!=Button::None;
-        }
-        
-        bool operator==(const HitTestResult& x) const {
-            if (panel != x.panel) return false;
-            if (button != x.button) return false;
-            if (buttonEnabled != x.buttonEnabled) return false;
-            return true;
-        }
-        
-        bool operator!=(const HitTestResult& x) const {
-            return !(*this==x);
-        }
-    };
-    
     RevColumn(const ColorPalette& colors) : colors(colors) {}
     
     void layout() {
@@ -129,6 +101,7 @@ public:
                 button->drawBorder = true;
                 button->insetX = 1;
                 button->frame(snapshotsFrame);
+                button->actionTrigger = UI::Button::ActionTrigger::MouseDown;
                 if (snapshotsAction) {
                     button->action = [&] (UI::Button&) { snapshotsAction(*this); };
                 }
