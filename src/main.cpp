@@ -5,12 +5,6 @@
 #include "Terminal.h"
 #include "Debase.h"
 
-static void _ThemeWrite(State::Theme theme) {
-    State::State state(StateDir());
-    state.theme(theme);
-    state.write();
-}
-
 struct _Args {
     struct {
         bool en = false;
@@ -328,7 +322,7 @@ int main(int argc, const char* argv[]) {
             } else {
                 throw Toastbox::RuntimeError("invalid theme: %s", args.setTheme.theme.c_str());
             }
-            _ThemeWrite(theme);
+            State::ThemeWrite(theme);
             return 0;
         
         } else if (!args.normal.en) {
