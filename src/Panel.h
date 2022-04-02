@@ -5,7 +5,7 @@ namespace UI {
 
 class Panel : public Window {
 public:
-    Panel() {
+    Panel() : Window(nullptr) {
         _panel = ::new_panel(*this);
         assert(_panel);
         

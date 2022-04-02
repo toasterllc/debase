@@ -22,10 +22,7 @@ namespace UI {
 
 class MainWindow : public Window {
 public:
-    MainWindow(Git::Repo repo, const std::vector<Git::Rev>& revs) :
-    Window(::stdscr), _repo(repo), _revs(revs) {
-        
-    }
+    MainWindow(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     void layout() override {
         layoutNeeded = true;
@@ -349,6 +346,8 @@ public:
         try {
             _CursesInit();
             Defer(_CursesDeinit());
+            
+            Window::operator=(Window(::stdscr));
             
             for (;;) {
                 _reload();

@@ -34,19 +34,27 @@ public:
         } _s;
     };
     
-    Window(WINDOW* win=nullptr) : _win(win) {
-        if (!_win) {
-            _win = ::newwin(0, 0, 0, 0);
-            assert(_win);
+    Window() {}
+    
+    Window(WINDOW* win) : _s{.win = win} {
+        if (!_s.win) {
+            _s.win = ::newwin(0, 0, 0, 0);
+            assert(_s.win);
         }
         
-        ::keypad(_win, true);
-        ::meta(_win, true);
+        ::keypad(_s.win, true);
+        ::meta(_s.win, true);
+    }
+    
+    Window(const Window& x) = delete;
+    Window(Window&& x) {
+        std::swap(_s, x._s);
     }
     
     ~Window() {
-        ::delwin(_win);
-        _win = nullptr;
+        if (_s.win) {
+            ::delwin(_s.win);
+        }
     }
     
     void drawBorder() const {
@@ -85,17 +93,17 @@ public:
         ::werase(*this);
     }
     
-    Point position() const { return { getbegx(_win), getbegy(_win) }; }
+    Point position() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     
-    Size size() const { return { getmaxx(_win), getmaxy(_win) }; }
+    Size size() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     void size(const Size& s) {
         // Short-circuit if the size hasn't changed
-        // We need to compare against the last size we set (_sizePrev) *and* our current size(),
+        // We need to compare against the last size we set (_s.sizePrev) *and* our current size(),
         // because ncurses can change our size underneath us, due to terminal resizing clipping
         // the window.
-        if (s==_sizePrev && s==size()) return;
+        if (s==_s.sizePrev && s==size()) return;
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
-        _sizePrev = s;
+        _s.sizePrev = s;
         layoutNeeded = true;
         drawNeeded = true;
     }
@@ -212,13 +220,17 @@ public:
         drawNeeded = false;
     }
     
+    Window& operator=(Window&& x) { std::swap(_s, x._s); return *this; }
+    
+    operator WINDOW*() const { return _s.win; }
+    
     Event eventCurrent;
     
-    operator WINDOW*() const { return _win; }
-    
 private:
-    WINDOW* _win = nullptr;
-    Size _sizePrev;
+    struct {
+        WINDOW* win = nullptr;
+        Size sizePrev;
+    } _s;
 };
 
 using WindowPtr = std::shared_ptr<Window>;
