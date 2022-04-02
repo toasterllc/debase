@@ -1,0 +1,73 @@
+* General
+Copy commits
+Move commits
+Delete commits
+Edit commit
+
+Undo Copy commits
+Undo Move commits
+Undo Delete commits
+Undo Edit commit
+
+Redo Copy commits
+Redo Move commits
+Redo Delete commits
+Redo Edit commit
+
+Delete commits using delete key
+
+History lost when head commit doesn't match saved commit
+
+* Edit commit
+Edit commit with double-click
+Edit commit with return key
+Edit commit but don't make changes -> commit id doesn't change
+Edit commit and change date
+Edit commit with vi
+Edit commit with pico
+Edit commit with TextMate
+
+* Readonly rev
+Copy commits allowed
+Move commits disallowed
+Delete commits disallowed
+Edit commit disallowed
+
+* Register window
+Resize terminal
+Text field interactions (arrow keys, delete, forward delete)
+Registration works
+
+* Error panel
+Resize terminal
+Dismiss by clicking inside
+Dismiss by clicking outside
+Dismiss with escape key
+
+* Bad commit id in state file
+Corrupt snapshot commit id in repo state file -- snapshot hidden?
+Corrupt undo commit id in repo state file -- shows error? recovers?
+Corrupt redo commit id in repo state file -- shows error? recovers?
+
+* Context menu
+Right mouse down -> drag -> select -- works?
+Right mouse down+up -> select -- works?
+Menu is positioned away from terminal edge, when right-clicking near edge
+Resize terminal while menu is open
+
+* Snapshots menu
+Set active snapshot
+Undo set snapshot
+Redo set snapshot
+Right mouse down -> drag -> select
+Right mouse down+up -> select
+Menu properly clipped if window is too small to contain it
+Resize terminal while menu is open
+Clicking button after opening snapshots menu requires delay + moving mouse 1 character
+
+* Theme
+light mode automatically detected
+dark mode automatically detected
+setting theme=light works
+setting theme=dark works
+setting theme=auto works

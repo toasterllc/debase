@@ -4,6 +4,7 @@
 #include "lib/ncurses/include/panel.h"
 #include "Bitfield.h"
 #include "UI.h"
+#include "CursorState.h"
 
 namespace UI {
 
@@ -181,8 +182,9 @@ public:
     void refresh() {
         layout();
         draw();
-        UI::CursorState::Draw();
-        UI::Draw();
+        CursorState::Draw();
+        ::update_panels();
+        ::refresh();
     }
     
     virtual void track() {
