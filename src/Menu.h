@@ -107,7 +107,7 @@ public:
         // See if any of the buttons want the event
         size_t handleCount = 0;
         for (ButtonPtr button : buttonsVisible) {
-            bool handled = button->handleEvent(*this, ev, md.sensitive);
+            bool handled = button->handleEvent(*this, ev, Event::MouseButtons::Left|Event::MouseButtons::Right);
             if (handled) handleCount++;
         }
         
@@ -132,7 +132,7 @@ public:
                 return false;
             
             // Handle mouse up
-            } else if (ev.mouseUp(md.sensitive)) {
+            } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
                 auto duration = std::chrono::steady_clock::now()-md.mouseDownTime;
                 
                 // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
@@ -143,8 +143,6 @@ public:
                     return false;
                 }
                 
-                // Start listening for left mouse up
-                md.sensitive |= Event::MouseButtons::Left;
                 md.stayOpen = true;
             }
         
@@ -157,7 +155,6 @@ public:
     
     void track() override {
         _mouseDown.mouseDownTime = std::chrono::steady_clock::now();
-        _mouseDown.sensitive = Event::MouseButtons::Right;
         _mouseDown.stayOpen = false;
         Window::track();
     }
@@ -188,7 +185,6 @@ private:
     
     struct {
         std::chrono::steady_clock::time_point mouseDownTime = {};
-        Event::MouseButtons sensitive;
         bool stayOpen = false;
     } _mouseDown;
 };
