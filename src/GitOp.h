@@ -156,6 +156,13 @@ inline bool _CommitsHasGap(Git::Commit head, const std::set<Commit>& commits) {
     return false;
 }
 
+inline bool _CommitsHasMerge(const std::set<Commit>& commits) {
+    for (Commit commit : commits) {
+        if (commit.isMerge()) return true;
+    }
+    return false;
+}
+
 inline bool _InsertionIsNop(Commit head, Commit position, const std::set<Commit>& commits) {
     std::set<Commit> positions = commits;
     Commit tail = _FindEarliestCommit(head, positions);
@@ -312,6 +319,7 @@ inline std::optional<OpResult> _Exec_DeleteCommits(Repo repo, const Op& op) {
 inline std::optional<OpResult> _Exec_CombineCommits(Repo repo, const Op& op) {
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
+    if (_CommitsHasMerge(op.src.commits)) throw RuntimeError("can't combine with merge commit");
     
     std::deque<Commit> integrate; // Commits that need to be integrated into a single commit
     std::deque<Commit> attach;    // Commits that need to be attached after the integrate step

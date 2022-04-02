@@ -102,59 +102,59 @@ public:
         }
     }
     
-    void track(Event mouseDownEvent) {
-        auto mouseDownTime = std::chrono::steady_clock::now();
-        UI::Event ev = mouseDownEvent;
-        Event::MouseButtons sensitive = Event::MouseButtons::Right;
-        bool stayOpen = false;
-        
-        for (;;) {
-            draw();
-            ev = nextEvent();
-            
-            // See if any of the buttons want the event
-            for (ButtonPtr button : buttonsVisible) {
-                bool handled = button->handleEvent(*this, ev, sensitive);
-                if (handled) {
-                    if (dismissAction) dismissAction(*this);
-                    return;
-                }
-            }
-            
-            if (ev.type == Event::Type::Mouse) {
-                // Update the mouseActive state for all of our buttons
-                bool inside = HitTest(bounds(), ev.mouse.point);
-                for (ButtonPtr button : buttonsVisible) {
-                    button->mouseActive(inside);
-                }
-                
-                // Handle mouse down
-                if (ev.mouseDown() && !inside) {
-                    if (dismissAction) dismissAction(*this);
-                    return;
-                
-                // Handle mouse up
-                } else if (ev.mouseUp(sensitive)) {
-                    auto duration = std::chrono::steady_clock::now()-mouseDownTime;
-                    
-                    // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
-                    //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
-                    ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
-                    if ((!stayOpen && duration>=_StayOpenExpiration) || (stayOpen && !inside)) {
-                        if (dismissAction) dismissAction(*this);
-                        return;
-                    }
-                    
-                    // Start listening for left mouse up
-                    sensitive |= Event::MouseButtons::Left;
-                    stayOpen = true;
-                }
-            
-            } else if (ev.type == Event::Type::KeyEscape) {
+    bool handleEvent(const Event& ev) override {
+        auto& md = _mouseDown;
+        // See if any of the buttons want the event
+        for (ButtonPtr button : buttonsVisible) {
+            bool handled = button->handleEvent(*this, ev, md.sensitive);
+            if (handled) {
                 if (dismissAction) dismissAction(*this);
-                return;
+                return false;
             }
         }
+        
+        if (ev.type == Event::Type::Mouse) {
+            // Update the mouseActive state for all of our buttons
+            bool inside = HitTest(bounds(), ev.mouse.point);
+            for (ButtonPtr button : buttonsVisible) {
+                button->mouseActive(inside);
+            }
+            
+            // Handle mouse down
+            if (ev.mouseDown() && !inside) {
+                if (dismissAction) dismissAction(*this);
+                return false;
+            
+            // Handle mouse up
+            } else if (ev.mouseUp(md.sensitive)) {
+                auto duration = std::chrono::steady_clock::now()-md.mouseDownTime;
+                
+                // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
+                //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
+                ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
+                if ((!md.stayOpen && duration>=_StayOpenExpiration) || (md.stayOpen && !inside)) {
+                    if (dismissAction) dismissAction(*this);
+                    return false;
+                }
+                
+                // Start listening for left mouse up
+                md.sensitive |= Event::MouseButtons::Left;
+                md.stayOpen = true;
+            }
+        
+        } else if (ev.type == Event::Type::KeyEscape) {
+            if (dismissAction) dismissAction(*this);
+            return false;
+        }
+        return true;
+    }
+    
+    void track(const Event& mouseDownEvent) {
+        _mouseDown.mouseDownTime = std::chrono::steady_clock::now();
+        _mouseDown.ev = mouseDownEvent;
+        _mouseDown.sensitive = Event::MouseButtons::Right;
+        _mouseDown.stayOpen = false;
+        Window::track();
     }
     
     const ColorPalette& colors;
@@ -182,6 +182,13 @@ private:
     }
     
     size_t _buttonCount = 0;
+    
+    struct {
+        std::chrono::steady_clock::time_point mouseDownTime = {};
+        UI::Event ev;
+        Event::MouseButtons sensitive;
+        bool stayOpen = false;
+    } _mouseDown;
 };
 
 using MenuPtr = std::shared_ptr<Menu>;

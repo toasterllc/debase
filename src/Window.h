@@ -175,13 +175,14 @@ public:
     
     virtual void track() {
         for (;;) {
-            bool handled = handleEvent(nextEvent());
-            // Continue until an event isn't handled
-            if (!handled) break;
             layout();
             draw();
             UI::CursorState::Draw();
             UI::Draw();
+            
+            bool handled = handleEvent(nextEvent());
+            // Continue until an event isn't handled
+            if (!handled) break;
         }
     }
     

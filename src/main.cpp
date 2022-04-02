@@ -786,10 +786,26 @@ static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_
     return b;
 }
 
+static bool _SelectionCanCombine() {
+    bool selectionContainsMerge = false;
+    for (Git::Commit commit : _Selection.commits) {
+        if (commit.isMerge()) {
+            selectionContainsMerge = true;
+            break;
+        }
+    }
+    return _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
+}
+
+static bool _SelectionCanEdit() {
+    return _Selection.rev.isMutable() && _Selection.commits.size() == 1;
+}
+
+static bool _SelectionCanDelete() {
+    return _Selection.rev.isMutable();
+}
+
 static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
-    auto mouseDownTime = std::chrono::steady_clock::now();
-    UI::Event ev = mouseDownEvent;
-    
     // If the commit that was clicked isn't selected, set the selection to only that commit
     if (!_Selected(mouseDownColumn, mouseDownPanel)) {
         _Selection = {
@@ -800,20 +816,12 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     
     assert(!_Selection.commits.empty());
     
-    bool selectionContainsMerge = false;
-    for (Git::Commit commit : _Selection.commits) {
-        if (commit.isMerge()) {
-            selectionContainsMerge = true;
-            break;
-        }
-    }
+    // Draw once before we open the context menu, so that the selection is updated
+    _Draw();
     
-    bool combineEnabled = _Selection.rev.isMutable() && _Selection.commits.size()>1 && !selectionContainsMerge;
-    bool editEnabled    = _Selection.rev.isMutable() && _Selection.commits.size() == 1;
-    bool deleteEnabled  = _Selection.rev.isMutable();
-    UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", combineEnabled);
-    UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", editEnabled);
-    UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", deleteEnabled);
+    UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", _SelectionCanCombine());
+    UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", _SelectionCanEdit());
+    UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", _SelectionCanDelete());
     UI::ButtonPtr menuButton = nullptr;
     combineButton->action = [&] (UI::Button&) { menuButton = combineButton; };
     editButton->action = [&] (UI::Button&) { menuButton = editButton; };
@@ -828,8 +836,6 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     _ContextMenu->size(_ContextMenu->sizeIntrinsic());
     _ContextMenu->layout();
     _ContextMenu->setPosition(mouseDownEvent.mouse.point);
-    
-    _Draw();
     _ContextMenu->track(mouseDownEvent);
     
 //    UI::ButtonPtr menuButton = nullptr;
@@ -1164,14 +1170,14 @@ static void _EventLoop() {
     
     
     
-    {
-        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
-        _RegisterPanel->color           = _Colors.menu;
-        _RegisterPanel->messageInsetY   = 1;
-        _RegisterPanel->title           = "Register";
-        _RegisterPanel->message         = "Please register debase";
-    }
-    
+//    {
+//        _RegisterPanel = std::make_shared<UI::RegisterPanel>(_Colors);
+//        _RegisterPanel->color           = _Colors.menu;
+//        _RegisterPanel->messageInsetY   = 1;
+//        _RegisterPanel->title           = "Register";
+//        _RegisterPanel->message         = "Please register debase";
+//    }
+//    
     
     
     
@@ -1266,7 +1272,7 @@ static void _EventLoop() {
                     
                     case UI::Event::Type::KeyDelete:
                     case UI::Event::Type::KeyFnDelete: {
-                        if (_Selection.commits.empty() || !_Selection.rev.isMutable()) {
+                        if (!_SelectionCanDelete()) {
                             beep();
                             break;
                         }
@@ -1282,7 +1288,7 @@ static void _EventLoop() {
                     }
                     
                     case UI::Event::Type::KeyC: {
-                        if (_Selection.commits.size()<=1 || !_Selection.rev.isMutable()) {
+                        if (!_SelectionCanCombine()) {
                             beep();
                             break;
                         }
@@ -1298,7 +1304,7 @@ static void _EventLoop() {
                     }
                     
                     case UI::Event::Type::KeyReturn: {
-                        if (_Selection.commits.size()!=1 || !_Selection.rev.isMutable()) {
+                        if (!_SelectionCanEdit()) {
                             beep();
                             break;
                         }
