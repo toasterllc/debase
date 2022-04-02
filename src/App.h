@@ -21,9 +21,9 @@ extern "C" {
 
 namespace UI {
 
-class MainWindow : public Window {
+class App : public Window {
 public:
-    MainWindow(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
+    App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     void layout() override {
         layoutNeeded = true;

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <spawn.h>
-#include "MainWindow.h"
+#include "App.h"
 #include "StateDir.h"
 #include "Terminal.h"
 #include "Debase.h"
@@ -343,7 +343,7 @@ int main(int argc, const char* argv[]) {
         setlocale(LC_ALL, "");
         
         Git::Repo repo;
-        std::vector<Git::Rev> _Revs;
+        std::vector<Git::Rev> _revs;
         
         try {
             repo = Git::Repo::Open(".");
@@ -352,7 +352,7 @@ int main(int argc, const char* argv[]) {
         }
         
         if (args.normal.revs.empty()) {
-            _Revs.emplace_back(repo.head());
+            _revs.emplace_back(repo.head());
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
@@ -366,14 +366,14 @@ int main(int argc, const char* argv[]) {
                 }
                 
                 if (unique.find(rev) == unique.end()) {
-                    _Revs.push_back(rev);
+                    _revs.push_back(rev);
                     unique.insert(rev);
                 }
             }
         }
         
-        UI::MainWindow win(repo, _Revs);
-        win.run();
+        auto app = std::make_shared<UI::App>(repo, _revs);
+        app->run();
     
     } catch (const std::exception& e) {
         fprintf(stderr, "Error: %s\n", e.what());
