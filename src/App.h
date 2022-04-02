@@ -112,7 +112,9 @@ public:
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
-        erase();
+        if (_eraseNeeded) {
+            erase();
+        }
         
         if (_drag.titlePanel) {
             _drag.titlePanel->draw();
@@ -144,6 +146,8 @@ public:
         if (_registerPanel) {
             _registerPanel->draw();
         }
+        
+        _eraseNeeded = false;
     }
     
     bool handleEvent(const UI::Event& ev) override {
@@ -187,7 +191,7 @@ public:
                     
                     } else {
                         // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _trackMouseOutsideCommitPanel(ev);
+                        _trackSelectionRect(ev);
                     }
                 
                 } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
@@ -349,13 +353,13 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator=(Window(::stdscr));
             
-            {
-                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-                _registerPanel->color           = _colors.menu;
-                _registerPanel->messageInsetY   = 1;
-                _registerPanel->title           = "Register";
-                _registerPanel->message         = "Please register debase";
-            }
+//            {
+//                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+//                _registerPanel->color           = _colors.menu;
+//                _registerPanel->messageInsetY   = 1;
+//                _registerPanel->title           = "Register";
+//                _registerPanel->message         = "Please register debase";
+//            }
             
             for (;;) {
                 _reload();
@@ -783,6 +787,7 @@ private:
                 }
             }
             
+            _eraseNeeded = true; // Need to erase the insertion marker
             refresh();
             ev = nextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
@@ -847,16 +852,15 @@ private:
         }
         
         // Reset state
-        {
-            _drag = {};
-        }
+        _eraseNeeded = true; // We need one more erase to erase the insertion marker
+        _drag = {};
         
         return gitOp;
     }
     
-    // _trackMouseOutsideCommitPanel
+    // _trackSelectionRect
     // Handles updating the selection rectangle / selection state
-    void _trackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
+    void _trackSelectionRect(const UI::Event& mouseDownEvent) {
         auto selectionOld = _selection;
         UI::Event ev = mouseDownEvent;
         
@@ -908,6 +912,7 @@ private:
                 }
             }
             
+            _eraseNeeded = true; // Need to erase the selection rect
             refresh();
             ev = nextEvent();
             // Check if we should abort
@@ -917,9 +922,8 @@ private:
         }
         
         // Reset state
-        {
-            _selectionRect = std::nullopt;
-        }
+        _eraseNeeded = true; // We need one more erase to erase the selection rect upon mouse-up
+        _selectionRect = std::nullopt;
     }
     
     std::optional<Git::Op> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
@@ -1008,7 +1012,7 @@ private:
         menu->size(menu->sizeIntrinsic(heightMax));
         menu->position(p);
         menu->layout();
-        menu->track(menu->convert(eventCurrent));
+        menu->track(menu->convert(eventCurrent()));
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1210,4 +1214,6 @@ private:
     
     UI::ModalPanelPtr _messagePanel;
     UI::RegisterPanelPtr _registerPanel;
+    
+    bool _eraseNeeded = false;
 };

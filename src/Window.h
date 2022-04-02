@@ -199,9 +199,9 @@ public:
         for (;;) {
             refresh();
             
-            eventCurrent = nextEvent();
-            bool handled = handleEvent(eventCurrent);
-            eventCurrent = {};
+            _s.eventCurrent = nextEvent();
+            bool handled = handleEvent(_s.eventCurrent);
+            _s.eventCurrent = {};
             
             // Continue until an event isn't handled
             if (!handled) break;
@@ -220,16 +220,16 @@ public:
         drawNeeded = false;
     }
     
-    Window& operator=(Window&& x) { std::swap(_s, x._s); return *this; }
+    Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
+    const Event& eventCurrent() const { return _s.eventCurrent; }
     operator WINDOW*() const { return _s.win; }
-    
-    Event eventCurrent;
     
 private:
     struct {
         WINDOW* win = nullptr;
         Size sizePrev;
+        Event eventCurrent;
     } _s;
 };
 

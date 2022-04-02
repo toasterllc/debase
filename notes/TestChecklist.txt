@@ -38,6 +38,11 @@ Resize terminal
 Text field interactions (arrow keys, delete, forward delete)
 Registration works
 Click text fields
+Ctrl-C exits
+Ctrl-D exits
+Cmd-. exits
+Esc doesn't close
+Clicking outside doesn't close
 
 * Error panel
 Resize terminal
