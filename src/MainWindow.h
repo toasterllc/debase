@@ -74,14 +74,6 @@ public:
             _drag.titlePanel->orderFront();
         }
         
-        if (_contextMenu) {
-            _contextMenu->orderFront();
-        }
-        
-        if (_snapshotsMenu) {
-            _snapshotsMenu->orderFront();
-        }
-        
         if (_messagePanel) {
             constexpr int MessagePanelWidth = 40;
             _messagePanel->width = std::min(MessagePanelWidth, bounds().size.x);
@@ -147,14 +139,6 @@ public:
             col->draw(*this);
         }
         
-        if (_contextMenu) {
-            _contextMenu->draw();
-        }
-        
-        if (_snapshotsMenu) {
-            _snapshotsMenu->draw();
-        }
-        
         if (_messagePanel) {
             _messagePanel->draw();
         }
@@ -211,7 +195,7 @@ public:
                 } else if (ev.mouseDown(Event::MouseButtons::Right)) {
                     if (hitTest) {
                         if (hitTest.panel) {
-                            std::optional<Git::Op> gitOp = _trackRightMouse(ev, hitTest.column, hitTest.panel);
+                            std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
                             if (gitOp) _gitOpExec(*gitOp);
                         }
                     }
@@ -445,18 +429,6 @@ private:
         const State::Snapshot& snap, bool sessionStart, SnapshotButton*& chosen) {
         
         bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
-        
-    //    Button::Options buttonOpts = {
-    //        .enabled = true,
-    //    };
-    //    
-    //    SnapshotButton::Options snapButtonOpts = {
-    //        .repo           = repo,
-    //        .snapshot       = snap,
-    //        .width          = _SnapshotMenuWidth,
-    //        .activeSnapshot = activeSnapshot,
-    //    };
-        
         SnapshotButtonPtr b = std::make_shared<SnapshotButton>(_colors, repo, snap, _SnapshotMenuWidth);
         b->enabled        = true;
         b->activeSnapshot = activeSnapshot;
@@ -544,68 +516,6 @@ private:
             
             OffsetX += ColumnWidth+ColumnSpacing;
         }
-    }
-    
-    std::optional<Git::Op> _trackRightMouse(const Event& mouseDownEvent, RevColumnPtr mouseDownColumn, CommitPanelPtr mouseDownPanel) {
-        // If the commit that was clicked isn't selected, set the selection to only that commit
-        if (!_selected(mouseDownColumn, mouseDownPanel)) {
-            _selection = {
-                .rev = mouseDownColumn->rev,
-                .commits = {mouseDownPanel->commit()},
-            };
-        }
-        
-        assert(!_selection.commits.empty());
-        
-        // Draw once before we open the context menu, so that the selection is updated
-        refresh();
-        
-        Button* menuButton = nullptr;
-        ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);
-        ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
-        ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
-        
-        std::vector<ButtonPtr> buttons = { combineButton, editButton, deleteButton };
-        _contextMenu = std::make_shared<Menu>(_colors);
-        Defer(_contextMenu = nullptr);
-        
-        _contextMenu->buttons = buttons;
-        _contextMenu->size(_contextMenu->sizeIntrinsic());
-        _contextMenu->position(mouseDownEvent.mouse.point);
-        _contextMenu->layout();
-        _contextMenu->track(_contextMenu->convert(mouseDownEvent));
-        
-        // Handle the clicked button
-        std::optional<Git::Op> gitOp;
-        if (menuButton == combineButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Combine,
-                .src = {
-                    .rev = _selection.rev,
-                    .commits = _selection.commits,
-                },
-            };
-        
-        } else if (menuButton == editButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Edit,
-                .src = {
-                    .rev = _selection.rev,
-                    .commits = _selection.commits,
-                },
-            };
-        
-        } else if (menuButton == deleteButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Delete,
-                .src = {
-                    .rev = _selection.rev,
-                    .commits = _selection.commits,
-                },
-            };
-        }
-        
-        return gitOp;
     }
     
     // _trackMouseInsideCommitPanel
@@ -857,6 +767,65 @@ private:
         }
     }
     
+    std::optional<Git::Op> _trackContextMenu(const Event& mouseDownEvent, RevColumnPtr mouseDownColumn, CommitPanelPtr mouseDownPanel) {
+        // If the commit that was clicked isn't selected, set the selection to only that commit
+        if (!_selected(mouseDownColumn, mouseDownPanel)) {
+            _selection = {
+                .rev = mouseDownColumn->rev,
+                .commits = {mouseDownPanel->commit()},
+            };
+        }
+        
+        assert(!_selection.commits.empty());
+        
+        // Draw once before we open the context menu, so that the selection is updated
+        refresh();
+        
+        Button* menuButton = nullptr;
+        ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);
+        ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
+        ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
+        
+        MenuPtr menu = std::make_shared<Menu>(_colors);
+        menu->buttons = { combineButton, editButton, deleteButton };
+        menu->size(menu->sizeIntrinsic());
+        menu->position(mouseDownEvent.mouse.point);
+        menu->layout();
+        menu->track(menu->convert(mouseDownEvent));
+        
+        // Handle the clicked button
+        std::optional<Git::Op> gitOp;
+        if (menuButton == combineButton.get()) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Combine,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+        
+        } else if (menuButton == editButton.get()) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Edit,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+        
+        } else if (menuButton == deleteButton.get()) {
+            gitOp = Git::Op{
+                .type = Git::Op::Type::Delete,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+        }
+        
+        return gitOp;
+    }
+    
     void _trackSnapshotsMenu(RevColumn& col) {
         SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col.rev.ref;
@@ -874,21 +843,17 @@ private:
         }
         
         const int width = _SnapshotMenuWidth+SnapshotMenu::Padding().x;
-        const int px = col.offset.x + (col.width-width)/2;
-        
-        _snapshotsMenu = std::make_shared<SnapshotMenu>(_colors);
-        Defer(_snapshotsMenu = nullptr);
-        
-        _snapshotsMenu->title = "Session Start";
-        _snapshotsMenu->buttons = buttons;
-        
-        const Point p = {px, 2};
+        const Point p = {col.offset.x+(col.width-width)/2, 2};
         const int heightMax = size().y-p.y;
-        _snapshotsMenu->buttons = buttons;
-        _snapshotsMenu->size(_snapshotsMenu->sizeIntrinsic(heightMax));
-        _snapshotsMenu->position(p);
-        _snapshotsMenu->layout();
-        _snapshotsMenu->track(_snapshotsMenu->convert(eventCurrent));
+        
+        SnapshotMenuPtr menu = std::make_shared<SnapshotMenu>(_colors);
+        menu->title = "Session Start";
+        menu->buttons = buttons;
+        menu->buttons = buttons;
+        menu->size(menu->sizeIntrinsic(heightMax));
+        menu->position(p);
+        menu->layout();
+        menu->track(menu->convert(eventCurrent));
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1005,9 +970,6 @@ private:
     
     _Selection _selection;
     std::optional<Rect> _selectionRect;
-    
-    MenuPtr _contextMenu;
-    SnapshotMenuPtr _snapshotsMenu;
     
     ModalPanelPtr _messagePanel;
     RegisterPanelPtr _registerPanel;
