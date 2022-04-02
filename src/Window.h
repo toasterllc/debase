@@ -84,6 +84,8 @@ public:
         ::werase(*this);
     }
     
+    Point position() const { return { getbegx(_win), getbegy(_win) }; }
+    
     Size size() const { return { getmaxx(_win), getmaxy(_win) }; }
     void size(const Size& s) {
         // Short-circuit if the size hasn't changed
@@ -105,7 +107,7 @@ public:
     
     Rect frame() const {
         return Rect{
-            .point = { getbegx(_win), getbegy(_win) },
+            .point = position(),
             .size  = size(),
         };
     }

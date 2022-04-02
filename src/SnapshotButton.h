@@ -26,15 +26,15 @@ public:
         _commit.author = sig.name();
         _commit.message = LineWrap::Wrap(1, width-_TextInsetX, commit.message());
         
-        frame.size = {width, 3};
+        size({width, 3});
     }
     
     void draw(const Window& win) override {
         if (!drawNeeded) return;
         Button::draw(win);
         
-        const int width = frame.size.x;
-        const Point off = frame.point;
+        const int width = size().x;
+        const Point off = position();
         const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;
@@ -84,6 +84,11 @@ public:
                     Window::Attr color = win.attr(colors.menu|A_BOLD);
                     win.drawText(off + offTextY, "%s", "●");
                 }
+            } else {
+                // Draw a space to erase the previous highlight
+                // Otherwise we'd need to erase the panel to get rid of the
+                // previously-drawn ●/○, and this is easier
+                win.drawText(off + offTextY, "%s", " ");
             }
         }
     }

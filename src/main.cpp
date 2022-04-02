@@ -103,7 +103,7 @@ static void _Draw() {
     // Update panels
     {
         if (_Drag.titlePanel) {
-            _Drag.titlePanel->setBorderColor(selectionColor);
+            _Drag.titlePanel->borderColor(selectionColor);
             
             for (UI::BorderedPanelPtr panel : _Drag.shadowPanels) {
                 panel->setBorderColor(selectionColor);
@@ -131,8 +131,8 @@ static void _Draw() {
                     if (!dragging && selectState==_SelectState::Similar) borderColor = _Colors.selectionSimilar;
                 }
                 
-                panel->setVisible(visible);
-                panel->setBorderColor(borderColor);
+                panel->visible(visible);
+                panel->borderColor(borderColor);
             }
         }
         
@@ -163,7 +163,7 @@ static void _Draw() {
                 (rs.x-ps.x)/2,
                 (rs.y-ps.y)/3,
             };
-            _MessagePanel->setPosition(p);
+            _MessagePanel->position(p);
             _MessagePanel->orderFront();
             _MessagePanel->layout();
         }
@@ -179,7 +179,7 @@ static void _Draw() {
                 (rs.x-ps.x)/2,
                 (rs.y-ps.y)/3,
             };
-            _RegisterPanel->setPosition(p);
+            _RegisterPanel->position(p);
             _RegisterPanel->orderFront();
             _RegisterPanel->layout();
         }
@@ -368,7 +368,9 @@ static void _UndoRedo(UI::RevColumn& col, bool undo) {
 
 constexpr int _SnapshotMenuWidth = 26;
 
-static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const State::Snapshot& snap, bool sessionStart) {
+static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
+    const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
+    
     bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
     
 //    UI::Button::Options buttonOpts = {
@@ -383,95 +385,59 @@ static UI::ButtonPtr _MakeSnapshotMenuButton(Git::Repo repo, Git::Ref ref, const
 //    };
     
     UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_Colors, repo, snap, _SnapshotMenuWidth);
-    b->enabled = true;
+    b->enabled        = true;
     b->activeSnapshot = activeSnapshot;
+    b->action         = [&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; };
     return b;
 }
 
 static void _TrackSnapshotsMenu(UI::RevColumn& col) {
-//    Git::Ref ref = col.rev.ref;
-//    std::vector<UI::ButtonPtr> buttons = {
-//        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true),
-//    };
-//    
-//    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
-//    for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
-//        // Creating the button will throw if we can't get the commit for the snapshot
-//        // If that happens, just don't shown the button representing the snapshot
-//        try {
-//            buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false));
-//        } catch (...) {}
-//    }
-//    
-//    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
-//    const int px = col.offset.x + (col.width-width)/2;
-//    _SnapshotsMenu = std::make_shared<UI::SnapshotMenu>(_Colors);
-//    Defer(_SnapshotsMenu = nullptr);
-//    _SnapshotsMenu->title = "Session Start";
-//    _SnapshotsMenu->buttons = buttons;
-//    _SnapshotsMenu->allowTruncate = true;
-//    _SnapshotsMenu->dismissAction = [&] (UI::Menu& menu) {
-//        _SnapshotsMenu = nullptr;
-//    };
-//
-//    NEW CODE:
-//    _ContextMenu->containerSize = _RootWindow->bounds().size;
-//    _ContextMenu->buttons = buttons;
-//    _ContextMenu->size(_ContextMenu->sizeIntrinsic());
-//    _ContextMenu->layout();
-//    _ContextMenu->setPosition(mouseDownEvent.mouse.point);
-//
-//    _SnapshotsMenu->setPosition({px, 2});
-//    
-//    UI::SnapshotButtonPtr menuButton;
-//    bool abort = false;
-//    for (;;) {
-//        _Draw();
-//        
-//        UI::Event ev = _RootWindow->nextEvent();
-//        abort = (ev.type != UI::Event::Type::Mouse);
-//        
-//        if (ev.type == UI::Event::Type::Mouse) {
-//            menuButton = std::dynamic_pointer_cast<UI::SnapshotButton>(_SnapshotsMenu->updateMouse(ev.mouse.point));
-//        } else {
-//            menuButton = nullptr;
-//        }
-//        
-//        // Check if we should abort
-//        if (abort) {
-//            break;
-//        
-//        // Handle mouse up
-//        } else if (ev.mouseUp()) {
-//            // Close the menu only if clicking outside of the menu, or clicking on an
-//            // enabled menu button.
-//            // In other words, don't close the menu when clicking on a disabled menu
-//            // button.
-//            if (!menuButton || menuButton->enabled) {
-//                break;
-//            }
-//        }
-//    }
-//    
-//    if (!abort && menuButton) {
-//        State::History& h = _RepoState.history(ref);
-//        State::Commit commitNew = menuButton->snapshot.head;
-//        State::Commit commitCur = h.get().head;
-//        
-//        if (commitNew != commitCur) {
-//            Git::Commit commit = Convert(_Repo, commitNew);
-//            h.push(State::RefState{.head = commitNew});
-//            _Repo.refReplace(ref, commit);
-//            // Clear the selection when restoring a snapshot
-//            _Selection = {};
-//            _Reload();
-//        }
-//    }
-//    
-//    // Reset state
-//    {
-//        _SnapshotsMenu = nullptr;
-//    }
+    UI::SnapshotButton* menuButton = nullptr;
+    Git::Ref ref = col.rev.ref;
+    std::vector<UI::ButtonPtr> buttons = {
+        _MakeSnapshotMenuButton(_Repo, ref, _RepoState.initialSnapshot(ref), true, menuButton),
+    };
+    
+    const std::vector<State::Snapshot>& snapshots = _RepoState.snapshots(ref);
+    for (auto it=snapshots.rbegin(); it!=snapshots.rend(); it++) {
+        // Creating the button will throw if we can't get the commit for the snapshot
+        // If that happens, just don't shown the button representing the snapshot
+        try {
+            buttons.push_back(_MakeSnapshotMenuButton(_Repo, ref, *it, false, menuButton));
+        } catch (...) {}
+    }
+    
+    const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
+    const int px = col.offset.x + (col.width-width)/2;
+    
+    _SnapshotsMenu = std::make_shared<UI::SnapshotMenu>(_Colors);
+    Defer(_SnapshotsMenu = nullptr);
+    
+    _SnapshotsMenu->title = "Session Start";
+    _SnapshotsMenu->buttons = buttons;
+    
+    const UI::Point p = {px, 2};
+    const int heightMax = _RootWindow->size().y-p.y;
+    _SnapshotsMenu->buttons = buttons;
+    _SnapshotsMenu->size(_SnapshotsMenu->sizeIntrinsic(heightMax));
+    _SnapshotsMenu->position(p);
+    _SnapshotsMenu->layout();
+    _SnapshotsMenu->track();
+    
+    if (menuButton) {
+        State::History& h = _RepoState.history(ref);
+        State::Commit commitNew = menuButton->snapshot.head;
+        State::Commit commitCur = h.get().head;
+        
+        if (commitNew != commitCur) {
+            Git::Commit commit = Convert(_Repo, commitNew);
+            h.push(State::RefState{.head = commitNew});
+            _Repo.refReplace(ref, commit);
+            // Clear the selection when restoring a snapshot
+            _Selection = {};
+            _Reload();
+        }
+    }
 }
 
 static void _Reload() {
@@ -599,20 +565,20 @@ static std::optional<Git::Op> _TrackMouseInsideCommitPanel(const UI::Event& mous
                 const bool forceCopy = !selectionColumn->rev.isMutable();
                 const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
                 _Drag.copy = copy;
-                _Drag.titlePanel->setHeaderLabel(_Drag.copy ? "Copy" : "Move");
+                _Drag.titlePanel->headerLabel(_Drag.copy ? "Copy" : "Move");
             }
             
             // Position title panel / shadow panels
             {
                 const UI::Point pos0 = p + mouseDownOffset;
                 
-                _Drag.titlePanel->setPosition(pos0);
+                _Drag.titlePanel->position(pos0);
                 
                 // Position shadowPanels
                 int off = 1;
                 for (UI::PanelPtr panel : _Drag.shadowPanels) {
                     const UI::Point pos = pos0+off;
-                    panel->setPosition(pos);
+                    panel->position(pos);
                     off++;
                 }
             }
@@ -774,15 +740,15 @@ static void _TrackMouseOutsideCommitPanel(const UI::Event& mouseDownEvent) {
     }
 }
 
-static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled) {
+static UI::ButtonPtr _MakeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
     constexpr int ContextMenuWidth = 12;
     UI::ButtonPtr b = std::make_shared<UI::Button>(_Colors);
-    b->label          = std::string(label);
-    b->key            = std::string(key);
-    b->enabled        = enabled;
-    b->insetX         = 0;
-    b->frame.size.x   = ContextMenuWidth;
-    b->frame.size.y   = 1;
+    b->label        = std::string(label);
+    b->key          = std::string(key);
+    b->enabled      = enabled;
+    b->insetX       = 0;
+    b->action       = [&] (UI::Button& button) { chosen = &button; };
+    b->size({ContextMenuWidth, 1});
     return b;
 }
 
@@ -819,24 +785,20 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     // Draw once before we open the context menu, so that the selection is updated
     _Draw();
     
-    UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", _SelectionCanCombine());
-    UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", _SelectionCanEdit());
-    UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", _SelectionCanDelete());
-    UI::ButtonPtr menuButton = nullptr;
-    combineButton->action = [&] (UI::Button&) { menuButton = combineButton; };
-    editButton->action = [&] (UI::Button&) { menuButton = editButton; };
-    deleteButton->action = [&] (UI::Button&) { menuButton = deleteButton; };
+    UI::Button* menuButton = nullptr;
+    UI::ButtonPtr combineButton = _MakeContextMenuButton("Combine", "c", _SelectionCanCombine(), menuButton);
+    UI::ButtonPtr editButton    = _MakeContextMenuButton("Edit", "ret", _SelectionCanEdit(), menuButton);
+    UI::ButtonPtr deleteButton  = _MakeContextMenuButton("Delete", "del", _SelectionCanDelete(), menuButton);
     
     std::vector<UI::ButtonPtr> buttons = { combineButton, editButton, deleteButton };
     _ContextMenu = std::make_shared<UI::Menu>(_Colors);
     Defer(_ContextMenu = nullptr);
     
-    _ContextMenu->containerSize = _RootWindow->bounds().size;
     _ContextMenu->buttons = buttons;
     _ContextMenu->size(_ContextMenu->sizeIntrinsic());
+    _ContextMenu->position(mouseDownEvent.mouse.point);
     _ContextMenu->layout();
-    _ContextMenu->setPosition(mouseDownEvent.mouse.point);
-    _ContextMenu->track(mouseDownEvent);
+    _ContextMenu->track();
     
 //    UI::ButtonPtr menuButton = nullptr;
 //    UI::Event::MouseButtons mouseUpButtons = UI::Event::MouseButtons::Right;
@@ -884,7 +846,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
     
     // Handle the clicked button
     std::optional<Git::Op> gitOp;
-    if (menuButton == combineButton) {
+    if (menuButton == combineButton.get()) {
         gitOp = Git::Op{
             .type = Git::Op::Type::Combine,
             .src = {
@@ -893,7 +855,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
             },
         };
     
-    } else if (menuButton == editButton) {
+    } else if (menuButton == editButton.get()) {
         gitOp = Git::Op{
             .type = Git::Op::Type::Edit,
             .src = {
@@ -902,7 +864,7 @@ static std::optional<Git::Op> _TrackRightMouse(const UI::Event& mouseDownEvent, 
             },
         };
     
-    } else if (menuButton == deleteButton) {
+    } else if (menuButton == deleteButton.get()) {
         gitOp = Git::Op{
             .type = Git::Op::Type::Delete,
             .src = {

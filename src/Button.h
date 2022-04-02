@@ -18,30 +18,31 @@ public:
         if (!drawNeeded) return;
         Control::draw(win);
         
+        const Rect f = frame();
         size_t labelLen = UTF8::Strlen(label);
         size_t keyLen = UTF8::Strlen(key);
         
         if (drawBorder) {
             Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
-            win.drawRect(frame);
+            win.drawRect(f);
         }
         
-        int offY = (frame.size.y-1)/2;
+        int offY = (f.size.y-1)/2;
         
         // Draw button name
         Point plabel;
         Point pkey;
         if (center) {
             int textWidth = (int)labelLen + (int)keyLen + (!key.empty() ? KeySpacing : 0);
-            int leftX = insetX + ((frame.size.x-2*insetX)-textWidth)/2;
-            int rightX = frame.size.x-leftX;
+            int leftX = insetX + ((f.size.x-2*insetX)-textWidth)/2;
+            int rightX = f.size.x-leftX;
             
-            plabel = frame.point + Size{leftX, offY};
-            pkey = frame.point + Size{rightX-(int)keyLen, offY};
+            plabel = f.point + Size{leftX, offY};
+            pkey = f.point + Size{rightX-(int)keyLen, offY};
         
         } else {
-            plabel = frame.point + Size{insetX, offY};
-            pkey = frame.point + Size{frame.size.x-(int)keyLen-insetX, offY};
+            plabel = f.point + Size{insetX, offY};
+            pkey = f.point + Size{f.size.x-(int)keyLen-insetX, offY};
         }
         
         {

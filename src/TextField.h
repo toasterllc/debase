@@ -17,7 +17,7 @@ public:
         if (_focus) {
 //            os_log(OS_LOG_DEFAULT, "TextField: update _cursorState");
             
-            Point p = win.frame().point + frame.point;
+            Point p = win.position() + position();
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
         }
@@ -31,15 +31,15 @@ public:
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
         if (!_focus) color = win.attr(colors.dimmed);
-        win.drawLineHoriz(frame.point, frame.size.x, ' ');
+        win.drawLineHoriz(position(), size().x, ' ');
         
         // Print as many runes as will fit our width
-        const int width = frame.size.x;
+        const int width = size().x;
         auto left = _left();
         auto right = UTF8::NextN(left, value.end(), width);
         
         std::string substr(left, right);
-        win.drawText(frame.point, "%s", substr.c_str());
+        win.drawText(position(), "%s", substr.c_str());
     }
     
     bool handleEvent(const Window& win, const Event& ev) override {
@@ -69,7 +69,7 @@ private:
     
     std::string::iterator _leftMin() { return value.begin(); }
     std::string::iterator _leftMax() {
-        int width = frame.size.x;
+        int width = size().x;
         auto it = value.end();
         while (width && it!=value.begin()) {
             it = UTF8::Prev(it, value.begin());
@@ -85,7 +85,7 @@ private:
     
     std::string::iterator _cursorMin() { return _left(); }
     std::string::iterator _cursorMax() {
-        const int width = frame.size.x;
+        const int width = size().x;
         auto left = _cursorMin();
         auto right = left;
         int len = 0;
@@ -108,13 +108,13 @@ private:
     
     bool _handleEvent(const Window& win, const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
-            if (ev.mouseDown() && HitTest(frame, ev.mouse.point)) {
+            if (ev.mouseDown() && hitTest(ev.mouse.point)) {
                 if (!_focus) {
                     requestFocus(*this);
                 
                 } else {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.point.x-frame.point.x;
+                    int offX = ev.mouse.point.x-position().x;
                     auto offIt = UTF8::NextN(_left(), value.end(), offX);
                     _offCursor = std::distance(value.begin(), offIt);
                 }

@@ -15,19 +15,18 @@ public:
     
     Menu(const ColorPalette& colors) : colors(colors) {}
     
-    Size sizeIntrinsic() override {
+    Size sizeIntrinsic(int heightMax=0) {
         // First button sets the width
-        const int width = (!buttons.empty() ? buttons[0]->frame.size.x : 0) + Padding().x;
+        const int width = (!buttons.empty() ? buttons[0]->size().x : 0) + Padding().x;
         
-        // Calculate the height by iterating over every button until no more fit in `sizeMax`
-        const Size sizeMax = containerSize-frame().point;
+        // Calculate the height by iterating over every button (until no more fit in `heightMax`, if supplied)
         int height = Padding().y;
-        int rem = sizeMax.y;
+        int rem = heightMax;
         bool first = true;
         for (ButtonPtr button : buttons) {
-            const int add = (!first ? _SeparatorHeight : 0) + button->frame.size.y;
+            const int add = (!first ? _SeparatorHeight : 0) + button->size().y;
             // Bail if the button won't fit in the available height
-            if (allowTruncate && add>rem) break;
+            if (heightMax && add>rem) break;
             height += add;
             rem -= add;
             first = false;
@@ -52,18 +51,19 @@ public:
             if (!buttonsVisible.empty()) y += _SeparatorHeight;
             
             // Set button position (after separator)
-            Rect& f = button->frame;
-            f.point = {x,y};
+            button->position({x,y});
             
             // Add space for button
-            y += f.size.y;
+            y += button->size().y;
             
             // Set the expanded hit test size so that the menu doesn't have any dead zones
             if (buttonsVisible.empty()) button->hitTestExpand.t = 1;
+            button->hitTestExpand.l = _BorderSize+_InsetX;
+            button->hitTestExpand.r = _BorderSize+_InsetX;
             button->hitTestExpand.b = 1;
             
             // Bail if the bottom of the bottom extends beyond our max y
-            if (allowTruncate && y>ymax) break;
+            if (y > ymax) break;
             buttonsVisible.push_back(button);
         }
     }
@@ -73,8 +73,8 @@ public:
         if (!drawNeeded) return;
         
         os_log(OS_LOG_DEFAULT, "Menu::draw()");
-        
         Panel::draw();
+//        erase();
         
         const int width = bounds().size.x;
         
@@ -84,7 +84,7 @@ public:
             // Draw separator
             if (button != buttonsVisible.back()) {
                 Window::Attr color = attr(colors.menu);
-                drawLineHoriz({0, button->frame.ymax()+1}, width);
+                drawLineHoriz({0, button->frame().ymax()+1}, width);
             }
         }
         
@@ -105,12 +105,18 @@ public:
     bool handleEvent(const Event& ev) override {
         auto& md = _mouseDown;
         // See if any of the buttons want the event
+        size_t handleCount = 0;
         for (ButtonPtr button : buttonsVisible) {
             bool handled = button->handleEvent(*this, ev, md.sensitive);
-            if (handled) {
-                if (dismissAction) dismissAction(*this);
-                return false;
-            }
+            if (handled) handleCount++;
+        }
+        
+        // Check assumption that one button max will handle the event
+        assert(handleCount==0 || handleCount==1);
+        
+        if (handleCount) {
+            if (dismissAction) dismissAction(*this);
+            return false;
         }
         
         if (ev.type == Event::Type::Mouse) {
@@ -149,26 +155,23 @@ public:
         return true;
     }
     
-    void track(const Event& mouseDownEvent) {
+    void track() override {
         _mouseDown.mouseDownTime = std::chrono::steady_clock::now();
-        _mouseDown.ev = mouseDownEvent;
         _mouseDown.sensitive = Event::MouseButtons::Right;
         _mouseDown.stayOpen = false;
         Window::track();
     }
     
     const ColorPalette& colors;
-    Size containerSize;
     std::string title;
-    bool allowTruncate = false;
     std::vector<ButtonPtr> buttons;
     std::vector<ButtonPtr> buttonsVisible;
     std::function<void(Menu&)> dismissAction;
     
 private:
     static constexpr int _BorderSize      = 1;
-    static constexpr int _SeparatorHeight = 1;
     static constexpr int _InsetX          = 1;
+    static constexpr int _SeparatorHeight = 1;
     static constexpr int _KeySpacing      = 2;
     static constexpr int _RowHeight       = 2;
     
@@ -185,7 +188,6 @@ private:
     
     struct {
         std::chrono::steady_clock::time_point mouseDownTime = {};
-        UI::Event ev;
         Event::MouseButtons sensitive;
         bool stayOpen = false;
     } _mouseDown;

@@ -19,7 +19,7 @@ public:
         _panel = nullptr;
     }
     
-    void setPosition(const Point& p) {
+    void position(const Point& p) const {
         ::move_panel(*this, p.y, p.x);
     }
     
@@ -27,7 +27,7 @@ public:
         return !::panel_hidden(*this);
     }
     
-    void setVisible(bool v) {
+    void visible(bool v) {
         if (_visible == v) return;
         _visible = v;
         if (_visible) ::show_panel(*this);

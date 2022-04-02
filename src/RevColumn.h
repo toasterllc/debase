@@ -73,7 +73,7 @@ public:
                     Rect frame = {p, panel->frame().size};
                     // Check if any part of the window would be offscreen
                     if (Intersection(containerBounds, frame) != frame) break;
-                    panel->setPosition(p);
+                    panel->position(p);
                     panels.push_back(panel);
                     offY += panel->frame().size.y + _CommitSpacing;
                 
@@ -102,7 +102,7 @@ public:
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
-                button->frame = undoFrame;
+                button->frame(undoFrame);
                 if (undoAction) {
                     button->action = [&] (UI::Button&) { undoAction(*this); };
                 }
@@ -115,7 +115,7 @@ public:
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
-                button->frame = redoFrame;
+                button->frame(redoFrame);
                 if (redoAction) {
                     button->action = [&] (UI::Button&) { redoAction(*this); };
                 }
@@ -128,7 +128,7 @@ public:
                 button->center = true;
                 button->drawBorder = true;
                 button->insetX = 1;
-                button->frame = snapshotsFrame;
+                button->frame(snapshotsFrame);
                 if (snapshotsAction) {
                     button->action = [&] (UI::Button&) { snapshotsAction(*this); };
                 }

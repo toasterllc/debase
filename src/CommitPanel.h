@@ -27,13 +27,13 @@ public:
         size({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
     }
     
-    void setBorderColor(std::optional<Color> x) {
+    void borderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;
         drawNeeded = true;
     }
     
-    void setHeaderLabel(std::string_view x) {
+    void headerLabel(std::string_view x) {
         assert(_header);
         if (_headerLabel == x) return;
         _headerLabel = x;
