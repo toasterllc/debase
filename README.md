@@ -13,6 +13,12 @@
     ./configure --prefix=/usr --enable-widec
     make -j8
 
+### Build libcurl
+
+    cd lib/libcurl
+    ./configure --disable-shared --with-secure-transport --prefix=$PWD/build
+    make install-strip
+
 ### Build debase
 
 - Open debase.xcodeproj
