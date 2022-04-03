@@ -631,9 +631,9 @@ public:
         
         // Combine the commit messages
         std::stringstream msg;
-        msg << git_commit_message(*src);
-        msg << "\n";
         msg << git_commit_message(*dst);
+        msg << "\n";
+        msg << git_commit_message(*src);
         
         git_oid id;
         int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, git_commit_message_encoding(*dst), msg.str().c_str(), *newTree);
