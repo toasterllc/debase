@@ -103,15 +103,16 @@ public:
             if (redoButton.drawNeeded()) return true;
             if (snapshotsButton.drawNeeded()) return true;
         }
+        
+        for (CommitPanelPtr p : panels) {
+            if (p->drawNeeded()) return true;
+        }
+        
         return false;
     }
     
     bool draw(const Window& win) override {
         if (!Control::draw(win)) return false;
-        
-        // Don't draw anything if we don't have any panels
-        if (panels.empty()) return true;
-        
         const Point pos = position();
         const int width = size().x;
         

@@ -30,21 +30,16 @@ public:
         
         os_log(OS_LOG_DEFAULT, "App::layout()");
         
-        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
-        
-        if (_drag.titlePanel) {
-            _drag.titlePanel->borderColor(selectionColor);
-            
-            for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
-                panel->borderColor(selectionColor);
-            }
-        }
-        
         // Create/layout columns
         {
             constexpr int ColumnInsetX = 3;
             constexpr int ColumnWidth = 32;
             constexpr int ColumnSpacing = 6;
+            
+            // Reserve enough space to hold the maximum number of columns
+            // This is critical to prevent _columns from reallocating, so that our existing
+            // references/pointers to columns stay valid after calling _columns.push_back().
+            _columns.reserve(_revs.size());
             
             int offX = ColumnInsetX;
             size_t i = 0;
@@ -54,27 +49,27 @@ public:
                 if (f != Intersection(bounds(), f)) break;
                 
                 // Create the column if it doesn't exist yet
-                UI::RevColumnPtr col = (i<_columns.size() ? _columns[i] : nullptr);
-                if (!col) {
-                    col = std::make_shared<UI::RevColumn>(_colors);
-                    col->repo   = _repo;
-                    col->rev    = rev;
-                    col->head   = (rev.displayHead() == _head.commit);
+                bool create = (i >= _columns.size());
+                UI::RevColumn& col = (create ? _columns.emplace_back(_colors) : _columns[i]);
+                if (create) {
+                    col.repo = _repo;
+                    col.rev  = rev;
+                    col.head = (rev.displayHead() == _head.commit);
                     
                     if (h && !h->begin()) {
-                        col->undoButton.action = [=] (UI::Button&) { _undoRedo(*col, true); };
+                        col.undoButton.action = [&] (UI::Button&) { _undoRedo(col, true); };
                     }
                     
                     if (h && !h->end()) {
-                        col->redoButton.action = [=] (UI::Button&) { _undoRedo(*col, false); };
+                        col.redoButton.action = [&] (UI::Button&) { _undoRedo(col, false); };
                     }
                     
-                    col->snapshotsButton.action = [=] (UI::Button&) { _trackSnapshotsMenu(*col); };
+                    col.snapshotsButton.action = [&] (UI::Button&) { _trackSnapshotsMenu(col); };
                     _columns.push_back(col);
                 }
                 
-                col->frame({{offX, 0}, {ColumnWidth, size().y}});
-                col->layout(*this);
+                col.frame({{offX, 0}, {ColumnWidth, size().y}});
+                col.layout(*this);
                 
                 offX += ColumnWidth+ColumnSpacing;
                 i++;
@@ -83,7 +78,11 @@ public:
             os_log(OS_LOG_DEFAULT, "App::cols before = %zu", _columns.size());
             
             // Erase columns that aren't visible
-            _columns.erase(_columns.begin()+i, _columns.end());
+            // Normally we'd use _columns.erase() here to delete a range of columns, but that
+            // doesn't compile because vector::erase requires moveable elements (in case a
+            // range in the middle of the vector was removed) and RevColumn doesn't support
+            // moving or assignment
+            while (_columns.size() > i) _columns.pop_back();
             
             os_log(OS_LOG_DEFAULT, "App::cols after = %zu", _columns.size());
         }
@@ -99,30 +98,11 @@ public:
 //                offX += ColumnWidth+ColumnSpacing;
 //            }
 //        }
-        
-        bool dragging = (bool)_drag.titlePanel;
-        bool copying = _drag.copy;
-        for (UI::RevColumnPtr col : _columns) {
-            for (UI::CommitPanelPtr panel : col->panels) {
-                bool visible = false;
-                std::optional<UI::Color> borderColor;
-                _SelectState selectState = _selectStateGet(col, panel);
-                if (selectState == _SelectState::True) {
-                    visible = !dragging || copying;
-                    if (dragging) borderColor = _colors.selectionSimilar;
-                    else          borderColor = _colors.selection;
-                
-                } else {
-                    visible = true;
-                    if (!dragging && selectState==_SelectState::Similar) borderColor = _colors.selectionSimilar;
-                }
-                
-                panel->visible(visible);
-                panel->borderColor(borderColor);
-            }
-        }
+//        
+//        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         // Order all the title panel and shadow panels
+        const bool dragging = (bool)_drag.titlePanel;
         if (dragging) {
             for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
                 (*it)->orderFront();
@@ -190,8 +170,8 @@ public:
             drawRect(*_selectionRect);
         }
         
-        for (UI::RevColumnPtr col : _columns) {
-            col->draw(*this);
+        for (UI::RevColumn& col : _columns) {
+            col.draw(*this);
         }
         
         if (_messagePanel) {
@@ -227,8 +207,8 @@ public:
             }
             
             // Let every column handle the event
-            for (UI::RevColumnPtr col : _columns) {
-                bool handled = col->handleEvent(*this, ev);
+            for (UI::RevColumn& col : _columns) {
+                bool handled = col.handleEvent(*this, ev);
                 if (handled) return true;
             }
             
@@ -240,7 +220,7 @@ public:
                     if (hitTest && !shift) {
                         if (hitTest.panel) {
                             // Mouse down inside of a CommitPanel, without shift key
-                            std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                            std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, *hitTest.column, hitTest.panel);
                             if (gitOp) _gitOpExec(*gitOp);
                         }
                     
@@ -252,7 +232,7 @@ public:
                 } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
                     if (hitTest) {
                         if (hitTest.panel) {
-                            std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
+                            std::optional<Git::Op> gitOp = _trackContextMenu(ev, *hitTest.column, hitTest.panel);
                             if (gitOp) _gitOpExec(*gitOp);
                         }
                     }
@@ -448,12 +428,12 @@ private:
     };
     
     struct _InsertionPosition {
-        UI::RevColumnPtr col;
+        UI::RevColumn* col = nullptr;
         UI::CommitPanelVecIter iter;
     };
     
     struct _HitTestResult {
-        UI::RevColumnPtr column;
+        UI::RevColumn* column = nullptr;
         UI::CommitPanelPtr panel;
         operator bool() const {
             return (bool)column;
@@ -558,22 +538,22 @@ private:
         return colors;
     }
     
-    _SelectState _selectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
+    _SelectState _selectStateGet(UI::RevColumn& col, UI::CommitPanelPtr panel) {
         bool similar = _selection.commits.find(panel->commit()) != _selection.commits.end();
         if (!similar) return _SelectState::False;
-        return (col->rev==_selection.rev ? _SelectState::True : _SelectState::Similar);
+        return (col.rev==_selection.rev ? _SelectState::True : _SelectState::Similar);
     }
     
-    bool _selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
+    bool _selected(UI::RevColumn& col, UI::CommitPanelPtr panel) {
         return _selectStateGet(col, panel) == _SelectState::True;
     }
     
     _HitTestResult _hitTest(const UI::Point& p) {
-        for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelPtr panel = col->hitTest(p);
+        for (UI::RevColumn& col : _columns) {
+            UI::CommitPanelPtr panel = col.hitTest(p);
             if (panel) {
                 return {
-                    .column = col,
+                    .column = &col,
                     .panel = panel,
                 };
             }
@@ -582,11 +562,11 @@ private:
     }
     
     std::optional<_InsertionPosition> _findInsertionPosition(const UI::Point& p) {
-        UI::RevColumnPtr icol;
+        UI::RevColumn* icol = nullptr;
         UI::CommitPanelVecIter iiter;
         std::optional<int> leastDistance;
-        for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelVec& panels = col->panels;
+        for (UI::RevColumn& col : _columns) {
+            UI::CommitPanelVec& panels = col.panels;
             // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
             if (panels.empty()) continue;
             const UI::Rect lastFrame = panels.back()->frame();
@@ -600,7 +580,7 @@ private:
                 int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
                 
                 if (!leastDistance || dist<leastDistance) {
-                    icol = col;
+                    icol = &col;
                     iiter = it;
                     leastDistance = dist;
                 }
@@ -617,23 +597,23 @@ private:
         for (;;) {
             if (iiter == icolPanels.begin()) break;
             UI::CommitPanelPtr prevPanel = *std::prev(iiter);
-            if (!_selected(icol, prevPanel)) break;
+            if (!_selected(*icol, prevPanel)) break;
             iiter--;
         }
         
         return _InsertionPosition{icol, iiter};
     }
     
-    UI::RevColumnPtr _columnForRev(Git::Rev rev) {
-        for (UI::RevColumnPtr col : _columns) {
-            if (col->rev == rev) return col;
+    UI::RevColumn& _columnForRev(Git::Rev rev) {
+        for (UI::RevColumn& col : _columns) {
+            if (col.rev == rev) return col;
         }
         // Programmer error if it doesn't exist
         abort();
     }
     
-    UI::CommitPanelPtr _panelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
-        for (UI::CommitPanelPtr panel : col->panels) {
+    UI::CommitPanelPtr _panelForCommit(UI::RevColumn& col, Git::Commit commit) {
+        for (UI::CommitPanelPtr panel : col.panels) {
             if (panel->commit() == commit) return panel;
         }
         // Programmer error if it doesn't exist
@@ -699,7 +679,48 @@ private:
     
     // _trackMouseInsideCommitPanel
     // Handles clicking/dragging a set of CommitPanels
-    std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn& mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+        
+        
+//        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
+//        if (_drag.titlePanel) {
+//            _drag.titlePanel->borderColor(selectionColor);
+//            
+//            for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
+//                panel->borderColor(selectionColor);
+//            }
+//        }
+//        
+//        bool dragging = (bool)_drag.titlePanel;
+//        bool copying = _drag.copy;
+//        for (UI::RevColumn& col : _columns) {
+//            for (UI::CommitPanelPtr panel : col.panels) {
+//                bool visible = false;
+//                std::optional<UI::Color> borderColor;
+//                _SelectState selectState = _selectStateGet(col, panel);
+//                if (selectState == _SelectState::True) {
+//                    visible = !dragging || copying;
+//                    if (dragging) borderColor = _colors.selectionSimilar;
+//                    else          borderColor = _colors.selection;
+//                
+//                } else {
+//                    visible = true;
+//                    if (!dragging && selectState==_SelectState::Similar) borderColor = _colors.selectionSimilar;
+//                }
+//                
+//                panel->visible(visible);
+//                panel->borderColor(borderColor);
+//            }
+//        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
         const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
@@ -711,14 +732,14 @@ private:
         //   - there's no selection; or
         //   - the mouse-down CommitPanel is in a different column than the current selection; or
         //   - an unselected CommitPanel was clicked
-        if (_selection.commits.empty() || (_selection.rev != mouseDownColumn->rev) || !wasSelected) {
+        if (_selection.commits.empty() || (_selection.rev != mouseDownColumn.rev) || !wasSelected) {
             _selection = {
-                .rev = mouseDownColumn->rev,
+                .rev = mouseDownColumn.rev,
                 .commits = {mouseDownPanel->commit()},
             };
         
         } else {
-            assert(!_selection.commits.empty() && (_selection.rev == mouseDownColumn->rev));
+            assert(!_selection.commits.empty() && (_selection.rev == mouseDownColumn.rev));
             _selection.commits.insert(mouseDownPanel->commit());
         }
         
@@ -728,7 +749,7 @@ private:
         bool mouseDragged = false;
         for (;;) {
             assert(!_selection.commits.empty());
-            UI::RevColumnPtr selectionColumn = _columnForRev(_selection.rev);
+            UI::RevColumn& selectionColumn = _columnForRev(_selection.rev);
             
             const UI::Point p = ev.mouse.point;
             const UI::Size delta = mouseDownEvent.mouse.point-p;
@@ -763,15 +784,18 @@ private:
             }
             
             if (_drag.titlePanel) {
+                // forceCopy: require copying if the source column isn't mutable (and therefore commits
+                // can't be moved away from it, because that would require deleting the commits from
+                // the source column)
+                const bool forceCopy = !selectionColumn.rev.isMutable();
+                const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
+                const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
+                
                 // Update _Drag.copy depending on whether the option key is held
                 {
-                    // forceCopy: require copying if the source column isn't mutable (and therefore commits
-                    // can't be moved away from it, because that would require deleting the commits from
-                    // the source column)
-                    const bool forceCopy = !selectionColumn->rev.isMutable();
-                    const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
                     _drag.copy = copy;
                     _drag.titlePanel->headerLabel(_drag.copy ? "Copy" : "Move");
+                    _drag.titlePanel->borderColor(selectionColor);
                 }
                 
                 // Position title panel / shadow panels
@@ -782,8 +806,9 @@ private:
                     
                     // Position shadowPanels
                     int off = 1;
-                    for (UI::PanelPtr panel : _drag.shadowPanels) {
+                    for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
                         const UI::Point pos = pos0+off;
+                        panel->borderColor(selectionColor);
                         panel->position(pos);
                         off++;
                     }
@@ -837,7 +862,7 @@ private:
             // set the selection to the commit that was clicked
             } else if (!mouseDragged) {
                 _selection = {
-                    .rev = mouseDownColumn->rev,
+                    .rev = mouseDownColumn.rev,
                     .commits = {mouseDownPanel->commit()},
                 };
                 
@@ -902,10 +927,10 @@ private:
             // Update selection
             {
                 struct _Selection selectionNew;
-                for (UI::RevColumnPtr col : _columns) {
-                    for (UI::CommitPanelPtr panel : col->panels) {
+                for (UI::RevColumn& col : _columns) {
+                    for (UI::CommitPanelPtr panel : col.panels) {
                         if (!Empty(Intersection(selectionRect, panel->frame()))) {
-                            selectionNew.rev = col->rev;
+                            selectionNew.rev = col.rev;
                             selectionNew.commits.insert(panel->commit());
                         }
                     }
@@ -946,11 +971,11 @@ private:
         _selectionRect = std::nullopt;
     }
     
-    std::optional<Git::Op> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<Git::Op> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumn& mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
             _selection = {
-                .rev = mouseDownColumn->rev,
+                .rev = mouseDownColumn.rev,
                 .commits = {mouseDownPanel->commit()},
             };
         }
@@ -1213,7 +1238,7 @@ private:
     UI::ColorPalette _colorsPrev;
     State::RepoState _repoState;
     Git::Rev _head;
-    std::vector<UI::RevColumnPtr> _columns;
+    std::vector<UI::RevColumn> _columns;
     UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
     
