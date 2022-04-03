@@ -71,10 +71,6 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
-    
-    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
-    
     #warning TODO: implement 7-day trial
     
     #warning TODO: implement registration
@@ -92,6 +88,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
+//    
+//    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
+//
 //    #warning TODO: move from master~3 -> master doesn't select commits in master
 //
 //    #warning TODO: verify that ctrl-c still works with RegPanel visible
