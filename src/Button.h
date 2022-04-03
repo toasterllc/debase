@@ -27,7 +27,7 @@ public:
         size_t keyLen = UTF8::Strlen(key);
         
         if (drawBorder) {
-            Window::Attr color = win.attr(enabled ? colors.normal : colors.dimmed);
+            Window::Attr color = win.attr(_enabled ? colors.normal : colors.dimmed);
             win.drawRect(f);
         }
         
@@ -52,9 +52,9 @@ public:
         {
             Window::Attr bold;
             Window::Attr color;
-            if (enabled)                 bold = win.attr(A_BOLD);
-            if (_highlighted && enabled) color = win.attr(colors.menu);
-            else if (!enabled)           color = win.attr(colors.dimmed);
+            if (_enabled)                 bold = win.attr(A_BOLD);
+            if (_highlighted && _enabled) color = win.attr(colors.menu);
+            else if (!_enabled)           color = win.attr(colors.dimmed);
             win.drawText(plabel, "%s", label.c_str());
         }
         
@@ -68,7 +68,7 @@ public:
     }
     
     bool handleEvent(const Window& win, const Event& ev) override {
-        if (ev.type == Event::Type::Mouse && enabled) {
+        if (ev.type == Event::Type::Mouse) {
             if (hitTest(ev.mouse.point)) {
                 highlighted(true);
                 
@@ -76,7 +76,7 @@ public:
                 // Mouse-up events are to allow Menu to use this function for context
                 // menus: right-mouse-down opens the menu, while the right-mouse-up
                 // triggers the Button action via this function.
-                if (ev.mouseDown(actionButtons) || ev.mouseUp(actionButtons)) {
+                if (_enabled && (ev.mouseDown(actionButtons) || ev.mouseUp(actionButtons))) {
                     // Track mouse
                     _trackMouse(win, ev);
                     return true;
@@ -88,14 +88,21 @@ public:
         return false;
     }
     
-    bool highlighted() { return _highlighted; }
+    bool highlighted() const { return _highlighted; }
     void highlighted(bool x) {
         if (_highlighted == x) return;
         _highlighted = x;
         drawNeeded(true);
     }
     
-    bool mouseActive() { return _mouseActive; }
+    bool enabled() const { return _enabled; }
+    void enabled(bool x) {
+        if (_enabled == x) return;
+        _enabled = x;
+        drawNeeded(true);
+    }
+    
+    bool mouseActive() const { return _mouseActive; }
     void mouseActive(bool x) {
         if (_mouseActive == x) return;
         _mouseActive = x;
@@ -104,7 +111,6 @@ public:
     
     std::string label;
     std::string key;
-    bool enabled = false;
     bool center = false;
     bool drawBorder = false;
     int insetX = 0;
@@ -119,7 +125,7 @@ private:
         if ((actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(actionButtons)) ||
             (actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(actionButtons))) {
             
-            if (enabled && hitTest(ev.mouse.point) && action) {
+            if (_enabled && hitTest(ev.mouse.point) && action) {
                 action(*this);
             }
             // Consume event
@@ -141,7 +147,7 @@ private:
             if ((actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(actionButtons)) ||
                 (actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(actionButtons))) {
                 
-                if (enabled && hitTest(ev.mouse.point) && action) {
+                if (_enabled && hitTest(ev.mouse.point) && action) {
                     action(*this);
                 }
                 break;
@@ -151,6 +157,7 @@ private:
         }
     }
     
+    bool _enabled = false;
     bool _highlighted = false;
     bool _mouseActive = false;
 };

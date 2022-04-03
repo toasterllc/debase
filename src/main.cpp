@@ -73,7 +73,7 @@ static void _PrintUsage() {
 int main(int argc, const char* argv[]) {
     #warning TODO: right click on panel doesn't draw purple
     
-    #warning TODO: screen flickers when show error panel (throw exception when deleting commit)
+    #warning TODO: screen flickers when showing error panel (throw exception when deleting commit)
     
     #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
     

@@ -57,18 +57,26 @@ public:
         }
         
         // Create our CommitPanels for each commit
-        panels.clear();
         int offY = _CommitsInsetY;
         Git::Commit commit = rev.commit;
         size_t skip = rev.skip;
+        size_t i = 0;
         while (commit) {
             if (!skip) {
-                CommitPanelPtr panel = std::make_shared<CommitPanel>(colors, false, width, commit);
+                CommitPanelPtr panel = (i<panels.size() ? panels[i] : nullptr);
+                
+                // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
+                if (!panel || panel->commit()!=commit) {
+                    panel = std::make_shared<CommitPanel>(colors, false, width, commit);
+                    panels.insert(panels.begin()+i, panel);
+                }
+                
                 const Rect f = {pos + Size{0,offY}, panel->size()};
                 if (f.ymax() > frame().ymax()) break;
                 panel->position(f.point);
-                panels.push_back(panel);
+                
                 offY += panel->size().y + _CommitSpacing;
+                i++;
             
             } else {
                 skip--;
@@ -77,6 +85,9 @@ public:
             commit = commit.parent();
         }
         
+        // Erase excess panels (ones that extend beyond visible region)
+        panels.erase(panels.begin()+i, panels.end());
+        
         constexpr int UndoWidth      = 8;
         constexpr int RedoWidth      = 8;
         constexpr int SnapshotsWidth = 16;
@@ -84,10 +95,6 @@ public:
         Rect undoFrame = {pos+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
         Rect redoFrame = {pos+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
         Rect snapshotsFrame = {pos+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
-        
-        undoButton.enabled = (bool)undoButton.action;
-        redoButton.enabled = (bool)redoButton.action;
-        snapshotsButton.enabled = (bool)snapshotsButton.action;
         
         undoButton.frame(undoFrame);
         redoButton.frame(redoFrame);
