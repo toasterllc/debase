@@ -1,4 +1,5 @@
 #pragma once
+#include <thread>
 #include "Window.h"
 #include "Color.h"
 #include "Git.h"
@@ -14,8 +15,6 @@
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Theme.h"
-
-#include <os/log.h>
 
 extern "C" {
     extern char** environ;
@@ -348,6 +347,12 @@ public:
             _messagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
             _messagePanel->title    = "Error";
             _messagePanel->message  = errorMsg;
+            
+            // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
+            // as a result of pressing a keyboard key. For some reason showing panels
+            // due to a mouse event doesn't trigger the flicker, only keyboard events.
+            // For some reason sleeping a short time fixes it.
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         
         return true;

@@ -35,10 +35,6 @@ public:
         snapshotsButton.actionTrigger = Button::ActionTrigger::MouseDown;
     }
     
-    ~RevColumn() {
-        os_log(OS_LOG_DEFAULT, "~RevColumn");
-    }
-    
     bool layout(const Window& win) override {
         if (!Control::layout(win)) return false;
         const Point pos = position();
