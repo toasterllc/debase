@@ -303,15 +303,15 @@ public:
             }
             
             case UI::Event::Type::KeyC: {
-                {
-                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-                    _registerPanel->color           = _colors.menu;
-                    _registerPanel->messageInsetY   = 1;
-                    _registerPanel->title           = "Register";
-                    _registerPanel->message         = "Please register debase";
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                break;
+//                {
+//                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+//                    _registerPanel->color           = _colors.menu;
+//                    _registerPanel->messageInsetY   = 1;
+//                    _registerPanel->title           = "Register";
+//                    _registerPanel->message         = "Please register debase";
+//                }
+//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//                break;
                 
                 if (!_selectionCanCombine()) {
                     beep();
