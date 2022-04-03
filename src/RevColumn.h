@@ -5,19 +5,44 @@
 #include "Color.h"
 #include "UTF8.h"
 #include "Button.h"
+#include "Control.h"
+
+#include <os/log.h>
 
 namespace UI {
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
-class RevColumn {
+class RevColumn : public Control {
 public:
-    RevColumn(const ColorPalette& colors) : colors(colors) {}
+    RevColumn(const ColorPalette& colors) :
+    Control(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
     
-    void layout() {
-        // Short-circuit if layout isn't needed
-        if (!_layoutNeeded) return;
-        _layoutNeeded = false;
+        undoButton.label = "Undo";
+        undoButton.center = true;
+        undoButton.drawBorder = true;
+        undoButton.insetX = 1;
+        
+        redoButton.label = "Redo";
+        redoButton.center = true;
+        redoButton.drawBorder = true;
+        redoButton.insetX = 1;
+        
+        snapshotsButton.label = "Snapshots…";
+        snapshotsButton.center = true;
+        snapshotsButton.drawBorder = true;
+        snapshotsButton.insetX = 1;
+        snapshotsButton.actionTrigger = Button::ActionTrigger::MouseDown;
+    }
+    
+    ~RevColumn() {
+        os_log(OS_LOG_DEFAULT, "~RevColumn");
+    }
+    
+    bool layout(const Window& win) override {
+        if (!Control::layout(win)) return false;
+        const Point pos = position();
+        const int width = size().x;
         
         // Set our column name
         {
@@ -31,100 +56,76 @@ public:
             _name.erase(std::min(UTF8::Strlen(_name), (size_t)width));
         }
         
-        // Create our CommitPanels
-        Rect nameFrame = {offset, {width, 1}};
-        _truncated = Intersection(containerBounds, nameFrame) != nameFrame;
-        if (!_truncated) {
-            // Create panels for each commit
-            int offY = _CommitsInsetY;
-            Git::Commit commit = rev.commit;
-            size_t skip = rev.skip;
-            while (commit) {
-                if (!skip) {
-                    Point p = offset + Size{0,offY};
-                    CommitPanelPtr panel = std::make_shared<CommitPanel>(colors, false, width, commit);
-                    Rect frame = {p, panel->frame().size};
-                    // Check if any part of the window would be offscreen
-                    if (Intersection(containerBounds, frame) != frame) break;
-                    panel->position(p);
-                    panels.push_back(panel);
-                    offY += panel->frame().size.y + _CommitSpacing;
-                
-                } else {
-                    skip--;
-                }
-                
-                commit = commit.parent();
+        // Create our CommitPanels for each commit
+        panels.clear();
+        int offY = _CommitsInsetY;
+        Git::Commit commit = rev.commit;
+        size_t skip = rev.skip;
+        while (commit) {
+            if (!skip) {
+                CommitPanelPtr panel = std::make_shared<CommitPanel>(colors, false, width, commit);
+                const Rect f = {pos + Size{0,offY}, panel->size()};
+                if (f.ymax() > frame().ymax()) break;
+                panel->position(f.point);
+                panels.push_back(panel);
+                offY += panel->size().y + _CommitSpacing;
+            
+            } else {
+                skip--;
             }
+            
+            commit = commit.parent();
         }
         
-        // Create our undo/redo buttons
-        if (rev.isMutable()) {
-            constexpr int UndoWidth      = 8;
-            constexpr int RedoWidth      = 8;
-            constexpr int SnapshotsWidth = 16;
-            
-            Rect undoFrame = {offset+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
-            Rect redoFrame = {offset+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
-            Rect snapshotsFrame = {offset+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
-            
-            {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
-                button->label = "Undo";
-                button->enabled = (bool)undoAction;
-                button->center = true;
-                button->drawBorder = true;
-                button->insetX = 1;
-                button->frame(undoFrame);
-                if (undoAction) {
-                    button->action = [&] (UI::Button&) { undoAction(*this); };
-                }
-            }
-            
-            {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
-                button->label = "Redo";
-                button->enabled = (bool)redoAction;
-                button->center = true;
-                button->drawBorder = true;
-                button->insetX = 1;
-                button->frame(redoFrame);
-                if (redoAction) {
-                    button->action = [&] (UI::Button&) { redoAction(*this); };
-                }
-            }
-            
-            {
-                auto button = _buttons.emplace_back(std::make_shared<UI::Button>(colors));
-                button->label = "Snapshots…";
-                button->enabled = (bool)snapshotsAction;
-                button->center = true;
-                button->drawBorder = true;
-                button->insetX = 1;
-                button->frame(snapshotsFrame);
-                button->actionTrigger = UI::Button::ActionTrigger::MouseDown;
-                if (snapshotsAction) {
-                    button->action = [&] (UI::Button&) { snapshotsAction(*this); };
-                }
-            }
-        }
+        constexpr int UndoWidth      = 8;
+        constexpr int RedoWidth      = 8;
+        constexpr int SnapshotsWidth = 16;
+        
+        Rect undoFrame = {pos+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
+        Rect redoFrame = {pos+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
+        Rect snapshotsFrame = {pos+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
+        
+        undoButton.enabled = (bool)undoButton.action;
+        redoButton.enabled = (bool)redoButton.action;
+        snapshotsButton.enabled = (bool)snapshotsButton.action;
+        
+        undoButton.frame(undoFrame);
+        redoButton.frame(redoFrame);
+        snapshotsButton.frame(snapshotsFrame);
+        
+        return true;
     }
     
-    void draw(const Window& win) {
-        // Don't draw anything if our column is truncated
-        if (_truncated) return;
+    bool drawNeeded() const override {
+        if (Control::drawNeeded()) return true;
+        if (_showButtons()) {
+            if (undoButton.drawNeeded()) return true;
+            if (redoButton.drawNeeded()) return true;
+            if (snapshotsButton.drawNeeded()) return true;
+        }
+        return false;
+    }
+    
+    bool draw(const Window& win) override {
+        if (!Control::draw(win)) return false;
+        
+        // Don't draw anything if we don't have any panels
+        if (panels.empty()) return true;
+        
+        const Point pos = position();
+        const int width = size().x;
         
         // Draw branch name
         if (win.erased()) {
             Window::Attr bold = win.attr(A_BOLD);
-            const Point p = offset + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
+            const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
         }
         
         if (!rev.isMutable()) {
             Window::Attr color = win.attr(colors.error);
             const char immutableText[] = "read-only";
-            const Point p = offset + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, "%s", immutableText);
         }
         
@@ -132,15 +133,22 @@ public:
             p->draw();
         }
         
-        for (ButtonPtr button : _buttons) {
-            button->draw(win);
+        if (_showButtons()) {
+            undoButton.draw(win);
+            redoButton.draw(win);
+            snapshotsButton.draw(win);
         }
+        
+        return true;
     }
     
-    bool handleEvent(const Window& win, const Event& ev) {
-        for (ButtonPtr button : _buttons) {
-            bool handled = button->handleEvent(win, ev);
-            if (handled) return true;
+    bool handleEvent(const Window& win, const Event& ev) override {
+        if (_showButtons()) {
+            bool handled = false;
+            if (!handled) handled = undoButton.handleEvent(win, ev);
+            if (!handled) handled = redoButton.handleEvent(win, ev);
+            if (!handled) handled = snapshotsButton.handleEvent(win, ev);
+            return handled;
         }
         return false;
     }
@@ -152,16 +160,12 @@ public:
         return nullptr;
     }
     
-    const ColorPalette& colors;
-    Rect containerBounds;
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
-    Point offset;
-    int width = 0;
-    std::function<void(RevColumn&)> undoAction;
-    std::function<void(RevColumn&)> redoAction;
-    std::function<void(RevColumn&)> snapshotsAction;
+    Button undoButton;
+    Button redoButton;
+    Button snapshotsButton;
     CommitPanelVec panels;
     
 private:
@@ -172,10 +176,11 @@ private:
     static constexpr int _ButtonWidth    = 8;
     static constexpr int _CommitSpacing  = 1;
     
-    bool _layoutNeeded = true;
+    bool _showButtons() const {
+        return rev.isMutable();
+    }
+    
     std::string _name;
-    bool _truncated = false;
-    std::vector<ButtonPtr> _buttons;
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;

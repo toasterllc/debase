@@ -71,6 +71,7 @@ public:
     }
     
     bool drawNeeded() const override {
+        if (Panel::drawNeeded()) return true;
         for (ButtonPtr button : buttonsVisible) {
             if (button->drawNeeded()) return true;
         }

@@ -11,7 +11,7 @@ public:
         size(s);
     }
     
-    void setBorderColor(std::optional<Color> x) {
+    void borderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;
         drawNeeded(true);

@@ -15,6 +15,8 @@
 #include "Terminal.h"
 #include "Theme.h"
 
+#include <os/log.h>
+
 extern "C" {
     extern char** environ;
 };
@@ -24,8 +26,9 @@ public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     bool layout() override {
-        layoutNeeded(true);
         if (!Window::layout()) return false;
+        
+        os_log(OS_LOG_DEFAULT, "App::layout()");
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
@@ -33,13 +36,69 @@ public:
             _drag.titlePanel->borderColor(selectionColor);
             
             for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
-                panel->setBorderColor(selectionColor);
+                panel->borderColor(selectionColor);
             }
         }
         
-        for (UI::RevColumnPtr col : _columns) {
-            col->layout();
+        // Create/layout columns
+        {
+            constexpr int ColumnInsetX = 3;
+            constexpr int ColumnWidth = 32;
+            constexpr int ColumnSpacing = 6;
+            
+            int offX = ColumnInsetX;
+            size_t i = 0;
+            for (const Git::Rev& rev : _revs) {
+                State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
+                UI::Rect f = {{offX, 0}, {ColumnWidth, size().y}};
+                if (f != Intersection(bounds(), f)) break;
+                
+                // Create the column if it doesn't exist yet
+                UI::RevColumnPtr col = (i<_columns.size() ? _columns[i] : nullptr);
+                if (!col) {
+                    col = std::make_shared<UI::RevColumn>(_colors);
+                    col->repo   = _repo;
+                    col->rev    = rev;
+                    col->head   = (rev.displayHead() == _head.commit);
+                    
+                    if (h && !h->begin()) {
+                        col->undoButton.action = [=] (UI::Button&) { _undoRedo(*col, true); };
+                    }
+                    
+                    if (h && !h->end()) {
+                        col->redoButton.action = [=] (UI::Button&) { _undoRedo(*col, false); };
+                    }
+                    
+                    col->snapshotsButton.action = [=] (UI::Button&) { _trackSnapshotsMenu(*col); };
+                    _columns.push_back(col);
+                }
+                
+                col->frame({{offX, 0}, {ColumnWidth, size().y}});
+                col->layout(*this);
+                
+                offX += ColumnWidth+ColumnSpacing;
+                i++;
+            }
+            
+            os_log(OS_LOG_DEFAULT, "App::cols before = %zu", _columns.size());
+            
+            // Erase columns that aren't visible
+            _columns.erase(_columns.begin()+i, _columns.end());
+            
+            os_log(OS_LOG_DEFAULT, "App::cols after = %zu", _columns.size());
         }
+        
+//        {
+//            constexpr int InsetX = 3;
+//            constexpr int ColumnWidth = 32;
+//            constexpr int ColumnSpacing = 6;
+//            int offX = InsetX;
+//            for (UI::RevColumnPtr col : _columns) {
+//                col->frame({{offX, 0}, {ColumnWidth, size().y}});
+//                col->layout(*this);
+//                offX += ColumnWidth+ColumnSpacing;
+//            }
+//        }
         
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
@@ -349,20 +408,21 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            {
-                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-                _registerPanel->color           = _colors.menu;
-                _registerPanel->messageInsetY   = 1;
-                _registerPanel->title           = "Register";
-                _registerPanel->message         = "Please register debase";
-            }
+//            {
+//                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+//                _registerPanel->color           = _colors.menu;
+//                _registerPanel->messageInsetY   = 1;
+//                _registerPanel->title           = "Register";
+//                _registerPanel->message         = "Please register debase";
+//            }
             
             for (;;) {
                 _reload();
+                
                 try {
                     track();
                 } catch (const UI::WindowResize&) {
-                    // Continue the loop, which calls _Reload()
+                    // Continue the loop, which calls _reload()
                 }
             }
             
@@ -624,10 +684,6 @@ private:
     
     void _reload() {
         // Create a RevColumn for each specified branch
-        constexpr int InsetX = 3;
-        constexpr int ColumnWidth = 32;
-        constexpr int ColumnSpacing = 6;
-        
         if (_head.ref) {
             _head = _repo.revReload(_head);
         }
@@ -638,39 +694,7 @@ private:
             }
         }
         
-        _columns.clear();
-        int OffsetX = InsetX;
-        for (const Git::Rev& rev : _revs) {
-            State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
-            
-            std::function<void(UI::RevColumn&)> undoAction;
-            std::function<void(UI::RevColumn&)> redoAction;
-            std::function<void(UI::RevColumn&)> snapshotsAction;
-            
-            if (h && !h->begin()) {
-                undoAction = [&] (UI::RevColumn& col) { _undoRedo(col, true); };
-            }
-            
-            if (h && !h->end()) {
-                redoAction = [&] (UI::RevColumn& col) { _undoRedo(col, false); };
-            }
-            
-            snapshotsAction = [&] (UI::RevColumn& col) { _trackSnapshotsMenu(col); };
-            
-            UI::RevColumnPtr col = std::make_shared<UI::RevColumn>(_colors);
-            col->containerBounds    = bounds();
-            col->repo               = _repo;
-            col->rev                = rev;
-            col->head               = (rev.displayHead() == _head.commit);
-            col->offset             = UI::Size{OffsetX, 0};
-            col->width              = ColumnWidth;
-            col->undoAction         = undoAction;
-            col->redoAction         = redoAction;
-            col->snapshotsAction    = snapshotsAction;
-            _columns.push_back(col);
-            
-            OffsetX += ColumnWidth+ColumnSpacing;
-        }
+        layoutNeeded(true);
     }
     
     // _trackMouseInsideCommitPanel
@@ -998,7 +1022,7 @@ private:
         }
         
         const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
-        const UI::Point p = {col.offset.x+(col.width-width)/2, 2};
+        const UI::Point p = {col.position().x+(col.size().x-width)/2, 2};
         const int heightMax = size().y-p.y;
         
         UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>(_colors);
