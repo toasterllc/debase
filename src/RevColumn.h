@@ -121,6 +121,7 @@ public:
         
         // Draw branch name
         if (win.erased()) {
+            Window::Attr color = win.attr(colors.menu);
             Window::Attr bold = win.attr(A_BOLD);
             const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
