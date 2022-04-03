@@ -95,17 +95,6 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    // eraseNeeded(): sets whether the window should be erased the next time it's drawn
-    void eraseNeeded(bool x) {
-        _s.eraseNeeded = x;
-        if (_s.eraseNeeded) {
-            drawNeeded(true);
-        }
-    }
-    
-    // erased(): whether the window was erased during this draw cycle
-    bool erased() const { return _s.erased; }
-    
     Point position() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     
     Size size() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
@@ -255,6 +244,17 @@ public:
         }
         return false;
     }
+    
+    // eraseNeeded(): sets whether the window should be erased the next time it's drawn
+    void eraseNeeded(bool x) {
+        _s.eraseNeeded = x;
+        if (_s.eraseNeeded) {
+            drawNeeded(true);
+        }
+    }
+    
+    // erased(): whether the window was erased during this draw cycle
+    bool erased() const { return _s.erased; }
     
     Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
