@@ -218,7 +218,11 @@ public:
         // by ncurses (eg by the terminal size changing)
         const bool sizeChanged = _s.sizePrev!=size();
         if (layoutNeeded() || sizeChanged) {
-            if (sizeChanged) erase(true); // Need to erase after resizing
+            if (sizeChanged) {
+                // We need to erase and redraw after resizing
+                erase(true);
+                drawNeeded(true);
+            }
             _s.sizePrev = size();
             layoutNeeded(false);
             return true;
