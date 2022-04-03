@@ -410,7 +410,11 @@ public:
         bool detachHead = _head.ref && std::find(_revs.begin(), _revs.end(), _head)!=_revs.end();
         
         if (detachHead && _repo.dirty()) {
-            throw Toastbox::RuntimeError("please commit or stash your outstanding changes before running debase on %s", _head.displayName().c_str());
+            throw Toastbox::RuntimeError(
+                "can't run debase on current branch (%s) while there are outstanding changes.\n"
+                "\n"
+                "Please commit or stash your outstanding changes, or detach HEAD (git checkout -d).\n",
+            _head.displayName().c_str());
         }
         
         // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
