@@ -87,14 +87,16 @@ public:
             button->draw(*this);
             
             // Draw separator
-            if (button != buttonsVisible.back()) {
-                Window::Attr color = attr(colors.menu);
-                drawLineHoriz({0, button->frame().ymax()+1}, width);
+            if (erased()) { // Performance optimization: only draw if the window was erased
+                if (button != buttonsVisible.back()) {
+                    Window::Attr color = attr(colors.menu);
+                    drawLineHoriz({0, button->frame().ymax()+1}, width);
+                }
             }
         }
         
         // Draw border
-        {
+        if (erased()) { // Performance optimization: only draw if the window was erased
             Window::Attr color = attr(colors.menu);
             drawBorder();
             

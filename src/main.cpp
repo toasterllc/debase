@@ -71,6 +71,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: move from master~3 -> master doesn't select commits in master
+    
     #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
     
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?

@@ -25,7 +25,7 @@ public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     bool layout() override {
-        layoutNeeded(true);
+//        layoutNeeded(true);
         if (!Window::layout()) return false;
         
         // Create/layout columns
@@ -78,6 +78,16 @@ public:
             while (_columns.size() > i) _columns.pop_back();
         }
         
+        bool dragging = (bool)_drag.titlePanel;
+        bool copying = _drag.copy;
+        for (UI::RevColumn& col : _columns) {
+            for (UI::CommitPanelPtr panel : col.panels) {
+                const _SelectState selectState = _selectStateGet(col, panel);
+                const bool visible = (selectState!=_SelectState::True ? true : (!dragging || copying));
+                panel->visible(visible);
+            }
+        }
+        
 //        {
 //            constexpr int InsetX = 3;
 //            constexpr int ColumnWidth = 32;
@@ -93,7 +103,6 @@ public:
 //        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         // Order all the title panel and shadow panels
-        bool dragging = (bool)_drag.titlePanel;
         if (dragging) {
             for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
                 (*it)->orderFront();
@@ -151,23 +160,17 @@ public:
         }
         
         bool dragging = (bool)_drag.titlePanel;
-        bool copying = _drag.copy;
         for (UI::RevColumn& col : _columns) {
             for (UI::CommitPanelPtr panel : col.panels) {
-                bool visible = false;
-                std::optional<UI::Color> borderColor;
+                UI::Color borderColor;
                 _SelectState selectState = _selectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
-                    visible = !dragging || copying;
-                    if (dragging) borderColor = _colors.selectionSimilar;
-                    else          borderColor = _colors.selection;
+                    borderColor = (dragging ? _colors.selectionSimilar : _colors.selection);
                 
                 } else {
-                    visible = true;
-                    if (!dragging && selectState==_SelectState::Similar) borderColor = _colors.selectionSimilar;
+                    borderColor = (!dragging && selectState==_SelectState::Similar ? _colors.selectionSimilar : _colors.normal);
                 }
                 
-                panel->visible(visible);
                 panel->borderColor(borderColor);
             }
         }
@@ -708,7 +711,7 @@ private:
             col.layoutNeeded(true);
         }
         
-//        layoutNeeded(true);
+        layoutNeeded(true);
     }
     
     // _trackMouseInsideCommitPanel
@@ -766,11 +769,8 @@ private:
                     _drag.shadowPanels.push_back(std::make_shared<UI::BorderedPanel>(shadowSize));
                 }
                 
-                // Order all the title panel and shadow panels
-                for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
-                    (*it)->orderFront();
-                }
-                _drag.titlePanel->orderFront();
+                // The titlePanel/shadowPanels need layout
+                layoutNeeded(true);
             
             } else if (!allow) {
                 _drag = {};
@@ -821,7 +821,7 @@ private:
                 }
             }
             
-            erase(true); // Need to erase the insertion marker
+            eraseNeeded(true); // Need to erase the insertion marker
             refresh();
             ev = nextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
@@ -886,7 +886,10 @@ private:
         }
         
         // Reset state
-        erase(true); // We need one more erase to erase the insertion marker
+        // The dragged panels need layout
+        layoutNeeded(true);
+        // We need one more erase to erase the insertion marker
+        eraseNeeded(true);
         _drag = {};
         
         return gitOp;
@@ -946,7 +949,7 @@ private:
                 }
             }
             
-            erase(true); // Need to erase the selection rect
+            eraseNeeded(true); // Need to erase the selection rect
             refresh();
             ev = nextEvent();
             // Check if we should abort
@@ -956,7 +959,7 @@ private:
         }
         
         // Reset state
-        erase(true); // We need one more erase to erase the selection rect upon mouse-up
+        eraseNeeded(true); // We need one more erase to erase the selection rect upon mouse-up
         _selectionRect = std::nullopt;
     }
     

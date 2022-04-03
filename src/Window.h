@@ -95,8 +95,14 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    // erase(): sets whether the window should be erased the next time it's drawn
-    void erase(bool x) { _s.erase = x; }
+    // eraseNeeded(): sets whether the window should be erased the next time it's drawn
+    void eraseNeeded(bool x) {
+        _s.eraseNeeded = x;
+        if (_s.eraseNeeded) {
+            drawNeeded(true);
+        }
+    }
+    
     // erased(): whether the window was erased during this draw cycle
     bool erased() const { return _s.erased; }
     
@@ -219,9 +225,8 @@ public:
         const bool sizeChanged = _s.sizePrev!=size();
         if (layoutNeeded() || sizeChanged) {
             if (sizeChanged) {
-                // We need to erase and redraw after resizing
-                erase(true);
-                drawNeeded(true);
+                // We need to erase (and redraw) after resizing
+                eraseNeeded(true);
             }
             _s.sizePrev = size();
             layoutNeeded(false);
@@ -237,12 +242,12 @@ public:
             // Remember whether we erased ourself during this draw cycle
             // This is used by Control instances (Button and TextField)
             // to know whether they need to be drawn again
-            _s.erased = _s.erase;
+            _s.erased = _s.eraseNeeded;
             
             // Erase ourself if needed, and remember that we did so
-            if (_s.erase) {
+            if (_s.eraseNeeded) {
                 ::werase(*this);
-                _s.erase = false;
+                _s.eraseNeeded = false;
             }
             
             drawNeeded(false);
@@ -263,8 +268,8 @@ private:
         Event eventCurrent;
         bool layoutNeeded = true;
         bool drawNeeded = true;
-        // erase: tracks whether the window needs to be erased the next time it's drawn
-        bool erase = true;
+        // eraseNeeded: tracks whether the window needs to be erased the next time it's drawn
+        bool eraseNeeded = true;
         // erased: tracks whether the window was erased in this draw cycle
         bool erased = false;
     } _s;

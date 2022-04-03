@@ -27,7 +27,7 @@ public:
         size({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
     }
     
-    void borderColor(std::optional<Color> x) {
+    void borderColor(const Color& x) {
         if (_borderColor == x) return;
         _borderColor = x;
         drawNeeded(true);
@@ -52,8 +52,7 @@ public:
         }
         
         {
-            Window::Attr color;
-            if (_borderColor) color = attr(*_borderColor);
+            Window::Attr color = attr(_borderColor);
             drawBorder();
             
             if (_commit.isMerge()) {
@@ -64,7 +63,7 @@ public:
         {
             Window::Attr bold = attr(A_BOLD);
             Window::Attr color;
-            if (!_header && _borderColor) color = attr(*_borderColor);
+            if (!_header) color = attr(_borderColor);
             drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
         }
         
@@ -75,8 +74,7 @@ public:
         }
         
         if (_header) {
-            Window::Attr color;
-            if (_borderColor) color = attr(*_borderColor);
+            Window::Attr color = attr(_borderColor);
             drawText({3, 0}, " %s ", _headerLabel.c_str());
         }
         
@@ -102,7 +100,7 @@ private:
     std::string _time;
     std::string _author;
     std::vector<std::string> _message;
-    std::optional<Color> _borderColor;
+    Color _borderColor = _colors.normal;
 };
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;
