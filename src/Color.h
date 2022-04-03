@@ -16,7 +16,7 @@ public:
     NCURSES_COLOR_T b = 0;
     
     operator int() const { return COLOR_PAIR(idx); }
-    bool operator ==(const Color& x) const { return !memcmp(this, &x, sizeof(Color)); }
+    bool operator ==(const Color& x) const { return idx==x.idx && r==x.r && g==x.g && b==x.b; }
 };
 
 class ColorPalette {

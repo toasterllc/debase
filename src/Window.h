@@ -14,11 +14,11 @@ public:
     public:
         Attr() {}
         Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
-//            if (rand() % 2) {
-//                wattron(*_s.win, A_REVERSE);
-//            } else {
-//                wattroff(*_s.win, A_REVERSE);
-//            }
+            if (rand() % 2) {
+                wattron(*_s.win, A_REVERSE);
+            } else {
+                wattroff(*_s.win, A_REVERSE);
+            }
             
             wattron(*_s.win, _s.attr);
         }
