@@ -10,7 +10,10 @@ class TextField : public Control {
 public:
     TextField(const ColorPalette& colors) : Control(colors) {}
     
-    void layout(const Window& win) override {
+    bool layoutNeeded() const override { return true; }
+    
+    bool layout(const Window& win) override {
+        if (!Control::layout(win)) return false;
         _offUpdate();
         
         if (_focus) {
@@ -18,12 +21,11 @@ public:
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
         }
+        return true;
     }
     
-    void draw(const Window& win) override {
-        drawNeeded = true;
-        if (!drawNeeded) return;
-        Control::draw(win);
+    bool draw(const Window& win) override {
+        if (!Control::draw(win)) return false;
         
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
@@ -37,19 +39,23 @@ public:
         
         std::string substr(left, right);
         win.drawText(position(), "%s", substr.c_str());
+        
+        return true;
     }
     
     bool handleEvent(const Window& win, const Event& ev) override {
         bool handled = _handleEvent(win, ev);
         if (!handled) return false;
-        drawNeeded = true;
+        drawNeeded(true);
         return true;
     }
     
     bool focus() const { return _focus; }
     void focus(bool x) {
+        if (_focus == x) return;
         _focus = x;
         if (_cursorState) _cursorState.restore();
+        drawNeeded(true);
     }
     
     std::function<void(TextField&)> requestFocus;

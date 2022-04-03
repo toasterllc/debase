@@ -35,20 +35,14 @@ public:
         };
     }
     
-    void layout() override {
-        if (!layoutNeeded) return;
-        Panel::layout();
-        
+    bool layout() override {
+        if (!Panel::layout()) return false;
         _messageLines = _createMessageLines();
+        return true;
     }
     
-    void draw() override {
-        if (!drawNeeded) return;
-        Panel::draw();
-        
-        // Erase needed to handle the case where our panel is resized (eg when the
-        // terminal window is being resized)
-        erase();
+    bool draw() override {
+        if (!Panel::draw()) return false;
         
         int offY = _MessageInsetY-1; // -1 because the title overwrites the border
         {
@@ -73,6 +67,8 @@ public:
             drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
             offY++;
         }
+        
+        return true;
     }
     
     bool handleEvent(const Event& ev) override {

@@ -134,8 +134,8 @@ public:
         
         for (ButtonPtr button : _buttons) {
             // Force buttons to be redraw if the window was erased
-            if (win.erase()) {
-                button->drawNeeded = true;
+            if (win.erased()) {
+                button->drawNeeded(true);
             }
             button->draw(win);
         }

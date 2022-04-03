@@ -26,8 +26,10 @@ public:
         _email.focus(true);
     }
     
-    void layout() override {
-        ModalPanel::layout();
+    bool layoutNeeded() const override { return true; }
+    
+    bool layout() override {
+        if (!ModalPanel::layout()) return false;
         
         Size s = size();
         int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
@@ -38,13 +40,19 @@ public:
         _code.frame({{_FieldValueInsetX, offY}, {fieldWidth, 1}});
         _code.layout(*this);
         offY += 2;
+        
+        return true;
     }
     
-    void draw() override {
-//        drawNeeded = true;
-        if (!drawNeeded) return;
-        
-        ModalPanel::draw();
+    bool drawNeeded() const override {
+        if (ModalPanel::drawNeeded()) return true;
+        if (_email.drawNeeded()) return true;
+        if (_code.drawNeeded()) return true;
+        return false;
+    }
+    
+    bool draw() override {
+        if (!ModalPanel::draw()) return false;
         
         int offY = size().y-_FieldsExtraHeight-1;
         
@@ -65,6 +73,8 @@ public:
         
         _code.draw(*this);
         offY += 2;
+        
+        return true;
     }
     
     bool handleEvent(const Event& ev) override {
@@ -78,7 +88,7 @@ public:
         if (!handled) handled |= _email.handleEvent(*this, ev);
         if (!handled) handled |= _code.handleEvent(*this, ev);
         // If we handled an event, we need to draw
-        if (handled) drawNeeded = true;
+        if (handled) ModalPanel::drawNeeded(true);
         return true;
     }
     

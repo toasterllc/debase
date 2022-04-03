@@ -30,19 +30,18 @@ public:
     void borderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
     void headerLabel(std::string_view x) {
         assert(_header);
         if (_headerLabel == x) return;
         _headerLabel = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
-    void draw() {
-        if (!drawNeeded) return;
-        Panel::draw();
+    bool draw() override {
+        if (!Panel::draw()) return false;
         
         const int offY = (_header ? 1 : 0);
         
@@ -85,6 +84,8 @@ public:
             Window::Attr color = attr(_colors.dimmed);
             drawText({2, offY+1}, "%s", _author.c_str());
         }
+        
+        return true;
     }
     
     const Git::Commit commit() const { return _commit; }

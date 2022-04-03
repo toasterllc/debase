@@ -27,15 +27,15 @@ public:
     void position(const Point& x) {
         if (_frame.point == x) return;
         _frame.point = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
     Size size() const { return _frame.size; }
     void size(const Size& x) {
         if (_frame.size == x) return;
         _frame.size = x;
-        layoutNeeded = true;
-        drawNeeded = true;
+        layoutNeeded(true);
+        drawNeeded(true);
     }
     
     Rect frame() const {
@@ -45,20 +45,30 @@ public:
     void frame(const Rect& x) {
         if (_frame == x) return;
         _frame = x;
-        layoutNeeded = true;
-        drawNeeded = true;
+        layoutNeeded(true);
+        drawNeeded(true);
     }
     
-    bool layoutNeeded = true;
-    virtual void layout(const Window& win) {
-        assert(layoutNeeded); // For debugging unnecessary layout
-        layoutNeeded = false;
+    virtual bool layoutNeeded() const { return _layoutNeeded; }
+    virtual void layoutNeeded(bool x) { _layoutNeeded = x; }
+    virtual bool layout(const Window& win) {
+        if (layoutNeeded()) {
+            layoutNeeded(false);
+            return true;
+        }
+        return false;
     }
     
-    bool drawNeeded = true;
-    virtual void draw(const Window& win) {
-        assert(drawNeeded); // For debugging unnecessary layout
-        drawNeeded = false;
+    virtual bool drawNeeded() const { return _drawNeeded; }
+    virtual void drawNeeded(bool x) { _drawNeeded = x; }
+    
+    virtual bool draw(const Window& win) {
+        // If the window was erased during this draw cycle, we need to redraw
+        if (drawNeeded() || win.erased()) {
+            drawNeeded(false);
+            return true;
+        }
+        return false;
     }
     
     virtual bool handleEvent(const Window& win, const Event& ev) {
@@ -75,6 +85,8 @@ public:
 
 private:
     Rect _frame;
+    bool _layoutNeeded = true;
+    bool _drawNeeded = true;
 };
 
 } // namespace UI

@@ -14,16 +14,17 @@ public:
     void setBorderColor(std::optional<Color> x) {
         if (_borderColor == x) return;
         _borderColor = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
-    void draw() {
-        if (!drawNeeded) return;
-        Panel::draw();
+    bool draw() override {
+        if (!Panel::draw()) return false;
         
         Window::Attr color;
         if (_borderColor) color = attr(*_borderColor);
         drawBorder();
+        
+        return true;
     }
     
 private:

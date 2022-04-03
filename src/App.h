@@ -23,10 +23,9 @@ class App : public UI::Window {
 public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
-    void layout() override {
-        layoutNeeded = true;
-        if (!layoutNeeded) return;
-        Window::layout();
+    bool layout() override {
+        layoutNeeded(true);
+        if (!Window::layout()) return false;
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
@@ -103,12 +102,13 @@ public:
             _registerPanel->orderFront();
             _registerPanel->layout();
         }
+        
+        return true;
     }
     
-    void draw() override {
-        drawNeeded = true;
-        if (!drawNeeded) return;
-        Window::draw();
+    bool draw() override {
+        drawNeeded(true);
+        if (!Window::draw()) return false;
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
@@ -142,6 +142,8 @@ public:
         if (_registerPanel) {
             _registerPanel->draw();
         }
+        
+        return true;
     }
     
     bool handleEvent(const UI::Event& ev) override {
@@ -347,13 +349,13 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-//            {
-//                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-//                _registerPanel->color           = _colors.menu;
-//                _registerPanel->messageInsetY   = 1;
-//                _registerPanel->title           = "Register";
-//                _registerPanel->message         = "Please register debase";
-//            }
+            {
+                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+                _registerPanel->color           = _colors.menu;
+                _registerPanel->messageInsetY   = 1;
+                _registerPanel->title           = "Register";
+                _registerPanel->message         = "Please register debase";
+            }
             
             for (;;) {
                 _reload();

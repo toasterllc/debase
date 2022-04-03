@@ -10,8 +10,8 @@ class SnapshotMenu : public Menu {
 public:
     using Menu::Menu;
     
-    void draw() {
-        Menu::draw();
+    bool draw() override {
+        if (!Menu::draw()) return false;
         const int width = size().x;
         
         // Draw separator
@@ -23,6 +23,8 @@ public:
             cchar_t c = { .chars = L"╍" };
             mvwhline_set(*this, p.y, p.x, &c, len);
         }
+        
+        return true;
     }
 };
 

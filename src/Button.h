@@ -19,9 +19,8 @@ public:
     
     Button(const ColorPalette& colors) : Control(colors) {}
     
-    void draw(const Window& win) override {
-        if (!drawNeeded) return;
-        Control::draw(win);
+    bool draw(const Window& win) override {
+        if (!Control::draw(win)) return false;
         
         const Rect f = frame();
         size_t labelLen = UTF8::Strlen(label);
@@ -64,6 +63,8 @@ public:
             Window::Attr color = win.attr(colors.dimmed);
             win.drawText(pkey, "%s", key.c_str());
         }
+        
+        return true;
     }
     
     bool handleEvent(const Window& win, const Event& ev) override {
@@ -91,14 +92,14 @@ public:
     void highlighted(bool x) {
         if (_highlighted == x) return;
         _highlighted = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
     bool mouseActive() { return _mouseActive; }
     void mouseActive(bool x) {
         if (_mouseActive == x) return;
         _mouseActive = x;
-        drawNeeded = true;
+        drawNeeded(true);
     }
     
     std::string label;

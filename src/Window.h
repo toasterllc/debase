@@ -21,8 +21,6 @@ public:
             }
             
             wattron(*_s.win, _s.attr);
-            
-//            wattron(*_s.win, _s.attr);
         }
         
         Attr(const Attr& x) = delete;
@@ -97,22 +95,20 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
+    // erase(): sets whether the window should be erased the next time it's drawn
     void erase(bool x) { _s.erase = x; }
-    bool erase() const { return _s.erase; }
+    // erased(): whether the window was erased during this draw cycle
+    bool erased() const { return _s.erased; }
     
     Point position() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     
     Size size() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     void size(const Size& s) {
         // Short-circuit if the size hasn't changed
-        // We need to compare against the last size we set (_s.sizePrev) *and* our current size(),
-        // because ncurses can change our size underneath us, due to terminal resizing clipping
-        // the window.
-        if (s==_s.sizePrev && s==size()) return;
+        if (s == size()) return;
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
-        _s.sizePrev = s;
-        layoutNeeded = true;
-        drawNeeded = true;
+        layoutNeeded(true);
+        drawNeeded(true);
     }
     
     virtual Size sizeIntrinsic() { return size(); }
@@ -196,17 +192,10 @@ public:
     
     void refresh() {
         layout();
-        
-        // Erase ourself if needed
-        if (_s.erase) ::werase(*this);
-        
         draw();
         CursorState::Draw();
         ::update_panels();
         ::refresh();
-        
-        // Clear our `erase` flag, now that the window has been drawn
-        erase(false);
     }
     
     virtual void track() {
@@ -222,16 +211,40 @@ public:
         }
     }
     
-    bool layoutNeeded = true;
-    virtual void layout() {
-        assert(layoutNeeded); // For debugging unnecessary layout
-        layoutNeeded = false;
+    virtual bool layoutNeeded() const { return _s.layoutNeeded; }
+    virtual void layoutNeeded(bool x) { _s.layoutNeeded = x; }
+    virtual bool layout() {
+        // Detect size changes that can occurs from underneath us
+        // by ncurses (eg by the terminal size changing)
+        const bool sizeChanged = _s.sizePrev!=size();
+        if (layoutNeeded() || sizeChanged) {
+            if (sizeChanged) erase(true); // Need to erase after resizing
+            _s.sizePrev = size();
+            layoutNeeded(false);
+            return true;
+        }
+        return false;
     }
     
-    bool drawNeeded = true;
-    virtual void draw() {
-        assert(drawNeeded); // For debugging unnecessary drawing
-        drawNeeded = false;
+    virtual bool drawNeeded() const { return _s.drawNeeded; }
+    virtual void drawNeeded(bool x) { _s.drawNeeded = x; }
+    virtual bool draw() {
+        if (drawNeeded()) {
+            // Remember whether we erased ourself during this draw cycle
+            // This is used by Control instances (Button and TextField)
+            // to know whether they need to be drawn again
+            _s.erased = _s.erase;
+            
+            // Erase ourself if needed, and remember that we did so
+            if (_s.erase) {
+                ::werase(*this);
+                _s.erase = false;
+            }
+            
+            drawNeeded(false);
+            return true;
+        }
+        return false;
     }
     
     Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
@@ -244,8 +257,12 @@ private:
         WINDOW* win = nullptr;
         Size sizePrev;
         Event eventCurrent;
-        // erase: tracks whether the window needs to be erased in the next refresh cycle
+        bool layoutNeeded = true;
+        bool drawNeeded = true;
+        // erase: tracks whether the window needs to be erased the next time it's drawn
         bool erase = true;
+        // erased: tracks whether the window was erased in this draw cycle
+        bool erased = false;
     } _s;
 };
 

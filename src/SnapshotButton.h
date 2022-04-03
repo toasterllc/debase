@@ -29,9 +29,8 @@ public:
         size({width, 3});
     }
     
-    void draw(const Window& win) override {
-        if (!drawNeeded) return;
-        Button::draw(win);
+    bool draw(const Window& win) override {
+        if (!Button::draw(win)) return false;
         
         const int width = size().x;
         const Point off = position();
@@ -91,6 +90,8 @@ public:
                 win.drawText(off + offTextY, "%s", " ");
             }
         }
+        
+        return true;
     }
     
     Git::Repo repo;

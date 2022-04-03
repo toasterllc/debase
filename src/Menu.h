@@ -35,10 +35,9 @@ public:
         return {width, height};
     }
     
-    void layout() override {
+    bool layout() override {
         // Short-circuit if layout isn't needed
-        if (!layoutNeeded) return;
-        Panel::layout();
+        if (!Panel::layout()) return false;
         
         const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
@@ -67,13 +66,19 @@ public:
             if (y > ymax) break;
             buttonsVisible.push_back(button);
         }
+        
+        return true;
     }
     
-    void draw() override {
-        drawNeeded |= _drawNeeded();
-        if (!drawNeeded) return;
-        
-        Panel::draw();
+    bool drawNeeded() const override {
+        for (ButtonPtr button : buttonsVisible) {
+            if (button->drawNeeded()) return true;
+        }
+        return false;
+    }
+    
+    bool draw() override {
+        if (!Panel::draw()) return false;
         
         const int width = bounds().size.x;
         
@@ -99,6 +104,8 @@ public:
                 drawText({offX,0}, " %s ", title.c_str());
             }
         }
+        
+        return true;
     }
     
     bool handleEvent(const Event& ev) override {
@@ -179,13 +186,6 @@ private:
     
     static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
     static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
-    
-    bool _drawNeeded() const {
-        for (ButtonPtr button : buttonsVisible) {
-            if (button->drawNeeded) return true;
-        }
-        return false;
-    }
     
     size_t _buttonCount = 0;
     
