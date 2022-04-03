@@ -207,15 +207,22 @@ inline std::optional<OpResult> _Exec_MoveCommits(Repo repo, const Op& op) {
         );
         
         // Replace the source branch/tag
-        Rev srcDstRev = repo.revReplace(op.src.rev, srcDstResult.commit);
+        repo.revReplace(op.src.rev, srcDstResult.commit);
+        // srcRev/dstRev: we're not using the result from revReplace() as the OpResult src/dst revs,
+        // and instead use repo.revReload() to get the new revs. This is to handle the case where
+        // we're moving commits between eg master and master~4. In this case, the revs are different
+        // even though the underlying refs are the same, so we can't use the same rev for both
+        // OpResult.src.rev and OpResult.dst.rev.
+        Rev srcRev = repo.revReload(op.src.rev);
+        Rev dstRev = repo.revReload(op.dst.rev);
         return OpResult{
             .src = {
-                .rev = srcDstRev,
+                .rev = srcRev,
                 .selection = srcDstResult.added,
                 .selectionPrev = op.src.commits,
             },
             .dst = {
-                .rev = srcDstRev,
+                .rev = dstRev,
                 .selection = srcDstResult.added,
                 .selectionPrev = op.src.commits,
             },
