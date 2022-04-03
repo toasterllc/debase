@@ -154,8 +154,18 @@ public:
         return true;
     }
     
+    bool drawNeeded() const override {
+        if (Window::drawNeeded()) return true;
+        for (const UI::RevColumn& col : _columns) {
+            if (col.drawNeeded()) return true;
+        }
+        if (_messagePanel && _messagePanel->drawNeeded()) return true;
+        if (_registerPanel && _registerPanel->drawNeeded()) return true;
+        return false;
+    }
+    
     bool draw() override {
-        drawNeeded(true);
+//        Window::drawNeeded(true);
         if (!Window::draw()) return false;
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
@@ -299,6 +309,7 @@ public:
                     _registerPanel->title           = "Register";
                     _registerPanel->message         = "Please register debase";
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 break;
                 
                 if (!_selectionCanCombine()) {

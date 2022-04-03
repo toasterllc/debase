@@ -1,5 +1,6 @@
 #pragma once
 #include "UI.h"
+//#include <os/log.h>
 
 namespace UI {
 
@@ -8,8 +9,10 @@ public:
     static void Draw() {
         if (_States.empty()) return;
         const _CursorState& state = _States.back();
-        ::curs_set(state.visible);
+//        os_log(OS_LOG_DEFAULT, "Cursor = {%d %d}", state.position.x, state.position.y);
         ::move(state.position.y, state.position.x);
+//        ::refresh();
+        ::curs_set(state.visible);
     }
     
     CursorState(bool visible, Point pos={}) : _id(_IdCurrent) {

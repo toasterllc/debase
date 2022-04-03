@@ -74,6 +74,8 @@ Resize terminal while menu is open
 Clicking button after opening snapshots menu requires delay + moving mouse 1 character
 
 * Theme
+dark mode looks good
+light mode looks good
 light mode automatically detected
 dark mode automatically detected
 setting theme=light works
