@@ -18,6 +18,8 @@ Delete commits using delete key
 
 History lost when head commit doesn't match saved commit
 
+Moving mouse and exiting debase doesn't result in mouse-moved escape sequences being printed to terminal
+
 * Edit commit
 Edit commit with double-click
 Edit commit with return key
