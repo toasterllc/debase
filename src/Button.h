@@ -76,7 +76,7 @@ public:
                 // Mouse-up events are to allow Menu to use this function for context
                 // menus: right-mouse-down opens the menu, while the right-mouse-up
                 // triggers the Button action via this function.
-                if (_enabled && (ev.mouseDown(actionButtons) || ev.mouseUp(actionButtons))) {
+                if (ev.mouseDown(actionButtons) || ev.mouseUp(actionButtons)) {
                     // Track mouse
                     _trackMouse(win, ev);
                     return true;

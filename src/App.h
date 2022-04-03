@@ -24,8 +24,17 @@ class App : public UI::Window {
 public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
+    bool layoutNeeded() const override {
+        if (Window::layoutNeeded()) return true;
+        for (const UI::RevColumn& col : _columns) {
+            if (col.layoutNeeded()) return true;
+        }
+        if (_messagePanel && _messagePanel->layoutNeeded()) return true;
+        if (_registerPanel && _registerPanel->layoutNeeded()) return true;
+        return false;
+    }
+    
     bool layout() override {
-//        layoutNeeded(true);
         if (!Window::layout()) return false;
         
         // Create/layout columns
@@ -283,6 +292,16 @@ public:
             }
             
             case UI::Event::Type::KeyC: {
+//                {
+//                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+//                    _registerPanel->color           = _colors.menu;
+//                    _registerPanel->messageInsetY   = 1;
+//                    _registerPanel->title           = "Register";
+//                    _registerPanel->message         = "Please register debase";
+//                }
+//                Window::layoutNeeded(true);
+//                break;
+                
                 if (!_selectionCanCombine()) {
                     beep();
                     break;
@@ -710,8 +729,6 @@ private:
             }
             col.layoutNeeded(true);
         }
-        
-        layoutNeeded(true);
     }
     
     // _trackMouseInsideCommitPanel
@@ -770,7 +787,7 @@ private:
                 }
                 
                 // The titlePanel/shadowPanels need layout
-                layoutNeeded(true);
+                Window::layoutNeeded(true);
             
             } else if (!allow) {
                 _drag = {};
@@ -887,7 +904,7 @@ private:
         
         // Reset state
         // The dragged panels need layout
-        layoutNeeded(true);
+        Window::layoutNeeded(true);
         // We need one more erase to erase the insertion marker
         eraseNeeded(true);
         _drag = {};

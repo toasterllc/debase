@@ -187,22 +187,18 @@ private:
                 return true;
             
             } else {
+                const int c = (int)ev.type;
+                // Ignore the character if it's not UTF-8 (>=256), or if it's non-printable ASCII
+                if (c>=256 || (c<128 && !isprint(c))) return true;
+                
                 // If the cursor's at the display-end, shift view right
                 if (_cursor() == _cursorMax()) {
                     auto left = UTF8::Next(_left(), value.end());
                     _offLeft = std::distance(value.begin(), left);
                 }
                 
-                const int c = (int)ev.type;
-                // If this is a valid UTF8 value...
-                if (c < 256) {
-                    // Add the character if it's non-ASCII (therefore UTF8), or if it is ASCII and it's printable
-                    if (c>=128 || isprint(c)) {
-                        value.insert(_cursor(), c);
-                        _offCursor++;
-                    }
-                }
-                
+                value.insert(_cursor(), c);
+                _offCursor++;
                 _offUpdate();
                 return true;
             }
