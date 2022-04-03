@@ -71,13 +71,9 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    #warning TODO: right click on panel doesn't draw purple
-    
     #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
     
     #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
-    
-    #warning TODO: verify that ctrl-c still works with RegPanel visible
     
     #warning TODO: implement 7-day trial
     
@@ -96,6 +92,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: verify that ctrl-c still works with RegPanel visible
+//
+//    #warning TODO: right click on panel doesn't draw purple
+//
 //    #warning TODO: screen flickers when showing error panel (throw exception when deleting commit)
 //
 //    #warning TODO: get snapshots menu working again
