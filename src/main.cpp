@@ -71,6 +71,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    #warning TODO: allow debase to be called from git repo subdirectories
+    
     #warning TODO: implement 7-day trial
     
     #warning TODO: implement registration
