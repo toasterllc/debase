@@ -72,13 +72,7 @@ private:
     
     std::string::iterator _leftMin() { return value.begin(); }
     std::string::iterator _leftMax() {
-        int width = size().x;
-        auto it = value.end();
-        while (width && it!=value.begin()) {
-            it = UTF8::Prev(it, value.begin());
-            width--;
-        }
-        return it;
+        return UTF8::NextN(value.end(), value.begin(), -size().x);
     }
     
     std::string::iterator _cursor() {
@@ -88,15 +82,7 @@ private:
     
     std::string::iterator _cursorMin() { return _left(); }
     std::string::iterator _cursorMax() {
-        const int width = size().x;
-        auto left = _cursorMin();
-        auto right = left;
-        int len = 0;
-        while (len<width && right!=value.end()) {
-            right = UTF8::Next(right, value.end());
-            len++;
-        }
-        return right;
+        return UTF8::NextN(_cursorMin(), value.end(), size().x);
     }
     
     ssize_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
@@ -172,6 +158,18 @@ private:
                 
                 auto it = UTF8::Next(cursor, value.end());
                 _offCursor = std::distance(value.begin(), it);
+                return true;
+            
+            } else if (ev.type == Event::Type::KeyUp) {
+                _offLeft = _offLeftMin();
+                _offCursor = _offCursorMin();
+                _offUpdate();
+                return true;
+            
+            } else if (ev.type == Event::Type::KeyDown) {
+                _offLeft = _offLeftMax();
+                _offCursor = _offCursorMax();
+                _offUpdate();
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {

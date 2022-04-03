@@ -51,6 +51,8 @@ struct Event {
         KeyFnDelete     = KEY_DC,
         KeyLeft         = KEY_LEFT,
         KeyRight        = KEY_RIGHT,
+        KeyUp           = KEY_UP,
+        KeyDown         = KEY_DOWN,
         KeyTab          = '\t',
         KeyBackTab      = KEY_BTAB,
         KeyEscape       = '\x1B',

@@ -292,15 +292,14 @@ public:
             }
             
             case UI::Event::Type::KeyC: {
-//                {
-//                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-//                    _registerPanel->color           = _colors.menu;
-//                    _registerPanel->messageInsetY   = 1;
-//                    _registerPanel->title           = "Register";
-//                    _registerPanel->message         = "Please register debase";
-//                }
-//                Window::layoutNeeded(true);
-//                break;
+                {
+                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
+                    _registerPanel->color           = _colors.menu;
+                    _registerPanel->messageInsetY   = 1;
+                    _registerPanel->title           = "Register";
+                    _registerPanel->message         = "Please register debase";
+                }
+                break;
                 
                 if (!_selectionCanCombine()) {
                     beep();
@@ -693,6 +692,8 @@ private:
     }
     
     bool _selectionCanCombine() {
+        if (_selection.commits.empty()) return false;
+        
         bool selectionContainsMerge = false;
         for (Git::Commit commit : _selection.commits) {
             if (commit.isMerge()) {
@@ -704,10 +705,12 @@ private:
     }
     
     bool _selectionCanEdit() {
+        if (_selection.commits.empty()) return false;
         return _selection.rev.isMutable() && _selection.commits.size() == 1;
     }
     
     bool _selectionCanDelete() {
+        if (_selection.commits.empty()) return false;
         return _selection.rev.isMutable();
     }
     
