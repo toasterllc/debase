@@ -44,28 +44,30 @@ public:
     bool draw() override {
         if (!Panel::draw()) return false;
         
-        int offY = _MessageInsetY-1; // -1 because the title overwrites the border
-        {
-            Window::Attr style = attr(color);
-            drawRect(Inset(bounds(), {2,1}));
-            drawRect(bounds());
-        }
-        
-        {
-            Window::Attr style = attr(color|A_BOLD);
-            drawText({_MessageInsetX, offY}, " %s ", title.c_str());
-            offY++;
-        }
-        
-        offY += messageInsetY;
-        
-        for (const std::string& line : _messageLines) {
-            int offX = 0;
-            if (align==TextAlign::Center || (align==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
-                offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
+        if (erased()) {
+            int offY = _MessageInsetY-1; // -1 because the title overwrites the border
+            {
+                Window::Attr style = attr(color);
+                drawRect(Inset(bounds(), {2,1}));
+                drawRect(bounds());
             }
-            drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
-            offY++;
+            
+            {
+                Window::Attr style = attr(color|A_BOLD);
+                drawText({_MessageInsetX, offY}, " %s ", title.c_str());
+                offY++;
+            }
+            
+            offY += messageInsetY;
+            
+            for (const std::string& line : _messageLines) {
+                int offX = 0;
+                if (align==TextAlign::Center || (align==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
+                    offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
+                }
+                drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
+                offY++;
+            }
         }
         
         return true;

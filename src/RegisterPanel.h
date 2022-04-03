@@ -57,7 +57,7 @@ public:
         int offY = size().y-_FieldsExtraHeight-1;
         
         // Draw email field
-        {
+        if (erased()) {
             Attr style = attr(color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
         }
@@ -66,7 +66,7 @@ public:
         offY += 2;
         
         // Draw code field
-        {
+        if (erased()) {
             Attr style = attr(color|A_BOLD);
             drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
         }

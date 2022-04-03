@@ -61,7 +61,6 @@ public:
     
     virtual bool drawNeeded() const { return _drawNeeded; }
     virtual void drawNeeded(bool x) { _drawNeeded = x; }
-    
     virtual bool draw(const Window& win) {
         // If the window was erased during this draw cycle, we need to redraw
         if (drawNeeded() || win.erased()) {

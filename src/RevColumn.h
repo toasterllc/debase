@@ -115,7 +115,7 @@ public:
         if (_truncated) return;
         
         // Draw branch name
-        {
+        if (win.erased()) {
             Window::Attr bold = win.attr(A_BOLD);
             const Point p = offset + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, "%s", _name.c_str());
@@ -133,10 +133,6 @@ public:
         }
         
         for (ButtonPtr button : _buttons) {
-            // Force buttons to be redraw if the window was erased
-            if (win.erased()) {
-                button->drawNeeded(true);
-            }
             button->draw(win);
         }
     }
