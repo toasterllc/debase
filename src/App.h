@@ -25,6 +25,7 @@ public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     bool layoutNeeded() const override {
+        // We need to layout if any of our constituents needs to layout
         if (Window::layoutNeeded()) return true;
         for (const UI::RevColumn& col : _columns) {
             if (col.layoutNeeded()) return true;
@@ -165,7 +166,7 @@ public:
     }
     
     bool draw() override {
-//        Window::drawNeeded(true);
+        // We need to draw if any of our constituents needs to layout
         if (!Window::draw()) return false;
         
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
