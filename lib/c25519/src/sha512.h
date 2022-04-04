@@ -22,12 +22,18 @@ struct sha512_state {
 };
 
 /* Initial state */
-extern const struct sha512_state sha512_initial_state;
+extern const struct sha512_state sha512_initial_state;      // SHA512
+extern const struct sha512_state sha512half_initial_state;  // SHA512-256
 
 /* Set up a new context */
 static inline void sha512_init(struct sha512_state *s)
 {
 	memcpy(s, &sha512_initial_state, sizeof(*s));
+}
+
+static inline void sha512half_init(struct sha512_state *s)
+{
+	memcpy(s, &sha512half_initial_state, sizeof(*s));
 }
 
 /* Feed a full block in */

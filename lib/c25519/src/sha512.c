@@ -13,6 +13,13 @@ const struct sha512_state sha512_initial_state = { {
 	0x1f83d9abfb41bd6bLL, 0x5be0cd19137e2179LL,
 } };
 
+const struct sha512_state sha512half_initial_state = { {
+    0x22312194fc2bf72cLL, 0x9f555fa3c84c64c2LL,
+    0x2393b86b6f53b151LL, 0x963877195940eabdLL,
+    0x96283ee2a88effe3LL, 0xbe5e1e2553863992LL,
+    0x2b0199fc2c85b8aaLL, 0x0eb72ddc81c52ca2LL,
+} };
+
 static const uint64_t round_k[80] = {
 	0x428a2f98d728ae22LL, 0x7137449123ef65cdLL,
 	0xb5c0fbcfec4d3b2fLL, 0xe9b5dba58189dbbcLL,
