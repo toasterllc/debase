@@ -5,6 +5,7 @@
 #include "Terminal.h"
 #include "Debase.h"
 #include "lib/toastbox/Stringify.h"
+//#include "license/SHA512Half.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -82,6 +83,10 @@ int main(int argc, const char* argv[]) {
 //    CURLcode cr = Curl_base64_encode("hello", 5, &res, &resLen);
 //    assert(cr==CURLE_OK);
 //    printf("%s\n", res);
+    
+//    SHA512Half::Hash hash = SHA512Half::Calc("hello");
+//    printf("%s", SHA512Half::StringForHash(hash).c_str());
+//    return 0;
     
     #warning TODO: allow debase to be called from git repo subdirectories
     

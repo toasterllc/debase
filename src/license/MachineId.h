@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <sys/stat.h>
+#include "SHA512Half.h"
 
 namespace License {
 
@@ -39,7 +40,7 @@ inline MachineId MachineIdGet() {
         "/bin/mkdir",
     };
     
-    std::stringstream str;
+    std::stringstream stream;
     for (const fs::path& path : paths) {
         struct stat info;
         int ir = 0;
@@ -47,10 +48,20 @@ inline MachineId MachineIdGet() {
         while (ir && errno==EINTR);
         
         const ino_t inode = (ir==0 ? info.st_ino : 0);
-        str << path << "=" << std::to_string(inode) << Separator;
+        stream << path << "=" << std::to_string(inode) << Separator;
     }
     
-    str << "ram=" << std::to_string(_RAMCapacity()) << Separator;
+    stream << "ram=" << std::to_string(_RAMCapacity()) << Separator;
+    
+    std::string str = stream.str();
+    sha512_state s;
+    sha512half_init(&s);
+    const uint8_t* data = (const uint8_t*)str.data();
+    const uint8_t* dataEnd = data+str.size();
+    for (; data<dataEnd; data+=SHA512_BLOCK_SIZE) {
+        sha512_block(&s, data);
+    }
+    sha512_final(&s, data, str.size());
     
     return "";
 }

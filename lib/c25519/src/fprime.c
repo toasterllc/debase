@@ -92,10 +92,10 @@ void fprime_from_bytes(uint8_t *n,
 		       const uint8_t *x, size_t len,
 		       const uint8_t *modulus)
 {
-	const int preload_total = min_int(prime_msb(modulus) - 1, len << 3);
+	const int preload_total = min_int(prime_msb(modulus) - 1, (int)(len << 3));
 	const int preload_bytes = preload_total >> 3;
 	const int preload_bits = preload_total & 7;
-	const int rbits = (len << 3) - preload_total;
+	const int rbits = (int)(len << 3) - preload_total;
 	int i;
 
 	memset(n, 0, FPRIME_SIZE);
