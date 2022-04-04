@@ -6,6 +6,11 @@
 #include "Debase.h"
 #include "lib/toastbox/Stringify.h"
 
+//extern "C" {
+//#include "lib/libcurl/include/curl/curl.h"
+//#include "lib/libcurl/lib/curl_base64.h"
+//}
+
 struct _Args {
     struct {
         bool en = false;
@@ -72,6 +77,12 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+//    char* res = nullptr;
+//    size_t resLen = 0;
+//    CURLcode cr = Curl_base64_encode("hello", 5, &res, &resLen);
+//    assert(cr==CURLE_OK);
+//    printf("%s\n", res);
+    
     #warning TODO: allow debase to be called from git repo subdirectories
     
     #warning TODO: implement 7-day trial

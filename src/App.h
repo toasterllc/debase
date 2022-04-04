@@ -15,7 +15,7 @@
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Theme.h"
-#include "License.h"
+#include "license/License.h"
 
 extern "C" {
     extern char** environ;

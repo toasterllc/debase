@@ -16,7 +16,7 @@
 ### Build libcurl
 
     cd lib/libcurl
-    ./configure --disable-shared --with-secure-transport --prefix=$PWD/build
+    ./configure --prefix=$PWD/build --disable-shared --with-secure-transport --disable-debug --disable-curldebug --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --disable-verbose --disable-crypto --disable-alt --without-brotli --without-zstd --without-libpsl --without-libgsasl --without-librtmp --without-winidn
     make install-strip
 
 ### Build debase

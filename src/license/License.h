@@ -1,7 +1,8 @@
 #pragma once
 #include "lib/nlohmann/json.h"
-#inclide "UserId.h"
-#inclide "MachineId.h"
+#include "UserId.h"
+#include "MachineId.h"
+#include "RegisterCode.h"
 
 extern "C" {
 #include "lib/c25519/src/edsign.h"
@@ -86,8 +87,7 @@ inline Status Unseal(const SealedLicense& sealed, License& license) {
     
     // Decode the payload
     try {
-        nlohmann::json j;
-        license.payload >> j;
+        nlohmann::json j = nlohmann::json::parse(sealed.payload);
         j.get_to(license);
     
     } catch (...) {
@@ -127,5 +127,11 @@ inline Status Validate(const License& license, const Context& ctx) {
 //   
 //   - we have reasonable security against rolling back the machine's time -- that'll only work if you
 //     save the license before it expires _and_ you roll back the machine's time.
+
+// - have a troubleshooting mechanism to allow a license to be specified on the command line,
+//   to support users who email that the trial isn't working, or requesting more time.
+//   2 parts:
+//     debase --machine    prints the machine id, which the user communicates to support@heytoaster.com
+//     debase --license    sets the license, supplied by support@heytoaster.com
 
 } // namespace License
