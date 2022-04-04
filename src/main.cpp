@@ -4,6 +4,7 @@
 #include "StateDir.h"
 #include "Terminal.h"
 #include "Debase.h"
+#include "lib/toastbox/Stringify.h"
 
 struct _Args {
     struct {
@@ -56,7 +57,7 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
 }
 
 static void _PrintUsage() {
-    std::cout << "debase version " DebaseVersionString "\n";
+    std::cout << "debase version " Stringify(DebaseVersion) "\n";
     std::cout << "\n";
     std::cout << "Usage:\n";
     std::cout << "  -h, --help\n";
