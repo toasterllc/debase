@@ -1,6 +1,5 @@
 #pragma once
 #include <algorithm>
-#include "Window.h"
 
 namespace UTF8 {
 

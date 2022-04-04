@@ -1,6 +1,6 @@
 #pragma once
 #include <optional>
-#include "Git.h"
+#include "git/Git.h"
 #include "Panel.h"
 #include "Color.h"
 #include "LineWrap.h"

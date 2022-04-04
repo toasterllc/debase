@@ -1,9 +1,9 @@
 #pragma once
-#include "Git.h"
+#include "git/Git.h"
+#include "state/State.h"
 #include "Color.h"
 #include "LineWrap.h"
 #include "UTF8.h"
-#include "State.h"
 #include "Time.h"
 
 namespace UI {

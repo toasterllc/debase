@@ -10,5 +10,5 @@ std::filesystem::path StateDir() {
     
     NSURL* libDir = urls[0];
     std::filesystem::path path = [libDir fileSystemRepresentation];
-    return path / "Preferences" / DebaseBundleId;
+    return path / "Preferences" / DebaseProductId;
 }

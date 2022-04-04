@@ -10,5 +10,5 @@ std::filesystem::path StateDir() {
         if (home.empty()) throw Toastbox::RuntimeError("HOME environment variable isn't set");
         configDir = home / ".config";
     }
-    return configDir / DebaseBundleId;
+    return configDir / DebaseProductId;
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <optional>
+#include <vector>
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/libgit2/include/git2.h"

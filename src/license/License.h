@@ -37,7 +37,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 
 struct License {
     UserId userId;              // Hashed from email
-    RegisterCode registerCode;  // Hashed from code supplied to user upon purchase
+    RegisterCode registerCode;  // Code supplied to user upon purchase
     MachineId machineId;        // Stable, unique identifier for the licensed machine
     uint32_t version = 0;       // Software version
     uint64_t expiration = 0;    // Expiration (non-zero only for trial licenses)

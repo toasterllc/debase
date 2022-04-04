@@ -1,11 +1,11 @@
 #include <iostream>
 #include <spawn.h>
+#include "state/StateDir.h"
+#include "lib/toastbox/Stringify.h"
+#include "license/MachineId.h"
 #include "App.h"
-#include "StateDir.h"
 #include "Terminal.h"
 #include "Debase.h"
-#include "lib/toastbox/Stringify.h"
-//#include "license/SHA512Half.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -87,6 +87,11 @@ int main(int argc, const char* argv[]) {
 //    SHA512Half::Hash hash = SHA512Half::Calc("hello");
 //    printf("%s", SHA512Half::StringForHash(hash).c_str());
 //    return 0;
+    
+    printf("%s\n", License::MachineIdGet().c_str());
+    return 0;
+    
+    #warning TODO: obfuscate paths in MachineId.h
     
     #warning TODO: allow debase to be called from git repo subdirectories
     

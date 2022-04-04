@@ -8,8 +8,8 @@
 #include "lib/toastbox/FDStream.h"
 #include "lib/nlohmann/json.h"
 #include "History.h"
-#include "Git.h"
-#include "GitOp.h"
+#include "git/Git.h"
+#include "git/GitOp.h"
 
 namespace State {
 

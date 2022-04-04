@@ -1,5 +1,6 @@
 #pragma once
 #include "State.h"
+#include "Terminal.h"
 
 namespace State {
 

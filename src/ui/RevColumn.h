@@ -1,5 +1,5 @@
 #pragma once
-#include "Git.h"
+#include "git/Git.h"
 #include "Panel.h"
 #include "CommitPanel.h"
 #include "Color.h"

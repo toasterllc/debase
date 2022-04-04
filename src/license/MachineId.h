@@ -1,6 +1,8 @@
 #pragma once
 #include <filesystem>
+#include <sstream>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "SHA512Half.h"
 
 namespace License {
@@ -48,22 +50,13 @@ inline MachineId MachineIdGet() {
         while (ir && errno==EINTR);
         
         const ino_t inode = (ir==0 ? info.st_ino : 0);
-        stream << path << "=" << std::to_string(inode) << Separator;
+        stream << path.c_str() << "=" << std::to_string(inode) << Separator;
     }
     
     stream << "ram=" << std::to_string(_RAMCapacity()) << Separator;
     
-    std::string str = stream.str();
-    sha512_state s;
-    sha512half_init(&s);
-    const uint8_t* data = (const uint8_t*)str.data();
-    const uint8_t* dataEnd = data+str.size();
-    for (; data<dataEnd; data+=SHA512_BLOCK_SIZE) {
-        sha512_block(&s, data);
-    }
-    sha512_final(&s, data, str.size());
-    
-    return "";
+    SHA512Half::Hash hash = SHA512Half::Calc(stream.str());
+    return SHA512Half::StringForHash(hash);
 }
 
 } // namespace License
