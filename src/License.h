@@ -98,8 +98,9 @@ inline ValidateResult Validate(const License& license, const Context& ctx) {
 // - implement a 'grace' period in the debase binary so that it only ends the trial X minutes after
 //   the expiration time. this is so that once debase notifies the user that the trial has ended,
 //   the server is guaranteed (within reason) to no longer issue the expired license (to prevent
-//   machine time rollback attacks). 
+//   machine time-rollback attacks).
 //
+// - to help prevent time-rollback: determine the time using max(time(), modification/creation time of every file in current directory)
 //
 // - with the above strategy:
 //
