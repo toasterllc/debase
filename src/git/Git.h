@@ -141,7 +141,13 @@ protected:
         if (!msg) return git_error_last()->message;
         
         char buf[256];
-        snprintf(buf, sizeof(buf), "%s: %s", msg, git_error_last()->message);
+        const git_error* gitErr = git_error_last();
+        const char* gitErrMsg = (gitErr ? gitErr->message : nullptr);
+        if (gitErrMsg) {
+            snprintf(buf, sizeof(buf), "%s: %s", msg, gitErrMsg);
+        } else {
+            snprintf(buf, sizeof(buf), "%s", msg);
+        }
         return buf;
     }
 };
@@ -212,6 +218,17 @@ struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
         if (ir) throw Error(ir, "git_reflog_drop failed");
         ir = git_reflog_write(*get());
         if (ir) throw Error(ir, "git_reflog_write failed");
+    }
+    
+    const git_reflog_entry* operator [](size_t idx) const {
+        return git_reflog_entry_byindex(*get(), idx);
+    }
+    
+    const git_reflog_entry* at(size_t idx) const {
+        if (idx >= git_reflog_entrycount(*get())) {
+            throw std::out_of_range("index out of range");
+        }
+        return git_reflog_entry_byindex(*get(), idx);
     }
 };
 

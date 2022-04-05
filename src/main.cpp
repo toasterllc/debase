@@ -97,8 +97,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: obfuscate paths in MachineId.h
     
-    #warning TODO: if no arguments are specified, have debase launch with: @{0}, @{-1}, @{-2}
-    
     #warning TODO: allow debase to be called from git repo subdirectories
     
     #warning TODO: implement 7-day trial
@@ -118,6 +116,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: test new @{0} @{-1} @{-2} behavior with a git repo that has a reflog without that many entries
+//
+//    #warning TODO: if no arguments are specified, have debase launch with: @{0}, @{-1}, @{-2}
+//
 //    #warning TODO: figure out how to remove the layoutNeeded=true / drawNeeded=true from MainWindow layout()/draw()
 //    
 //    #warning TODO: try to optimize drawing. maybe draw using a random color so we can tell when things refresh?
@@ -387,7 +389,24 @@ int main(int argc, const char* argv[]) {
         }
         
         if (args.run.revs.empty()) {
-            revs.emplace_back(repo.headResolved());
+            constexpr size_t RevCountDefault = 3;
+            std::set<Git::Rev> unique;
+            ssize_t i = 0;
+            while (revs.size() < RevCountDefault) {
+                Git::Rev rev;
+                try {
+                    rev = (!i ? repo.headResolved() : repo.revLookup("@{" + std::to_string(i) + "}"));
+                    
+                    if (unique.find(rev) == unique.end()) {
+                        revs.emplace_back(rev);
+                        unique.insert(rev);
+                    }
+                
+                } catch (...) {
+                    break;
+                }
+                i--;
+            }
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
