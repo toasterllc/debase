@@ -1,5 +1,6 @@
 #pragma once
 #include "lib/nlohmann/json.h"
+#include "lib/toastbox/IntForStr.h"
 #include "UserId.h"
 #include "MachineId.h"
 #include "RegisterCode.h"
@@ -22,7 +23,7 @@ struct License {
     RegisterCode registerCode;  // Code supplied to user upon purchase
     MachineId machineId;        // Stable, unique identifier for the licensed machine
     uint32_t version = 0;       // Software version
-    uint64_t expiration = 0;    // Expiration (non-zero only for trial licenses)
+    int64_t expiration = 0;     // Expiration (non-zero only for trial licenses)
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, registerCode, machineId, version, expiration);
@@ -30,7 +31,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, registerCode, machineId, ver
 struct Context {
     MachineId machineId;
     uint32_t version = 0;
-    uint64_t time = 0;
+    int64_t time = 0;
 };
 
 enum class Status {
@@ -59,11 +60,18 @@ enum class Status {
 // Unseal: decodes a SealedLicense -> License, if the signature is valid
 inline Status Unseal(const uint8_t* publicKey, const SealedLicense& sealed, License& license) {
     // Validate that the signature is the correct size
-    if (sealed.signature.size() != EDSIGN_SIGNATURE_SIZE) return Status::InvalidSignatureSize;
+    if (sealed.signature.size() != 2*EDSIGN_SIGNATURE_SIZE) return Status::InvalidSignatureSize;
+    
+    // Hex string -> bytes
+    uint8_t sig[EDSIGN_SIGNATURE_SIZE];
+    for (size_t i=0; i<EDSIGN_SIGNATURE_SIZE; i++) {
+        const char s[3] = {sealed.signature[2*i],sealed.signature[(2*i)+1],0};
+        sig[i] = Toastbox::IntForStr<uint8_t>(s, 16);
+    }
     
     // Validate that the signature is valid for the payload
     // This verifies that the license came from our trusted server
-    bool ok = edsign_verify((const uint8_t*)sealed.signature.c_str(), publicKey,
+    bool ok = edsign_verify(sig, publicKey,
         (const uint8_t*)sealed.payload.c_str(), sealed.payload.size());
     if (!ok) return Status::InvalidSignature;
     

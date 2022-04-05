@@ -1,21 +1,26 @@
 #pragma once
+#include <stdint.h>
 
-#define _DebaseShortURL                 "ali6d2wo8k.execute-api.us-west-1.amazonaws.com/production"
-#define _DebaseURL                      "https://" _DebaseShortURL
+#if DebaseLicenseServer
+#define inline // Go can't handle 'inline' below
+#endif
 
-inline const uint32_t DebaseVersion     = 1;
-inline const char* DebaseProductId      = "com.heytoaster.debase";
-inline const char* DebaseDisplayURL     = _DebaseShortURL;
-inline const char* DebaseLicenseURL     = _DebaseURL "/license";
+#define _DebaseShortURL             "ali6d2wo8k.execute-api.us-west-1.amazonaws.com/production"
+#define _DebaseURL                  "https://" _DebaseShortURL
 
-#if DebaseServer
+inline const uint32_t DebaseVersion = 1;
+inline const char* DebaseProductId  = "com.heytoaster.debase";
+inline const char* DebaseDisplayURL = _DebaseShortURL;
+inline const char* DebaseLicenseURL = _DebaseURL "/license";
+
+#if DebaseLicenseServer
 inline const uint8_t DebaseKeySecret[] = {
     0xb3, 0xab, 0xbe, 0xc7, 0xfe, 0xe3, 0x1e, 0x1a,
     0xd4, 0xa4, 0x4e, 0xde, 0xfa, 0xf2, 0xc4, 0x4a,
     0xa5, 0x67, 0xdb, 0x03, 0x36, 0x32, 0x35, 0xa2,
     0xfa, 0xe4, 0x17, 0xb3, 0x15, 0x90, 0x66, 0x81,
 };
-#endif // DebaseServer
+#endif // DebaseLicenseServer
 
 inline const uint8_t DebaseKeyPublic[] = {
     0x9e, 0xf7, 0x3a, 0x4c, 0xab, 0x98, 0x6e, 0x0b,

@@ -1298,8 +1298,7 @@ private:
             }
         } catch (...) {} // Suppress failures while getting latest write time in repo dir
         
-        const uint64_t time = (latestTime.count()>0 ? latestTime.count() : 0);
-        
+        const int64_t time = latestTime.count();
         return License::Context{
             .machineId = machineId,
             .version = DebaseVersion,
