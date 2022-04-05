@@ -80,9 +80,11 @@ func reqSanitize(req license.Request) (license.Request, error) {
 		}
 	}
 
-	req.RegisterCode, err = registerCodeSanitize(req.RegisterCode)
-	if err != nil {
-		return license.Request{}, fmt.Errorf("invalid register code (%v): %w", req.UserId, err)
+	if req.RegisterCode != "" {
+		req.RegisterCode, err = registerCodeSanitize(req.RegisterCode)
+		if err != nil {
+			return license.Request{}, fmt.Errorf("invalid register code (%v): %w", req.UserId, err)
+		}
 	}
 
 	return req, nil
@@ -171,7 +173,7 @@ func HandlerTrial(ctx context.Context, mid license.MachineId) (license.Response,
 func Handler(ctx context.Context, req license.Request) (license.Response, error) {
 	req, err := reqSanitize(req)
 	if err != nil {
-		log.Printf("invalid request: %w", err)
+		log.Printf("invalid request: %v", err)
 		return license.Response{}, fmt.Errorf("invalid request")
 	}
 
@@ -179,7 +181,7 @@ func Handler(ctx context.Context, req license.Request) (license.Response, error)
 		// Register request
 		resp, err := HandlerLicense(ctx, req)
 		if err != nil {
-			log.Printf("HandlerLicense failed: %w", err)
+			log.Printf("HandlerLicense failed: %v", err)
 			return license.Response{}, fmt.Errorf("HandlerLicense failed")
 		}
 		return resp, nil
@@ -206,7 +208,6 @@ func Handler(ctx context.Context, req license.Request) (license.Response, error)
 }
 
 func main() {
-
 	aws, err := session.NewSession(&aws.Config{
 		Region: aws.String(os.Getenv("AWS_REGION")),
 	})
