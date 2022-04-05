@@ -10,24 +10,6 @@ extern "C" {
 
 namespace License {
 
-#if DebaseServer
-static constexpr uint8_t KeySecret[] = {
-    0xb3, 0xab, 0xbe, 0xc7, 0xfe, 0xe3, 0x1e, 0x1a,
-    0xd4, 0xa4, 0x4e, 0xde, 0xfa, 0xf2, 0xc4, 0x4a,
-    0xa5, 0x67, 0xdb, 0x03, 0x36, 0x32, 0x35, 0xa2,
-    0xfa, 0xe4, 0x17, 0xb3, 0x15, 0x90, 0x66, 0x81
-};
-static_assert(sizeof(KeySecret) == EDSIGN_SECRET_KEY_SIZE);
-#endif // DebaseServer
-
-static constexpr uint8_t KeyPublic[] = {
-    0x9e, 0xf7, 0x3a, 0x4c, 0xab, 0x98, 0x6e, 0x0b,
-    0x98, 0xae, 0xa8, 0x64, 0xb9, 0x4c, 0x18, 0xca,
-    0x6e, 0x7b, 0xa1, 0x04, 0x44, 0x15, 0x55, 0x3f,
-    0x1b, 0x79, 0x34, 0xba, 0x6c, 0x84, 0xec, 0xff
-};
-static_assert(sizeof(KeyPublic) == EDSIGN_PUBLIC_KEY_SIZE);
-
 struct SealedLicense {
     std::string payload;
     std::string signature;
@@ -75,13 +57,13 @@ enum class Status {
 //};
 
 // Unseal: decodes a SealedLicense -> License, if the signature is valid
-inline Status Unseal(const SealedLicense& sealed, License& license) {
+inline Status Unseal(const uint8_t* publicKey, const SealedLicense& sealed, License& license) {
     // Validate that the signature is the correct size
     if (sealed.signature.size() != EDSIGN_SIGNATURE_SIZE) return Status::InvalidSignatureSize;
     
     // Validate that the signature is valid for the payload
     // This verifies that the license came from our trusted server
-    bool ok = edsign_verify((const uint8_t*)sealed.signature.c_str(), KeyPublic,
+    bool ok = edsign_verify((const uint8_t*)sealed.signature.c_str(), publicKey,
         (const uint8_t*)sealed.payload.c_str(), sealed.payload.size());
     if (!ok) return Status::InvalidSignature;
     

@@ -1316,7 +1316,7 @@ private:
         
         License::SealedLicense sealed = state.license();
         License::License license;
-        License::Status st = License::Unseal(sealed, license);
+        License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
         
         // Perform further license validation if unsealing was successful
         if (st == License::Status::Valid) {

@@ -8,9 +8,11 @@ namespace License {
 
 // Request: a license request-request, ie an HTTP request that's a request for a license
 struct Request {
-    UserId userId;              // Populated when registered (ie !trial)
-    RegisterCode registerCode;  // Populated when registered (ie !trial)
-    MachineId machineId;        // Always populated
+    // Required
+    MachineId machineId;
+    // Only used for registration (not trials)
+    UserId userId;
+    RegisterCode registerCode;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, userId, registerCode, machineId);

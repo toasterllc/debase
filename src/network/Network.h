@@ -31,8 +31,9 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     }
     
     std::stringstream respStream;
-    auto respWriter = +[] (char* data, size_t _, size_t len, std::stringstream& respStream) {
+    auto respWriter = +[] (char* data, size_t _, size_t len, std::stringstream& respStream) -> size_t {
         respStream.write(data, len);
+        return len;
     };
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &respStream);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, respWriter);
