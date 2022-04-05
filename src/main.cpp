@@ -88,8 +88,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s", SHA512Half::StringForHash(hash).c_str());
 //    return 0;
     
-    printf("%s\n", License::MachineIdGet().c_str());
-    return 0;
+//    printf("%s\n", License::Calc().c_str());
+//    return 0;
+    
+    #warning TODO: what happens when decoding json state with a negative integer, into an unsigned field?
     
     #warning TODO: obfuscate paths in MachineId.h
     

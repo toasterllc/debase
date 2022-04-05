@@ -17,11 +17,14 @@ inline uint64_t _RAMCapacity() {
 
 using MachineId = std::string;
 
-inline MachineId MachineIdGet() {
+inline MachineId MachineIdCalc(std::string_view domain) noexcept {
+    namespace Fs = std::filesystem;
     constexpr const char* Separator = ":";
     
-    namespace fs = std::filesystem;
-    const fs::path paths[] = {
+    std::stringstream stream;
+    stream << domain << ":";
+    
+    const Fs::path paths[] = {
         // Directories
         "/bin",
         "/etc",
@@ -42,8 +45,7 @@ inline MachineId MachineIdGet() {
         "/bin/mkdir",
     };
     
-    std::stringstream stream;
-    for (const fs::path& path : paths) {
+    for (const Fs::path& path : paths) {
         struct stat info;
         int ir = 0;
         do ir = stat(path.c_str(), &info);

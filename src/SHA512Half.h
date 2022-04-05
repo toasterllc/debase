@@ -9,7 +9,7 @@ namespace SHA512Half {
 static constexpr size_t Len = SHA512_HASH_SIZE/2;
 using Hash = std::array<uint8_t,Len>;
 
-inline Hash Calc(std::string_view str) {
+inline Hash Calc(std::string_view str) noexcept {
     sha512_state s;
     sha512half_init(&s);
     const uint8_t* data = (const uint8_t*)str.data();
@@ -27,7 +27,7 @@ inline Hash Calc(std::string_view str) {
     return r;
 }
 
-inline std::string StringForHash(const Hash& hash) {
+inline std::string StringForHash(const Hash& hash) noexcept {
     char str[Len*2+1];
     size_t i = 0;
     for (uint8_t b : hash) {

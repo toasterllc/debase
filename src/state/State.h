@@ -7,9 +7,10 @@
 #include "lib/toastbox/FileDescriptor.h"
 #include "lib/toastbox/FDStream.h"
 #include "lib/nlohmann/json.h"
-#include "History.h"
 #include "git/Git.h"
 #include "git/GitOp.h"
+#include "license/License.h"
+#include "History.h"
 
 namespace State {
 
@@ -156,7 +157,7 @@ private:
     using _Path = std::filesystem::path;
     
     struct _State {
-        std::string license;
+        License::SealedLicense license;
         Theme theme = Theme::None;
     };
     
@@ -286,8 +287,8 @@ public:
         _StateWrite(_StateFilePath(_rootDir), _state);
     }
     
-    std::string license() const { return _state.license; }
-    void license(std::string_view x) { _state.license = x; }
+    const License::SealedLicense& license() const { return _state.license; }
+    void license(const License::SealedLicense& x) { _state.license = x; }
     
     Theme theme() const { return _state.theme; }
     void theme(Theme x) { _state.theme = x; }

@@ -1,9 +1,9 @@
 #pragma once
 #include <thread>
+#include "Debase.h"
 #include "git/Git.h"
 #include "ui/Window.h"
 #include "ui/Color.h"
-#include "state/State.h"
 #include "ui/RevColumn.h"
 #include "ui/SnapshotButton.h"
 #include "ui/BorderedPanel.h"
@@ -13,7 +13,9 @@
 #include "ui/RegisterPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
+#include "state/State.h"
 #include "license/License.h"
+#include "license/Network.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
 
@@ -393,8 +395,6 @@ public:
     }
     
     void run() {
-        namespace fs = std::filesystem;
-        
         _theme = State::ThemeRead();
         _head = _repo.head();
         
@@ -430,7 +430,7 @@ public:
                     _repo.checkout(_head.ref);
                 } catch (const Git::ConflictError& e) {
                     err = "Error: checkout failed because these untracked files would be overwritten:\n";
-                    for (const fs::path& path : e.paths) {
+                    for (const _Path& path : e.paths) {
                         err += "  " + std::string(path) + "\n";
                     }
                     
@@ -452,6 +452,8 @@ public:
             
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
+            
+            _licenseCheck();
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -481,6 +483,8 @@ public:
     }
     
 private:
+    using _Path = std::filesystem::path;
+    
     struct _Selection {
         Git::Rev rev;
         std::set<Git::Commit> commits;
@@ -1258,6 +1262,125 @@ private:
         }
         
         if (!preserveTerminal) _cursesInit();
+    }
+    
+    static License::Context _LicenseContext(const _Path& repoDir) {
+        using namespace std::chrono;
+        using namespace std::filesystem;
+        License::MachineId machineId = License::MachineIdCalc(DebaseProductId);
+        
+//        // Find t = max(time(), <time of each file in repoDir>),
+//        // to help prevent time-rollback attacks.
+//        auto t = std::chrono::system_clock::now();
+//        try {
+//            for (const _Path& p : Fs::directory_iterator(repoDir)) {
+//                try {
+//                    auto writeTimeSinceEpoch = std::chrono::time_point_cast<std::chrono::system_clock::duration>(Fs::last_write_time(p));
+//                    if (writeTimeSinceEpoch > t) {
+//                        t = writeTimeSinceEpoch;
+//                    }
+//                } catch (...) {} // Continue to next file if an error occurs
+//            }
+//        } catch (...) {} // Suppress failures while getting latest write time in repo dir
+        
+        
+        
+        // Find t = max(time(), <time of each file in repoDir>),
+        // to help prevent time-rollback attacks.
+        seconds latestTime = duration_cast<seconds>(system_clock::now().time_since_epoch());
+        try {
+            for (const path& p : directory_iterator(repoDir)) {
+                try {
+                    seconds writeTimeSinceEpoch = duration_cast<seconds>(last_write_time(p).time_since_epoch());
+                    latestTime = std::max(latestTime, writeTimeSinceEpoch);
+                } catch (...) {} // Continue to next file if an error occurs
+            }
+        } catch (...) {} // Suppress failures while getting latest write time in repo dir
+        
+        const uint64_t time = (latestTime.count()>0 ? latestTime.count() : 0);
+        
+        return License::Context{
+            .machineId = machineId,
+            .version = DebaseVersion,
+            .time = time,
+        };
+    }
+    
+//    void _trialStart(State::State& state) {
+//        
+//    }
+    
+    void _licenseCheck() {
+        State::State state(StateDir());
+        
+        License::SealedLicense sealed = state.license();
+        License::License license;
+        License::Status st = License::Unseal(sealed, license);
+        
+        // Perform further license validation if unsealing was successful
+        if (st == License::Status::Valid) {
+            License::Context ctx = _LicenseContext(_repo.path());
+            st = License::Validate(license, ctx);
+            
+            // If the license is valid except for the machine id, and it's not a trial license,
+            // request a new license from the server with our machine id
+            if (st==License::Status::InvalidMachineId && !license.expiration) {
+                
+            }
+        }
+        
+        if (st != License::Status::Valid) {
+            switch (st) {
+            // License expired:
+            // Show license-expired dialog
+            case License::Status::Expired:
+                break;
+            
+            // Generic license-invalid handling:
+            // Assume trial mode
+            default:
+                
+                
+                
+                break;
+            }
+        }
+        
+        // If the license is expired, show the expired dialog
+        if (st == License::Status::Expired) {
+            
+        } else {
+            
+        }
+        
+        // The license is invalid
+        // Assume trial mode
+        if (st != License::Status::Valid) {
+            
+        }
+        
+        if (st == License::Status::Valid) {
+            
+        
+        
+        
+        } else {
+            // Invalid license
+            // Assume trial mode
+            
+        }
+        
+//        if (st==License::Status::InvalidMachineId && )
+//        
+//        switch (st) {
+//        case InvalidMachineId:
+//            // The license is valid except for the machine id
+//            // If it's not a trial license, ask the server for a new license for the current machine id
+//            
+//            break;
+//        default:
+//        }
+//        if (st == )
     }
     
     Git::Repo _repo;
