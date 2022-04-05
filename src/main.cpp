@@ -25,7 +25,7 @@ struct _Args {
     struct {
         bool en = false;
         std::vector<std::string> revs;
-    } normal;
+    } run;
 };
 
 static _Args _ParseArgs(int argc, const char* argv[]) {
@@ -36,7 +36,7 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
     
     _Args args;
     if (strs.size() < 1) {
-        return _Args{ .normal = {.en = true}, };
+        return _Args{ .run = {.en = true}, };
     }
     
     if (strs[0]=="-h" || strs[0]=="--help") {
@@ -55,7 +55,7 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
     }
     
     return _Args{
-        .normal = {
+        .run = {
             .en = true,
             .revs = strs,
         },
@@ -90,6 +90,8 @@ int main(int argc, const char* argv[]) {
     
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
+    
+    #warning TODO: consider collecting telemetry from users: OS type, location
     
     #warning TODO: what happens when decoding json state with a negative integer, into an unsigned field?
     
@@ -358,7 +360,7 @@ int main(int argc, const char* argv[]) {
             State::ThemeWrite(theme);
             return 0;
         
-        } else if (!args.normal.en) {
+        } else if (!args.run.en) {
             throw Toastbox::RuntimeError("invalid arguments");
         }
         
@@ -384,13 +386,13 @@ int main(int argc, const char* argv[]) {
             throw Toastbox::RuntimeError("current directory isn't a git repository");
         }
         
-        if (args.normal.revs.empty()) {
-            revs.emplace_back(repo.head());
+        if (args.run.revs.empty()) {
+            revs.emplace_back(repo.headResolved());
         
         } else {
             // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
             std::set<Git::Rev> unique;
-            for (const std::string& revName : args.normal.revs) {
+            for (const std::string& revName : args.run.revs) {
                 Git::Rev rev;
                 try {
                     rev = repo.revLookup(revName);

@@ -204,6 +204,17 @@ struct Config : RefCounted<git_config*, git_config_free> {
     }
 };
 
+struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
+    using RefCounted::RefCounted;
+    
+    void drop(size_t idx) {
+        int ir = git_reflog_drop(*get(), idx, 1);
+        if (ir) throw Error(ir, "git_reflog_drop failed");
+        ir = git_reflog_write(*get());
+        if (ir) throw Error(ir, "git_reflog_write failed");
+    }
+};
+
 struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
     using RefCounted::RefCounted;
     
@@ -231,7 +242,7 @@ struct Commit : Object {
     const git_commit** get() const { return (const git_commit**)Object::get(); }
     const git_commit*& operator *() const { return *get(); }
     
-    static Commit FromObject(Object obj) {
+    static Commit ForObject(Object obj) {
         git_commit* x = nullptr;
         int ir = git_object_peel((git_object**)&x, *obj, GIT_OBJECT_COMMIT);
         if (ir) throw Error(ir, "git_object_peel failed");
@@ -356,7 +367,7 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
 struct Branch : Ref {
     using Ref::Ref;
     
-    static Branch FromRef(Ref ref) {
+    static Branch ForRef(Ref ref) {
         assert(ref.isBranch());
         git_reference* x = nullptr;
         int ir = git_reference_dup(&x, *ref);
@@ -390,7 +401,7 @@ struct Branch : Ref {
 struct Tag : Ref {
     using Ref::Ref;
     
-    static Tag FromRef(Ref ref) {
+    static Tag ForRef(Ref ref) {
         assert(ref.isTag());
         git_reference* x = nullptr;
         int ir = git_reference_dup(&x, *ref);
@@ -521,7 +532,11 @@ public:
         return git_repository_workdir(*get());
     }
     
-    Rev head() const {
+    Ref head() const {
+        return refFullNameLookup("HEAD");
+    }
+    
+    Rev headResolved() const {
         Ref ref;
         {
             git_reference* x = nullptr;
@@ -529,18 +544,11 @@ public:
             if (ir) throw Error(ir, "git_repository_head failed");
             ref = x;
         }
-        
         if (ref.isBranch()) return revLookup(ref.fullName());
         return ref.commit();
     }
     
-    void headDetach() const {
-        int ir = git_repository_detach_head(*get());
-        if (ir) throw Error(ir, "git_repository_detach_head failed");
-    }
-    
-    void checkout(Ref ref) const {
-        std::string fullName = ref.fullName();
+    void checkout(Rev rev) const {
         struct Ctx {
             std::vector<std::filesystem::path> conflicts;
         };
@@ -564,14 +572,38 @@ public:
             return 0;
         };
         
-        int ir = git_checkout_tree(*get(), (git_object*)*ref.tree(), &opts);
+        int ir = git_checkout_tree(*get(), (git_object*)*rev.commit.tree(), &opts);
         if (ir == GIT_ECONFLICT) throw ConflictError(ir, ctx.conflicts);
         else if (ir)             throw Error(ir, "git_checkout_tree failed");
         
-        ir = git_repository_set_head(*get(), fullName.c_str());
-        if (ir) throw Error(ir, "git_repository_set_head failed");
+        if (rev.ref) {
+            std::string fullName = rev.ref.fullName();
+            ir = git_repository_set_head(*get(), fullName.c_str());
+            if (ir) throw Error(ir, "git_repository_set_head failed");
+        
+        } else {
+            ir = git_repository_set_head_detached(*get(), &rev.commit.id());
+            if (ir) throw Error(ir, "git_repository_set_head_detached failed");
+        }
         
         submodulesUpdate(true);
+    }
+    
+    void headDetach() const {
+        int ir = git_repository_detach_head(*get());
+        if (ir) throw Error(ir, "git_repository_detach_head failed");
+        
+        // Forget that we detached head
+        Reflog reflog = reflogForRef(head());
+        reflog.drop(0);
+    }
+    
+    void headAttach(Rev rev) const {
+        checkout(rev);
+        
+        // Forget that we attached head
+        Reflog reflog = reflogForRef(head());
+        reflog.drop(0);
     }
     
     Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
@@ -693,10 +725,10 @@ public:
     
     Ref refReplace(Ref ref, Commit commit) const {
         if (ref.isBranch()) {
-            return branchReplace(Branch::FromRef(ref), commit);
+            return branchReplace(Branch::ForRef(ref), commit);
         
         } else if (ref.isTag()) {
-            return tagReplace(Tag::FromRef(ref), commit);
+            return tagReplace(Tag::ForRef(ref), commit);
         
         } else {
             // Unknown ref type
@@ -820,7 +852,7 @@ public:
     }
     
     Tag tagLookup(std::string_view name) const {
-        return Tag::FromRef(refLookup(name));
+        return Tag::ForRef(refLookup(name));
     }
     
     Tag tagCreate(std::string_view name, Commit commit, bool force=false) const {
@@ -917,6 +949,13 @@ public:
         }
     }
     
+    Reflog reflogForRef(Ref ref) const {
+        git_reflog* x = nullptr;
+        int ir = git_reflog_read(&x, *get(), ref.fullName().c_str());
+        if (ir) throw Error(ir, "git_reflog_read failed");
+        return x;
+    }
+    
 private:
     Rev _revLookup(std::string_view str) const {
         Ref ref;
@@ -931,7 +970,7 @@ private:
         }
         
         if (ref) return Rev(ref, 0);
-        return Commit::FromObject(obj);
+        return Commit::ForObject(obj);
     }
     
     Index _cherryPick(Commit dst, Commit commit) const {

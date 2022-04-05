@@ -396,7 +396,7 @@ public:
     
     void run() {
         _theme = State::ThemeRead();
-        _head = _repo.head();
+        _head = _repo.headResolved();
         
         // Create _repoState
         std::set<Git::Ref> refs;
@@ -408,7 +408,7 @@ public:
         // Determine if we need to detach head.
         // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
         // In other words, we need to detach head when whatever is checked-out may be modified.
-        bool detachHead = _head.ref && std::find(_revs.begin(), _revs.end(), _head)!=_revs.end();
+        bool detachHead = _head.ref && refs.find(_head.ref)!=refs.end();
         
         if (detachHead && _repo.dirty()) {
             throw Toastbox::RuntimeError(
@@ -427,7 +427,7 @@ public:
                 std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
                 std::string err;
                 try {
-                    _repo.checkout(_head.ref);
+                    _repo.headAttach(_head);
                 } catch (const Git::ConflictError& e) {
                     err = "Error: checkout failed because these untracked files would be overwritten:\n";
                     for (const _Path& path : e.paths) {
