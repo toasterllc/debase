@@ -95,6 +95,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: obfuscate paths in MachineId.h
     
+    #warning TODO: if no arguments are specified, have debase launch with: @{0}, @{-1}, @{-2}
+    
     #warning TODO: allow debase to be called from git repo subdirectories
     
     #warning TODO: implement 7-day trial

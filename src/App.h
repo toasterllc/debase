@@ -412,9 +412,9 @@ public:
         
         if (detachHead && _repo.dirty()) {
             throw Toastbox::RuntimeError(
-                "can't run debase on current branch (%s) while there are outstanding changes.\n"
+                "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
                 "\n"
-                "Please commit or stash your outstanding changes, or detach HEAD (git checkout -d).\n",
+                "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
             _head.displayName().c_str());
         }
         
