@@ -15,7 +15,8 @@
 #include "state/Theme.h"
 #include "state/State.h"
 #include "license/License.h"
-#include "license/Network.h"
+#include "license/Request.h"
+#include "network/Network.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
 
@@ -1339,7 +1340,13 @@ private:
             // Generic license-invalid handling:
             // Assume trial mode
             default:
+                sleep(1);
+                License::Request req = {
+                    .machineId = License::MachineIdCalc(DebaseProductId),
+                };
                 
+                License::RequestResponse resp;
+                Network::Request(DebaseLicenseURL, req, resp);
                 
                 
                 break;
