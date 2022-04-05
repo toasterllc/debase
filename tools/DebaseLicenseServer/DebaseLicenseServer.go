@@ -23,7 +23,7 @@ import (
 )
 
 // #cgo CFLAGS: -DDebaseLicenseServer=1
-// #include "Debase.h"
+// #include "../../src/Debase.h"
 import "C"
 
 const LicenseTableName = "License"
@@ -109,7 +109,7 @@ func trialLicenseCreate(mid license.MachineId) license.License {
 	expiration := time.Now().Add(TrialDuration)
 	return license.License{
 		MachineId:  mid,
-		Version:    C.DebaseVersion,
+		Version:    uint32(C.DebaseVersion),
 		Expiration: expiration.Unix(),
 	}
 }
