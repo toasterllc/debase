@@ -91,6 +91,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: add installation affordances: suggest movinig debase to a permanent location, add git alias
+    
     #warning TODO: consider collecting telemetry from users: OS type, location
     
     #warning TODO: what happens when decoding json state with a negative integer, into an unsigned field?
