@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -22,19 +21,18 @@ import (
 )
 
 // #cgo CFLAGS: -DDebaseLicenseServer=1
-// #include "../../src/Debase.h"
+// #include "Debase.h"
 import "C"
 
 const LicensesCollection = "Licenses"
 const TrialsCollection = "Trials"
 const TrialDuration = 7 * 24 * time.Hour
 
-var projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 var db *firestore.Client
 
 func init() {
 	var err error
-	db, err = firestore.NewClient(context.Background(), projectID)
+	db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("firestore.NewClient failed: %v", err)
 	}
@@ -197,11 +195,6 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 
-	//     //
-	// h := sha512.New512_256()
-	// h.Write(licb)
-	// sigb := h.Sum(nil)
-
 	key := ed25519.PrivateKey(*(*[]byte)(unsafe.Pointer(&C.DebaseKeyPrivate)))
 	sig := ed25519.Sign(key, payload)
 	sealed := license.SealedLicense{
@@ -215,31 +208,6 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 		return fmt.Errorf("json.NewEncoder(w).Encode failed: %w", err)
 	}
 	return nil
-
-	// av, err := dynamodbattribute.MarshalMap(SealedLicenseRecord{
-	//     MachineId:     mid,
-	//     SealedLicense: sealed,
-	// })
-	// if err != nil {
-	//     return license.Response{}, fmt.Errorf("dynamodbattribute.MarshalMap failed: %w", err)
-	// }
-	//
-	// _, err = db.PutItemWithContext(ctx, &dynamodb.PutItemInput{
-	//     Item:                av,
-	//     TableName:           aws.String(TrialTableName),
-	//     ConditionExpression: aws.String("attribute_not_exists(machineId)"),
-	// })
-	//
-	// if err != nil {
-	//     return fmt.Errorf("db.PutItem failed: %w", err)
-	// }
-	//
-	// resp := license.Response{License: sealed}
-	// err = json.NewEncoder(w).Encode(&resp)
-	// if err != nil {
-	//     return fmt.Errorf("json.NewDecoder failed: %w", err)
-	// }
-	// return nil
 }
 
 func entry(w http.ResponseWriter, r *http.Request) error {
