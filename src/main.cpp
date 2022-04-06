@@ -78,6 +78,8 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
+    sleep(1);
+    
 //    char* res = nullptr;
 //    size_t resLen = 0;
 //    CURLcode cr = Curl_base64_encode("hello", 5, &res, &resLen);

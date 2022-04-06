@@ -1339,7 +1339,6 @@ private:
             // Generic license-invalid handling:
             // Assume trial mode
             default:
-                sleep(1);
                 License::Request req = {
                     .machineId = License::MachineIdCalc(DebaseProductId),
                 };

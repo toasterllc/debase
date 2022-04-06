@@ -5,7 +5,7 @@
 #define inline // Go can't handle 'inline' below
 #endif
 
-#define _DebaseShortURL             "ali6d2wo8k.execute-api.us-west-1.amazonaws.com/production"
+#define _DebaseShortURL             "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer"
 #define _DebaseURL                  "https://" _DebaseShortURL
 
 inline const uint32_t DebaseVersion = 1;

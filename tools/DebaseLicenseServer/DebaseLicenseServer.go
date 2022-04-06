@@ -165,7 +165,7 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
 				// Create the license
-				_, err = licRef.Create(ctx, licNew)
+				err = tx.Create(licRef, licNew)
 				if err != nil {
 					return fmt.Errorf("licRef.Create failed: %w", err)
 				}
@@ -257,7 +257,7 @@ func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
 	err := entry(w, r)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		http.Error(w, "Error", http.StatusBadRequest) // Intentionally not divulging the error in the response
+		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusBadRequest) // Intentionally not divulging the error in the response
 		return
 	}
 }
