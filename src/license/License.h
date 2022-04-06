@@ -35,7 +35,7 @@ struct Context {
 };
 
 enum class Status {
-    Invalid,
+    Empty,
     InvalidSignatureSize,
     InvalidSignature,
     InvalidPayload,
@@ -59,6 +59,7 @@ enum class Status {
 
 // Unseal: decodes a SealedLicense -> License, if the signature is valid
 inline Status Unseal(const uint8_t* publicKey, const SealedLicense& sealed, License& license) {
+    if (sealed.payload.empty()) return Status::Empty;
     // Validate that the signature is the correct size
     if (sealed.signature.size() != 2*EDSIGN_SIGNATURE_SIZE) return Status::InvalidSignatureSize;
     

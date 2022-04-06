@@ -1310,23 +1310,42 @@ private:
 //        
 //    }
     
-    void _licenseCheck() {
-        State::State state(StateDir());
-        
-        License::SealedLicense sealed = state.license();
-        License::License license;
+    static License::Status _LicenseUnseal(const _Path& repoDir, const License::SealedLicense& sealed, License::License& license) {
         License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
+        if (st != License::Status::Valid) return st;
+        // Unsealing was successful; validate the license payload
+        License::Context ctx = _LicenseContext(repoDir);
+        return License::Validate(license, ctx);
+    }
+    
+    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {
+        License::License license;
+        License::Status st = _LicenseUnseal(_repo.path(), sealed, license);
         
-        // Perform further license validation if unsealing was successful
-        if (st == License::Status::Valid) {
-            License::Context ctx = _LicenseContext(_repo.path());
-            st = License::Validate(license, ctx);
+        // If the license is valid except for the machine id, and it's not a trial license,
+        // request a new license from the server with our machine id
+        if (st==License::Status::InvalidMachineId && !license.expiration) {
+            if (!networkAllowed) return st;
             
-            // If the license is valid except for the machine id, and it's not a trial license,
-            // request a new license from the server with our machine id
-            if (st==License::Status::InvalidMachineId && !license.expiration) {
-                
+            const License::Request req = {
+                .machineId = License::MachineIdCalc(DebaseProductId),
+                .userId = license.userId,
+                .registerCode = license.registerCode,
+            };
+            
+            License::RequestResponse resp;
+            try {
+                Network::Request(DebaseLicenseURL, req, resp);
+            } catch (const std::exception& e) {
+                #warning TODO: license is authentic but isn't valid for this machine, but we couldn't reach the server to renew it
             }
+            
+            if (!resp.error.empty()) {
+                #warning TODO: license is authentic but isn't valid for this machine, and the server gave us an error when we tried to renew it
+                return;
+            }
+            
+            return _licenseCheck(resp.license, false);
         }
         
         if (st != License::Status::Valid) {
@@ -1334,18 +1353,28 @@ private:
             // License expired:
             // Show license-expired dialog
             case License::Status::Expired:
+                #warning TODO: Show license-expired dialog
                 break;
             
             // Generic license-invalid handling:
             // Assume trial mode
             default:
-                License::Request req = {
+                const License::Request req = {
                     .machineId = License::MachineIdCalc(DebaseProductId),
                 };
                 
                 License::RequestResponse resp;
                 Network::Request(DebaseLicenseURL, req, resp);
+                if (!resp.error.empty()) {
+                    #warning TODO: show error panel with `resp.error`
+                    break;
+                }
                 
+                // Validate response
+                _LicenseUnseal(_repo.path(), resp.license, license);
+                
+                License::Context ctx = _LicenseContext(_repo.path());
+                st = License::Validate(license, ctx);
                 
                 break;
             }
@@ -1387,6 +1416,86 @@ private:
 //        }
 //        if (st == )
     }
+
+    
+//    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {
+//        State::State state(StateDir());
+//        
+//        License::License license;
+//        License::Status st = _SealedLicenseValidate(_repo.path(), state.license(), license);
+//        
+//        // If the license is valid except for the machine id, and it's not a trial license,
+//        // request a new license from the server with our machine id
+//        if (st==License::Status::InvalidMachineId && !license.expiration) {
+//            
+//        } else if (st != License::Status::Valid) {
+//            switch (st) {
+//            // License expired:
+//            // Show license-expired dialog
+//            case License::Status::Expired:
+//                #warning TODO: Show license-expired dialog
+//                break;
+//            
+//            // Generic license-invalid handling:
+//            // Assume trial mode
+//            default:
+//                const License::Request req = {
+//                    .machineId = License::MachineIdCalc(DebaseProductId),
+//                };
+//                
+//                License::RequestResponse resp;
+//                Network::Request(DebaseLicenseURL, req, resp);
+//                if (!resp.error.empty()) {
+//                    #warning TODO: show error panel with `resp.error`
+//                    break;
+//                }
+//                
+//                // Validate response
+//                _SealedLicenseValidate(_repo.path(), resp.license, license);
+//                
+//                License::Context ctx = _LicenseContext(_repo.path());
+//                st = License::Validate(license, ctx);
+//                
+//                break;
+//            }
+//        }
+//        
+//        // If the license is expired, show the expired dialog
+//        if (st == License::Status::Expired) {
+//            
+//        } else {
+//            
+//        }
+//        
+//        // The license is invalid
+//        // Assume trial mode
+//        if (st != License::Status::Valid) {
+//            
+//        }
+//        
+//        if (st == License::Status::Valid) {
+//            
+//        
+//        
+//        
+//        } else {
+//            // Invalid license
+//            // Assume trial mode
+//            
+//        }
+//        
+////        if (st==License::Status::InvalidMachineId && )
+////        
+////        switch (st) {
+////        case InvalidMachineId:
+////            // The license is valid except for the machine id
+////            // If it's not a trial license, ask the server for a new license for the current machine id
+////            
+////            break;
+////        default:
+////        }
+////        if (st == )
+//    }
     
     Git::Repo _repo;
     std::vector<Git::Rev> _revs;

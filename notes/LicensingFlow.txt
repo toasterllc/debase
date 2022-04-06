@@ -1,0 +1,29 @@
+* Register Panel
+
+    Welcome to debase!
+
+    Start free trial
+
+    Register
+
+---------------------------------
+
+* Licensing flow
+
+    SealedLicense empty?
+        yes && expired==0 -> show welcome panel
+        yes && expired==1 -> show register panel with custom message ("trial expired")
+        no -> _LicenseUnseal()
+            success -> done (debase is registered)
+            invalid machine id && !trial -> renew license
+                *** problem -- what if network IO stalls at this point?
+                *** user is able to use debase effectively unlicensed during this time.
+                *** however, our machine-id scheme isn't perfect, and the machine-id
+                *** could change over time. in such a case, we don't want to burden
+                *** paying customers by showing the register panel again.
+                *** compromise: refresh in the background with a 10-second timeout.
+                success -> done (debase is registered)
+                timeout / network error -> show modal error panel with retry button ("debase license isn't valid for this machine, but debase couldn't reach its server to renew it")
+                server error -> show register panel with server error message
+            expired -> delete license, set expired=1, show register panel with custom message ("trial expired")
+            error -> delete license, show welcome panel
