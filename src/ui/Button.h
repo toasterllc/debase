@@ -19,10 +19,6 @@ public:
     
     Button(const ColorPalette& colors) : Control(colors) {}
     
-    bool drawNeeded() const override {
-        return true;
-    }
-    
     bool draw(const Window& win) override {
         if (!Control::draw(win)) return false;
         
@@ -95,37 +91,37 @@ public:
         return false;
     }
     
-    auto label() const { return _label; }
+    const auto& label() const { return _label; }
     template <typename T> void label(const T& x) { _set(_label, x); }
     
-    auto key() const { return _key; }
+    const auto& key() const { return _key; }
     template <typename T> void key(const T& x) { _set(_key, x); }
     
-    auto enabled() const { return _enabled; }
+    const auto& enabled() const { return _enabled; }
     template <typename T> void enabled(const T& x) { _set(_enabled, x); }
     
-    auto highlighted() const { return _highlighted; }
+    const auto& highlighted() const { return _highlighted; }
     template <typename T> void highlighted(const T& x) { _set(_highlighted, x); }
     
-    auto mouseActive() const { return _mouseActive; }
+    const auto& mouseActive() const { return _mouseActive; }
     template <typename T> void mouseActive(const T& x) { _set(_mouseActive, x); }
     
-    auto center() const { return _center; }
+    const auto& center() const { return _center; }
     template <typename T> void center(const T& x) { _set(_center, x); }
     
-    auto drawBorder() const { return _drawBorder; }
+    const auto& drawBorder() const { return _drawBorder; }
     template <typename T> void drawBorder(const T& x) { _set(_drawBorder, x); }
     
-    auto insetX() const { return _insetX; }
+    const auto& insetX() const { return _insetX; }
     template <typename T> void insetX(const T& x) { _set(_insetX, x); }
     
-    auto action() const { return _action; }
+    const auto& action() const { return _action; }
     template <typename T> void action(const T& x) { _setAlways(_action, x); }
     
-    auto actionButtons() const { return _actionButtons; }
+    const auto& actionButtons() const { return _actionButtons; }
     template <typename T> void actionButtons(const T& x) { _set(_actionButtons, x); }
     
-    auto actionTrigger() const { return _actionTrigger; }
+    const auto& actionTrigger() const { return _actionTrigger; }
     template <typename T> void actionTrigger(const T& x) { _set(_actionTrigger, x); }
     
 private:

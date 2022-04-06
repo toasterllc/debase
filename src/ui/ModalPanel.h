@@ -79,32 +79,39 @@ public:
     
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
-        if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) return false;
-        // Dismiss upon escape key
-        if (ev.type == Event::Type::KeyEscape) return false;
-        // Eat all other events
+        if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right) ||
+            ev.type == Event::Type::KeyEscape) {
+            
+            if (_dismissAction) {
+                _dismissAction(*this);
+            }
+        }
+        // Eat all events
         return true;
     }
     
     const ColorPalette& colors;
     
-    auto color() const { return _color; }
+    const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
     
-    auto width() const { return _width; }
+    const auto& width() const { return _width; }
     template <typename T> void width(const T& x) { _set(_width, x); }
     
-    auto messageInsetY() const { return _messageInsetY; }
+    const auto& messageInsetY() const { return _messageInsetY; }
     template <typename T> void messageInsetY(const T& x) { _set(_messageInsetY, x); }
     
-    auto textAlign() const { return _textAlign; }
+    const auto& textAlign() const { return _textAlign; }
     template <typename T> void textAlign(const T& x) { _set(_textAlign, x); }
     
-    auto title() const { return _title; }
+    const auto& title() const { return _title; }
     template <typename T> void title(const T& x) { _set(_title, x); }
     
-    auto message() const { return _message; }
+    const auto& message() const { return _message; }
     template <typename T> void message(const T& x) { _set(_message, x); }
+    
+    const auto& dismissAction() const { return _dismissAction; }
+    template <typename T> void dismissAction(const T& x) { _setAlways(_dismissAction, x); }
     
 private:
     std::vector<std::string> _createMessageLines() const {
@@ -118,6 +125,7 @@ private:
     std::string _title;
     std::string _message;
     std::vector<std::string> _messageLines;
+    std::function<void(ModalPanel&)> _dismissAction;
 };
 
 using ModalPanelPtr = std::shared_ptr<ModalPanel>;

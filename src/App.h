@@ -227,30 +227,15 @@ public:
         std::string errorMsg;
         try {
             if (_messagePanel) {
-                bool handled = _messagePanel->handleEvent(_messagePanel->convert(ev));
-                if (!handled) {
-                    _messagePanel = nullptr;
-                    return false;
-                }
-                return true;
+                return _messagePanel->handleEvent(_messagePanel->convert(ev));
             }
             
             if (_welcomePanel) {
-                bool handled = _welcomePanel->handleEvent(_welcomePanel->convert(ev));
-                if (!handled) {
-                    _welcomePanel = nullptr;
-                    return false;
-                }
-                return true;
+                return _welcomePanel->handleEvent(_welcomePanel->convert(ev));
             }
             
             if (_registerPanel) {
-                bool handled = _registerPanel->handleEvent(_registerPanel->convert(ev));
-                if (!handled) {
-                    _registerPanel = nullptr;
-                    return false;
-                }
-                return true;
+                return _registerPanel->handleEvent(_registerPanel->convert(ev));
             }
             
             // Let every column handle the event
@@ -379,10 +364,11 @@ public:
             errorMsg[0] = toupper(errorMsg[0]);
             
             _messagePanel = std::make_shared<UI::ModalPanel>(_colors);
-            _messagePanel->color     (_colors.error);
-            _messagePanel->textAlign (UI::ModalPanel::TextAlign::CenterSingleLine);
-            _messagePanel->title     ("Error");
-            _messagePanel->message   (errorMsg);
+            _messagePanel->color         (_colors.error);
+            _messagePanel->textAlign     (UI::ModalPanel::TextAlign::CenterSingleLine);
+            _messagePanel->title         ("Error");
+            _messagePanel->message       (errorMsg);
+            _messagePanel->dismissAction ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
             
             // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
             // as a result of pressing a keyboard key. For some reason showing panels
@@ -1318,13 +1304,16 @@ private:
         return License::Validate(license, ctx);
     }
     
-    static UI::WelcomePanelPtr _WelcomePanelCreate(const UI::ColorPalette& colors) {
+    template <typename TA, typename RA>
+    static UI::WelcomePanelPtr _WelcomePanelCreate(const UI::ColorPalette& colors, const TA& trialAction, const RA& registerAction) {
         UI::WelcomePanelPtr p;
         p = std::make_shared<UI::WelcomePanel>(colors);
-        p->color         (colors.menu);
-        p->messageInsetY (1);
-        p->title         ("");
-        p->message       ("Welcome to debase!");
+        p->color                    (colors.menu);
+        p->messageInsetY            (1);
+        p->title                    ("");
+        p->message                  ("Welcome to debase!");
+        p->trialButton().action     (trialAction);
+        p->registerButton().action  (registerAction);
         return p;
     }
     
@@ -1353,19 +1342,42 @@ private:
         panel->layout();
     }
     
+    UI::RegisterPanelPtr _trialExpiredPanelCreate() {
+        constexpr const char* Title     = "Trial Expired";
+        constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
+        return _RegisterPanelCreate(_colors, Title, Message);
+    }
+    
+    UI::RegisterPanelPtr _registerPanelCreate() {
+        constexpr const char* Title     = "Register debase";
+        constexpr const char* Message   = "Please enter your registration information.";
+        return _RegisterPanelCreate(_colors, Title, Message);
+    }
+    
+    UI::WelcomePanelPtr _welcomePanelCreate() {
+        auto trialAction = [=] (UI::Button&) {
+            #warning TODO: request trial license from server
+        };
+        
+        auto registerAction = [=] (UI::Button&) {
+            _welcomePanel = nullptr;
+            _registerPanel = _registerPanelCreate();
+        };
+        
+        return _WelcomePanelCreate(_colors, trialAction, registerAction);
+    }
+    
     void _licenseCheck(State::State& state, bool networkAllowed=true) {
-        const char* TrialExpiredTitle = "Trial Expired";
-        const char* TrialExpiredMsg   = "Thank you for trying debase. Please register to continue.";
         License::License license;
         License::Status st = _LicenseUnseal(_repo.path(), state.license(), license);
         
         if (st == License::Status::Empty) {
             if (!state.trialExpired()) {
-                _welcomePanel = _WelcomePanelCreate(_colors);
+                _welcomePanel = _welcomePanelCreate();
             
             } else {
                 // Show trial-expired panel
-                _registerPanel = _RegisterPanelCreate(_colors, TrialExpiredTitle, TrialExpiredMsg);
+                _registerPanel = _trialExpiredPanelCreate();
             }
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
@@ -1375,7 +1387,7 @@ private:
             // Delete license, set expired=1, show trial-expired panel
             state.license({});
             state.trialExpired(true);
-            _registerPanel = _RegisterPanelCreate(_colors, TrialExpiredTitle, TrialExpiredMsg);
+            _registerPanel = _trialExpiredPanelCreate();
         
         } else if (st == License::Status::Valid) {
             // Done; debase is registered
@@ -1383,7 +1395,7 @@ private:
         } else {
             // Delete license, show welcome panel
             state.license({});
-            _welcomePanel = _WelcomePanelCreate(_colors);
+            _welcomePanel = _welcomePanelCreate();
         }
     }
     

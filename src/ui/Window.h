@@ -206,14 +206,11 @@ public:
     }
     
     virtual void track() {
-        bool mouse = false;
         for (;;) {
-            if (!mouse)
-                refresh();
+            refresh();
             
             _s.eventCurrent = nextEvent();
             bool handled = handleEvent(_s.eventCurrent);
-            mouse = (_s.eventCurrent.type == Event::Type::Mouse);
             _s.eventCurrent = {};
             
             // Continue until an event isn't handled
