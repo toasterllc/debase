@@ -5,6 +5,7 @@
 #include "Bitfield.h"
 #include "UI.h"
 #include "CursorState.h"
+#include "UTF8.h"
 
 namespace UI {
 
@@ -88,6 +89,17 @@ public:
         mvwaddch(*this, y2, x1, ACS_LLCORNER);
         mvwaddch(*this, y1, x2, ACS_URCORNER);
         mvwaddch(*this, y2, x2, ACS_LRCORNER);
+    }
+    
+    void drawText(const Point& p, const char* txt) const {
+        mvwprintw(*this, p.y, p.x, "%s", txt);
+    }
+    
+    void drawText(const Point& p, int maxLen, const char* txt) const {
+        std::string str = txt;
+        auto it = UTF8::NextN(str.begin(), str.end(), maxLen);
+        str.resize(std::distance(str.begin(), it));
+        mvwprintw(*this, p.y, p.x, "%s", str.c_str());
     }
     
     template <typename ...T_Args>
@@ -194,11 +206,14 @@ public:
     }
     
     virtual void track() {
+        bool mouse = false;
         for (;;) {
-            refresh();
+            if (!mouse)
+                refresh();
             
             _s.eventCurrent = nextEvent();
             bool handled = handleEvent(_s.eventCurrent);
+            mouse = (_s.eventCurrent.type == Event::Type::Mouse);
             _s.eventCurrent = {};
             
             // Continue until an event isn't handled
@@ -260,6 +275,20 @@ public:
     
     const Event& eventCurrent() const { return _s.eventCurrent; }
     operator WINDOW*() const { return _s.win; }
+    
+protected:
+    template <typename X, typename Y>
+    void _setAlways(X& x, const Y& y) {
+        x = y;
+        drawNeeded(true);
+    }
+    
+    template <typename X, typename Y>
+    void _set(X& x, const Y& y) {
+        if (x == y) return;
+        x = y;
+        drawNeeded(true);
+    }
     
 private:
     struct {

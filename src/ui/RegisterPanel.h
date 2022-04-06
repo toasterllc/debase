@@ -12,8 +12,6 @@ class RegisterPanel : public ModalPanel {
 public:
     RegisterPanel(const ColorPalette& colors) :
     ModalPanel(colors), _email(colors), _code(colors) {
-        extraHeight = _FieldsExtraHeight;
-        
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
@@ -24,6 +22,12 @@ public:
         _code.releaseFocus = releaseFocus;
         
         _email.focus(true);
+    }
+    
+    Size sizeIntrinsic() override {
+        Size s = ModalPanel::sizeIntrinsic();
+        s.y += _FieldsExtraHeight;
+        return s;
     }
     
     bool layoutNeeded() const override { return true; }
@@ -58,8 +62,8 @@ public:
         
         // Draw email field
         if (erased()) {
-            Attr style = attr(color|A_BOLD);
-            drawText({_FieldLabelInsetX, offY}, "%s", "Email: ");
+            Attr style = attr(color()|A_BOLD);
+            drawText({_FieldLabelInsetX, offY}, "Email: ");
         }
         
         _email.draw(*this);
@@ -67,8 +71,8 @@ public:
         
         // Draw code field
         if (erased()) {
-            Attr style = attr(color|A_BOLD);
-            drawText({_FieldLabelInsetX, offY}, "%s", "Code: ");
+            Attr style = attr(color()|A_BOLD);
+            drawText({_FieldLabelInsetX, offY}, "Code: ");
         }
         
         _code.draw(*this);
@@ -94,7 +98,7 @@ public:
     
 private:
     static constexpr int _FieldsExtraHeight = 5;
-    static constexpr int _FieldLabelInsetX  = _MessageInsetX;
+    static constexpr int _FieldLabelInsetX  = MessageInsetX();
     static constexpr int _FieldLabelWidth   = 10;
     static constexpr int _FieldValueInsetX  = _FieldLabelInsetX+_FieldLabelWidth;
     

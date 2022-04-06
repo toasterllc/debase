@@ -78,7 +78,7 @@ static void _PrintUsage() {
 }
 
 int main(int argc, const char* argv[]) {
-    sleep(1);
+//    sleep(1);
     
 //    char* res = nullptr;
 //    size_t resLen = 0;
@@ -92,6 +92,8 @@ int main(int argc, const char* argv[]) {
     
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
+    
+    #warning TODO: add feature requests field in register panel
     
     #warning TODO: notify about debase updates?
     

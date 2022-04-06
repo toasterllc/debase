@@ -158,6 +158,7 @@ private:
     
     struct _State {
         License::SealedLicense license;
+        bool trialExpired = false;
         Theme theme = Theme::None;
     };
     
@@ -177,6 +178,7 @@ private:
             nlohmann::json j;
             f >> j;
             j.at("license").get_to(state.license);
+            j.at("trialExpired").get_to(state.trialExpired);
             j.at("theme").get_to(state.theme);
         }
     }
@@ -186,6 +188,7 @@ private:
         f.exceptions(std::ios::failbit | std::ios::badbit);
         nlohmann::json j = {
             {"license", state.license},
+            {"trialExpired", state.trialExpired},
             {"theme", state.theme},
         };
         f << std::setw(4) << j;
@@ -289,6 +292,9 @@ public:
     
     const License::SealedLicense& license() const { return _state.license; }
     void license(const License::SealedLicense& x) { _state.license = x; }
+    
+    bool trialExpired() const { return _state.trialExpired; }
+    void trialExpired(bool x) { _state.trialExpired = x; }
     
     Theme theme() const { return _state.theme; }
     void theme(Theme x) { _state.theme = x; }

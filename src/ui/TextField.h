@@ -38,7 +38,7 @@ public:
         auto right = UTF8::NextN(left, value.end(), width);
         
         std::string substr(left, right);
-        win.drawText(position(), "%s", substr.c_str());
+        win.drawText(position(), substr.c_str());
         
         return true;
     }

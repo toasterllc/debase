@@ -18,21 +18,21 @@ public:
     RevColumn(const ColorPalette& colors) :
     Control(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
     
-        undoButton.label = "Undo";
-        undoButton.center = true;
-        undoButton.drawBorder = true;
-        undoButton.insetX = 1;
+        undoButton.label("Undo");
+        undoButton.center(true);
+        undoButton.drawBorder(true);
+        undoButton.insetX(1);
         
-        redoButton.label = "Redo";
-        redoButton.center = true;
-        redoButton.drawBorder = true;
-        redoButton.insetX = 1;
+        redoButton.label("Redo");
+        redoButton.center(true);
+        redoButton.drawBorder(true);
+        redoButton.insetX(1);
         
-        snapshotsButton.label = "Snapshots…";
-        snapshotsButton.center = true;
-        snapshotsButton.drawBorder = true;
-        snapshotsButton.insetX = 1;
-        snapshotsButton.actionTrigger = Button::ActionTrigger::MouseDown;
+        snapshotsButton.label("Snapshots…");
+        snapshotsButton.center(true);
+        snapshotsButton.drawBorder(true);
+        snapshotsButton.insetX(1);
+        snapshotsButton.actionTrigger(Button::ActionTrigger::MouseDown);
     }
     
     bool layout(const Window& win) override {
@@ -124,14 +124,14 @@ public:
             Window::Attr color = win.attr(colors.menu);
             Window::Attr bold = win.attr(A_BOLD);
             const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
-            win.drawText(p, "%s", _name.c_str());
+            win.drawText(p, _name.c_str());
         }
         
         if (!rev.isMutable()) {
             Window::Attr color = win.attr(colors.error);
             const char immutableText[] = "read-only";
             const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
-            win.drawText(p, "%s", immutableText);
+            win.drawText(p, immutableText);
         }
         
         for (CommitPanelPtr p : panels) {

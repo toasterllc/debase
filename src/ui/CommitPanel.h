@@ -47,7 +47,7 @@ public:
         
         int i = 0;
         for (const std::string& line : _message) {
-            drawText({2, offY+2+i}, "%s", line.c_str());
+            drawText({2, offY+2+i}, line.c_str());
             i++;
         }
         
@@ -56,7 +56,7 @@ public:
             drawBorder();
             
             if (_commit.isMerge()) {
-                drawText({0, 1}, "%s", "𝝠");
+                drawText({0, 1}, "𝝠");
             }
         }
         
@@ -80,7 +80,7 @@ public:
         
         {
             Window::Attr color = attr(_colors.dimmed);
-            drawText({2, offY+1}, "%s", _author.c_str());
+            drawText({2, offY+1}, _author.c_str());
         }
         
         return true;

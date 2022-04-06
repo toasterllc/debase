@@ -27,11 +27,14 @@ public:
         CenterSingleLine
     };
     
+    static constexpr int BorderSize() { return 2; }
+    static constexpr int MessageInsetX() { return BorderSize()+3; }
+    
     Size sizeIntrinsic() override {
         std::vector<std::string> messageLines = _createMessageLines();
         return {
-            .x = width,
-            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
+            .x = _width,
+            .y = 2*BorderSize() + _messageInsetY + (int)messageLines.size(),
         };
     }
     
@@ -45,27 +48,28 @@ public:
         if (!Panel::draw()) return false;
         
         if (erased()) {
-            int offY = _MessageInsetY-1; // -1 because the title overwrites the border
+            int offY = BorderSize()-1; // -1 because the title overwrites the border
             {
-                Window::Attr style = attr(color);
+                Window::Attr style = attr(_color);
                 drawRect(Inset(bounds(), {2,1}));
                 drawRect(bounds());
             }
             
-            {
-                Window::Attr style = attr(color|A_BOLD);
-                drawText({_MessageInsetX, offY}, " %s ", title.c_str());
+            // Draw title
+            if (!_title.empty()) {
+                Window::Attr style = attr(_color|A_BOLD);
+                drawText({MessageInsetX(), offY}, " %s ", _title.c_str());
                 offY++;
             }
+            offY += _messageInsetY;
             
-            offY += messageInsetY;
-            
+            // Draw message
             for (const std::string& line : _messageLines) {
                 int offX = 0;
-                if (align==TextAlign::Center || (align==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
-                    offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*_MessageInsetX)/2;
+                if (_textAlign==TextAlign::Center || (_textAlign==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
+                    offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*MessageInsetX())/2;
                 }
-                drawText({_MessageInsetX+offX, offY}, "%s", line.c_str());
+                drawText({MessageInsetX()+offX, offY}, line.c_str());
                 offY++;
             }
         }
@@ -83,33 +87,36 @@ public:
     }
     
     const ColorPalette& colors;
-    Color color;
-    int width = 0;
-    int messageInsetY = 0;
-    int extraHeight = 0;
-    TextAlign align = TextAlign::Left;
-    std::string title;
-    std::string message;
     
-protected:
-    static constexpr int _MessageInsetX = 5;
-    static constexpr int _MessageInsetY = 2;
+    auto color() const { return _color; }
+    template <typename T> void color(const T& x) { _set(_color, x); }
+    
+    auto width() const { return _width; }
+    template <typename T> void width(const T& x) { _set(_width, x); }
+    
+    auto messageInsetY() const { return _messageInsetY; }
+    template <typename T> void messageInsetY(const T& x) { _set(_messageInsetY, x); }
+    
+    auto textAlign() const { return _textAlign; }
+    template <typename T> void textAlign(const T& x) { _set(_textAlign, x); }
+    
+    auto title() const { return _title; }
+    template <typename T> void title(const T& x) { _set(_title, x); }
+    
+    auto message() const { return _message; }
+    template <typename T> void message(const T& x) { _set(_message, x); }
     
 private:
-//    Size _calcSize() {
-//        std::vector<std::string> messageLines = _createMessageLines();
-//        return {
-//            .x = width,
-//            .y = 2*_MessageInsetY + messageInsetY + (int)messageLines.size() + extraHeight,
-//        };
-//    }
-    
     std::vector<std::string> _createMessageLines() const {
-        return LineWrap::Wrap(SIZE_MAX, width-2*_MessageInsetX, message);;
+        return LineWrap::Wrap(SIZE_MAX, _width-2*MessageInsetX(), _message);
     }
     
-//    bool _layoutNeeded = false;
-//    Size _sizePrev;
+    Color _color;
+    int _width = 0;
+    int _messageInsetY = 0;
+    TextAlign _textAlign = TextAlign::Left;
+    std::string _title;
+    std::string _message;
     std::vector<std::string> _messageLines;
 };
 

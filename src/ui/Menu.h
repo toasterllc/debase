@@ -60,7 +60,7 @@ public:
             button->hitTestExpand.l = _BorderSize+_InsetX;
             button->hitTestExpand.r = _BorderSize+_InsetX;
             button->hitTestExpand.b = 1;
-            button->actionButtons = Event::MouseButtons::Left|Event::MouseButtons::Right;
+            button->actionButtons(Event::MouseButtons::Left|Event::MouseButtons::Right);
             
             // Bail if the bottom of the bottom extends beyond our max y
             if (y > ymax) break;

@@ -9,6 +9,7 @@
 #include "ui/BorderedPanel.h"
 #include "ui/Menu.h"
 #include "ui/SnapshotMenu.h"
+#include "ui/WelcomePanel.h"
 #include "ui/ModalPanel.h"
 #include "ui/RegisterPanel.h"
 #include "state/StateDir.h"
@@ -35,6 +36,7 @@ public:
             if (col.layoutNeeded()) return true;
         }
         if (_messagePanel && _messagePanel->layoutNeeded()) return true;
+        if (_welcomePanel && _welcomePanel->layoutNeeded()) return true;
         if (_registerPanel && _registerPanel->layoutNeeded()) return true;
         return false;
     }
@@ -68,9 +70,9 @@ public:
                     col.rev  = rev;
                     col.head = (rev.displayHead() == _head.commit);
                     
-                    col.undoButton.action      = [&] (UI::Button&) { _undoRedo(col, true); };
-                    col.redoButton.action      = [&] (UI::Button&) { _undoRedo(col, false); };
-                    col.snapshotsButton.action = [&] (UI::Button&) { _trackSnapshotsMenu(col); };
+                    col.undoButton.action([&] (UI::Button&) { _undoRedo(col, true); });
+                    col.redoButton.action([&] (UI::Button&) { _undoRedo(col, false); });
+                    col.snapshotsButton.action([&] (UI::Button&) { _trackSnapshotsMenu(col); });
                 }
                 
                 col.undoButton.enabled(h && !h->begin());
@@ -126,34 +128,17 @@ public:
         
         if (_messagePanel) {
             constexpr int MessagePanelWidth = 40;
-            _messagePanel->width = std::min(MessagePanelWidth, bounds().size.x);
-            _messagePanel->size(_messagePanel->sizeIntrinsic());
-            
-            UI::Size ps = _messagePanel->frame().size;
-            UI::Size rs = frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _messagePanel->position(p);
-            _messagePanel->orderFront();
-            _messagePanel->layout();
+            _layoutModalPanel(_messagePanel, MessagePanelWidth);
+        }
+        
+        if (_welcomePanel) {
+            constexpr int WelcomePanelWidth = 40;
+            _layoutModalPanel(_welcomePanel, WelcomePanelWidth);
         }
         
         if (_registerPanel) {
             constexpr int RegisterPanelWidth = 50;
-            _registerPanel->width = std::min(RegisterPanelWidth, bounds().size.x);
-            _registerPanel->size(_registerPanel->sizeIntrinsic());
-            
-            UI::Size ps = _registerPanel->frame().size;
-            UI::Size rs = frame().size;
-            UI::Point p = {
-                (rs.x-ps.x)/2,
-                (rs.y-ps.y)/3,
-            };
-            _registerPanel->position(p);
-            _registerPanel->orderFront();
-            _registerPanel->layout();
+            _layoutModalPanel(_registerPanel, RegisterPanelWidth);
         }
         
         return true;
@@ -165,6 +150,7 @@ public:
             if (col.drawNeeded()) return true;
         }
         if (_messagePanel && _messagePanel->drawNeeded()) return true;
+        if (_welcomePanel && _welcomePanel->drawNeeded()) return true;
         if (_registerPanel && _registerPanel->drawNeeded()) return true;
         return false;
     }
@@ -226,6 +212,10 @@ public:
             _messagePanel->draw();
         }
         
+        if (_welcomePanel) {
+            _welcomePanel->draw();
+        }
+        
         if (_registerPanel) {
             _registerPanel->draw();
         }
@@ -240,6 +230,15 @@ public:
                 bool handled = _messagePanel->handleEvent(_messagePanel->convert(ev));
                 if (!handled) {
                     _messagePanel = nullptr;
+                    return false;
+                }
+                return true;
+            }
+            
+            if (_welcomePanel) {
+                bool handled = _welcomePanel->handleEvent(_welcomePanel->convert(ev));
+                if (!handled) {
+                    _welcomePanel = nullptr;
                     return false;
                 }
                 return true;
@@ -380,10 +379,10 @@ public:
             errorMsg[0] = toupper(errorMsg[0]);
             
             _messagePanel = std::make_shared<UI::ModalPanel>(_colors);
-            _messagePanel->color    = _colors.error;
-            _messagePanel->align    = UI::ModalPanel::TextAlign::CenterSingleLine;
-            _messagePanel->title    = "Error";
-            _messagePanel->message  = errorMsg;
+            _messagePanel->color     (_colors.error);
+            _messagePanel->textAlign (UI::ModalPanel::TextAlign::CenterSingleLine);
+            _messagePanel->title     ("Error");
+            _messagePanel->message   (errorMsg);
             
             // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
             // as a result of pressing a keyboard key. For some reason showing panels
@@ -454,7 +453,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            _licenseCheck();
+            State::State state(StateDir());
+            _licenseCheck(state);
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -696,7 +696,7 @@ private:
         bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
         UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_colors, repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot = activeSnapshot;
-        b->action         = [&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; };
+        b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
         b->enabled(true);
         return b;
     }
@@ -704,10 +704,10 @@ private:
     UI::ButtonPtr _makeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
         constexpr int ContextMenuWidth = 12;
         UI::ButtonPtr b = std::make_shared<UI::Button>(_colors);
-        b->label        = std::string(label);
-        b->key          = std::string(key);
-        b->insetX       = 0;
-        b->action       = [&] (UI::Button& button) { chosen = &button; };
+        b->label(std::string(label));
+        b->key(std::string(key));
+        b->insetX(0);
+        b->action([&] (UI::Button& button) { chosen = &button; });
         b->enabled(enabled);
         b->size({ContextMenuWidth, 1});
         return b;
@@ -1318,104 +1318,178 @@ private:
         return License::Validate(license, ctx);
     }
     
-    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {
-        License::License license;
-        License::Status st = _LicenseUnseal(_repo.path(), sealed, license);
-        
-        // If the license is valid except for the machine id, and it's not a trial license,
-        // request a new license from the server with our machine id
-        if (st==License::Status::InvalidMachineId && !license.expiration) {
-            if (!networkAllowed) return st;
-            
-            const License::Request req = {
-                .machineId = License::MachineIdCalc(DebaseProductId),
-                .userId = license.userId,
-                .registerCode = license.registerCode,
-            };
-            
-            License::RequestResponse resp;
-            try {
-                Network::Request(DebaseLicenseURL, req, resp);
-            } catch (const std::exception& e) {
-                #warning TODO: license is authentic but isn't valid for this machine, but we couldn't reach the server to renew it
-            }
-            
-            if (!resp.error.empty()) {
-                #warning TODO: license is authentic but isn't valid for this machine, and the server gave us an error when we tried to renew it
-                return;
-            }
-            
-            return _licenseCheck(resp.license, false);
-        }
-        
-        if (st != License::Status::Valid) {
-            switch (st) {
-            // License expired:
-            // Show license-expired dialog
-            case License::Status::Expired:
-                #warning TODO: Show license-expired dialog
-                break;
-            
-            // Generic license-invalid handling:
-            // Assume trial mode
-            default:
-                const License::Request req = {
-                    .machineId = License::MachineIdCalc(DebaseProductId),
-                };
-                
-                License::RequestResponse resp;
-                Network::Request(DebaseLicenseURL, req, resp);
-                if (!resp.error.empty()) {
-                    #warning TODO: show error panel with `resp.error`
-                    break;
-                }
-                
-                // Validate response
-                _LicenseUnseal(_repo.path(), resp.license, license);
-                
-                License::Context ctx = _LicenseContext(_repo.path());
-                st = License::Validate(license, ctx);
-                
-                break;
-            }
-        }
-        
-        // If the license is expired, show the expired dialog
-        if (st == License::Status::Expired) {
-            
-        } else {
-            
-        }
-        
-        // The license is invalid
-        // Assume trial mode
-        if (st != License::Status::Valid) {
-            
-        }
-        
-        if (st == License::Status::Valid) {
-            
-        
-        
-        
-        } else {
-            // Invalid license
-            // Assume trial mode
-            
-        }
-        
-//        if (st==License::Status::InvalidMachineId && )
-//        
-//        switch (st) {
-//        case InvalidMachineId:
-//            // The license is valid except for the machine id
-//            // If it's not a trial license, ask the server for a new license for the current machine id
-//            
-//            break;
-//        default:
-//        }
-//        if (st == )
+    static UI::WelcomePanelPtr _WelcomePanelCreate(const UI::ColorPalette& colors) {
+        UI::WelcomePanelPtr p;
+        p = std::make_shared<UI::WelcomePanel>(colors);
+        p->color         (colors.menu);
+        p->messageInsetY (1);
+        p->title         ("");
+        p->message       ("Welcome to debase!");
+        return p;
     }
+    
+    static UI::RegisterPanelPtr _RegisterPanelCreate(const UI::ColorPalette& colors, std::string_view title, std::string_view message) {
+        UI::RegisterPanelPtr p;
+        p = std::make_shared<UI::RegisterPanel>(colors);
+        p->color         (colors.menu);
+        p->messageInsetY (1);
+        p->title         (title);
+        p->message       (message);
+        return p;
+    }
+    
+    void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
+        panel->width(std::min(width, bounds().size.x));
+        panel->size(panel->sizeIntrinsic());
+        
+        UI::Size ps = panel->frame().size;
+        UI::Size rs = frame().size;
+        UI::Point p = {
+            (rs.x-ps.x)/2,
+            (rs.y-ps.y)/3,
+        };
+        panel->position(p);
+        panel->orderFront();
+        panel->layout();
+    }
+    
+    void _licenseCheck(State::State& state, bool networkAllowed=true) {
+        const char* TrialExpiredTitle = "Trial Expired";
+        const char* TrialExpiredMsg   = "Thank you for trying debase. Please register to continue.";
+        License::License license;
+        License::Status st = _LicenseUnseal(_repo.path(), state.license(), license);
+        
+        if (st == License::Status::Empty) {
+            if (!state.trialExpired()) {
+                _welcomePanel = _WelcomePanelCreate(_colors);
+            
+            } else {
+                // Show trial-expired panel
+                _registerPanel = _RegisterPanelCreate(_colors, TrialExpiredTitle, TrialExpiredMsg);
+            }
+        
+        } else if (st==License::Status::InvalidMachineId && !license.expiration) {
+            #warning TODO: renew license
+        
+        } else if (st == License::Status::Expired) {
+            // Delete license, set expired=1, show trial-expired panel
+            state.license({});
+            state.trialExpired(true);
+            _registerPanel = _RegisterPanelCreate(_colors, TrialExpiredTitle, TrialExpiredMsg);
+        
+        } else if (st == License::Status::Valid) {
+            // Done; debase is registered
+        
+        } else {
+            // Delete license, show welcome panel
+            state.license({});
+            _welcomePanel = _WelcomePanelCreate(_colors);
+        }
+    }
+    
+    
+    
+    
+    
+    
+//    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {
+//        License::License license;
+//        License::Status st = _LicenseUnseal(_repo.path(), sealed, license);
+//        
+//        // If the license is valid except for the machine id, and it's not a trial license,
+//        // request a new license from the server with our machine id
+//        if (st==License::Status::InvalidMachineId && !license.expiration) {
+//            if (!networkAllowed) return st;
+//            
+//            const License::Request req = {
+//                .machineId = License::MachineIdCalc(DebaseProductId),
+//                .userId = license.userId,
+//                .registerCode = license.registerCode,
+//            };
+//            
+//            License::RequestResponse resp;
+//            try {
+//                Network::Request(DebaseLicenseURL, req, resp);
+//            } catch (const std::exception& e) {
+//                #warning TODO: license is authentic but isn't valid for this machine, but we couldn't reach the server to renew it
+//            }
+//            
+//            if (!resp.error.empty()) {
+//                #warning TODO: license is authentic but isn't valid for this machine, and the server gave us an error when we tried to renew it
+//                return;
+//            }
+//            
+//            return _licenseCheck(resp.license, false);
+//        }
+//        
+//        if (st != License::Status::Valid) {
+//            switch (st) {
+//            // License expired:
+//            // Show license-expired dialog
+//            case License::Status::Expired:
+//                #warning TODO: Show license-expired dialog
+//                break;
+//            
+//            // Generic license-invalid handling:
+//            // Assume trial mode
+//            default:
+//                const License::Request req = {
+//                    .machineId = License::MachineIdCalc(DebaseProductId),
+//                };
+//                
+//                License::RequestResponse resp;
+//                Network::Request(DebaseLicenseURL, req, resp);
+//                if (!resp.error.empty()) {
+//                    #warning TODO: show error panel with `resp.error`
+//                    break;
+//                }
+//                
+//                // Validate response
+//                _LicenseUnseal(_repo.path(), resp.license, license);
+//                
+//                License::Context ctx = _LicenseContext(_repo.path());
+//                st = License::Validate(license, ctx);
+//                
+//                break;
+//            }
+//        }
+//        
+//        // If the license is expired, show the expired dialog
+//        if (st == License::Status::Expired) {
+//            
+//        } else {
+//            
+//        }
+//        
+//        // The license is invalid
+//        // Assume trial mode
+//        if (st != License::Status::Valid) {
+//            
+//        }
+//        
+//        if (st == License::Status::Valid) {
+//            
+//        
+//        
+//        
+//        } else {
+//            // Invalid license
+//            // Assume trial mode
+//            
+//        }
+//        
+////        if (st==License::Status::InvalidMachineId && )
+////        
+////        switch (st) {
+////        case InvalidMachineId:
+////            // The license is valid except for the machine id
+////            // If it's not a trial license, ask the server for a new license for the current machine id
+////            
+////            break;
+////        default:
+////        }
+////        if (st == )
+//    }
 
     
 //    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {
@@ -1524,5 +1598,6 @@ private:
     std::optional<UI::Rect> _selectionRect;
     
     UI::ModalPanelPtr _messagePanel;
+    UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
 };

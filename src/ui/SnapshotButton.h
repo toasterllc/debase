@@ -42,7 +42,7 @@ public:
         {
             Window::Attr color = win.attr(colors.dimmed);
             int offX = width - (int)UTF8::Strlen(_time);
-            win.drawText(off + offTextY + Size{offX, 0}, "%s", _time.c_str());
+            win.drawText(off + offTextY + Size{offX, 0}, _time.c_str());
         }
         
         // Draw commit id
@@ -52,20 +52,20 @@ public:
             if (highlighted() || (activeSnapshot && !mouseActive())) {
                 color = win.attr(colors.menu);
             }
-            win.drawText(offText, "%s", _commit.id.c_str());
+            win.drawText(offText, _commit.id.c_str());
         }
         
         // Draw author name
         {
             Window::Attr color = win.attr(colors.dimmed);
-            win.drawText(offText + Size{0, 1}, "%s", _commit.author.c_str());
+            win.drawText(offText + Size{0, 1}, _commit.author.c_str());
         }
         
         // Draw commit message
         {
             int i = 0;
             for (const std::string& line : _commit.message) {
-                win.drawText(offText + Size{0, 2+i}, "%s", line.c_str());
+                win.drawText(offText + Size{0, 2+i}, line.c_str());
                 i++;
             }
         }
@@ -74,20 +74,20 @@ public:
         {
             if (highlighted()) {
                 Window::Attr color = win.attr(colors.menu|A_BOLD);
-                win.drawText(off + offTextY, "%s", "●");
+                win.drawText(off + offTextY, "●");
             
             } else if (activeSnapshot) {
                 if (mouseActive()) {
-                    win.drawText(off + offTextY, "%s", "○");
+                    win.drawText(off + offTextY, "○");
                 } else {
                     Window::Attr color = win.attr(colors.menu|A_BOLD);
-                    win.drawText(off + offTextY, "%s", "●");
+                    win.drawText(off + offTextY, "●");
                 }
             } else {
                 // Draw a space to erase the previous highlight
                 // Otherwise we'd need to erase the panel to get rid of the
                 // previously-drawn ●/○, and this is easier
-                win.drawText(off + offTextY, "%s", " ");
+                win.drawText(off + offTextY, " ");
             }
         }
         

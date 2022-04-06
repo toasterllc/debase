@@ -81,7 +81,21 @@ public:
         int t = 0;
         int b = 0;
     } hitTestExpand;
-
+    
+protected:
+    template <typename X, typename Y>
+    void _setAlways(X& x, const Y& y) {
+        x = y;
+        Control::drawNeeded(true);
+    }
+    
+    template <typename X, typename Y>
+    void _set(X& x, const Y& y) {
+        if (x == y) return;
+        x = y;
+        Control::drawNeeded(true);
+    }
+    
 private:
     Rect _frame;
     bool _layoutNeeded = true;
