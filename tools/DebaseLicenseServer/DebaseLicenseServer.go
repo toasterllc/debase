@@ -1,7 +1,6 @@
 package DebaseLicenseServer
 
 import (
-	"DebaseLicenseServer/license"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"heytoaster.com/DebaseLicenseServer/license"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"

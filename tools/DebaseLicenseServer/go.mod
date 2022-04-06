@@ -1,10 +1,10 @@
-module DebaseLicenseServer
+module heytoaster.com/DebaseLicenseServer
 
 go 1.18
 
 require (
 	cloud.google.com/go/firestore v1.6.1
-	google.golang.org/grpc v1.40.0
+	google.golang.org/grpc v1.45.0
 )
 
 require (
