@@ -38,12 +38,7 @@ func init() {
 	}
 }
 
-func hashSanitize(hash string) (string, error) {
-	// Validate the machine id, which is always required
-	if len(hash) != license.HashStringLen {
-		return "", fmt.Errorf("invalid length")
-	}
-
+func hashStringSanitize(hash string) (string, error) {
 	hash = strings.ToLower(hash)
 
 	validHash := regexp.MustCompile(`^[a-f0-9]+$`)
@@ -55,12 +50,20 @@ func hashSanitize(hash string) (string, error) {
 }
 
 func machineIdSanitize(mid license.MachineId) (license.MachineId, error) {
-	r, err := hashSanitize(string(mid))
+	if len(mid) != license.MachineIdLen {
+		return "", fmt.Errorf("invalid length")
+	}
+
+	r, err := hashStringSanitize(string(mid))
 	return license.MachineId(r), err
 }
 
 func userIdSanitize(uid license.UserId) (license.UserId, error) {
-	r, err := hashSanitize(string(uid))
+	if len(uid) != license.UserIdLen {
+		return "", fmt.Errorf("invalid length")
+	}
+
+	r, err := hashStringSanitize(string(uid))
 	return license.UserId(r), err
 }
 
@@ -195,7 +198,8 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 		return fmt.Errorf("json.Marshal failed: %w", err)
 	}
 
-	key := ed25519.PrivateKey(*(*[]byte)(unsafe.Pointer(&C.DebaseKeyPrivate)))
+	seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
+	key := ed25519.NewKeyFromSeed(seed[:])
 	sig := ed25519.Sign(key, payload)
 	sealed := license.SealedLicense{
 		Payload:   string(payload),
