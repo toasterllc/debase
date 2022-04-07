@@ -3,7 +3,7 @@
 
 namespace UI {
 
-void Window::_layout() {
+void Window::layoutTree() {
     // Detect size changes that can occurs from underneath us
     // by ncurses (eg by the terminal size changing)
     if (_s.sizePrev != size()) {
@@ -17,13 +17,13 @@ void Window::_layout() {
     
     // Layout the window's subviews
     for (auto views=subviews(); *views; views++) {
-        View::TreeLayout(*this, *(*views));
+        (*views)->layoutTree(*this);
     }
     
     layoutNeeded(false);
 }
 
-void Window::_draw() {
+void Window::drawTree() {
     // Remember whether we erased ourself during this draw cycle
     // This is used by View instances (Button and TextField)
     // to know whether they need to be drawn again
@@ -40,16 +40,16 @@ void Window::_draw() {
     
     // Draw the window's subviews
     for (auto views=subviews(); *views; views++) {
-        View::TreeDraw(*this, *(*views));
+        (*views)->drawTree(*this);
     }
     
     drawNeeded(false);
 }
 
-bool Window::_handleEvent(const Event& ev) {
+bool Window::handleEventTree(const Event& ev) {
     // Let the subviews handle the event first
     for (auto views=subviews(); *views; views++) {
-        if (View::TreeHandleEvent(*this, *(*views), ev)) return true;
+        if ((*views)->handleEventTree(*this, ev)) return true;
     }
     // None of the subviews wanted the event; let the window handle it
     if (handleEvent(ev)) return true;

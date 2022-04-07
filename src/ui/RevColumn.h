@@ -127,7 +127,7 @@ public:
         }
         
         for (CommitPanelPtr p : panels) {
-            p->draw();
+            p->drawTree();
         }
     }
     

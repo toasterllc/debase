@@ -123,7 +123,7 @@ public:
         }
         
         if (_drag.titlePanel) {
-            _drag.titlePanel->draw();
+            _drag.titlePanel->drawTree();
             
             // Draw insertion marker
             if (_drag.insertionMarker) {
@@ -133,7 +133,7 @@ public:
         }
         
         for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
-            panel->draw();
+            panel->drawTree();
         }
         
         if (_selectionRect) {
@@ -141,20 +141,16 @@ public:
             drawRect(*_selectionRect);
         }
         
-        for (UI::RevColumn& col : _columns) {
-            col.draw(*this);
-        }
-        
         if (_messagePanel) {
-            _messagePanel->draw();
+            _messagePanel->drawTree();
         }
         
         if (_welcomePanel) {
-            _welcomePanel->draw();
+            _welcomePanel->drawTree();
         }
         
         if (_registerPanel) {
-            _registerPanel->draw();
+            _registerPanel->drawTree();
         }
     }
     
@@ -1319,7 +1315,7 @@ private:
         };
         panel->origin(p);
         panel->orderFront();
-        panel->layout();
+        panel->layoutTree();
     }
     
     UI::RegisterPanelPtr _trialExpiredPanelCreate() {

@@ -196,8 +196,8 @@ public:
     }
     
     void refresh() {
-        _layout();
-        _draw();
+        layoutTree();
+        drawTree();
         CursorState::Draw();
         ::update_panels();
         ::refresh();
@@ -217,7 +217,7 @@ public:
         do {
             refresh();
             _s.eventCurrent = nextEvent();
-            _handleEvent(_s.eventCurrent);
+            handleEventTree(_s.eventCurrent);
             _s.eventCurrent = {};
         } while (!_s.trackStop);
         
@@ -228,6 +228,14 @@ public:
     virtual void trackStop() {
         _s.trackStop = true;
     }
+    
+    virtual View*const* subviews() {
+        return _s.subviews;
+    }
+    
+    void layoutTree();
+    void drawTree();
+    bool handleEventTree(const Event& ev);
     
     // eraseNeeded(): sets whether the window should be erased the next time it's drawn
     void eraseNeeded(bool x) {
@@ -245,10 +253,6 @@ public:
     const Event& eventCurrent() const { return _s.eventCurrent; }
     operator WINDOW*() const { return _s.win; }
     
-    virtual View*const* subviews() {
-        return _s.subviews;
-    }
-    
 protected:
     template <typename X, typename Y>
     void _setAlways(X& x, const Y& y) {
@@ -264,10 +268,6 @@ protected:
     }
     
 private:
-    void _layout();
-    void _draw();
-    bool _handleEvent(const Event& ev);
-    
     struct {
         WINDOW* win = nullptr;
         Size sizePrev;

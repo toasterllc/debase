@@ -74,42 +74,42 @@ public:
     
     virtual View*const* subviews() { return _subviews; }
     
-    static void TreeLayout(const Window& win, View& view) {
-        if (!view.visible()) return;
+    void layoutTree(const Window& win) {
+        if (!visible()) return;
         
-        if (view.layoutNeeded()) {
-            view.layout(win);
-            view.layoutNeeded(false);
+        if (layoutNeeded()) {
+            layout(win);
+            layoutNeeded(false);
         }
         
-        for (auto subviews=view.subviews(); *subviews; subviews++) {
-            TreeLayout(win, *(*subviews));
+        for (auto views=subviews(); *views; views++) {
+            (*views)->layoutTree(win);
         }
     }
     
-    static void TreeDraw(const Window& win, View& v) {
-        if (!v.visible()) return;
+    void drawTree(const Window& win) {
+        if (!visible()) return;
         
         // If the window was erased during this draw cycle, we need to redraw
-        if (v.drawNeeded() || win.erased()) {
-            v.draw(win);
-            v.drawNeeded(false);
+        if (drawNeeded() || win.erased()) {
+            draw(win);
+            drawNeeded(false);
         }
         
-        for (auto subviews=v.subviews(); *subviews; subviews++) {
-            TreeDraw(win, *(*subviews));
+        for (auto views=subviews(); *views; views++) {
+            (*views)->drawTree(win);
         }
     }
     
-    static bool TreeHandleEvent(const Window& win, View& view, const Event& ev) {
-        if (!view.visible()) return false;
-        if (!view.interaction()) return false;
+    bool handleEventTree(const Window& win, const Event& ev) {
+        if (!visible()) return false;
+        if (!interaction()) return false;
         // Let the subviews handle the event first
-        for (auto subviews=view.subviews(); *subviews; subviews++) {
-            if (TreeHandleEvent(win, *(*subviews), ev)) return true;
+        for (auto views=subviews(); *views; views++) {
+            if ((*views)->handleEventTree(win, ev)) return true;
         }
-        // None of the subviews wanted the event; let the window handle it
-        if (view.handleEvent(win, ev)) return true;
+        // None of the subviews wanted the event; let the view itself handle it
+        if (handleEvent(win, ev)) return true;
         return false;
     }
     

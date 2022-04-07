@@ -93,9 +93,9 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: fix: context menu not drawing separators
+    #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
     
-    #warning TODO: fix: clicking on disabled button within context menu closes the menu
+    #warning TODO: fix: context menu not drawing separators
     
     #warning TODO: encapsulate View's hitTestExpand
     
@@ -141,6 +141,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: fix: clicking on disabled button within context menu closes the menu
+//
 //    #warning TODO: test new @{0} @{-1} @{-2} behavior with a git repo that has a reflog without that many entries
 //
 //    #warning TODO: if no arguments are specified, have debase launch with: @{0}, @{-1}, @{-2}

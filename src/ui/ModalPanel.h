@@ -81,6 +81,10 @@ public:
     
     const ColorPalette& colors;
     
+    View*const* subviews() override {
+        return _subviews;
+    }
+    
     const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
     
@@ -97,6 +101,7 @@ private:
     Label _title;
     Label _message;
     std::function<void(ModalPanel&)> _dismissAction;
+    View*const _subviews[3] = { &_title, &_message, nullptr };
 };
 
 using ModalPanelPtr = std::shared_ptr<ModalPanel>;
