@@ -997,10 +997,9 @@ private:
         UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
         
         UI::MenuPtr menu = std::make_shared<UI::Menu>(_colors);
+        menu->buttons({ combineButton, editButton, deleteButton });
         menu->origin(mouseDownEvent.mouse.point);
         menu->size(menu->sizeIntrinsic({}));
-        menu->buttons({ combineButton, editButton, deleteButton });
-        menu->layout();
         menu->track(menu->convert(mouseDownEvent));
         
         // Handle the clicked button
@@ -1058,10 +1057,9 @@ private:
         
         UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>(_colors);
         menu->title("Session Start");
+        menu->buttons(buttons);
         menu->origin(p);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
-        menu->buttons(buttons);
-        menu->layout();
         menu->track(menu->convert(eventCurrent()));
         
         if (menuButton) {

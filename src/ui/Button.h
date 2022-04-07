@@ -209,7 +209,7 @@ private:
                 highlighted(hitTest(ev.mouse.point));
             }
             
-            draw(win);
+            TreeDraw(win, *this);
             
             if ((_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons)) ||
                 (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons))) {

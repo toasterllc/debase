@@ -35,128 +35,7 @@ public:
         return {width, height};
     }
     
-    void draw() override {
-        const int width = bounds().size.x;
-        
-        for (ButtonPtr button : _buttons) {
-            // Draw separator
-            if (erased()) { // Performance optimization: only draw if the window was erased
-                if (!button->hidden()) {
-                    Window::Attr color = attr(_colors.menu);
-                    drawLineHoriz({0, button->frame().ymax()+1}, width);
-                }
-            }
-        }
-        
-        // Draw border
-        if (erased()) { // Performance optimization: only draw if the window was erased
-            Window::Attr color = attr(_colors.menu);
-            drawBorder();
-            
-            // Draw title
-            if (!_title.empty()) {
-                Window::Attr bold = attr(A_BOLD);
-                int offX = (width-(int)UTF8::Strlen(_title))/2;
-                drawText({offX,0}, " %s ", _title.c_str());
-            }
-        }
-    }
-    
-    bool handleEvent(const Event& ev) override {
-        auto& ts = _trackState;
-        const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
-        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
-        
-        // Don't allow buttons to receive events until _ActivateDuration
-        // has elapsed and the mouse has moved at least 1 px
-        if (ev.type==Event::Type::Mouse &&
-            duration>=_ActivateDuration &&
-            (delta.x || delta.y)) {
-            
-            ts.active |= true;
-        }
-        
-        if (ts.active) {
-            // See if any of the buttons want the event
-            bool handled = Panel::handleEvent(ev);
-            if (handled) {
-                _dismiss();
-                return true;
-            }
-        }
-        
-        if (ev.type == Event::Type::Mouse) {
-            // Update the mouseActive state for all of our buttons
-            bool inside = HitTest(bounds(), ev.mouse.point);
-            for (ButtonPtr button : _buttons) {
-                button->mouseActive(inside);
-            }
-            
-            // Handle mouse down
-            if (ev.mouseDown() && !inside) {
-                _dismiss();
-                return true;
-            
-            // Handle mouse up
-            } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
-                // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
-                //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
-                ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
-                if ((!ts.stayOpen && duration>=_StayOpenExpiration) || (ts.stayOpen && !inside)) {
-                    _dismiss();
-                    return true;
-                }
-                
-                ts.stayOpen = true;
-            }
-        
-        } else if (ev.type == Event::Type::KeyEscape) {
-            _dismiss();
-            return true;
-        }
-        
-        // Eat all events
-        return true;
-    }
-    
-    void track(const Event& ev) {
-        _trackState = {};
-        _trackState.startEvent = ev;
-        Window::track();
-    }
-    
-    View*const* subviews() override {
-        return _subviews.get();
-    }
-    
-    const auto& colors() const { return _colors; }
-    
-    const auto& title() const { return _title; }
-    template <typename T> void title(const T& x) { _set(_title, x); }
-    
-    const auto& buttons() const { return _buttons; }
-    void buttons(const std::vector<UI::ButtonPtr>& x) {
-        _set(_buttons, x);
-        _updateButtons();
-    }
-    
-    const auto& dismissAction() const { return _dismissAction; }
-    template <typename T> void dismissAction(const T& x) { _set(_dismissAction, x); }
-    
-//    const auto& subviews() const { return _subviews; }
-//    template <typename T> void subviews(const T& x) { _set(_subviews, x); }
-    
-private:
-    static constexpr int _BorderSize      = 1;
-    static constexpr int _InsetX          = 1;
-    static constexpr int _SeparatorHeight = 1;
-    static constexpr int _KeySpacing      = 2;
-    static constexpr int _RowHeight       = 2;
-    
-    static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
-    static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
-    
-    void _updateButtons() {
+    void layout() override {
         const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
@@ -187,18 +66,156 @@ private:
             
             first = false;
         }
+    }
+    
+    void draw() override {
+        const int width = bounds().size.x;
+        
+        for (ButtonPtr button : _buttons) {
+            // Draw separator
+            if (erased()) { // Performance optimization: only draw if the window was erased
+                if (!button->hidden()) {
+                    Window::Attr color = attr(_colors.menu);
+                    drawLineHoriz({0, button->frame().ymax()+1}, width);
+                }
+            }
+        }
+        
+        // Draw border
+        if (erased()) { // Performance optimization: only draw if the window was erased
+            Window::Attr color = attr(_colors.menu);
+            drawBorder();
+            
+            // Draw title
+            if (!_title.empty()) {
+                Window::Attr bold = attr(A_BOLD);
+                int offX = (width-(int)UTF8::Strlen(_title))/2;
+                drawText({offX,0}, " %s ", _title.c_str());
+            }
+        }
+    }
+    
+    bool handleEvent(const Event& ev) override {
+        if (ev.type == Event::Type::KeyEscape) {
+            dismiss();
+            return true;
+        }
+        
+        return false;
+        
+//        auto& ts = _trackState;
+//        const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
+//        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
+//        
+//        // Don't allow buttons to receive events until _ActivateDuration
+//        // has elapsed and the mouse has moved at least 1 px
+//        if (ev.type==Event::Type::Mouse &&
+//            duration>=_ActivateDuration &&
+//            (delta.x || delta.y)) {
+//            
+//            ts.active |= true;
+//        }
+//        
+//        if (ts.active) {
+//            // See if any of the buttons want the event
+//            bool handled = Panel::handleEvent(ev);
+//            if (handled) {
+//                _dismiss();
+//                return true;
+//            }
+//        }
+//        
+//        if (ev.type == Event::Type::Mouse) {
+//            // Update the mouseActive state for all of our buttons
+//            bool inside = HitTest(bounds(), ev.mouse.point);
+//            for (ButtonPtr button : _buttons) {
+//                button->mouseActive(inside);
+//            }
+//            
+//            // Handle mouse down
+//            if (ev.mouseDown() && !inside) {
+//                _dismiss();
+//                return true;
+//            
+//            // Handle mouse up
+//            } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
+//                // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
+//                //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
+//                ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
+//                if ((!ts.stayOpen && duration>=_StayOpenExpiration) || (ts.stayOpen && !inside)) {
+//                    _dismiss();
+//                    return true;
+//                }
+//                
+//                ts.stayOpen = true;
+//            }
+//        
+//        } else if (ev.type == Event::Type::KeyEscape) {
+//            _dismiss();
+//            return true;
+//        }
+//        
+//        // Eat all events
+//        return true;
+    }
+    
+    void track(const Event& ev) {
+        _trackState = {};
+        _trackState.startEvent = ev;
+        Window::track();
+    }
+    
+    View*const* subviews() override {
+        return _subviews.get();
+    }
+    
+    const auto& colors() const { return _colors; }
+    
+    const auto& title() const { return _title; }
+    template <typename T> void title(const T& x) { _set(_title, x); }
+    
+    const auto& buttons() const { return _buttons; }
+    void buttons(const std::vector<UI::ButtonPtr>& x) {
+        _set(_buttons, x);
+        
+        // Update every button action to invoke dismiss(), and then call the original action
+        for (UI::ButtonPtr button : _buttons) {
+            auto existing = button->action();
+            button->action([=] (Button& button) {
+                dismiss();
+                if (existing) existing(button);
+            });
+        }
         
         // Recreate `_subviews`
         _subviews = std::make_unique<View*[]>(_buttons.size()+1);
         for (size_t i=0; i<_buttons.size(); i++) {
             _subviews[i] = _buttons[i].get();
         }
+        
+        layoutNeeded(true);
     }
     
-    void _dismiss() {
+    void dismiss() {
         if (_dismissAction) _dismissAction(*this);
         trackStop();
     }
+    
+    const auto& dismissAction() const { return _dismissAction; }
+    template <typename T> void dismissAction(const T& x) { _set(_dismissAction, x); }
+    
+//    const auto& subviews() const { return _subviews; }
+//    template <typename T> void subviews(const T& x) { _set(_subviews, x); }
+    
+private:
+    static constexpr int _BorderSize      = 1;
+    static constexpr int _InsetX          = 1;
+    static constexpr int _SeparatorHeight = 1;
+    static constexpr int _KeySpacing      = 2;
+    static constexpr int _RowHeight       = 2;
+    
+    static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
+    static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
     const ColorPalette& _colors;
     std::string _title;

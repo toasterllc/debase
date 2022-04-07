@@ -3,19 +3,6 @@
 
 namespace UI {
 
-static void _layout(const Window& win, View* v) {
-    if (v->hidden()) return;
-    
-    if (v->layoutNeeded()) {
-        v->layout(win);
-        v->layoutNeeded(false);
-    }
-    
-    for (auto subviews=v->subviews(); *subviews; subviews++) {
-        _layout(win, *subviews);
-    }
-}
-
 void Window::_layout() {
     // Detect size changes that can occurs from underneath us
     // by ncurses (eg by the terminal size changing)
@@ -30,24 +17,10 @@ void Window::_layout() {
     
     // Layout the window's subviews
     for (auto views=subviews(); *views; views++) {
-        ::UI::_layout(*this, *views);
+        View::TreeLayout(*this, *(*views));
     }
     
     layoutNeeded(false);
-}
-
-static void _draw(const Window& win, View* v) {
-    if (v->hidden()) return;
-    
-    // If the window was erased during this draw cycle, we need to redraw
-    if (v->drawNeeded() || win.erased()) {
-        v->draw(win);
-        v->drawNeeded(false);
-    }
-    
-    for (auto subviews=v->subviews(); *subviews; subviews++) {
-        ::UI::_draw(win, *subviews);
-    }
 }
 
 void Window::_draw() {
@@ -67,29 +40,19 @@ void Window::_draw() {
     
     // Draw the window's subviews
     for (auto views=subviews(); *views; views++) {
-        ::UI::_draw(*this, *views);
+        View::TreeDraw(*this, *(*views));
     }
     
     drawNeeded(false);
 }
 
-static bool _handleEvent(const Window& win, View* v, const Event& ev) {
-    if (v->hidden()) return false;
-    if (v->handleEvent(win, ev)) return true;
-    for (auto subviews=v->subviews(); *subviews; subviews++) {
-        if (_handleEvent(win, *subviews, ev)) return true;
-    }
-    return false;
-}
-
 bool Window::_handleEvent(const Event& ev) {
-    // Let the window handle the event first
-    if (handleEvent(ev)) return true;
-    
-    // Let the subviews handle the event
+    // Let the subviews handle the event first
     for (auto views=subviews(); *views; views++) {
-        if (::UI::_handleEvent(*this, *views, ev)) return true;
+        if (View::TreeHandleEvent(*this, *(*views), ev)) return true;
     }
+    // None of the subviews wanted the event; let the window handle it
+    if (handleEvent(ev)) return true;
     return false;
 }
 

@@ -71,6 +71,44 @@ public:
     
     virtual View*const* subviews() { return _subviews; }
     
+    static void TreeLayout(const Window& win, View& view) {
+        if (view.hidden()) return;
+        
+        if (view.layoutNeeded()) {
+            view.layout(win);
+            view.layoutNeeded(false);
+        }
+        
+        for (auto subviews=view.subviews(); *subviews; subviews++) {
+            TreeLayout(win, *(*subviews));
+        }
+    }
+    
+    static void TreeDraw(const Window& win, View& v) {
+        if (v.hidden()) return;
+        
+        // If the window was erased during this draw cycle, we need to redraw
+        if (v.drawNeeded() || win.erased()) {
+            v.draw(win);
+            v.drawNeeded(false);
+        }
+        
+        for (auto subviews=v.subviews(); *subviews; subviews++) {
+            TreeDraw(win, *(*subviews));
+        }
+    }
+    
+    static bool TreeHandleEvent(const Window& win, View& view, const Event& ev) {
+        if (view.hidden()) return false;
+        // Let the subviews handle the event first
+        for (auto subviews=view.subviews(); *subviews; subviews++) {
+            if (TreeHandleEvent(win, *(*subviews), ev)) return true;
+        }
+        // None of the subviews wanted the event; let the window handle it
+        if (view.handleEvent(win, ev)) return true;
+        return false;
+    }
+    
     struct {
         int l = 0;
         int r = 0;
