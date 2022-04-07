@@ -89,9 +89,9 @@ public:
         redoButton.frame(redoFrame);
         snapshotsButton.frame(snapshotsFrame);
         
-        undoButton.hidden(!rev.isMutable());
-        redoButton.hidden(!rev.isMutable());
-        snapshotsButton.hidden(!rev.isMutable());
+        undoButton.visible(rev.isMutable());
+        redoButton.visible(rev.isMutable());
+        snapshotsButton.visible(rev.isMutable());
         
 //        undoButton.layout(win);
 //        redoButton.layout(win);

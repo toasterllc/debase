@@ -53,8 +53,11 @@ public:
     // MARK: - Accessors
     const auto& colors() const { return _colors; }
     
-    const auto& hidden() const { return _hidden; }
-    template <typename T> void hidden(const T& x) { _set(_hidden, x); }
+    const auto& visible() const { return _visible; }
+    template <typename T> void visible(const T& x) { _set(_visible, x); }
+    
+    const auto& interaction() const { return _interaction; }
+    template <typename T> void interaction(const T& x) { _set(_interaction, x); }
     
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
@@ -72,7 +75,7 @@ public:
     virtual View*const* subviews() { return _subviews; }
     
     static void TreeLayout(const Window& win, View& view) {
-        if (view.hidden()) return;
+        if (!view.visible()) return;
         
         if (view.layoutNeeded()) {
             view.layout(win);
@@ -85,7 +88,7 @@ public:
     }
     
     static void TreeDraw(const Window& win, View& v) {
-        if (v.hidden()) return;
+        if (!v.visible()) return;
         
         // If the window was erased during this draw cycle, we need to redraw
         if (v.drawNeeded() || win.erased()) {
@@ -99,7 +102,8 @@ public:
     }
     
     static bool TreeHandleEvent(const Window& win, View& view, const Event& ev) {
-        if (view.hidden()) return false;
+        if (!view.visible()) return false;
+        if (!view.interaction()) return false;
         // Let the subviews handle the event first
         for (auto subviews=view.subviews(); *subviews; subviews++) {
             if (TreeHandleEvent(win, *(*subviews), ev)) return true;
@@ -134,7 +138,8 @@ private:
     const ColorPalette& _colors;
     View*const _subviews[1] = { nullptr };
     Rect _frame;
-    bool _hidden = false;
+    bool _visible = true;
+    bool _interaction = true;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
 };

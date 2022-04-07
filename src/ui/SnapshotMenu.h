@@ -11,11 +11,11 @@ public:
     using Menu::Menu;
     
     void draw() override {
-        const int width = size().x;
-        
+        Menu::draw();
         // Draw separator
+        const int width = size().x;
         if (erased()) { // Performance optimization: only draw if the window was erased
-            if (buttons().size() > 1) {
+            if (visibleButtonCount() > 1) {
                 ButtonPtr button0 = buttons()[0];
                 Window::Attr color = attr(colors().menu);
                 Point p = {1, button0->frame().ymax()+1};
@@ -24,6 +24,15 @@ public:
                 mvwhline_set(*this, p.y, p.x, &c, len);
             }
         }
+    }
+    
+    size_t visibleButtonCount() {
+        size_t count = 0;
+        for (UI::ButtonPtr button : buttons()) {
+            if (!button->visible()) break;
+            count++;
+        }
+        return count;
     }
 };
 

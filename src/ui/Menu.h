@@ -21,7 +21,7 @@ public:
         
         // Calculate the height by iterating over every button (until no more fit in `heightMax`, if supplied)
         int height = Padding().y;
-        int rem = constraint.y;
+        int rem = constraint.y-height;
         bool first = true;
         for (ButtonPtr button : _buttons) {
             const int add = (!first ? _SeparatorHeight : 0) + button->size().y;
@@ -41,7 +41,7 @@ public:
         int y = _BorderSize;
         
         bool first = true;
-        bool hide = false;
+        bool show = true;
         for (ButtonPtr button : _buttons) {
             // Add space for separator
             // If we're not the first button, add space for the separator at the top of the button
@@ -61,8 +61,8 @@ public:
             button->actionButtons(Event::MouseButtons::Left|Event::MouseButtons::Right);
             
             // Start hiding buttons once the bottom of the bottom extends beyond our max y
-            hide |= (y > ymax);
-            button->hidden(hide);
+            show &= (y <= ymax);
+            button->visible(show);
             
             first = false;
         }
@@ -74,7 +74,7 @@ public:
         for (ButtonPtr button : _buttons) {
             // Draw separator
             if (erased()) { // Performance optimization: only draw if the window was erased
-                if (!button->hidden()) {
+                if (button->visible()) {
                     Window::Attr color = attr(_colors.menu);
                     drawLineHoriz({0, button->frame().ymax()+1}, width);
                 }
@@ -96,72 +96,66 @@ public:
     }
     
     bool handleEvent(const Event& ev) override {
-        if (ev.type == Event::Type::KeyEscape) {
+        auto& ts = _trackState;
+        const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
+        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
+        
+        // Don't allow buttons to receive events until _ActivateDuration
+        // has elapsed and the mouse has moved at least 1 px
+        if (ev.type==Event::Type::Mouse &&
+            duration>=_ActivateDuration &&
+            (delta.x || delta.y)        &&
+            !ts.active                  ) {
+            
+            ts.active |= true;
+            for (UI::ButtonPtr button : _buttons) button->interaction(true);
+        }
+        
+        if (ev.type == Event::Type::Mouse) {
+            // Update the mouseActive state for all of our buttons
+            bool inside = HitTest(bounds(), ev.mouse.point);
+            if (ts.active) {
+                for (ButtonPtr button : _buttons) {
+                    button->mouseActive(inside);
+                }
+            }
+            
+            // Handle mouse down
+            if (ev.mouseDown() && !inside) {
+                dismiss();
+                return true;
+            
+            // Handle mouse up
+            } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
+                // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
+                //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
+                ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
+                if ((!ts.stayOpen && duration>=_StayOpenExpiration) || (ts.stayOpen && !inside)) {
+                    dismiss();
+                    return true;
+                }
+                
+                ts.stayOpen = true;
+            }
+        
+        } else if (ev.type == Event::Type::KeyEscape) {
             dismiss();
             return true;
         }
         
         return false;
-        
-//        auto& ts = _trackState;
-//        const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
-//        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
-//        
-//        // Don't allow buttons to receive events until _ActivateDuration
-//        // has elapsed and the mouse has moved at least 1 px
-//        if (ev.type==Event::Type::Mouse &&
-//            duration>=_ActivateDuration &&
-//            (delta.x || delta.y)) {
-//            
-//            ts.active |= true;
-//        }
-//        
-//        if (ts.active) {
-//            // See if any of the buttons want the event
-//            bool handled = Panel::handleEvent(ev);
-//            if (handled) {
-//                _dismiss();
-//                return true;
-//            }
-//        }
-//        
-//        if (ev.type == Event::Type::Mouse) {
-//            // Update the mouseActive state for all of our buttons
-//            bool inside = HitTest(bounds(), ev.mouse.point);
-//            for (ButtonPtr button : _buttons) {
-//                button->mouseActive(inside);
-//            }
-//            
-//            // Handle mouse down
-//            if (ev.mouseDown() && !inside) {
-//                _dismiss();
-//                return true;
-//            
-//            // Handle mouse up
-//            } else if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right)) {
-//                // Mouse-up occurred and no buttons handled it, so dismiss the menu if either:
-//                //   1. we haven't entered stay-open mode, and the period to allow stay-open mode has passed, or
-//                ///  2. we've entered stay-open mode, and the mouse-up was outside of the menu
-//                if ((!ts.stayOpen && duration>=_StayOpenExpiration) || (ts.stayOpen && !inside)) {
-//                    _dismiss();
-//                    return true;
-//                }
-//                
-//                ts.stayOpen = true;
-//            }
-//        
-//        } else if (ev.type == Event::Type::KeyEscape) {
-//            _dismiss();
-//            return true;
-//        }
-//        
-//        // Eat all events
-//        return true;
     }
     
     void track(const Event& ev) {
         _trackState = {};
         _trackState.startEvent = ev;
+        
+        // Disable button interaction at the very beginning, to prevent accidental clicks
+        for (UI::ButtonPtr button : _buttons) {
+            button->mouseActive(true);
+            button->interaction(false);
+        }
+        
         Window::track();
     }
     
