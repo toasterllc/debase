@@ -9,6 +9,7 @@ namespace UI::LineWrap {
 inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std::string_view str) {
     using Line = std::deque<std::string>;
     using Lines = std::deque<Line>;
+    if (!lineLenMax) return { std::string(str) };
     
     Lines linesInput;
     {

@@ -23,6 +23,10 @@ struct Vector {
     
     Vector& operator -=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
     template <typename T> Vector& operator -=(const T& t) { x-=t; y-=t; return *this; }
+    
+    template <typename T> Vector operator *(const T& t) const { return {x*t, y*t}; }
+    
+    template <typename T> Vector& operator *=(const T& t) { x*=t; y*=t; return *this; }
 };
 
 using Point = Vector;
@@ -112,7 +116,7 @@ enum class Align {
 struct ExitRequest : std::exception {};
 struct WindowResize : std::exception {};
 
-inline Rect Intersection(const Rect& a, const Rect& b) {
+inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.point.x, b.point.x);
     const int maxX = std::min(a.point.x+a.size.x, b.point.x+b.size.x);
     const int w = maxX-minX;
@@ -128,15 +132,15 @@ inline Rect Intersection(const Rect& a, const Rect& b) {
     };
 }
 
-inline Rect Inset(const Rect& x, const Size& s) {
+inline constexpr Rect Inset(const Rect& x, const Size& s) {
     return {x.point+s, x.size-s-s};
 }
 
-inline bool Empty(const Rect& x) {
+inline constexpr bool Empty(const Rect& x) {
     return x.size.x==0 || x.size.y==0;
 }
 
-inline bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
+inline constexpr bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
     return !Empty(Intersection(Inset(r, {-expand.x,-expand.y}), {p, {1,1}}));
 }
 

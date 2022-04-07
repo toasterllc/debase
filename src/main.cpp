@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: move ModalPanel colors into Window
+    
     #warning TODO: add feature requests field in register panel
     
     #warning TODO: notify about debase updates?

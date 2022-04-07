@@ -8,7 +8,11 @@ namespace UI {
 
 class ModalPanel : public Panel {
 public:
-    ModalPanel(const ColorPalette& colors) : colors(colors) {}
+    ModalPanel(const ColorPalette& colors) : colors(colors), _title(colors), _message(colors) {
+        #warning UNCOMMENT
+        _message.centerSingleLine(true);
+        _message.wrap(true);
+    }
     
 //    bool layoutNeeded() {
 //        if (_layoutNeeded) return true;
@@ -22,24 +26,38 @@ public:
 //        return true;
 //    }
     
-    static constexpr int BorderSize() { return 2; }
-    static constexpr int MessageInsetX() { return BorderSize()+3; }
+    static constexpr Size BorderSize() { return {4,2}; }
+    static constexpr Rect ContentRect(Size size) {
+        return Inset({{},size}, BorderSize());
+    }
     
-    static constexpr int 
+//    Size sizeIntrinsic(Size constraint) override {
+//        if (!_wrap) return {width, 1};
+//        std::vector<std::string> lines = LineWrap::Wrap(SIZE_MAX, size().x, _text);
+//        return { width, (int)lines.size() };
+//    }
     
-    Size sizeIntrinsic() override {
-        _title.sizeIntrinsic()
-        
-        std::vector<std::string> messageLines = _createMessageLines();
+    Size sizeIntrinsic(Size constraint) override {
+        const Rect rect = ContentRect(constraint);
+        const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
         return {
-            .x = _width,
-            .y = 2*BorderSize() + _messageInsetY + (int)messageLines.size(),
+            .x = constraint.x,
+            .y = 2*BorderSize().y + messageSize.y,
         };
     }
     
     bool layout() override {
         if (!Panel::layout()) return false;
-        _messageLines = _createMessageLines();
+        
+        const Rect rect = contentRect();
+        _title.attr(_color|A_BOLD);
+        _title.frame({rect.point-Size{0,1}, {rect.size.x, 1}});
+        
+        const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
+        _message.frame({rect.point, {rect.size.x, messageSize.y}});
+        
+        _title.layout(*this);
+        _message.layout(*this);
         return true;
     }
     
@@ -47,32 +65,13 @@ public:
         if (!Panel::draw()) return false;
         
         if (erased()) {
-            int offY = BorderSize()-1; // -1 because the title overwrites the border
-            {
-                Window::Attr style = attr(_color);
-                drawRect(Inset(bounds(), {2,1}));
-                drawRect(bounds());
-            }
-            
-            // Draw title
-            if (!_title.empty()) {
-                Window::Attr style = attr(_color|A_BOLD);
-                drawText({MessageInsetX(), offY}, " %s ", _title.c_str());
-                offY++;
-            }
-            offY += _messageInsetY;
-            
-            // Draw message
-            for (const std::string& line : _messageLines) {
-                int offX = 0;
-                if (_textAlign==Align::Center || (_textAlign==Align::CenterSingleLine && _messageLines.size()==1)) {
-                    offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*MessageInsetX())/2;
-                }
-                drawText({MessageInsetX()+offX, offY}, line.c_str());
-                offY++;
-            }
+            Window::Attr style = attr(_color);
+            drawRect(Inset(bounds(), {2,1}));
+            drawRect(bounds());
         }
         
+        _title.draw(*this);
+        _message.draw(*this);
         return true;
     }
     
@@ -89,16 +88,12 @@ public:
         return true;
     }
     
+    Rect contentRect() { return ContentRect(size()); }
+    
     const ColorPalette& colors;
     
     const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
-    
-    const auto& width() const { return _width; }
-    template <typename T> void width(const T& x) { _set(_width, x); }
-    
-    const auto& messageInsetY() const { return _messageInsetY; }
-    template <typename T> void messageInsetY(const T& x) { _set(_messageInsetY, x); }
     
     auto& title() { return _title; }
     auto& message() { return _message; }
@@ -108,8 +103,6 @@ public:
     
 private:
     Color _color;
-    int _width = 0;
-    int _messageInsetY = 0;
     Label _title;
     Label _message;
     std::function<void(ModalPanel&)> _dismissAction;

@@ -5,6 +5,7 @@
 #include "Color.h"
 #include "ModalPanel.h"
 #include "TextField.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -12,7 +13,7 @@ class WelcomePanel : public ModalPanel {
 public:
     WelcomePanel(const ColorPalette& colors) :
     ModalPanel(colors), _trialButton(colors), _registerButton(colors) {
-        textAlign(Align::Center);
+        message().align             (Align::Center);
         
         _trialButton.label          ("Start Free Trial");
         _trialButton.enabled        (true);
@@ -27,9 +28,9 @@ public:
         _registerButton.drawBorder  (true);
     }
     
-    Size sizeIntrinsic() override {
-        Size s = ModalPanel::sizeIntrinsic();
-        s.y += 2*_ButtonHeight;
+    Size sizeIntrinsic(Size constraint) override {
+        Size s = ModalPanel::sizeIntrinsic(constraint);
+        s.y += 2*_ButtonHeight+_ButtonSpacingTop;
         return s;
     }
     
@@ -38,15 +39,14 @@ public:
     bool layout() override {
         if (!ModalPanel::layout()) return false;
         
-        const Size s = size();
-        const int buttonWidth = s.x-2*_ButtonInsetX;
+        const Rect rect = contentRect();
         
-        int offY = s.y-BorderSize()-2*_ButtonHeight;
-        _trialButton.frame({{_ButtonInsetX, offY}, {buttonWidth, _ButtonHeight}});
+        int offY = message().frame().ymax()+1+_ButtonSpacingTop;
+        _trialButton.frame({{_ButtonInsetX, offY}, {rect.size.x, _ButtonHeight}});
         _trialButton.layout(*this);
         offY += _ButtonHeight;
         
-        _registerButton.frame({{_ButtonInsetX, offY}, {buttonWidth, _ButtonHeight}});
+        _registerButton.frame({{_ButtonInsetX, offY}, {rect.size.x, _ButtonHeight}});
         _registerButton.layout(*this);
         offY += _ButtonHeight;
         
@@ -86,9 +86,10 @@ public:
     auto& registerButton() { return _registerButton; }
     
 private:
-    static constexpr int _ButtonHeight  = 3;
-    static constexpr int _ButtonInsetX  = 4;
-    static constexpr int _ButtonWidth   = 10;
+    static constexpr int _ButtonSpacingTop  = 1;
+    static constexpr int _ButtonHeight      = 3;
+    static constexpr int _ButtonInsetX      = 4;
+    static constexpr int _ButtonWidth       = 10;
     
     Button _trialButton;
     Button _registerButton;

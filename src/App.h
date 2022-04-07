@@ -364,11 +364,10 @@ public:
             errorMsg[0] = toupper(errorMsg[0]);
             
             _messagePanel = std::make_shared<UI::ModalPanel>(_colors);
-            _messagePanel->color         (_colors.error);
-            _messagePanel->textAlign     (UI::ModalPanel::TextAlign::CenterSingleLine);
-            _messagePanel->title         ("Error");
-            _messagePanel->message       (errorMsg);
-            _messagePanel->dismissAction ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
+            _messagePanel->color            (_colors.error);
+            _messagePanel->title().text     ("Error");
+            _messagePanel->message().text   (errorMsg);
+            _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
             
             // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
             // as a result of pressing a keyboard key. For some reason showing panels
@@ -1012,7 +1011,7 @@ private:
         
         UI::MenuPtr menu = std::make_shared<UI::Menu>(_colors);
         menu->buttons = { combineButton, editButton, deleteButton };
-        menu->size(menu->sizeIntrinsic());
+        menu->size(menu->sizeIntrinsic({}));
         menu->position(mouseDownEvent.mouse.point);
         menu->layout();
         menu->track(menu->convert(mouseDownEvent));
@@ -1074,7 +1073,7 @@ private:
         menu->title = "Session Start";
         menu->buttons = buttons;
         menu->buttons = buttons;
-        menu->size(menu->sizeIntrinsic(heightMax));
+        menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->position(p);
         menu->layout();
         menu->track(menu->convert(eventCurrent()));
@@ -1309,9 +1308,8 @@ private:
         UI::WelcomePanelPtr p;
         p = std::make_shared<UI::WelcomePanel>(colors);
         p->color                    (colors.menu);
-        p->messageInsetY            (1);
-        p->title                    ("");
-        p->message                  ("Welcome to debase!");
+        p->title().text             ("");
+        p->message().text           ("Welcome to debase!");
         p->trialButton().action     (trialAction);
         p->registerButton().action  (registerAction);
         return p;
@@ -1320,16 +1318,14 @@ private:
     static UI::RegisterPanelPtr _RegisterPanelCreate(const UI::ColorPalette& colors, std::string_view title, std::string_view message) {
         UI::RegisterPanelPtr p;
         p = std::make_shared<UI::RegisterPanel>(colors);
-        p->color         (colors.menu);
-        p->messageInsetY (1);
-        p->title         (title);
-        p->message       (message);
+        p->color            (colors.menu);
+        p->title().text     (title);
+        p->message().text   (message);
         return p;
     }
     
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
-        panel->width(std::min(width, bounds().size.x));
-        panel->size(panel->sizeIntrinsic());
+        panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), 0}));
         
         UI::Size ps = panel->frame().size;
         UI::Size rs = frame().size;

@@ -21,7 +21,7 @@ public:
         return HitTest(f, p);
     }
     
-    virtual Size sizeIntrinsic() { return size(); }
+    virtual Size sizeIntrinsic(Size constraint) { return size(); }
     
     Point position() const { return _frame.point; }
     void position(const Point& x) {

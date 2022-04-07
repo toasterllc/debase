@@ -25,8 +25,8 @@ public:
         _email.focus(true);
     }
     
-    Size sizeIntrinsic() override {
-        Size s = ModalPanel::sizeIntrinsic();
+    Size sizeIntrinsic(Size constraint) override {
+        Size s = ModalPanel::sizeIntrinsic(constraint);
         s.y += _FieldsExtraHeight;
         return s;
     }
@@ -99,9 +99,9 @@ public:
     
 private:
     static constexpr int _FieldsExtraHeight = 5;
-    static constexpr int _FieldLabelInsetX  = MessageInsetX();
+    static constexpr int _FieldLabelInsetX  = 0;
     static constexpr int _FieldLabelWidth   = 10;
-    static constexpr int _FieldValueInsetX  = _FieldLabelInsetX+_FieldLabelWidth;
+    static constexpr int _FieldValueInsetX  = _FieldLabelWidth;
     
     void _fieldRequestFocus(TextField& field) {
         _email.focus(false);

@@ -15,18 +15,18 @@ public:
     
     Menu(const ColorPalette& colors) : colors(colors) {}
     
-    Size sizeIntrinsic(int heightMax=0) {
+    Size sizeIntrinsic(Size constraint) override {
         // First button sets the width
         const int width = (!buttons.empty() ? buttons[0]->size().x : 0) + Padding().x;
         
         // Calculate the height by iterating over every button (until no more fit in `heightMax`, if supplied)
         int height = Padding().y;
-        int rem = heightMax;
+        int rem = constraint.y;
         bool first = true;
         for (ButtonPtr button : buttons) {
             const int add = (!first ? _SeparatorHeight : 0) + button->size().y;
             // Bail if the button won't fit in the available height
-            if (heightMax && add>rem) break;
+            if (constraint.y && add>rem) break;
             height += add;
             rem -= add;
             first = false;

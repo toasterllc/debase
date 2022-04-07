@@ -118,7 +118,7 @@ public:
         drawNeeded(true);
     }
     
-    virtual Size sizeIntrinsic() { return size(); }
+    virtual Size sizeIntrinsic(Size constraint) { return size(); }
     
     Rect bounds() const {
         return Rect{ .size = size() };
