@@ -691,9 +691,21 @@ private:
                 col->repo = _repo;
                 col->head = (rev.displayHead() == _head.commit);
                 
-                col->undoButton->action([=] (UI::Button&) { _undoRedo(col, true); });
-                col->redoButton->action([=] (UI::Button&) { _undoRedo(col, false); });
-                col->snapshotsButton->action([=] (UI::Button&) { _trackSnapshotsMenu(col); });
+                std::weak_ptr<UI::RevColumn> weakCol = col;
+                col->undoButton->action([=] (UI::Button&) {
+                    auto col = weakCol.lock();
+                    if (col) _undoRedo(col, true);
+                });
+                
+                col->redoButton->action([=] (UI::Button&) {
+                    auto col = weakCol.lock();
+                    if (col) _undoRedo(col, false);
+                });
+                
+                col->snapshotsButton->action([=] (UI::Button&) {
+                    auto col = weakCol.lock();
+                    if (col) _trackSnapshotsMenu(col);
+                });
             
             } else {
                 col = _columns[i];
