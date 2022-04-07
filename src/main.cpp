@@ -95,15 +95,9 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
     
-    #warning TODO: fix: context menu not drawing separators
-    
     #warning TODO: encapsulate View's hitTestExpand
     
-    #warning TODO: View -> View
-    
     #warning TODO: add OK / Cancel buttons to RegisterPanel
-    
-    #warning TODO: have View/View return its subviews to eliminate boilerplate
     
     #warning TODO: move ModalPanel colors into Window
     
@@ -141,6 +135,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: have Control/View return its subviews to eliminate boilerplate
+//
+//    #warning TODO: Control -> View
+//
+//    #warning TODO: fix: context menu not drawing separators
+//
 //    #warning TODO: fix: clicking on disabled button within context menu closes the menu
 //
 //    #warning TODO: test new @{0} @{-1} @{-2} behavior with a git repo that has a reflog without that many entries
