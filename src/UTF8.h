@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <string>
 
 namespace UTF8 {
 

@@ -17,14 +17,10 @@ public:
         drawNeeded(true);
     }
     
-    bool draw() override {
-        if (!Panel::draw()) return false;
-        
+    void draw() override {
         Window::Attr color;
         if (_borderColor) color = attr(*_borderColor);
         drawBorder();
-        
-        return true;
     }
     
 private:

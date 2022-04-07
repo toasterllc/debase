@@ -24,39 +24,26 @@ public:
         _key.align(Align::Right);
     }
     
-    bool layoutNeeded() const override {
-        return View::layoutNeeded() || _label.layoutNeeded() || _key.layoutNeeded();
-    }
-    
-    bool layout(const Window& win) override {
-        if (!View::layout(win)) return false;
-        
+    void layout(const Window& win) override {
         const Rect f = frame();
         _label.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
         _key.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
         
 //        _label.frame(f);
 //        _key.frame(f);
-        
-        _label.layout(win);
-        _key.layout(win);
-        
-        
+//        
+//        _label.layout(win);
+//        _key.layout(win);
+//        
+//        
 //        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
 //        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
 //        
 //        _label.layout(win);
 //        _textField.layout(win);
-        return true;
     }
     
-    bool drawNeeded() const override {
-        return View::drawNeeded() || _label.drawNeeded() || _key.drawNeeded();
-    }
-    
-    bool draw(const Window& win) override {
-        if (!View::draw(win)) return false;
-        
+    void draw(const Window& win) override {
         const Rect f = frame();
         
         // Draw border
@@ -73,10 +60,9 @@ public:
         _label.attr(attr);
         _key.attr(colors().dimmed);
         
-        // Draw labels
-        _key.draw(win);
-        _label.draw(win);
-        return true;
+//        // Draw labels
+//        _key.draw(win);
+//        _label.draw(win);
     }
     
     
@@ -171,6 +157,10 @@ public:
         return false;
     }
     
+    View*const* subviews() override {
+        return _subviews;
+    }
+    
     auto& label() { return _label; }
     auto& key() { return _key; }
     
@@ -236,6 +226,8 @@ private:
     
     Label _label;
     Label _key;
+    View*const _subviews[3] = {&_label, &_key, nullptr};
+    
     bool _enabled = false;
     bool _highlighted = false;
     bool _mouseActive = false;

@@ -31,52 +31,23 @@ public:
         return s;
     }
     
-    bool layoutNeeded() const override { return true; }
+//    bool layoutNeeded() const override { return true; }
     
-    bool layout() override {
-        if (!ModalPanel::layout()) return false;
-        
+    void layout() override {
         const Rect rect = contentRect();
         
         int offY = message().frame().ymax()+1+_ContentSpacingTop;
         _trialButton.frame({{rect.origin.x, offY}, {rect.size.x, _ButtonHeight}});
-        _trialButton.layout(*this);
+//        _trialButton.layout(*this);
         offY += _ButtonHeight;
         
         _registerButton.frame({{rect.origin.x, offY}, {rect.size.x, _ButtonHeight}});
-        _registerButton.layout(*this);
+//        _registerButton.layout(*this);
         offY += _ButtonHeight;
-        
-        return true;
     }
     
-    bool drawNeeded() const override {
-        if (ModalPanel::drawNeeded()) return true;
-        if (_trialButton.drawNeeded()) return true;
-        if (_registerButton.drawNeeded()) return true;
-        return false;
-    }
-    
-    bool draw() override {
-        if (!ModalPanel::draw()) return false;
-        _trialButton.draw(*this);
-        _registerButton.draw(*this);
-        return true;
-    }
-    
-    bool handleEvent(const Event& ev) override {
-//        // Let caller handle window resize
-//        if (ev.type == Event::Type::WindowResize) return ev;
-//        // Let caller handle Ctrl-C/D
-//        if (ev.type == Event::Type::KeyCtrlC) return ev;
-//        if (ev.type == Event::Type::KeyCtrlD) return ev;
-        
-        bool handled = false;
-        if (!handled) handled |= _trialButton.handleEvent(*this, ev);
-        if (!handled) handled |= _registerButton.handleEvent(*this, ev);
-        // If we handled an event, we need to draw
-        if (handled) ModalPanel::drawNeeded(true);
-        return true;
+    View*const* subviews() override {
+        return _subviews;
     }
     
     auto& trialButton() { return _trialButton; }
@@ -88,6 +59,7 @@ private:
     
     Button _trialButton;
     Button _registerButton;
+    View*const _subviews[3] = { &_trialButton, &_registerButton, nullptr };
 };
 
 using WelcomePanelPtr = std::shared_ptr<WelcomePanel>;

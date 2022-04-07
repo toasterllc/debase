@@ -29,8 +29,7 @@ public:
         snapshotsButton.actionTrigger(Button::ActionTrigger::MouseDown);
     }
     
-    bool layout(const Window& win) override {
-        if (!View::layout(win)) return false;
+    void layout(const Window& win) override {
         const Point pos = origin();
         const int width = size().x;
         
@@ -90,20 +89,17 @@ public:
         redoButton.frame(redoFrame);
         snapshotsButton.frame(snapshotsFrame);
         
-        undoButton.layout(win);
-        redoButton.layout(win);
-        snapshotsButton.layout(win);
+        undoButton.hidden(!rev.isMutable());
+        redoButton.hidden(!rev.isMutable());
+        snapshotsButton.hidden(!rev.isMutable());
         
-        return true;
+//        undoButton.layout(win);
+//        redoButton.layout(win);
+//        snapshotsButton.layout(win);
     }
     
     bool drawNeeded() const override {
         if (View::drawNeeded()) return true;
-        if (_showButtons()) {
-            if (undoButton.drawNeeded()) return true;
-            if (redoButton.drawNeeded()) return true;
-            if (snapshotsButton.drawNeeded()) return true;
-        }
         
         for (CommitPanelPtr p : panels) {
             if (p->drawNeeded()) return true;
@@ -112,11 +108,9 @@ public:
         return false;
     }
     
-    bool draw(const Window& win) override {
-        if (!View::draw(win)) return false;
+    void draw(const Window& win) override {
         const Point pos = origin();
         const int width = size().x;
-        
         // Draw branch name
         if (win.erased()) {
             Window::Attr color = win.attr(colors().menu);
@@ -135,25 +129,10 @@ public:
         for (CommitPanelPtr p : panels) {
             p->draw();
         }
-        
-        if (_showButtons()) {
-            undoButton.draw(win);
-            redoButton.draw(win);
-            snapshotsButton.draw(win);
-        }
-        
-        return true;
     }
     
-    bool handleEvent(const Window& win, const Event& ev) override {
-        if (_showButtons()) {
-            bool handled = false;
-            if (!handled) handled = undoButton.handleEvent(win, ev);
-            if (!handled) handled = redoButton.handleEvent(win, ev);
-            if (!handled) handled = snapshotsButton.handleEvent(win, ev);
-            return handled;
-        }
-        return false;
+    View*const* subviews() override {
+        return _subviews;
     }
     
     CommitPanelPtr hitTest(const Point& p) {
@@ -179,11 +158,8 @@ private:
     static constexpr int _ButtonWidth    = 8;
     static constexpr int _CommitSpacing  = 1;
     
-    bool _showButtons() const {
-        return rev.isMutable();
-    }
-    
     std::string _name;
+    View*const _subviews[4] = { &undoButton, &redoButton, &snapshotsButton, nullptr };
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;

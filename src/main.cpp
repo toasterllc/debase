@@ -93,6 +93,12 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: context menu not drawing separators
+    
+    #warning TODO: fix: clicking on disabled button within context menu closes the menu
+    
+    #warning TODO: encapsulate View's hitTestExpand
+    
     #warning TODO: View -> View
     
     #warning TODO: add OK / Cancel buttons to RegisterPanel

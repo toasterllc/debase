@@ -32,68 +32,13 @@ public:
     bool layoutNeeded() const override {
         // We need to layout if any of our constituents needs to layout
         if (Window::layoutNeeded()) return true;
-        for (const UI::RevColumn& col : _columns) {
-            if (col.layoutNeeded()) return true;
-        }
         if (_messagePanel && _messagePanel->layoutNeeded()) return true;
         if (_welcomePanel && _welcomePanel->layoutNeeded()) return true;
         if (_registerPanel && _registerPanel->layoutNeeded()) return true;
         return false;
     }
     
-    bool layout() override {
-        if (!Window::layout()) return false;
-        
-        // Create/layout columns
-        {
-            constexpr int ColumnInsetX = 3;
-            constexpr int ColumnWidth = 32;
-            constexpr int ColumnSpacing = 6;
-            
-            // Reserve enough space to hold the maximum number of columns
-            // This is critical to prevent _columns from reallocating, so that our existing
-            // references/pointers to columns stay valid after calling _columns.emplace_back().
-            _columns.reserve(_revs.size());
-            
-            int offX = ColumnInsetX;
-            size_t i = 0;
-            for (const Git::Rev& rev : _revs) {
-                State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
-                UI::Rect f = {{offX, 0}, {ColumnWidth, size().y}};
-                if (f != Intersection(bounds(), f)) break;
-                
-                // Create the column if it doesn't exist yet
-                bool create = (i >= _columns.size());
-                UI::RevColumn& col = (create ? _columns.emplace_back(_colors) : _columns[i]);
-                if (create) {
-                    col.repo = _repo;
-                    col.rev  = rev;
-                    col.head = (rev.displayHead() == _head.commit);
-                    
-                    col.undoButton.action([&] (UI::Button&) { _undoRedo(col, true); });
-                    col.redoButton.action([&] (UI::Button&) { _undoRedo(col, false); });
-                    col.snapshotsButton.action([&] (UI::Button&) { _trackSnapshotsMenu(col); });
-                }
-                
-                col.undoButton.enabled(h && !h->begin());
-                col.redoButton.enabled(h && !h->end());
-                col.snapshotsButton.enabled(true);
-                
-                col.frame({{offX, 0}, {ColumnWidth, size().y}});
-                col.layout(*this);
-                
-                offX += ColumnWidth+ColumnSpacing;
-                i++;
-            }
-            
-            // Erase columns that aren't visible
-            // Normally we'd use _columns.erase() here to delete a range of columns, but that
-            // doesn't compile because vector::erase requires moveable elements (in case a
-            // range in the middle of the vector was removed) and RevColumn doesn't support
-            // moving or assignment
-            while (_columns.size() > i) _columns.pop_back();
-        }
-        
+    void layout() override {
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
         for (UI::RevColumn& col : _columns) {
@@ -140,25 +85,17 @@ public:
             constexpr int RegisterPanelWidth = 50;
             _layoutModalPanel(_registerPanel, RegisterPanelWidth);
         }
-        
-        return true;
     }
     
     bool drawNeeded() const override {
         if (Window::drawNeeded()) return true;
-        for (const UI::RevColumn& col : _columns) {
-            if (col.drawNeeded()) return true;
-        }
         if (_messagePanel && _messagePanel->drawNeeded()) return true;
         if (_welcomePanel && _welcomePanel->drawNeeded()) return true;
         if (_registerPanel && _registerPanel->drawNeeded()) return true;
         return false;
     }
     
-    bool draw() override {
-        // We need to draw if any of our constituents needs to layout
-        if (!Window::draw()) return false;
-        
+    void draw() override {
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         if (_drag.titlePanel) {
@@ -219,8 +156,6 @@ public:
         if (_registerPanel) {
             _registerPanel->draw();
         }
-        
-        return true;
     }
     
     bool handleEvent(const UI::Event& ev) override {
@@ -376,7 +311,7 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         
-        return true;
+        return Window::handleEvent(ev);
     }
     
     void run() {
@@ -466,6 +401,10 @@ public:
         }
         
         _repoState.write();
+    }
+    
+    UI::View*const* subviews() override {
+        return _subviews.get();
     }
     
 private:
@@ -722,22 +661,69 @@ private:
     }
     
     void _reload() {
-        // Create a RevColumn for each specified branch
+        // Reload head's ref
         if (_head.ref) {
             _head = _repo.revReload(_head);
         }
         
+        // Reload all ref-based revs
         for (Git::Rev& rev : _revs) {
             if (rev.ref) {
                 rev = _repo.revReload(rev);
             }
         }
         
-        for (UI::RevColumn& col : _columns) {
-            if (col.rev.ref) {
-                col.rev = _repo.revReload(col.rev);
+        // Create/layout columns
+        constexpr int ColumnInsetX = 3;
+        constexpr int ColumnWidth = 32;
+        constexpr int ColumnSpacing = 6;
+        
+        // Reserve enough space to hold the maximum number of columns
+        // This is critical to prevent _columns from reallocating, so that our existing
+        // references/pointers to columns stay valid after calling _columns.emplace_back().
+        _columns.reserve(_revs.size());
+        
+        int offX = ColumnInsetX;
+        size_t i = 0;
+        for (const Git::Rev& rev : _revs) {
+            State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
+            UI::Rect f = {{offX, 0}, {ColumnWidth, size().y}};
+            if (f != Intersection(bounds(), f)) break;
+            
+            // Create the column if it doesn't exist yet
+            bool create = (i >= _columns.size());
+            UI::RevColumn& col = (create ? _columns.emplace_back(_colors) : _columns[i]);
+            if (create) {
+                col.repo = _repo;
+                col.head = (rev.displayHead() == _head.commit);
+                
+                col.undoButton.action([&] (UI::Button&) { _undoRedo(col, true); });
+                col.redoButton.action([&] (UI::Button&) { _undoRedo(col, false); });
+                col.snapshotsButton.action([&] (UI::Button&) { _trackSnapshotsMenu(col); });
             }
+            
+            col.rev = rev; // Ensure all columns' revs are up to date (since refs become stale if they're modified)
+            col.undoButton.enabled(h && !h->begin());
+            col.redoButton.enabled(h && !h->end());
+            col.snapshotsButton.enabled(true);
+            col.frame({{offX, 0}, {ColumnWidth, size().y}});
             col.layoutNeeded(true);
+            
+            offX += ColumnWidth+ColumnSpacing;
+            i++;
+        }
+        
+        // Erase columns that aren't visible
+        // Normally we'd use _columns.erase() here to delete a range of columns, but that
+        // doesn't compile because vector::erase requires moveable elements (in case a
+        // range in the middle of the vector was removed) and RevColumn doesn't support
+        // moving or assignment
+        while (_columns.size() > i) _columns.pop_back();
+        
+        // Recreate `_subviews`
+        _subviews = std::make_unique<UI::View*[]>(_columns.size()+1);
+        for (size_t i=0; i<_columns.size(); i++) {
+            _subviews[i] = &_columns[i];
         }
     }
     
@@ -1011,9 +997,9 @@ private:
         UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
         
         UI::MenuPtr menu = std::make_shared<UI::Menu>(_colors);
-        menu->buttons = { combineButton, editButton, deleteButton };
-        menu->size(menu->sizeIntrinsic({}));
         menu->origin(mouseDownEvent.mouse.point);
+        menu->size(menu->sizeIntrinsic({}));
+        menu->buttons({ combineButton, editButton, deleteButton });
         menu->layout();
         menu->track(menu->convert(mouseDownEvent));
         
@@ -1071,11 +1057,10 @@ private:
         const int heightMax = size().y-p.y;
         
         UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>(_colors);
-        menu->title = "Session Start";
-        menu->buttons = buttons;
-        menu->buttons = buttons;
-        menu->size(menu->sizeIntrinsic({0, heightMax}));
+        menu->title("Session Start");
         menu->origin(p);
+        menu->size(menu->sizeIntrinsic({0, heightMax}));
+        menu->buttons(buttons);
         menu->layout();
         menu->track(menu->convert(eventCurrent()));
         
@@ -1609,4 +1594,6 @@ private:
     UI::ModalPanelPtr _messagePanel;
     UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
+    
+    std::unique_ptr<UI::View*[]> _subviews;
 };

@@ -15,19 +15,15 @@ public:
         return { width, (int)lines.size() };
     }
     
-    bool layout(const Window& win) override {
-        if (!View::layout(win)) return false;
+    void layout(const Window& win) override {
         if (!_wrap) {
             _lines = { _text };
         } else {
             _lines = LineWrap::Wrap(SIZE_MAX, size().x, _text);
         }
-        return true;
     }
     
-    bool draw(const Window& win) override {
-        if (!View::draw(win)) return false;
-        
+    void draw(const Window& win) override {
         const Rect f = frame();
         
         // Draw lines
@@ -58,8 +54,6 @@ public:
             win.drawText(p, lineWidth, line.c_str());
             offY++;
         }
-        
-        return true;
     }
     
     const auto& text() const { return _text; }

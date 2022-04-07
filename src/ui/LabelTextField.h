@@ -12,13 +12,7 @@ public:
         return _label.sizeIntrinsic(constraint);
     }
     
-    bool layoutNeeded() const override {
-        return View::layoutNeeded() || _label.layoutNeeded() || _textField.layoutNeeded();
-    }
-    
-    bool layout(const Window& win) override {
-        if (!View::layout(win)) return false;
-        
+    void layout(const Window& win) override {
         const Rect f = frame();
         const Size labelSize = _label.sizeIntrinsic({});
         _label.frame({f.origin, labelSize});
@@ -26,24 +20,12 @@ public:
         const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
         _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
         
-        _label.layout(win);
-        _textField.layout(win);
-        return true;
+//        _label.layout(win);
+//        _textField.layout(win);
     }
     
-    bool drawNeeded() const override {
-        return View::drawNeeded() || _label.drawNeeded() || _textField.drawNeeded();
-    }
-    
-    bool draw(const Window& win) override {
-        if (!View::draw(win)) return false;
-        _label.draw(win);
-        _textField.draw(win);
-        return true;
-    }
-    
-    bool handleEvent(const Window& win, const Event& ev) override {
-        return _textField.handleEvent(win, ev);
+    View*const* subviews() override {
+        return _subviews;
     }
     
     auto& label() { return _label; }
@@ -56,6 +38,8 @@ private:
     Label _label;
     TextField _textField;
     int _spacingX = 0;
+    
+    View*const _subviews[3] = { &_label, &_textField, nullptr };
 };
 
 using LabelTextFieldPtr = std::shared_ptr<LabelTextField>;

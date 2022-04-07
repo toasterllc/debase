@@ -40,11 +40,8 @@ public:
         drawNeeded(true);
     }
     
-    bool draw() override {
-        if (!Panel::draw()) return false;
-        
+    void draw() override {
         const int offY = (_header ? 1 : 0);
-        
         int i = 0;
         for (const std::string& line : _message) {
             drawText({2, offY+2+i}, line.c_str());
@@ -82,8 +79,6 @@ public:
             Window::Attr color = attr(_colors.dimmed);
             drawText({2, offY+1}, _author.c_str());
         }
-        
-        return true;
     }
     
     const Git::Commit commit() const { return _commit; }

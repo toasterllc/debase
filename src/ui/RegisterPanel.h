@@ -38,11 +38,9 @@ public:
         return s;
     }
     
-    bool layoutNeeded() const override { return true; }
+//    bool layoutNeeded() const override { return true; }
     
-    bool layout() override {
-        if (!ModalPanel::layout()) return false;
-        
+    void layout() override {
         const Rect rect = contentRect();
         int offY = message().frame().ymax()+1;
         
@@ -50,40 +48,13 @@ public:
         _email.frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
         offY += _FieldHeight+_FieldSpacingY;
         _code.frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
-        
-        _email.layout(*this);
-        _code.layout(*this);
-        return true;
+//        
+//        _email.layout(*this);
+//        _code.layout(*this);
     }
     
-    bool drawNeeded() const override {
-        if (ModalPanel::drawNeeded()) return true;
-        if (_email.drawNeeded()) return true;
-        if (_code.drawNeeded()) return true;
-        return false;
-    }
-    
-    bool draw() override {
-        if (!ModalPanel::draw()) return false;
-        
-        _email.draw(*this);
-        _code.draw(*this);
-        return true;
-    }
-    
-    bool handleEvent(const Event& ev) override {
-//        // Let caller handle window resize
-//        if (ev.type == Event::Type::WindowResize) return ev;
-//        // Let caller handle Ctrl-C/D
-//        if (ev.type == Event::Type::KeyCtrlC) return ev;
-//        if (ev.type == Event::Type::KeyCtrlD) return ev;
-        
-        bool handled = false;
-        if (!handled) handled |= _email.handleEvent(*this, ev);
-        if (!handled) handled |= _code.handleEvent(*this, ev);
-        // If we handled an event, we need to draw
-        if (handled) ModalPanel::drawNeeded(true);
-        return true;
+    View*const* subviews() override {
+        return _subviews;
     }
     
 private:
@@ -135,6 +106,7 @@ private:
     LabelTextField _code;
     Button _okButton;
     Button _cancelButton;
+    View*const _subviews[5] = { &_email, &_code, &_okButton, &_cancelButton, nullptr };
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;

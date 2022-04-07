@@ -10,10 +10,9 @@ class TextField : public View {
 public:
     TextField(const ColorPalette& colors) : View(colors) {}
     
-    bool layoutNeeded() const override { return true; }
+//    bool layoutNeeded() const override { return true; }
     
-    bool layout(const Window& win) override {
-        if (!View::layout(win)) return false;
+    void layout(const Window& win) override {
         _offUpdate();
         
         if (_focus) {
@@ -21,12 +20,9 @@ public:
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
         }
-        return true;
     }
     
-    bool draw(const Window& win) override {
-        if (!View::draw(win)) return false;
-        
+    void draw(const Window& win) override {
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
         if (!_focus) color = win.attr(colors().dimmed);
@@ -39,15 +35,6 @@ public:
         
         std::string substr(left, right);
         win.drawText(origin(), substr.c_str());
-        
-        return true;
-    }
-    
-    bool handleEvent(const Window& win, const Event& ev) override {
-        bool handled = _handleEvent(win, ev);
-        if (!handled) return false;
-        drawNeeded(true);
-        return true;
     }
     
     bool focus() const { return _focus; }

@@ -9,33 +9,14 @@ namespace UI {
 class ModalPanel : public Panel {
 public:
     ModalPanel(const ColorPalette& colors) : colors(colors), _title(colors), _message(colors) {
-        #warning UNCOMMENT
         _message.centerSingleLine(true);
         _message.wrap(true);
     }
-    
-//    bool layoutNeeded() {
-//        if (_layoutNeeded) return true;
-//        
-//        if (width <= 0) return false;
-//        Size sizeCur = size();
-//        Size sizeNew = _calcSize();
-//        if (sizeNew==_sizePrev && sizeNew==sizeCur) return false;
-//        
-//        _layoutNeeded = true;
-//        return true;
-//    }
     
     static constexpr Size BorderSize() { return {5,2}; }
     static constexpr Rect ContentRect(Size size) {
         return Inset({{},size}, BorderSize());
     }
-    
-//    Size sizeIntrinsic(Size constraint) override {
-//        if (!_wrap) return {width, 1};
-//        std::vector<std::string> lines = LineWrap::Wrap(SIZE_MAX, size().x, _text);
-//        return { width, (int)lines.size() };
-//    }
     
     Size messageOffset() const {
         return {0, 0};
@@ -50,9 +31,7 @@ public:
         };
     }
     
-    bool layout() override {
-        if (!Panel::layout()) return false;
-        
+    void layout() override {
         const Rect f = frame();
         const Rect rect = contentRect();
         const Point titlePos = {3,0};
@@ -65,29 +44,25 @@ public:
         const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
         _message.frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
         
-        _title.layout(*this);
-        _message.layout(*this);
-        return true;
+//        _title.layout(*this);
+//        _message.layout(*this);
     }
     
-    bool draw() override {
-        if (!Panel::draw()) return false;
-        
+    void draw() override {
         if (erased()) {
             Window::Attr style = attr(_color);
 //            drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
         }
         
-        _title.draw(*this);
+//        _title.draw(*this);
         if (!_title.text().empty()) {
             // Add spaces around title
             drawText(_title.frame().tl()-Size{1,0}, " ");
             drawText(_title.frame().tr()+Size{1,0}, " ");
         }
         
-        _message.draw(*this);
-        return true;
+//        _message.draw(*this);
     }
     
     bool handleEvent(const Event& ev) override {
@@ -99,7 +74,6 @@ public:
                 _dismissAction(*this);
             }
         }
-        // Eat all events
         return true;
     }
     

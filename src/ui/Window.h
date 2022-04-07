@@ -9,6 +9,8 @@
 
 namespace UI {
 
+class View;
+
 class Window {
 public:
     class Attr {
@@ -58,7 +60,7 @@ public:
         std::swap(_s, x._s);
     }
     
-    ~Window() {
+    virtual ~Window() {
         if (_s.win) {
             ::delwin(_s.win);
         }
@@ -193,66 +195,38 @@ public:
         }
     }
     
-    virtual bool handleEvent(const Event& ev) { return false; }
-    
     void refresh() {
-        layout();
-        draw();
+        _layout();
+        _draw();
         CursorState::Draw();
         ::update_panels();
         ::refresh();
     }
     
-    virtual void track() {
-        for (;;) {
-            refresh();
-            
-            _s.eventCurrent = nextEvent();
-            bool handled = handleEvent(_s.eventCurrent);
-            _s.eventCurrent = {};
-            
-            // Continue until an event isn't handled
-            if (!handled) break;
-        }
-    }
-    
-    virtual bool layoutNeeded() const { return _s.layoutNeeded; }
+    virtual bool layoutNeeded() const { return _s.layoutNeeded || _s.sizePrev!=size(); }
     virtual void layoutNeeded(bool x) { _s.layoutNeeded = x; }
-    virtual bool layout() {
-        // Detect size changes that can occurs from underneath us
-        // by ncurses (eg by the terminal size changing)
-        const bool sizeChanged = _s.sizePrev!=size();
-        if (layoutNeeded() || sizeChanged) {
-            if (sizeChanged) {
-                // We need to erase (and redraw) after resizing
-                eraseNeeded(true);
-            }
-            _s.sizePrev = size();
-            layoutNeeded(false);
-            return true;
-        }
-        return false;
-    }
+    virtual void layout() {}
     
     virtual bool drawNeeded() const { return _s.drawNeeded; }
     virtual void drawNeeded(bool x) { _s.drawNeeded = x; }
-    virtual bool draw() {
-        if (drawNeeded()) {
-            // Remember whether we erased ourself during this draw cycle
-            // This is used by View instances (Button and TextField)
-            // to know whether they need to be drawn again
-            _s.erased = _s.eraseNeeded;
-            
-            // Erase ourself if needed, and remember that we did so
-            if (_s.eraseNeeded) {
-                ::werase(*this);
-                _s.eraseNeeded = false;
-            }
-            
-            drawNeeded(false);
-            return true;
-        }
-        return false;
+    virtual void draw() {}
+    
+    virtual bool handleEvent(const Event& ev) { return false; }
+    
+    virtual void track() {
+        do {
+            refresh();
+            _s.eventCurrent = nextEvent();
+            _handleEvent(_s.eventCurrent);
+            _s.eventCurrent = {};
+        } while (!_s.trackStop);
+        
+        _s.trackStop = false;
+    }
+    
+    // Call to trigger track() to return
+    virtual void trackStop() {
+        _s.trackStop = true;
     }
     
     // eraseNeeded(): sets whether the window should be erased the next time it's drawn
@@ -271,6 +245,10 @@ public:
     const Event& eventCurrent() const { return _s.eventCurrent; }
     operator WINDOW*() const { return _s.win; }
     
+    virtual View*const* subviews() {
+        return _s.subviews;
+    }
+    
 protected:
     template <typename X, typename Y>
     void _setAlways(X& x, const Y& y) {
@@ -286,6 +264,10 @@ protected:
     }
     
 private:
+    void _layout();
+    void _draw();
+    bool _handleEvent(const Event& ev);
+    
     struct {
         WINDOW* win = nullptr;
         Size sizePrev;
@@ -296,6 +278,8 @@ private:
         bool eraseNeeded = true;
         // erased: tracks whether the window was erased in this draw cycle
         bool erased = false;
+        bool trackStop = false;
+        View* subviews[1] = { nullptr };
     } _s;
 };
 

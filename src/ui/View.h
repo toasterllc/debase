@@ -6,6 +6,7 @@ namespace UI {
 class View {
 public:
     View(const ColorPalette& colors) : _colors(colors) {}
+    virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
         Rect f = _frame;
@@ -23,58 +24,52 @@ public:
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
     
-    Point origin() const { return _frame.origin; }
-    void origin(const Point& x) {
+    virtual Point origin() const { return _frame.origin; }
+    virtual void origin(const Point& x) {
         if (_frame.origin == x) return;
         _frame.origin = x;
         drawNeeded(true);
     }
     
-    Size size() const { return _frame.size; }
-    void size(const Size& x) {
+    virtual Size size() const { return _frame.size; }
+    virtual void size(const Size& x) {
         if (_frame.size == x) return;
         _frame.size = x;
         layoutNeeded(true);
         drawNeeded(true);
     }
     
-    Rect frame() const {
+    virtual Rect frame() const {
         return _frame;
     }
     
-    void frame(const Rect& x) {
+    virtual void frame(const Rect& x) {
         if (_frame == x) return;
         _frame = x;
         layoutNeeded(true);
         drawNeeded(true);
     }
     
+    // MARK: - Accessors
+    const auto& colors() const { return _colors; }
+    
+    const auto& hidden() const { return _hidden; }
+    template <typename T> void hidden(const T& x) { _set(_hidden, x); }
+    
+    // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
     virtual void layoutNeeded(bool x) { _layoutNeeded = x; }
-    virtual bool layout(const Window& win) {
-        if (layoutNeeded()) {
-            layoutNeeded(false);
-            return true;
-        }
-        return false;
-    }
+    virtual void layout(const Window& win) {}
     
+    // MARK: - Draw
     virtual bool drawNeeded() const { return _drawNeeded; }
     virtual void drawNeeded(bool x) { _drawNeeded = x; }
-    virtual bool draw(const Window& win) {
-        // If the window was erased during this draw cycle, we need to redraw
-        if (drawNeeded() || win.erased()) {
-            drawNeeded(false);
-            return true;
-        }
-        return false;
-    }
+    virtual void draw(const Window& win) {}
     
-    virtual bool handleEvent(const Window& win, const Event& ev) {
-        return false;
-    }
+    // MARK: - Events
+    virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
     
-    const auto& colors() const { return _colors; }
+    virtual View*const* subviews() { return _subviews; }
     
     struct {
         int l = 0;
@@ -99,8 +94,9 @@ protected:
     
 private:
     const ColorPalette& _colors;
-    
+    View*const _subviews[1] = { nullptr };
     Rect _frame;
+    bool _hidden = false;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
 };
