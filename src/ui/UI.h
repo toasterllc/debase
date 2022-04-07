@@ -103,6 +103,12 @@ private:
     }
 };
 
+enum class Align {
+    Left,
+    Center,
+    Right,
+};
+
 struct ExitRequest : std::exception {};
 struct WindowResize : std::exception {};
 

@@ -33,7 +33,7 @@ public:
         const int textWidth = labelWidth + (!_key.empty() ? KeySpacing : 0) + keyWidth;
         
         if (_drawBorder) {
-            Window::Attr color = win.attr(_enabled ? colors.normal : colors.dimmed);
+            Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
             win.drawRect(f);
         }
         
@@ -56,14 +56,14 @@ public:
             Window::Attr bold;
             Window::Attr color;
             if (_enabled)                 bold = win.attr(A_BOLD);
-            if (_highlighted && _enabled) color = win.attr(colors.menu);
-            else if (!_enabled)           color = win.attr(colors.dimmed);
+            if (_highlighted && _enabled) color = win.attr(colors().menu);
+            else if (!_enabled)           color = win.attr(colors().dimmed);
             win.drawText(plabel, labelWidth, _label.c_str());
         }
         
         // Draw key
         {
-            Window::Attr color = win.attr(colors.dimmed);
+            Window::Attr color = win.attr(colors().dimmed);
             win.drawText(pkey, keyWidth, _key.c_str());
         }
         

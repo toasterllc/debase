@@ -29,7 +29,7 @@ public:
         
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
-        if (!_focus) color = win.attr(colors.dimmed);
+        if (!_focus) color = win.attr(colors().dimmed);
         win.drawLineHoriz(position(), size().x, ' ');
         
         // Print as many runes as will fit our width

@@ -5,7 +5,7 @@ namespace UI {
 
 class Control {
 public:
-    Control(const ColorPalette& colors) : colors(colors) {}
+    Control(const ColorPalette& colors) : _colors(colors) {}
     
     virtual bool hitTest(const Point& p) const {
         Rect f = _frame;
@@ -74,7 +74,8 @@ public:
         return false;
     }
     
-    const ColorPalette& colors;
+    const auto& colors() const { return _colors; }
+    
     struct {
         int l = 0;
         int r = 0;
@@ -97,6 +98,8 @@ protected:
     }
     
 private:
+    const ColorPalette& _colors;
+    
     Rect _frame;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;

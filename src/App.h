@@ -1381,7 +1381,7 @@ private:
             }
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            #warning TODO: renew license
+            #warning TODO: renew license for this machine
         
         } else if (st == License::Status::Expired) {
             // Delete license, set expired=1, show trial-expired panel

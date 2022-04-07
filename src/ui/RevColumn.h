@@ -63,7 +63,7 @@ public:
                 
                 // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
                 if (!panel || panel->commit()!=commit) {
-                    panel = std::make_shared<CommitPanel>(colors, false, width, commit);
+                    panel = std::make_shared<CommitPanel>(colors(), false, width, commit);
                     panels.insert(panels.begin()+i, panel);
                 }
                 
@@ -121,14 +121,14 @@ public:
         
         // Draw branch name
         if (win.erased()) {
-            Window::Attr color = win.attr(colors.menu);
+            Window::Attr color = win.attr(colors().menu);
             Window::Attr bold = win.attr(A_BOLD);
             const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, _name.c_str());
         }
         
         if (!rev.isMutable()) {
-            Window::Attr color = win.attr(colors.error);
+            Window::Attr color = win.attr(colors().error);
             const char immutableText[] = "read-only";
             const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, immutableText);

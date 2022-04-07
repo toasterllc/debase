@@ -2,6 +2,7 @@
 #include <optional>
 #include "Panel.h"
 #include "Color.h"
+#include "Label.h"
 
 namespace UI {
 
@@ -21,16 +22,14 @@ public:
 //        return true;
 //    }
     
-    enum class TextAlign {
-        Left,
-        Center,
-        CenterSingleLine
-    };
-    
     static constexpr int BorderSize() { return 2; }
     static constexpr int MessageInsetX() { return BorderSize()+3; }
     
+    static constexpr int 
+    
     Size sizeIntrinsic() override {
+        _title.sizeIntrinsic()
+        
         std::vector<std::string> messageLines = _createMessageLines();
         return {
             .x = _width,
@@ -66,7 +65,7 @@ public:
             // Draw message
             for (const std::string& line : _messageLines) {
                 int offX = 0;
-                if (_textAlign==TextAlign::Center || (_textAlign==TextAlign::CenterSingleLine && _messageLines.size()==1)) {
+                if (_textAlign==Align::Center || (_textAlign==Align::CenterSingleLine && _messageLines.size()==1)) {
                     offX = (bounds().size.x-(int)UTF8::Strlen(line)-2*MessageInsetX())/2;
                 }
                 drawText({MessageInsetX()+offX, offY}, line.c_str());
@@ -101,30 +100,18 @@ public:
     const auto& messageInsetY() const { return _messageInsetY; }
     template <typename T> void messageInsetY(const T& x) { _set(_messageInsetY, x); }
     
-    const auto& textAlign() const { return _textAlign; }
-    template <typename T> void textAlign(const T& x) { _set(_textAlign, x); }
-    
-    const auto& title() const { return _title; }
-    template <typename T> void title(const T& x) { _set(_title, x); }
-    
-    const auto& message() const { return _message; }
-    template <typename T> void message(const T& x) { _set(_message, x); }
+    auto& title() { return _title; }
+    auto& message() { return _message; }
     
     const auto& dismissAction() const { return _dismissAction; }
     template <typename T> void dismissAction(const T& x) { _setAlways(_dismissAction, x); }
     
 private:
-    std::vector<std::string> _createMessageLines() const {
-        return LineWrap::Wrap(SIZE_MAX, _width-2*MessageInsetX(), _message);
-    }
-    
     Color _color;
     int _width = 0;
     int _messageInsetY = 0;
-    TextAlign _textAlign = TextAlign::Left;
-    std::string _title;
-    std::string _message;
-    std::vector<std::string> _messageLines;
+    Label _title;
+    Label _message;
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

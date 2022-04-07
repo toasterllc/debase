@@ -11,7 +11,8 @@ namespace UI {
 class RegisterPanel : public ModalPanel {
 public:
     RegisterPanel(const ColorPalette& colors) :
-    ModalPanel(colors), _email(colors), _code(colors) {
+    ModalPanel(colors), _email(colors), _code(colors), _okButton(colors), _cancelButton(colors) {
+    
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
@@ -139,6 +140,8 @@ private:
     
     TextField _email;
     TextField _code;
+    Button _okButton;
+    Button _cancelButton;
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;
