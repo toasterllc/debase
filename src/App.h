@@ -124,33 +124,33 @@ public:
             drawRect(*_selectionRect);
         }
         
-        if (_messagePanel) {
-            _messagePanel->drawTree(*_messagePanel);
-        }
-        
-        if (_welcomePanel) {
-            _welcomePanel->drawTree(*_welcomePanel);
-        }
-        
-        if (_registerPanel) {
-            _registerPanel->drawTree(*_registerPanel);
-        }
+//        if (_messagePanel) {
+//            _messagePanel->drawTree(*_messagePanel);
+//        }
+//        
+//        if (_welcomePanel) {
+//            _welcomePanel->drawTree(*_welcomePanel);
+//        }
+//        
+//        if (_registerPanel) {
+//            _registerPanel->drawTree(*_registerPanel);
+//        }
     }
     
     bool handleEvent(const Window& win, const UI::Event& ev) override {
         std::string errorMsg;
         try {
-            if (_messagePanel) {
-                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
-            }
-            
-            if (_welcomePanel) {
-                return _welcomePanel->handleEvent(win, _welcomePanel->convert(ev));
-            }
-            
-            if (_registerPanel) {
-                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
-            }
+//            if (_messagePanel) {
+//                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
+//            }
+//            
+//            if (_welcomePanel) {
+//                return _welcomePanel->handleEvent(win, _welcomePanel->convert(ev));
+//            }
+//            
+//            if (_registerPanel) {
+//                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
+//            }
             
             // Let every column handle the event
             for (UI::RevColumnPtr col : _columns) {
@@ -277,7 +277,7 @@ public:
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _messagePanel = std::make_shared<UI::ModalPanel>();
+            _messagePanel = createSubview<UI::ModalPanel>();
             _messagePanel->color            (_colors.error);
             _messagePanel->title()->text    ("Error");
             _messagePanel->message()->text  (errorMsg);
@@ -367,7 +367,7 @@ public:
                 _reload();
                 
                 try {
-                    track();
+                    track(*this, {});
                 } catch (const UI::WindowResize&) {
                     // Continue the loop, which calls _reload()
                 }
@@ -765,12 +765,12 @@ private:
             if (!_drag.titlePanel && mouseDragged && allow) {
                 Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
                 UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
-                _drag.titlePanel = std::make_shared<UI::CommitPanel>(true, titlePanel->frame().size.x, titleCommit);
+                _drag.titlePanel = createSubview<UI::CommitPanel>(true, titlePanel->frame().size.x, titleCommit);
                 
                 // Create shadow panels
                 UI::Size shadowSize = _drag.titlePanel->frame().size;
                 for (size_t i=0; i<_selection.commits.size()-1; i++) {
-                    _drag.shadowPanels.push_back(std::make_shared<UI::BorderedPanel>(shadowSize));
+                    _drag.shadowPanels.push_back(createSubview<UI::BorderedPanel>(shadowSize));
                 }
                 
                 // The titlePanel/shadowPanels need layout
@@ -826,7 +826,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the insertion marker
-            refresh();
+            refresh(*this);
             ev = nextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
@@ -954,7 +954,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the selection rect
-            refresh();
+            refresh(*this);
             ev = nextEvent();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
@@ -979,19 +979,19 @@ private:
         assert(!_selection.commits.empty());
         
         // Draw once before we open the context menu, so that the selection is updated
-        Window::drawNeeded(true);
-        refresh();
+        drawNeeded(true);
+        refresh(*this);
         
         UI::Button* menuButton = nullptr;
         UI::ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);
         UI::ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
         UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
         
-        UI::MenuPtr menu = std::make_shared<UI::Menu>();
+        UI::MenuPtr menu = createSubview<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
         menu->size(menu->sizeIntrinsic({}));
         menu->origin(mouseDownEvent.mouse.point);
-        menu->track(menu->convert(mouseDownEvent));
+        menu->track(*menu, menu->convert(mouseDownEvent));
         
         // Handle the clicked button
         std::optional<Git::Op> gitOp;
@@ -1046,12 +1046,12 @@ private:
         const UI::Point p = {col->origin().x+(col->size().x-width)/2, 2};
         const int heightMax = size().y-p.y;
         
-        UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>();
+        UI::SnapshotMenuPtr menu = createSubview<UI::SnapshotMenu>();
         menu->title("Session Start");
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
-        menu->track(menu->convert(eventCurrent()));
+        menu->track(*menu, menu->convert(eventCurrent()));
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1281,27 +1281,6 @@ private:
         return License::Validate(license, ctx);
     }
     
-    template <typename TA, typename RA>
-    static UI::WelcomePanelPtr _WelcomePanelCreate(const TA& trialAction, const RA& registerAction) {
-        UI::WelcomePanelPtr p;
-        p = std::make_shared<UI::WelcomePanel>();
-        p->color                    (View::Colors().menu);
-        p->title()->text            ("");
-        p->message()->text          ("Welcome to debase!");
-        p->trialButton()->action    (trialAction);
-        p->registerButton()->action (registerAction);
-        return p;
-    }
-    
-    static UI::RegisterPanelPtr _RegisterPanelCreate(std::string_view title, std::string_view message) {
-        UI::RegisterPanelPtr p;
-        p = std::make_shared<UI::RegisterPanel>();
-        p->color            (View::Colors().menu);
-        p->title()->text    (title);
-        p->message()->text  (message);
-        return p;
-    }
-    
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
         panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), 0}));
         
@@ -1313,19 +1292,6 @@ private:
         };
         panel->origin(p);
         panel->orderFront();
-        panel->layoutTree(*panel);
-    }
-    
-    UI::RegisterPanelPtr _trialExpiredPanelCreate() {
-        constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
-        return _RegisterPanelCreate(Title, Message);
-    }
-    
-    UI::RegisterPanelPtr _registerPanelCreate() {
-        constexpr const char* Title     = "Register debase";
-        constexpr const char* Message   = "Please enter your registration information.";
-        return _RegisterPanelCreate(Title, Message);
     }
     
     UI::WelcomePanelPtr _welcomePanelCreate() {
@@ -1338,7 +1304,34 @@ private:
             _registerPanel = _registerPanelCreate();
         };
         
-        return _WelcomePanelCreate(trialAction, registerAction);
+        UI::WelcomePanelPtr p = createSubview<UI::WelcomePanel>();
+        p->color                    (View::Colors().menu);
+        p->title()->text            ("");
+        p->message()->text          ("Welcome to debase!");
+        p->trialButton()->action    (trialAction);
+        p->registerButton()->action (registerAction);
+        return p;
+    }
+    
+    UI::RegisterPanelPtr _registerPanelCreate(std::string_view title, std::string_view message) {
+        UI::RegisterPanelPtr p;
+        p = createSubview<UI::RegisterPanel>();
+        p->color            (View::Colors().menu);
+        p->title()->text    (title);
+        p->message()->text  (message);
+        return p;
+    }
+    
+    UI::RegisterPanelPtr _trialExpiredPanelCreate() {
+        constexpr const char* Title     = "Trial Expired";
+        constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
+        return _registerPanelCreate(Title, Message);
+    }
+    
+    UI::RegisterPanelPtr _registerPanelCreate() {
+        constexpr const char* Title     = "Register debase";
+        constexpr const char* Message   = "Please enter your registration information.";
+        return _registerPanelCreate(Title, Message);
     }
     
     void _licenseCheck(State::State& state, bool networkAllowed=true) {

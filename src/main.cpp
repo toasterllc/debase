@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: can we get rid of the Window requirement from draw/layout/handleEvent?
+    
     #warning TODO: move track() into View
     
     #warning TODO: make Window inherit from View

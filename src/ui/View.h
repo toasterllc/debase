@@ -1,5 +1,6 @@
 #pragma once
 #include "Color.h"
+#include "lib/toastbox/Defer.h"
 
 namespace UI {
 
@@ -15,7 +16,7 @@ public:
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
-        Rect f = _frame;
+        Rect f = frame();
         f.origin.x -= hitTestExpand.l;
         f.size.x   += hitTestExpand.l;
         
@@ -30,37 +31,36 @@ public:
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
     
-    virtual Point origin() const { return _frame.origin; }
+    virtual Point origin() const { return _origin; }
     virtual void origin(const Point& x) {
-        if (_frame.origin == x) return;
-        _frame.origin = x;
+        if (_origin == x) return;
+        _origin = x;
         drawNeeded(true);
     }
     
-    virtual Size size() const { return _frame.size; }
+    virtual Size size() const { return _size; }
     virtual void size(const Size& x) {
-        if (_frame.size == x) return;
-        _frame.size = x;
+        if (_size == x) return;
+        _size = x;
         layoutNeeded(true);
         drawNeeded(true);
     }
     
-    virtual Rect frame() const { return _frame; }
+    virtual Rect frame() const { return { .origin=origin(), .size=size() }; }
     virtual void frame(const Rect& x) {
-        if (_frame == x) return;
-        _frame = x;
-        layoutNeeded(true);
-        drawNeeded(true);
+        if (frame() == x) return;
+        origin(x.origin);
+        size(x.size);
     }
     
-    virtual Rect bounds() const { return Rect{ .size = size() }; }
+    virtual Rect bounds() const { return { .size = size() }; }
     
     // MARK: - Accessors
-    const auto& visible() const { return _visible; }
-    template <typename T> void visible(const T& x) { _set(_visible, x); }
+    virtual bool visible() const { return _visible; }
+    virtual void visible(bool x) { _set(_visible, x); }
     
-    const auto& interaction() const { return _interaction; }
-    template <typename T> void interaction(const T& x) { _set(_interaction, x); }
+    virtual const bool interaction() const { return _interaction; }
+    virtual void interaction(bool x) { _set(_interaction, x); }
     
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
@@ -79,6 +79,7 @@ public:
     std::shared_ptr<T> createSubview(T_Args&&... args) {
         auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
         _subviews.push_back(view);
+        layoutNeeded(true);
         return view;
     }
     
@@ -130,6 +131,37 @@ public:
         return false;
     }
     
+    virtual void refresh(const Window& win) {
+        layoutTree(win);
+        drawTree(win);
+        CursorState::Draw();
+        ::update_panels();
+        ::refresh();
+    }
+    
+    virtual void track(const Window& win, const Event& ev) {
+        _tracking = true;
+        Defer(_tracking = false); // Exception safety
+        Defer(_trackStop = false); // Exception safety
+        
+        do {
+            refresh(win);
+            
+            _eventCurrent = _winNextEvent(win);
+            Defer(_eventCurrent = {}); // Exception safety
+            
+            handleEventTree(win, _eventCurrent);
+        } while (!_trackStop);
+    }
+    
+    // Signal track() to return
+    virtual void trackStop() {
+        _trackStop = true;
+    }
+    
+    virtual bool tracking() const { return _tracking; }
+    virtual const Event& eventCurrent() const { return _eventCurrent; }
+    
     struct {
         int l = 0;
         int r = 0;
@@ -155,13 +187,18 @@ private:
     static inline ColorPalette _Colors;
     
     bool _winErased(const Window& win);
+    Event _winNextEvent(const Window& win);
     
     std::vector<Ptr> _subviews;
-    Rect _frame;
+    Point _origin;
+    Size _size;
     bool _visible = true;
     bool _interaction = true;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
+    bool _tracking = false;
+    bool _trackStop = false;
+    Event _eventCurrent;
 };
 
 using ViewPtr = std::shared_ptr<View>;

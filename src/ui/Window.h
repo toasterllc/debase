@@ -97,9 +97,11 @@ public:
         mvwprintw(*this, p.y, p.x, "%s", txt);
     }
     
-    virtual void drawText(const Point& p, int maxLen, const char* txt) const {
+    virtual void drawText(const Point& p, int widthMax, const char* txt) const {
+        widthMax = std::max(0, widthMax);
+        
         std::string str = txt;
-        auto it = UTF8::NextN(str.begin(), str.end(), maxLen);
+        auto it = UTF8::NextN(str.begin(), str.end(), widthMax);
         str.resize(std::distance(str.begin(), it));
         mvwprintw(*this, p.y, p.x, "%s", str.c_str());
     }
@@ -109,11 +111,12 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    Size size() const override { return View::size(); }
+    Point origin() const override { return { getbegx(_s.win), getbegy(_s.win) }; }
+    
+    Size size() const override { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     void size(const Size& s) override {
         // Short-circuit if the size hasn't changed
-        if (s == View::size()) return;
-        View::size(s);
+        if (s == size()) return;
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
     }
     
@@ -173,30 +176,6 @@ public:
         }
     }
     
-    virtual void refresh() {
-        layoutTree(*this);
-        drawTree(*this);
-        CursorState::Draw();
-        ::update_panels();
-        ::refresh();
-    }
-    
-    virtual void track() {
-        do {
-            refresh();
-            _s.eventCurrent = nextEvent();
-            handleEventTree(*this, _s.eventCurrent);
-            _s.eventCurrent = {};
-        } while (!_s.trackStop);
-        
-        _s.trackStop = false;
-    }
-    
-    // Call to trigger track() to return
-    virtual void trackStop() {
-        _s.trackStop = true;
-    }
-    
     bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=View::size(); }
     void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
@@ -240,7 +219,6 @@ public:
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
-    virtual const Event& eventCurrent() const { return _s.eventCurrent; }
     virtual operator WINDOW*() const { return _s.win; }
     
 protected:
@@ -261,13 +239,10 @@ private:
     struct {
         WINDOW* win = nullptr;
         Size sizePrev;
-        Event eventCurrent;
         // eraseNeeded: tracks whether the window needs to be erased the next time it's drawn
         bool eraseNeeded = true;
         // erased: tracks whether the window was erased in this draw cycle
         bool erased = false;
-        // trackStop: signals that track() should return
-        bool trackStop = false;
     } _s;
 };
 

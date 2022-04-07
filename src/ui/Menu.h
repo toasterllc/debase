@@ -154,7 +154,7 @@ public:
             button->interaction(false);
         }
         
-        Window::track();
+        Panel::track(win, ev);
     }
     
     const auto& title() const { return _title; }

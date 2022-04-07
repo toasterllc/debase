@@ -137,15 +137,29 @@ public:
             if (hitTest(ev.mouse.point)) {
                 highlighted(true);
                 
-                // We allow both mouse-down and mouse-up events to trigger tracking.
-                // Mouse-up events are to allow Menu to use this function for context
-                // menus: right-mouse-down opens the menu, while the right-mouse-up
-                // triggers the Button action via this function.
-                if (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons)) {
-                    // Track mouse
-                    _trackMouse(win, ev);
+                // Trigger action
+                if ((_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons)) ||
+                    (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons))) {
+                    
+                    if (_enabled && _action) {
+                        _action(*this);
+                    }
+                    
                     return true;
+                
+                // Start tracking
+                } else {
+                    // We allow both mouse-down and mouse-up events to trigger tracking.
+                    // Mouse-up events are to allow Menu to use this function for context
+                    // menus: right-mouse-down opens the menu, while the right-mouse-up
+                    // triggers the Button action via this function.
+                    if (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons)) {
+                        // Track mouse
+                        track(win, ev);
+                        return true;
+                    }
                 }
+            
             } else {
                 highlighted(false);
             }
@@ -179,42 +193,6 @@ public:
     
 private:
     static constexpr int KeySpacing = 2;
-    
-    Event _trigger(const Event& ev) {
-        if ((_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons)) ||
-            (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons))) {
-            
-            if (_enabled && hitTest(ev.mouse.point) && _action) {
-                _action(*this);
-            }
-            // Consume event
-            return {};
-        }
-        return ev;
-    }
-    
-    void _trackMouse(const Window& win, const Event& mouseDownEvent) {
-        Event ev = mouseDownEvent;
-        
-        for (;;) {
-            if (ev.type == Event::Type::Mouse) {
-                highlighted(hitTest(ev.mouse.point));
-            }
-            
-            drawTree(win);
-            
-            if ((_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons)) ||
-                (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons))) {
-                
-                if (_enabled && hitTest(ev.mouse.point) && _action) {
-                    _action(*this);
-                }
-                break;
-            }
-            
-            ev = win.nextEvent();
-        }
-    }
     
     LabelPtr _label = createSubview<Label>();
     LabelPtr _key = createSubview<Label>();
