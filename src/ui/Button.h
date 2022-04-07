@@ -44,12 +44,12 @@ public:
         Point pkey;
         if (_center) {
             int leftX = insetX + std::max(0, ((f.size.x-2*insetX)-textWidth)/2);
-            plabel = f.point + Size{leftX, offY};
+            plabel = f.origin + Size{leftX, offY};
             pkey = plabel + Size{labelWidth+KeySpacing, 0};
         
         } else {
-            plabel = f.point + Size{insetX, offY};
-            pkey = f.point + Size{f.size.x-keyWidth-insetX, offY};
+            plabel = f.origin + Size{insetX, offY};
+            pkey = f.origin + Size{f.size.x-keyWidth-insetX, offY};
         }
         
         {

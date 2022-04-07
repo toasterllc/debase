@@ -38,7 +38,7 @@ public:
 //    }
     
     Size messageOffset() const {
-        return {0, (!_title.text().empty() ? 1 : 0)};
+        return {0, 0};
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -53,12 +53,14 @@ public:
     bool layout() override {
         if (!Panel::layout()) return false;
         
+        const Rect f = frame();
         const Rect rect = contentRect();
+        const Point titlePos = {3,0};
         _title.attr(_color|A_BOLD);
-        _title.frame({rect.point-Size{0,1}, {rect.size.x, 1}});
+        _title.frame({titlePos, {f.size.x-titlePos.x, 1}});
         
         const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
-        _message.frame({rect.point + messageOffset(), {rect.size.x, messageSize.y}});
+        _message.frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
         
         _title.layout(*this);
         _message.layout(*this);
@@ -70,9 +72,11 @@ public:
         
         if (erased()) {
             Window::Attr style = attr(_color);
-            drawRect(Inset(bounds(), {2,1}));
+//            drawRect(Inset(bounds(), {2,1}));
             drawRect(bounds());
         }
+        
+//        drawText(_title.frame().origin, <#const char *txt#>)
         
         _title.draw(*this);
         _message.draw(*this);

@@ -50,7 +50,7 @@ public:
             if (!buttonsVisible.empty()) y += _SeparatorHeight;
             
             // Set button position (after separator)
-            button->position({x,y});
+            button->origin({x,y});
             
             // Add space for button
             y += button->size().y;

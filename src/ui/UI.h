@@ -33,17 +33,17 @@ using Point = Vector;
 using Size = Vector;
 
 struct Rect {
-    Point point;
+    Point origin;
     Size size;
     
-    bool operator ==(const Rect& x) const { return point==x.point && size==x.size; }
+    bool operator ==(const Rect& x) const { return origin==x.origin && size==x.size; }
     bool operator !=(const Rect& x) const { return !(*this == x); }
     
-    int xmin() const { return point.x; }
-    int xmax() const { return point.x+size.x-1; }
+    int xmin() const { return origin.x; }
+    int xmax() const { return origin.x+size.x-1; }
     
-    int ymin() const { return point.y; }
-    int ymax() const { return point.y+size.y-1; }
+    int ymin() const { return origin.y; }
+    int ymax() const { return origin.y+size.y-1; }
 };
 
 struct Event {
@@ -117,23 +117,23 @@ struct ExitRequest : std::exception {};
 struct WindowResize : std::exception {};
 
 inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
-    const int minX = std::max(a.point.x, b.point.x);
-    const int maxX = std::min(a.point.x+a.size.x, b.point.x+b.size.x);
+    const int minX = std::max(a.origin.x, b.origin.x);
+    const int maxX = std::min(a.origin.x+a.size.x, b.origin.x+b.size.x);
     const int w = maxX-minX;
     
-    const int minY = std::max(a.point.y, b.point.y);
-    const int maxY = std::min(a.point.y+a.size.y, b.point.y+b.size.y);
+    const int minY = std::max(a.origin.y, b.origin.y);
+    const int maxY = std::min(a.origin.y+a.size.y, b.origin.y+b.size.y);
     const int h = maxY-minY;
     
     if (w<=0 || h<=0) return {};
     return {
-        .point = {minX, minY},
+        .origin = {minX, minY},
         .size = {w, h},
     };
 }
 
 inline constexpr Rect Inset(const Rect& x, const Size& s) {
-    return {x.point+s, x.size-s-s};
+    return {x.origin+s, x.size-s-s};
 }
 
 inline constexpr bool Empty(const Rect& x) {

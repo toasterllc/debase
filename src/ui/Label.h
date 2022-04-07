@@ -43,7 +43,7 @@ public:
                     align = Align::Center;
                 }
                 
-                Point p = f.point + Size{0, offY};
+                Point p = f.origin + Size{0, offY};
                 switch (_align) {
                 case Align::Left:
                     break;

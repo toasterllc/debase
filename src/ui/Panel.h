@@ -19,7 +19,7 @@ public:
         _panel = nullptr;
     }
     
-    void position(const Point& p) const {
+    void origin(const Point& p) const {
         ::move_panel(*this, p.y, p.x);
     }
     

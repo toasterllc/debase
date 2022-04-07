@@ -191,7 +191,7 @@ public:
             // Draw insertion marker
             if (_drag.insertionMarker) {
                 Window::Attr color = attr(selectionColor);
-                drawLineHoriz(_drag.insertionMarker->point, _drag.insertionMarker->size.x);
+                drawLineHoriz(_drag.insertionMarker->origin, _drag.insertionMarker->size.x);
             }
         }
         
@@ -625,13 +625,13 @@ private:
             // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
             if (panels.empty()) continue;
             const UI::Rect lastFrame = panels.back()->frame();
-            const int midX = lastFrame.point.x + lastFrame.size.x/2;
-            const int endY = lastFrame.point.y + lastFrame.size.y;
+            const int midX = lastFrame.origin.x + lastFrame.size.x/2;
+            const int endY = lastFrame.origin.y + lastFrame.size.y;
             
             for (auto it=panels.begin();; it++) {
                 UI::CommitPanelPtr panel = (it!=panels.end() ? *it : nullptr);
-                const int x = (panel ? panel->frame().point.x+panel->frame().size.x/2 : midX);
-                const int y = (panel ? panel->frame().point.y : endY);
+                const int x = (panel ? panel->frame().origin.x+panel->frame().size.x/2 : midX);
+                const int y = (panel ? panel->frame().origin.y : endY);
                 int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
                 
                 if (!leastDistance || dist<leastDistance) {
@@ -745,7 +745,7 @@ private:
     // Handles clicking/dragging a set of CommitPanels
     std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumn& mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-        const UI::Size mouseDownOffset = mouseDownPanelFrame.point - mouseDownEvent.mouse.point;
+        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mouseDownEvent.mouse.point;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
         const auto doubleClickStatePrev = _doubleClickState;
@@ -819,13 +819,13 @@ private:
                 {
                     const UI::Point pos0 = p + mouseDownOffset;
                     
-                    _drag.titlePanel->position(pos0);
+                    _drag.titlePanel->origin(pos0);
                     
                     // Position shadowPanels
                     int off = 1;
                     for (UI::PanelPtr panel : _drag.shadowPanels) {
                         const UI::Point pos = pos0+off;
-                        panel->position(pos);
+                        panel->origin(pos);
                         off++;
                     }
                 }
@@ -835,11 +835,11 @@ private:
                     constexpr int InsertionExtraWidth = 6;
                     UI::CommitPanelVec& ipanels = ipos->col->panels;
                     const UI::Rect lastFrame = ipanels.back()->frame();
-                    const int endY = lastFrame.point.y + lastFrame.size.y;
-                    const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().point.y : endY+1);
+                    const int endY = lastFrame.origin.y + lastFrame.size.y;
+                    const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().origin.y : endY+1);
                     
                     _drag.insertionMarker = {
-                        .point = {lastFrame.point.x-InsertionExtraWidth/2, insertY-1},
+                        .origin = {lastFrame.origin.x-InsertionExtraWidth/2, insertY-1},
                         .size = {lastFrame.size.x+InsertionExtraWidth, 0},
                     };
                 
@@ -1012,7 +1012,7 @@ private:
         UI::MenuPtr menu = std::make_shared<UI::Menu>(_colors);
         menu->buttons = { combineButton, editButton, deleteButton };
         menu->size(menu->sizeIntrinsic({}));
-        menu->position(mouseDownEvent.mouse.point);
+        menu->origin(mouseDownEvent.mouse.point);
         menu->layout();
         menu->track(menu->convert(mouseDownEvent));
         
@@ -1066,7 +1066,7 @@ private:
         }
         
         const int width = _SnapshotMenuWidth+UI::SnapshotMenu::Padding().x;
-        const UI::Point p = {col.position().x+(col.size().x-width)/2, 2};
+        const UI::Point p = {col.origin().x+(col.size().x-width)/2, 2};
         const int heightMax = size().y-p.y;
         
         UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>(_colors);
@@ -1074,7 +1074,7 @@ private:
         menu->buttons = buttons;
         menu->buttons = buttons;
         menu->size(menu->sizeIntrinsic({0, heightMax}));
-        menu->position(p);
+        menu->origin(p);
         menu->layout();
         menu->track(menu->convert(eventCurrent()));
         
@@ -1333,7 +1333,7 @@ private:
             (rs.x-ps.x)/2,
             (rs.y-ps.y)/3,
         };
-        panel->position(p);
+        panel->origin(p);
         panel->orderFront();
         panel->layout();
     }

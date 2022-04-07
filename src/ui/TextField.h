@@ -17,7 +17,7 @@ public:
         _offUpdate();
         
         if (_focus) {
-            Point p = win.position() + position();
+            Point p = win.origin() + origin();
             ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
         }
@@ -30,7 +30,7 @@ public:
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
         if (!_focus) color = win.attr(colors().dimmed);
-        win.drawLineHoriz(position(), size().x, ' ');
+        win.drawLineHoriz(origin(), size().x, ' ');
         
         // Print as many runes as will fit our width
         const int width = size().x;
@@ -38,7 +38,7 @@ public:
         auto right = UTF8::NextN(left, value.end(), width);
         
         std::string substr(left, right);
-        win.drawText(position(), substr.c_str());
+        win.drawText(origin(), substr.c_str());
         
         return true;
     }
@@ -103,7 +103,7 @@ private:
                 
                 } else {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.point.x-position().x;
+                    int offX = ev.mouse.point.x-origin().x;
                     auto offIt = UTF8::NextN(_left(), value.end(), offX);
                     _offCursor = std::distance(value.begin(), offIt);
                 }

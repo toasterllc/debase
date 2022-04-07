@@ -21,10 +21,10 @@ public:
         
         const Rect f = frame();
         const Size labelSize = _label.sizeIntrinsic({});
-        _label.frame({f.point, labelSize});
+        _label.frame({f.origin, labelSize});
         
         const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
-        _textField.frame({f.point+Size{labelSize.x+_spacingX, 0}, textFieldSize});
+        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
         
         _label.layout(win);
         _textField.layout(win);

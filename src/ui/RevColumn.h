@@ -37,7 +37,7 @@ public:
     
     bool layout(const Window& win) override {
         if (!Control::layout(win)) return false;
-        const Point pos = position();
+        const Point pos = origin();
         const int width = size().x;
         
         // Set our column name
@@ -69,7 +69,7 @@ public:
                 
                 const Rect f = {pos + Size{0,offY}, panel->size()};
                 if (f.ymax() > frame().ymax()) break;
-                panel->position(f.point);
+                panel->origin(f.origin);
                 
                 offY += panel->size().y + _CommitSpacing;
                 i++;
@@ -116,7 +116,7 @@ public:
     
     bool draw(const Window& win) override {
         if (!Control::draw(win)) return false;
-        const Point pos = position();
+        const Point pos = origin();
         const int width = size().x;
         
         // Draw branch name

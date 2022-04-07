@@ -77,10 +77,10 @@ public:
     }
     
     void drawRect(const Rect& rect) const {
-        const int x1 = rect.point.x;
-        const int y1 = rect.point.y;
-        const int x2 = rect.point.x+rect.size.x-1;
-        const int y2 = rect.point.y+rect.size.y-1;
+        const int x1 = rect.origin.x;
+        const int y1 = rect.origin.y;
+        const int x2 = rect.origin.x+rect.size.x-1;
+        const int y2 = rect.origin.y+rect.size.y-1;
         mvwhline(*this, y1, x1, 0, rect.size.x);
         mvwhline(*this, y2, x1, 0, rect.size.x);
         mvwvline(*this, y1, x1, 0, rect.size.y);
@@ -107,7 +107,7 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    Point position() const { return { getbegx(_s.win), getbegy(_s.win) }; }
+    Point origin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     
     Size size() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     void size(const Size& s) {
@@ -126,8 +126,8 @@ public:
     
     Rect frame() const {
         return Rect{
-            .point = position(),
-            .size  = size(),
+            .origin = origin(),
+            .size   = size(),
         };
     }
     
@@ -137,9 +137,7 @@ public:
     
     // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
     Point convert(const Point& p) const {
-        Point r = p;
-        r -= frame().point;
-        return r;
+        return p-origin();
     }
     
     // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`

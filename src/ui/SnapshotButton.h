@@ -33,7 +33,7 @@ public:
         if (!Button::draw(win)) return false;
         
         const int width = size().x;
-        const Point off = position();
+        const Point off = origin();
         const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
         const Size offText = off+offTextX+offTextY;

@@ -9,24 +9,24 @@ public:
     
     virtual bool hitTest(const Point& p) const {
         Rect f = _frame;
-        f.point.x -= hitTestExpand.l;
-        f.size.x  += hitTestExpand.l;
+        f.origin.x -= hitTestExpand.l;
+        f.size.x   += hitTestExpand.l;
         
-        f.size.x  += hitTestExpand.r;
+        f.size.x   += hitTestExpand.r;
         
-        f.point.y -= hitTestExpand.t;
-        f.size.y  += hitTestExpand.t;
+        f.origin.y -= hitTestExpand.t;
+        f.size.y   += hitTestExpand.t;
         
-        f.size.y  += hitTestExpand.b;
+        f.size.y   += hitTestExpand.b;
         return HitTest(f, p);
     }
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
     
-    Point position() const { return _frame.point; }
-    void position(const Point& x) {
-        if (_frame.point == x) return;
-        _frame.point = x;
+    Point origin() const { return _frame.origin; }
+    void origin(const Point& x) {
+        if (_frame.origin == x) return;
+        _frame.origin = x;
         drawNeeded(true);
     }
     

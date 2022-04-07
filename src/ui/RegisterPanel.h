@@ -50,9 +50,9 @@ public:
         int offY = message().frame().ymax()+1;
         
         offY += _FieldSpacingY;
-        _email.frame({{rect.point.x, offY}, {rect.size.x, _FieldHeight}});
+        _email.frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
         offY += _FieldHeight+_FieldSpacingY;
-        _code.frame({{rect.point.x, offY}, {rect.size.x, _FieldHeight}});
+        _code.frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
         
         _email.layout(*this);
         _code.layout(*this);
@@ -92,7 +92,7 @@ public:
 private:
     static constexpr int _FieldSpacingY         = 1;
     static constexpr int _FieldHeight           = 1;
-    static constexpr int _ContentSpacingBottom  = 1;
+    static constexpr int _ContentSpacingBottom  = 0;
     
     static constexpr int _FieldsExtraHeight = 5;
     static constexpr int _FieldLabelInsetX  = 0;

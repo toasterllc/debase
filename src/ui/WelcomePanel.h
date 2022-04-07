@@ -42,11 +42,11 @@ public:
         const Rect rect = contentRect();
         
         int offY = message().frame().ymax()+1+_ContentSpacingTop;
-        _trialButton.frame({{rect.point.x, offY}, {rect.size.x, _ButtonHeight}});
+        _trialButton.frame({{rect.origin.x, offY}, {rect.size.x, _ButtonHeight}});
         _trialButton.layout(*this);
         offY += _ButtonHeight;
         
-        _registerButton.frame({{rect.point.x, offY}, {rect.size.x, _ButtonHeight}});
+        _registerButton.frame({{rect.origin.x, offY}, {rect.size.x, _ButtonHeight}});
         _registerButton.layout(*this);
         offY += _ButtonHeight;
         
