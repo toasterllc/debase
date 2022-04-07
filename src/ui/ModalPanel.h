@@ -26,7 +26,7 @@ public:
 //        return true;
 //    }
     
-    static constexpr Size BorderSize() { return {4,2}; }
+    static constexpr Size BorderSize() { return {5,2}; }
     static constexpr Rect ContentRect(Size size) {
         return Inset({{},size}, BorderSize());
     }
@@ -37,12 +37,16 @@ public:
 //        return { width, (int)lines.size() };
 //    }
     
+    Size messageOffset() const {
+        return {0, (!_title.text().empty() ? 1 : 0)};
+    }
+    
     Size sizeIntrinsic(Size constraint) override {
         const Rect rect = ContentRect(constraint);
         const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
         return {
             .x = constraint.x,
-            .y = 2*BorderSize().y + messageSize.y,
+            .y = 2*BorderSize().y + messageOffset().y + messageSize.y,
         };
     }
     
@@ -54,7 +58,7 @@ public:
         _title.frame({rect.point-Size{0,1}, {rect.size.x, 1}});
         
         const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
-        _message.frame({rect.point, {rect.size.x, messageSize.y}});
+        _message.frame({rect.point + messageOffset(), {rect.size.x, messageSize.y}});
         
         _title.layout(*this);
         _message.layout(*this);
@@ -102,6 +106,8 @@ public:
     template <typename T> void dismissAction(const T& x) { _setAlways(_dismissAction, x); }
     
 private:
+    static constexpr int _MessageSpacingTop = 1;
+    
     Color _color;
     Label _title;
     Label _message;

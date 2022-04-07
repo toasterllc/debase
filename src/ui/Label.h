@@ -67,9 +67,6 @@ public:
     const auto& text() const { return _text; }
     template <typename T> void text(const T& x) { _set(_text, x); }
     
-    const auto& color() const { return _color; }
-    template <typename T> void color(const T& x) { _set(_color, x); }
-    
     const auto& attr() const { return _attr; }
     template <typename T> void attr(const T& x) { _set(_attr, x); }
     
@@ -84,7 +81,6 @@ public:
     
 private:
     std::string _text;
-    Color _color;
     int _attr = 0;
     Align _align = Align::Left;
     bool _centerSingleLine = false;

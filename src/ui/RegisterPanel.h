@@ -5,6 +5,7 @@
 #include "Color.h"
 #include "ModalPanel.h"
 #include "TextField.h"
+#include "LabelTextField.h"
 
 namespace UI {
 
@@ -16,18 +17,27 @@ public:
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email.requestFocus = requestFocus;
-        _email.releaseFocus = releaseFocus;
+        _email.label().text ("Email: ");
+        _code.label().text  (" Code: ");
         
-        _code.requestFocus = requestFocus;
-        _code.releaseFocus = releaseFocus;
+        _email.spacingX     (3);
+        _code.spacingX      (3);
         
-        _email.focus(true);
+        _email.label().attr (colors.menu|A_BOLD);
+        _code.label().attr  (colors.menu|A_BOLD);
+        
+        _email.textField().requestFocus = requestFocus;
+        _email.textField().releaseFocus = releaseFocus;
+        
+        _code.textField().requestFocus = requestFocus;
+        _code.textField().releaseFocus = releaseFocus;
+        
+        _email.textField().focus(true);
     }
     
     Size sizeIntrinsic(Size constraint) override {
         Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += _FieldsExtraHeight;
+        s.y += 2*(_FieldSpacingY+_FieldHeight) + _ContentSpacingBottom;
         return s;
     }
     
@@ -36,16 +46,16 @@ public:
     bool layout() override {
         if (!ModalPanel::layout()) return false;
         
-        Size s = size();
-        int fieldWidth = s.x-2*_FieldLabelInsetX-_FieldLabelWidth;
-        int offY = s.y-_FieldsExtraHeight-1;
-        _email.frame({{_FieldValueInsetX, offY}, {fieldWidth, 1}});
-        _email.layout(*this);
-        offY += 2;
-        _code.frame({{_FieldValueInsetX, offY}, {fieldWidth, 1}});
-        _code.layout(*this);
-        offY += 2;
+        const Rect rect = contentRect();
+        int offY = message().frame().ymax()+1;
         
+        offY += _FieldSpacingY;
+        _email.frame({{rect.point.x, offY}, {rect.size.x, _FieldHeight}});
+        offY += _FieldHeight+_FieldSpacingY;
+        _code.frame({{rect.point.x, offY}, {rect.size.x, _FieldHeight}});
+        
+        _email.layout(*this);
+        _code.layout(*this);
         return true;
     }
     
@@ -59,26 +69,8 @@ public:
     bool draw() override {
         if (!ModalPanel::draw()) return false;
         
-        int offY = size().y-_FieldsExtraHeight-1;
-        
-        // Draw email field
-        if (erased()) {
-            Attr style = attr(color()|A_BOLD);
-            drawText({_FieldLabelInsetX, offY}, "Email: ");
-        }
-        
         _email.draw(*this);
-        offY += 2;
-        
-        // Draw code field
-        if (erased()) {
-            Attr style = attr(color()|A_BOLD);
-            drawText({_FieldLabelInsetX, offY}, "Code: ");
-        }
-        
         _code.draw(*this);
-        offY += 2;
-        
         return true;
     }
     
@@ -98,22 +90,26 @@ public:
     }
     
 private:
+    static constexpr int _FieldSpacingY         = 1;
+    static constexpr int _FieldHeight           = 1;
+    static constexpr int _ContentSpacingBottom  = 1;
+    
     static constexpr int _FieldsExtraHeight = 5;
     static constexpr int _FieldLabelInsetX  = 0;
     static constexpr int _FieldLabelWidth   = 10;
     static constexpr int _FieldValueInsetX  = _FieldLabelWidth;
     
     void _fieldRequestFocus(TextField& field) {
-        _email.focus(false);
-        _code.focus(false);
+        _email.textField().focus(false);
+        _code.textField().focus(false);
         field.focus(true);
     }
     
     void _fieldReleaseFocus(TextField& field, bool done) {
-        _email.focus(false);
-        _code.focus(false);
+        _email.textField().focus(false);
+        _code.textField().focus(false);
         
-        bool fieldsFilled = !_email.value.empty() && !_code.value.empty();
+        bool fieldsFilled = !_email.textField().value.empty() && !_code.textField().value.empty();
         if (done) {
             if (fieldsFilled) {
                 beep();
@@ -123,23 +119,23 @@ private:
                     field.focus(true);
                 
                 } else {
-                    if (_email.value.empty())     _email.focus(true);
-                    else if (_code.value.empty()) _code.focus(true);
+                    if (_email.textField().value.empty())     _email.textField().focus(true);
+                    else if (_code.textField().value.empty()) _code.textField().focus(true);
                 }
             }
         
         } else {
             // Tab behavior
-            if (&field == &_email) {
-                _code.focus(true);
-            } else if (&field == &_code) {
-                _email.focus(true);
+            if (&field == &_email.textField()) {
+                _code.textField().focus(true);
+            } else if (&field == &_code.textField()) {
+                _email.textField().focus(true);
             }
         }
     }
     
-    TextField _email;
-    TextField _code;
+    LabelTextField _email;
+    LabelTextField _code;
     Button _okButton;
     Button _cancelButton;
 };

@@ -30,7 +30,7 @@ public:
     
     Size sizeIntrinsic(Size constraint) override {
         Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += 2*_ButtonHeight+_ButtonSpacingTop;
+        s.y += 2*_ButtonHeight+_ContentSpacingTop;
         return s;
     }
     
@@ -41,12 +41,12 @@ public:
         
         const Rect rect = contentRect();
         
-        int offY = message().frame().ymax()+1+_ButtonSpacingTop;
-        _trialButton.frame({{_ButtonInsetX, offY}, {rect.size.x, _ButtonHeight}});
+        int offY = message().frame().ymax()+1+_ContentSpacingTop;
+        _trialButton.frame({{rect.point.x, offY}, {rect.size.x, _ButtonHeight}});
         _trialButton.layout(*this);
         offY += _ButtonHeight;
         
-        _registerButton.frame({{_ButtonInsetX, offY}, {rect.size.x, _ButtonHeight}});
+        _registerButton.frame({{rect.point.x, offY}, {rect.size.x, _ButtonHeight}});
         _registerButton.layout(*this);
         offY += _ButtonHeight;
         
@@ -86,10 +86,8 @@ public:
     auto& registerButton() { return _registerButton; }
     
 private:
-    static constexpr int _ButtonSpacingTop  = 1;
+    static constexpr int _ContentSpacingTop  = 1;
     static constexpr int _ButtonHeight      = 3;
-    static constexpr int _ButtonInsetX      = 4;
-    static constexpr int _ButtonWidth       = 10;
     
     Button _trialButton;
     Button _registerButton;
