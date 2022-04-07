@@ -7,13 +7,11 @@
 #include "UI.h"
 #include "CursorState.h"
 #include "UTF8.h"
+#include "View.h"
 
 namespace UI {
 
-class View;
-using ViewPtr = std::shared_ptr<View>;
-
-class Window {
+class Window : public View {
 public:
     class Attr {
     public:
@@ -68,19 +66,19 @@ public:
         }
     }
     
-    void drawBorder() const {
+    virtual void drawBorder() const {
         ::box(*this, 0, 0);
     }
     
-    void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
+    virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
         mvwhline(*this, p.y, p.x, ch, len);
     }
     
-    void drawLineVert(const Point& p, int len, chtype ch=0) const {
+    virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
         mvwvline(*this, p.y, p.x, ch, len);
     }
     
-    void drawRect(const Rect& rect) const {
+    virtual void drawRect(const Rect& rect) const {
         const int x1 = rect.origin.x;
         const int y1 = rect.origin.y;
         const int x2 = rect.origin.x+rect.size.x-1;
@@ -95,11 +93,11 @@ public:
         mvwaddch(*this, y2, x2, ACS_LRCORNER);
     }
     
-    void drawText(const Point& p, const char* txt) const {
+    virtual void drawText(const Point& p, const char* txt) const {
         mvwprintw(*this, p.y, p.x, "%s", txt);
     }
     
-    void drawText(const Point& p, int maxLen, const char* txt) const {
+    virtual void drawText(const Point& p, int maxLen, const char* txt) const {
         std::string str = txt;
         auto it = UTF8::NextN(str.begin(), str.end(), maxLen);
         str.resize(std::distance(str.begin(), it));
@@ -111,41 +109,21 @@ public:
         mvwprintw(*this, p.y, p.x, fmt, std::forward<T_Args>(args)...);
     }
     
-    Point origin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
-    
-    Size size() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
-    void size(const Size& s) {
+    Size size() const override { return View::size(); }
+    void size(const Size& s) override {
         // Short-circuit if the size hasn't changed
-        if (s == size()) return;
+        if (s == View::size()) return;
+        View::size(s);
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
-        layoutNeeded(true);
-        drawNeeded(true);
-    }
-    
-    virtual Size sizeIntrinsic(Size constraint) { return size(); }
-    
-    Rect bounds() const {
-        return Rect{ .size = size() };
-    }
-    
-    Rect frame() const {
-        return Rect{
-            .origin = origin(),
-            .size   = size(),
-        };
-    }
-    
-    bool hitTest(const Point& p) const {
-        return HitTest(frame(), p);
     }
     
     // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
-    Point convert(const Point& p) const {
+    virtual Point convert(const Point& p) const {
         return p-origin();
     }
     
     // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
-    Event convert(const Event& p) const {
+    virtual Event convert(const Event& p) const {
         Event r = p;
         if (r.type == Event::Type::Mouse) {
             r.mouse.point = convert(r.mouse.point);
@@ -153,11 +131,9 @@ public:
         return r;
     }
     
-    Attr attr(int attr) const {
-        return Attr(*this, attr);
-    }
+    virtual Attr attr(int attr) const { return Attr(*this, attr); }
     
-    Event nextEvent() const {
+    virtual Event nextEvent() const {
         // Wait for another mouse event
         for (;;) {
             int ch = ::wgetch(*this);
@@ -197,29 +173,19 @@ public:
         }
     }
     
-    void refresh() {
-        layoutTree();
-        drawTree();
+    virtual void refresh() {
+        layoutTree(*this);
+        drawTree(*this);
         CursorState::Draw();
         ::update_panels();
         ::refresh();
     }
     
-    virtual bool layoutNeeded() const { return _s.layoutNeeded || _s.sizePrev!=size(); }
-    virtual void layoutNeeded(bool x) { _s.layoutNeeded = x; }
-    virtual void layout() {}
-    
-    virtual bool drawNeeded() const { return _s.drawNeeded; }
-    virtual void drawNeeded(bool x) { _s.drawNeeded = x; }
-    virtual void draw() {}
-    
-    virtual bool handleEvent(const Event& ev) { return false; }
-    
     virtual void track() {
         do {
             refresh();
             _s.eventCurrent = nextEvent();
-            handleEventTree(_s.eventCurrent);
+            handleEventTree(*this, _s.eventCurrent);
             _s.eventCurrent = {};
         } while (!_s.trackStop);
         
@@ -231,21 +197,38 @@ public:
         _s.trackStop = true;
     }
     
-    template <typename T, typename ...T_Args>
-    std::shared_ptr<T> createSubview(T_Args&&... args) {
-        auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
-        _s.subviews.push_back(view);
-        return view;
+    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=View::size(); }
+    void layoutNeeded(bool x) override { View::layoutNeeded(x); }
+    
+    void layoutTree(const Window& win) override {
+        // Detect size changes that can occurs from underneath us
+        // by ncurses (eg by the terminal size changing)
+        if (_s.sizePrev != View::size()) {
+            // We need to erase (and redraw) after resizing
+            eraseNeeded(true);
+            _s.sizePrev = View::size();
+        }
+        
+        View::layoutTree(win);
     }
     
-    virtual std::vector<ViewPtr>& subviews() { return _s.subviews; }
-    
-    void layoutTree();
-    void drawTree();
-    bool handleEventTree(const Event& ev);
+    void drawTree(const Window& win) override {
+        // Remember whether we erased ourself during this draw cycle
+        // This is used by View instances (Button and TextField)
+        // to know whether they need to be drawn again
+        _s.erased = _s.eraseNeeded;
+        
+        // Erase ourself if needed, and remember that we did so
+        if (_s.eraseNeeded) {
+            ::werase(*this);
+            _s.eraseNeeded = false;
+        }
+        
+        View::drawTree(win);
+    }
     
     // eraseNeeded(): sets whether the window should be erased the next time it's drawn
-    void eraseNeeded(bool x) {
+    virtual void eraseNeeded(bool x) {
         _s.eraseNeeded = x;
         if (_s.eraseNeeded) {
             drawNeeded(true);
@@ -253,12 +236,12 @@ public:
     }
     
     // erased(): whether the window was erased during this draw cycle
-    bool erased() const { return _s.erased; }
+    virtual bool erased() const { return _s.erased; }
     
-    Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
+    virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
-    const Event& eventCurrent() const { return _s.eventCurrent; }
-    operator WINDOW*() const { return _s.win; }
+    virtual const Event& eventCurrent() const { return _s.eventCurrent; }
+    virtual operator WINDOW*() const { return _s.win; }
     
 protected:
     template <typename X, typename Y>
@@ -279,14 +262,12 @@ private:
         WINDOW* win = nullptr;
         Size sizePrev;
         Event eventCurrent;
-        bool layoutNeeded = true;
-        bool drawNeeded = true;
         // eraseNeeded: tracks whether the window needs to be erased the next time it's drawn
         bool eraseNeeded = true;
         // erased: tracks whether the window was erased in this draw cycle
         bool erased = false;
+        // trackStop: signals that track() should return
         bool trackStop = false;
-        std::vector<ViewPtr> subviews;
     } _s;
 };
 

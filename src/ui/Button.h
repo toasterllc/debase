@@ -9,16 +9,12 @@ namespace UI {
 
 class Button : public View {
 public:
-//    static auto Make(const ColorPalette& colors) {
-//        return std::make_shared<Button>(colors);
-//    }
-    
     enum ActionTrigger {
         MouseUp,
         MouseDown,
     };
     
-    Button(const ColorPalette& colors) : View(colors) {
+    Button() {
         _label->align(Align::Center);
         _label->attr(A_BOLD);
         _key->align(Align::Right);
@@ -48,17 +44,17 @@ public:
         
         // Draw border
         if (_drawBorder) {
-            Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
+            Window::Attr color = win.attr(_enabled ? Colors().normal : Colors().dimmed);
             win.drawRect(f);
         }
         
         // Update label styles
         int attr = 0;
         if (_enabled)                 attr |= A_BOLD;
-        if (_highlighted && _enabled) attr |= colors().menu;
-        else if (!_enabled)           attr |= colors().dimmed;
+        if (_highlighted && _enabled) attr |= Colors().menu;
+        else if (!_enabled)           attr |= Colors().dimmed;
         _label->attr(attr);
-        _key->attr(colors().dimmed);
+        _key->attr(Colors().dimmed);
         
 //        // Draw labels
 //        _key->draw(win);
@@ -99,7 +95,7 @@ public:
 //        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
 //        
 //        if (_drawBorder) {
-//            Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
+//            Window::Attr color = win.attr(_enabled ? Colors().normal : Colors().dimmed);
 //            win.drawRect(f);
 //        }
 //        
@@ -122,14 +118,14 @@ public:
 //            Window::Attr bold;
 //            Window::Attr color;
 //            if (_enabled)                 bold = win.attr(A_BOLD);
-//            if (_highlighted && _enabled) color = win.attr(colors().menu);
-//            else if (!_enabled)           color = win.attr(colors().dimmed);
+//            if (_highlighted && _enabled) color = win.attr(Colors().menu);
+//            else if (!_enabled)           color = win.attr(Colors().dimmed);
 //            win.drawText(plabel, labelWidth, _label->c_str());
 //        }
 //        
 //        // Draw key
 //        {
-//            Window::Attr color = win.attr(colors().dimmed);
+//            Window::Attr color = win.attr(Colors().dimmed);
 //            win.drawText(pkey, keyWidth, _key->c_str());
 //        }
 //        
@@ -220,8 +216,8 @@ private:
         }
     }
     
-    LabelPtr _label = createSubview<Label>(colors());
-    LabelPtr _key = createSubview<Label>(colors());
+    LabelPtr _label = createSubview<Label>();
+    LabelPtr _key = createSubview<Label>();
     
     bool _enabled = false;
     bool _highlighted = false;

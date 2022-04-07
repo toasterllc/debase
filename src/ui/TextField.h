@@ -8,10 +8,6 @@ namespace UI {
 
 class TextField : public View {
 public:
-    TextField(const ColorPalette& colors) : View(colors) {}
-    
-//    bool layoutNeeded() const override { return true; }
-    
     void layout(const Window& win) override {
         _offUpdate();
         
@@ -25,7 +21,7 @@ public:
     void draw(const Window& win) override {
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
-        if (!_focus) color = win.attr(colors().dimmed);
+        if (!_focus) color = win.attr(Colors().dimmed);
         win.drawLineHoriz(origin(), size().x, ' ');
         
         // Print as many runes as will fit our width

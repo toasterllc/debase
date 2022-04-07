@@ -11,20 +11,20 @@ namespace UI {
 
 class RegisterPanel : public ModalPanel {
 public:
-    RegisterPanel(const ColorPalette& colors) : ModalPanel(colors) {
+    RegisterPanel() {
     
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
         _email->label()->text   ("Email: ");
         _email->spacingX        (3);
-        _email->label()->attr   (colors.menu|A_BOLD);
+        _email->label()->attr   (Colors().menu|A_BOLD);
         _email->textField()->requestFocus = requestFocus;
         _email->textField()->releaseFocus = releaseFocus;
         
         _code->label()->text    (" Code: ");
         _code->spacingX         (3);
-        _code->label()->attr    (colors.menu|A_BOLD);
+        _code->label()->attr    (Colors().menu|A_BOLD);
         _code->textField()->requestFocus = requestFocus;
         _code->textField()->releaseFocus = releaseFocus;
         
@@ -39,7 +39,7 @@ public:
     
 //    bool layoutNeeded() const override { return true; }
     
-    void layout() override {
+    void layout(const Window& win) override {
         const Rect rect = contentRect();
         int offY = message()->frame().ymax()+1;
         
@@ -97,10 +97,10 @@ private:
         }
     }
     
-    LabelTextFieldPtr _email    = createSubview<LabelTextField>(colors);
-    LabelTextFieldPtr _code     = createSubview<LabelTextField>(colors);
-    ButtonPtr _okButton         = createSubview<Button>(colors);
-    ButtonPtr _cancelButton     = createSubview<Button>(colors);
+    LabelTextFieldPtr _email    = createSubview<LabelTextField>();
+    LabelTextFieldPtr _code     = createSubview<LabelTextField>();
+    ButtonPtr _okButton         = createSubview<Button>();
+    ButtonPtr _cancelButton     = createSubview<Button>();
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;

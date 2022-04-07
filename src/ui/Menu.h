@@ -13,8 +13,6 @@ public:
         return Size{2*(_BorderSize+_InsetX), 2*_BorderSize};
     }
     
-    Menu(const ColorPalette& colors) : _colors(colors) {}
-    
     Size sizeIntrinsic(Size constraint) override {
         // First button sets the width
         const int width = (!_buttons.empty() ? _buttons[0]->size().x : 0) + Padding().x;
@@ -35,7 +33,7 @@ public:
         return {width, height};
     }
     
-    void layout() override {
+    void layout(const Window& win) override {
         const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
@@ -68,14 +66,14 @@ public:
         }
     }
     
-    void draw() override {
+    void draw(const Window& win) override {
         const int width = bounds().size.x;
         
         for (ButtonPtr button : _buttons) {
             // Draw separator
             if (erased()) { // Performance optimization: only draw if the window was erased
                 if (button->visible()) {
-                    Window::Attr color = attr(_colors.menu);
+                    Window::Attr color = attr(Colors().menu);
                     drawLineHoriz({0, button->frame().ymax()+1}, width);
                 }
             }
@@ -83,7 +81,7 @@ public:
         
         // Draw border
         if (erased()) { // Performance optimization: only draw if the window was erased
-            Window::Attr color = attr(_colors.menu);
+            Window::Attr color = attr(Colors().menu);
             drawBorder();
             
             // Draw title
@@ -95,7 +93,7 @@ public:
         }
     }
     
-    bool handleEvent(const Event& ev) override {
+    bool handleEvent(const Window& win, const Event& ev) override {
         auto& ts = _trackState;
         const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
         const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
@@ -146,7 +144,7 @@ public:
         return false;
     }
     
-    void track(const Event& ev) {
+    void track(const Window& win, const Event& ev) override {
         _trackState = {};
         _trackState.startEvent = ev;
         
@@ -158,8 +156,6 @@ public:
         
         Window::track();
     }
-    
-    const auto& colors() const { return _colors; }
     
     const auto& title() const { return _title; }
     template <typename T> void title(const T& x) { _set(_title, x); }
@@ -206,7 +202,6 @@ private:
     static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
     static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
-    const ColorPalette& _colors;
     std::string _title;
     std::vector<ButtonPtr> _buttons;
     std::function<void(Menu&)> _dismissAction;

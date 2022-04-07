@@ -93,6 +93,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: move track() into View
+    
+    #warning TODO: make Window inherit from View
+    
     #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
     
     #warning TODO: encapsulate View's hitTestExpand

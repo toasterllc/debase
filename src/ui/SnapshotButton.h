@@ -10,13 +10,8 @@ namespace UI {
 
 class SnapshotButton : public Button {
 public:
-//    template <typename T, typename ...Args>
-//    static auto Make(const ColorPalette& colors, Git::Repo repo, State::Snapshot snapshot, int width) {
-//        return std::make_shared<SnapshotButton>(colors, opts);
-//    }
-    
-    SnapshotButton(const ColorPalette& colors, Git::Repo repo, const State::Snapshot& snapshot, int width) :
-    Button(colors), repo(repo), snapshot(snapshot) {
+    SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width) :
+    repo(repo), snapshot(snapshot) {
         
         Git::Commit commit = State::Convert(repo, snapshot.head);
         Git::Signature sig = commit.author();
@@ -38,7 +33,7 @@ public:
         
         // Draw time
         {
-            Window::Attr color = win.attr(colors().dimmed);
+            Window::Attr color = win.attr(Colors().dimmed);
             int offX = width - (int)UTF8::Strlen(_time);
             win.drawText(off + offTextY + Size{offX, 0}, _time.c_str());
         }
@@ -48,14 +43,14 @@ public:
             Window::Attr bold = win.attr(A_BOLD);
             Window::Attr color;
             if (highlighted() || (activeSnapshot && !mouseActive())) {
-                color = win.attr(colors().menu);
+                color = win.attr(Colors().menu);
             }
             win.drawText(offText, _commit.id.c_str());
         }
         
         // Draw author name
         {
-            Window::Attr color = win.attr(colors().dimmed);
+            Window::Attr color = win.attr(Colors().dimmed);
             win.drawText(offText + Size{0, 1}, _commit.author.c_str());
         }
         
@@ -71,14 +66,14 @@ public:
         // Draw highlight
         {
             if (highlighted()) {
-                Window::Attr color = win.attr(colors().menu|A_BOLD);
+                Window::Attr color = win.attr(Colors().menu|A_BOLD);
                 win.drawText(off + offTextY, "●");
             
             } else if (activeSnapshot) {
                 if (mouseActive()) {
                     win.drawText(off + offTextY, "○");
                 } else {
-                    Window::Attr color = win.attr(colors().menu|A_BOLD);
+                    Window::Attr color = win.attr(Colors().menu|A_BOLD);
                     win.drawText(off + offTextY, "●");
                 }
             } else {

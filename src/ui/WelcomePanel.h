@@ -11,8 +11,7 @@ namespace UI {
 
 class WelcomePanel : public ModalPanel {
 public:
-    WelcomePanel(const ColorPalette& colors) : ModalPanel(colors) {
-        
+    WelcomePanel() {
         message()->align(Align::Center);
         
         _trialButton->label()->text      ("Start Free Trial");
@@ -32,7 +31,7 @@ public:
     
 //    bool layoutNeeded() const override { return true; }
     
-    void layout() override {
+    void layout(const Window& win) override {
         const Rect rect = contentRect();
         
         int offY = message()->frame().ymax()+1+_ContentSpacingTop;
@@ -52,8 +51,8 @@ private:
     static constexpr int _ContentSpacingTop  = 1;
     static constexpr int _ButtonHeight      = 3;
     
-    ButtonPtr _trialButton     = createSubview<Button>(colors);
-    ButtonPtr _registerButton  = createSubview<Button>(colors);
+    ButtonPtr _trialButton     = createSubview<Button>();
+    ButtonPtr _registerButton  = createSubview<Button>();
 };
 
 using WelcomePanelPtr = std::shared_ptr<WelcomePanel>;

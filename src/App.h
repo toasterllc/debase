@@ -29,16 +29,7 @@ class App : public UI::Window {
 public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
-    bool layoutNeeded() const override {
-        // We need to layout if any of our constituents needs to layout
-        if (Window::layoutNeeded()) return true;
-        if (_messagePanel && _messagePanel->layoutNeeded()) return true;
-        if (_welcomePanel && _welcomePanel->layoutNeeded()) return true;
-        if (_registerPanel && _registerPanel->layoutNeeded()) return true;
-        return false;
-    }
-    
-    void layout() override {
+    void layout(const Window& win) override {
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
         for (UI::RevColumnPtr col : _columns) {
@@ -87,15 +78,7 @@ public:
         }
     }
     
-    bool drawNeeded() const override {
-        if (Window::drawNeeded()) return true;
-        if (_messagePanel && _messagePanel->drawNeeded()) return true;
-        if (_welcomePanel && _welcomePanel->drawNeeded()) return true;
-        if (_registerPanel && _registerPanel->drawNeeded()) return true;
-        return false;
-    }
-    
-    void draw() override {
+    void draw(const Window& win) override {
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         if (_drag.titlePanel) {
@@ -123,7 +106,7 @@ public:
         }
         
         if (_drag.titlePanel) {
-            _drag.titlePanel->drawTree();
+            _drag.titlePanel->drawTree(*_drag.titlePanel);
             
             // Draw insertion marker
             if (_drag.insertionMarker) {
@@ -133,7 +116,7 @@ public:
         }
         
         for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
-            panel->drawTree();
+            panel->drawTree(*panel);
         }
         
         if (_selectionRect) {
@@ -142,31 +125,31 @@ public:
         }
         
         if (_messagePanel) {
-            _messagePanel->drawTree();
+            _messagePanel->drawTree(*_messagePanel);
         }
         
         if (_welcomePanel) {
-            _welcomePanel->drawTree();
+            _welcomePanel->drawTree(*_welcomePanel);
         }
         
         if (_registerPanel) {
-            _registerPanel->drawTree();
+            _registerPanel->drawTree(*_registerPanel);
         }
     }
     
-    bool handleEvent(const UI::Event& ev) override {
+    bool handleEvent(const Window& win, const UI::Event& ev) override {
         std::string errorMsg;
         try {
             if (_messagePanel) {
-                return _messagePanel->handleEvent(_messagePanel->convert(ev));
+                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
             }
             
             if (_welcomePanel) {
-                return _welcomePanel->handleEvent(_welcomePanel->convert(ev));
+                return _welcomePanel->handleEvent(win, _welcomePanel->convert(ev));
             }
             
             if (_registerPanel) {
-                return _registerPanel->handleEvent(_registerPanel->convert(ev));
+                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
             }
             
             // Let every column handle the event
@@ -294,7 +277,7 @@ public:
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _messagePanel = std::make_shared<UI::ModalPanel>(_colors);
+            _messagePanel = std::make_shared<UI::ModalPanel>();
             _messagePanel->color            (_colors.error);
             _messagePanel->title()->text    ("Error");
             _messagePanel->message()->text  (errorMsg);
@@ -307,7 +290,7 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         
-        return Window::handleEvent(ev);
+        return Window::handleEvent(win, ev);
     }
     
     void run() {
@@ -369,8 +352,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-//            State::State state(StateDir());
-//            _licenseCheck(state);
+            State::State state(StateDir());
+            _licenseCheck(state);
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -610,7 +593,7 @@ private:
         const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
         
         bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
-        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_colors, repo, snap, _SnapshotMenuWidth);
+        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot = activeSnapshot;
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
         b->enabled(true);
@@ -619,7 +602,7 @@ private:
     
     UI::ButtonPtr _makeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
         constexpr int ContextMenuWidth = 12;
-        UI::ButtonPtr b = std::make_shared<UI::Button>(_colors);
+        UI::ButtonPtr b = std::make_shared<UI::Button>();
         b->label()->text(std::string(label));
         b->label()->align(UI::Align::Left);
         b->key()->text(std::string(key));
@@ -685,7 +668,7 @@ private:
             
             UI::RevColumnPtr col;
             if (create) {
-                col = std::make_shared<UI::RevColumn>(_colors);
+                col = std::make_shared<UI::RevColumn>();
                 _columns.push_back(col);
                 
                 col->repo = _repo;
@@ -731,6 +714,8 @@ private:
         // range in the middle of the vector was removed) and RevColumn doesn't support
         // moving or assignment
         while (_columns.size() > i) _columns.pop_back();
+        
+        layoutNeeded(true);
     }
     
     // _trackMouseInsideCommitPanel
@@ -780,7 +765,7 @@ private:
             if (!_drag.titlePanel && mouseDragged && allow) {
                 Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
                 UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
-                _drag.titlePanel = std::make_shared<UI::CommitPanel>(_colors, true, titlePanel->frame().size.x, titleCommit);
+                _drag.titlePanel = std::make_shared<UI::CommitPanel>(true, titlePanel->frame().size.x, titleCommit);
                 
                 // Create shadow panels
                 UI::Size shadowSize = _drag.titlePanel->frame().size;
@@ -906,7 +891,7 @@ private:
         
         // Reset state
         // The dragged panels need layout
-        Window::layoutNeeded(true);
+        layoutNeeded(true);
         // We need one more erase to erase the insertion marker
         eraseNeeded(true);
         _drag = {};
@@ -1002,7 +987,7 @@ private:
         UI::ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
         UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
         
-        UI::MenuPtr menu = std::make_shared<UI::Menu>(_colors);
+        UI::MenuPtr menu = std::make_shared<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
         menu->size(menu->sizeIntrinsic({}));
         menu->origin(mouseDownEvent.mouse.point);
@@ -1061,7 +1046,7 @@ private:
         const UI::Point p = {col->origin().x+(col->size().x-width)/2, 2};
         const int heightMax = size().y-p.y;
         
-        UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>(_colors);
+        UI::SnapshotMenuPtr menu = std::make_shared<UI::SnapshotMenu>();
         menu->title("Session Start");
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
@@ -1189,6 +1174,9 @@ private:
         
         _colorsPrev = _ColorsSet(_colors);
         
+        // Set _colors as the color pallette used by all Views
+        View::Colors(_colors);
+        
         _cursorState = UI::CursorState(false, {});
         
     //    // Hide cursor
@@ -1294,10 +1282,10 @@ private:
     }
     
     template <typename TA, typename RA>
-    static UI::WelcomePanelPtr _WelcomePanelCreate(const UI::ColorPalette& colors, const TA& trialAction, const RA& registerAction) {
+    static UI::WelcomePanelPtr _WelcomePanelCreate(const TA& trialAction, const RA& registerAction) {
         UI::WelcomePanelPtr p;
-        p = std::make_shared<UI::WelcomePanel>(colors);
-        p->color                    (colors.menu);
+        p = std::make_shared<UI::WelcomePanel>();
+        p->color                    (View::Colors().menu);
         p->title()->text            ("");
         p->message()->text          ("Welcome to debase!");
         p->trialButton()->action    (trialAction);
@@ -1305,12 +1293,12 @@ private:
         return p;
     }
     
-    static UI::RegisterPanelPtr _RegisterPanelCreate(const UI::ColorPalette& colors, std::string_view title, std::string_view message) {
+    static UI::RegisterPanelPtr _RegisterPanelCreate(std::string_view title, std::string_view message) {
         UI::RegisterPanelPtr p;
-        p = std::make_shared<UI::RegisterPanel>(colors);
-        p->color            (colors.menu);
-        p->title()->text     (title);
-        p->message()->text   (message);
+        p = std::make_shared<UI::RegisterPanel>();
+        p->color            (View::Colors().menu);
+        p->title()->text    (title);
+        p->message()->text  (message);
         return p;
     }
     
@@ -1325,19 +1313,19 @@ private:
         };
         panel->origin(p);
         panel->orderFront();
-        panel->layoutTree();
+        panel->layoutTree(*panel);
     }
     
     UI::RegisterPanelPtr _trialExpiredPanelCreate() {
         constexpr const char* Title     = "Trial Expired";
         constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
-        return _RegisterPanelCreate(_colors, Title, Message);
+        return _RegisterPanelCreate(Title, Message);
     }
     
     UI::RegisterPanelPtr _registerPanelCreate() {
         constexpr const char* Title     = "Register debase";
         constexpr const char* Message   = "Please enter your registration information.";
-        return _RegisterPanelCreate(_colors, Title, Message);
+        return _RegisterPanelCreate(Title, Message);
     }
     
     UI::WelcomePanelPtr _welcomePanelCreate() {
@@ -1350,7 +1338,7 @@ private:
             _registerPanel = _registerPanelCreate();
         };
         
-        return _WelcomePanelCreate(_colors, trialAction, registerAction);
+        return _WelcomePanelCreate(trialAction, registerAction);
     }
     
     void _licenseCheck(State::State& state, bool networkAllowed=true) {

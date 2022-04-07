@@ -15,7 +15,7 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class RevColumn : public View {
 public:
-    RevColumn(const ColorPalette& colors) : View(colors) {
+    RevColumn() {
         
         undoButton->label()->text("Undo");
         undoButton->drawBorder(true);
@@ -55,7 +55,7 @@ public:
                 
                 // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
                 if (!panel || panel->commit()!=commit) {
-                    panel = std::make_shared<CommitPanel>(colors(), false, width, commit);
+                    panel = std::make_shared<CommitPanel>(false, width, commit);
                     panels.insert(panels.begin()+i, panel);
                 }
                 
@@ -112,21 +112,21 @@ public:
         const int width = size().x;
         // Draw branch name
         if (win.erased()) {
-            Window::Attr color = win.attr(colors().menu);
+            Window::Attr color = win.attr(Colors().menu);
             Window::Attr bold = win.attr(A_BOLD);
             const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
             win.drawText(p, _name.c_str());
         }
         
         if (!rev.isMutable()) {
-            Window::Attr color = win.attr(colors().error);
+            Window::Attr color = win.attr(Colors().error);
             const char immutableText[] = "read-only";
             const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, immutableText);
         }
         
         for (CommitPanelPtr p : panels) {
-            p->drawTree();
+            p->drawTree(win);
         }
     }
     
@@ -140,9 +140,9 @@ public:
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
-    ButtonPtr undoButton        = createSubview<Button>(colors());
-    ButtonPtr redoButton        = createSubview<Button>(colors());
-    ButtonPtr snapshotsButton   = createSubview<Button>(colors());
+    ButtonPtr undoButton        = createSubview<Button>();
+    ButtonPtr redoButton        = createSubview<Button>();
+    ButtonPtr snapshotsButton   = createSubview<Button>();
     CommitPanelVec panels;
     
 private:

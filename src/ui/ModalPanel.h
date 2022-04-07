@@ -8,7 +8,7 @@ namespace UI {
 
 class ModalPanel : public Panel {
 public:
-    ModalPanel(const ColorPalette& colors) : colors(colors) {
+    ModalPanel() {
         _message->centerSingleLine(true);
         _message->wrap(true);
     }
@@ -31,7 +31,7 @@ public:
         };
     }
     
-    void layout() override {
+    void layout(const Window& win) override {
         const Rect f = frame();
         const Rect rect = contentRect();
         const Point titlePos = {3,0};
@@ -48,7 +48,7 @@ public:
 //        _message->layout(*this);
     }
     
-    void draw() override {
+    void draw(const Window& win) override {
         if (erased()) {
             Window::Attr style = attr(_color);
 //            drawRect(Inset(bounds(), {2,1}));
@@ -65,7 +65,7 @@ public:
 //        _message->draw(*this);
     }
     
-    bool handleEvent(const Event& ev) override {
+    bool handleEvent(const Window& win, const Event& ev) override {
         // Dismiss upon mouse-up
         if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right) ||
             ev.type == Event::Type::KeyEscape) {
@@ -78,8 +78,6 @@ public:
     }
     
     Rect contentRect() { return ContentRect(size()); }
-    
-    const ColorPalette& colors;
     
     const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
@@ -94,8 +92,8 @@ private:
     static constexpr int _MessageSpacingTop = 1;
     
     Color _color;
-    LabelPtr _title     = createSubview<Label>(colors);
-    LabelPtr _message   = createSubview<Label>(colors);
+    LabelPtr _title     = createSubview<Label>();
+    LabelPtr _message   = createSubview<Label>();
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

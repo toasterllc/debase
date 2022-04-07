@@ -6,8 +6,6 @@ namespace UI {
 
 class LabelTextField : public View {
 public:
-    LabelTextField(const ColorPalette& colors) : View(colors) {}
-    
     Size sizeIntrinsic(Size constraint) override {
         return _label->sizeIntrinsic(constraint);
     }
@@ -31,8 +29,8 @@ public:
     template <typename T> void spacingX(const T& x) { _set(_spacingX, x); }
     
 private:
-    LabelPtr _label         = createSubview<Label>(colors());
-    TextFieldPtr _textField = createSubview<TextField>(colors());
+    LabelPtr _label         = createSubview<Label>();
+    TextFieldPtr _textField = createSubview<TextField>();
     int _spacingX = 0;
 };
 

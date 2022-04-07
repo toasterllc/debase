@@ -17,7 +17,7 @@ public:
         drawNeeded(true);
     }
     
-    void draw() override {
+    void draw(const Window& win) override {
         Window::Attr color;
         if (_borderColor) color = attr(*_borderColor);
         drawBorder();

@@ -13,8 +13,7 @@ namespace UI {
 // its containing branch, where the top/first CommitPanel is index 0
 class CommitPanel : public Panel {
 public:
-    CommitPanel(const ColorPalette& colors, bool header, int width, Git::Commit commit) :
-    _colors(colors) {
+    CommitPanel(bool header, int width, Git::Commit commit) {
         _commit = commit;
         _header = header;
         _id = Git::DisplayStringForId(_commit.id());
@@ -40,7 +39,7 @@ public:
         drawNeeded(true);
     }
     
-    void draw() override {
+    void draw(const Window& win) override {
         const int offY = (_header ? 1 : 0);
         int i = 0;
         for (const std::string& line : _message) {
@@ -76,7 +75,7 @@ public:
         }
         
         {
-            Window::Attr color = attr(_colors.dimmed);
+            Window::Attr color = attr(Colors().dimmed);
             drawText({2, offY+1}, _author.c_str());
         }
     }
@@ -87,7 +86,6 @@ private:
     static constexpr size_t _LineCountMax = 2;
     static constexpr size_t _LineLenInset = 2;
     
-    const ColorPalette& _colors;
     Git::Commit _commit;
     bool _header = false;
     std::string _headerLabel;
@@ -95,7 +93,7 @@ private:
     std::string _time;
     std::string _author;
     std::vector<std::string> _message;
-    Color _borderColor = _colors.normal;
+    Color _borderColor = Colors().normal;
 };
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;

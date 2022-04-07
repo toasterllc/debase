@@ -3,11 +3,15 @@
 
 namespace UI {
 
+class Window;
+
 class View {
 public:
     using Ptr = std::shared_ptr<View>;
     
-    View(const ColorPalette& colors) : _colors(colors) {}
+    static const ColorPalette& Colors() { return _Colors; }
+    static void Colors(const ColorPalette& x) { _Colors = x; }
+    
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
@@ -41,10 +45,7 @@ public:
         drawNeeded(true);
     }
     
-    virtual Rect frame() const {
-        return _frame;
-    }
-    
+    virtual Rect frame() const { return _frame; }
     virtual void frame(const Rect& x) {
         if (_frame == x) return;
         _frame = x;
@@ -52,9 +53,9 @@ public:
         drawNeeded(true);
     }
     
-    // MARK: - Accessors
-    const auto& colors() const { return _colors; }
+    virtual Rect bounds() const { return Rect{ .size = size() }; }
     
+    // MARK: - Accessors
     const auto& visible() const { return _visible; }
     template <typename T> void visible(const T& x) { _set(_visible, x); }
     
@@ -83,7 +84,7 @@ public:
     
     virtual std::vector<Ptr>& subviews() { return _subviews; }
     
-    void layoutTree(const Window& win) {
+    virtual void layoutTree(const Window& win) {
         if (!visible()) return;
         
         if (layoutNeeded()) {
@@ -96,11 +97,18 @@ public:
         }
     }
     
-    void drawTree(const Window& win) {
+    virtual void drawTree(const Window& win) {
         if (!visible()) return;
         
-        // If the window was erased during this draw cycle, we need to redraw
-        if (drawNeeded() || win.erased()) {
+        // If the window was erased during this draw cycle, we need to redraw.
+        // _winErased() has to be implemented out-of-line because:
+        // 
+        //   Window.h includes View.h
+        //   ∴ View.h can't include Window.h
+        //   ∴ View has to forward declare Window
+        //   ∴ we can't call Window functions in View.h
+        //
+        if (drawNeeded() || _winErased(win)) {
             draw(win);
             drawNeeded(false);
         }
@@ -110,7 +118,7 @@ public:
         }
     }
     
-    bool handleEventTree(const Window& win, const Event& ev) {
+    virtual bool handleEventTree(const Window& win, const Event& ev) {
         if (!visible()) return false;
         if (!interaction()) return false;
         // Let the subviews handle the event first
@@ -144,7 +152,10 @@ protected:
     }
     
 private:
-    const ColorPalette& _colors;
+    static inline ColorPalette _Colors;
+    
+    bool _winErased(const Window& win);
+    
     std::vector<Ptr> _subviews;
     Rect _frame;
     bool _visible = true;

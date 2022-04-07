@@ -10,14 +10,14 @@ class SnapshotMenu : public Menu {
 public:
     using Menu::Menu;
     
-    void draw() override {
-        Menu::draw();
+    void draw(const Window& win) override {
+        Menu::draw(win);
         // Draw separator
         const int width = size().x;
         if (erased()) { // Performance optimization: only draw if the window was erased
             if (visibleButtonCount() > 1) {
                 ButtonPtr button0 = buttons()[0];
-                Window::Attr color = attr(colors().menu);
+                Window::Attr color = attr(Colors().menu);
                 Point p = {1, button0->frame().ymax()+1};
                 int len = width-2;
                 cchar_t c = { .chars = L"╍" };
