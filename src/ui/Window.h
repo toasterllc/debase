@@ -1,5 +1,6 @@
 #pragma once
 #define NCURSES_WIDECHAR 1
+#include <vector>
 #include "lib/ncurses/include/curses.h"
 #include "lib/ncurses/include/panel.h"
 #include "Bitfield.h"
@@ -10,6 +11,7 @@
 namespace UI {
 
 class View;
+using ViewPtr = std::shared_ptr<View>;
 
 class Window {
 public:
@@ -229,9 +231,14 @@ public:
         _s.trackStop = true;
     }
     
-    virtual View*const* subviews() {
-        return _s.subviews;
+    template <typename T, typename ...T_Args>
+    std::shared_ptr<T> createSubview(T_Args&&... args) {
+        auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
+        _s.subviews.push_back(view);
+        return view;
     }
+    
+    virtual std::vector<ViewPtr>& subviews() { return _s.subviews; }
     
     void layoutTree();
     void drawTree();
@@ -279,7 +286,7 @@ private:
         // erased: tracks whether the window was erased in this draw cycle
         bool erased = false;
         bool trackStop = false;
-        View* subviews[1] = { nullptr };
+        std::vector<ViewPtr> subviews;
     } _s;
 };
 

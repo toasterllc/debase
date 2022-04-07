@@ -18,28 +18,28 @@ public:
         MouseDown,
     };
     
-    Button(const ColorPalette& colors) : View(colors), _label(colors), _key(colors) {
-        _label.align(Align::Center);
-        _label.attr(A_BOLD);
-        _key.align(Align::Right);
+    Button(const ColorPalette& colors) : View(colors) {
+        _label->align(Align::Center);
+        _label->attr(A_BOLD);
+        _key->align(Align::Right);
     }
     
     void layout(const Window& win) override {
         const Rect f = frame();
-        _label.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
-        _key.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
+        _label->frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
+        _key->frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
         
-//        _label.frame(f);
-//        _key.frame(f);
+//        _label->frame(f);
+//        _key->frame(f);
 //        
-//        _label.layout(win);
-//        _key.layout(win);
+//        _label->layout(win);
+//        _key->layout(win);
 //        
 //        
 //        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
 //        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
 //        
-//        _label.layout(win);
+//        _label->layout(win);
 //        _textField.layout(win);
     }
     
@@ -57,12 +57,12 @@ public:
         if (_enabled)                 attr |= A_BOLD;
         if (_highlighted && _enabled) attr |= colors().menu;
         else if (!_enabled)           attr |= colors().dimmed;
-        _label.attr(attr);
-        _key.attr(colors().dimmed);
+        _label->attr(attr);
+        _key->attr(colors().dimmed);
         
 //        // Draw labels
-//        _key.draw(win);
-//        _label.draw(win);
+//        _key->draw(win);
+//        _label->draw(win);
     }
     
     
@@ -96,7 +96,7 @@ public:
 //        const int availWidth = f.size.x-2*insetX;
 //        const int labelWidth = std::min((int)labelLen, availWidth);
 //        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
-//        const int textWidth = labelWidth + (!_key.empty() ? KeySpacing : 0) + keyWidth;
+//        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
 //        
 //        if (_drawBorder) {
 //            Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
@@ -124,13 +124,13 @@ public:
 //            if (_enabled)                 bold = win.attr(A_BOLD);
 //            if (_highlighted && _enabled) color = win.attr(colors().menu);
 //            else if (!_enabled)           color = win.attr(colors().dimmed);
-//            win.drawText(plabel, labelWidth, _label.c_str());
+//            win.drawText(plabel, labelWidth, _label->c_str());
 //        }
 //        
 //        // Draw key
 //        {
 //            Window::Attr color = win.attr(colors().dimmed);
-//            win.drawText(pkey, keyWidth, _key.c_str());
+//            win.drawText(pkey, keyWidth, _key->c_str());
 //        }
 //        
 //        return true;
@@ -155,10 +155,6 @@ public:
             }
         }
         return false;
-    }
-    
-    View*const* subviews() override {
-        return _subviews;
     }
     
     auto& label() { return _label; }
@@ -224,9 +220,8 @@ private:
         }
     }
     
-    Label _label;
-    Label _key;
-    View*const _subviews[3] = {&_label, &_key, nullptr};
+    LabelPtr _label = createSubview<Label>(colors());
+    LabelPtr _key = createSubview<Label>(colors());
     
     bool _enabled = false;
     bool _highlighted = false;

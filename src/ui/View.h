@@ -5,6 +5,8 @@ namespace UI {
 
 class View {
 public:
+    using Ptr = std::shared_ptr<View>;
+    
     View(const ColorPalette& colors) : _colors(colors) {}
     virtual ~View() = default;
     
@@ -72,7 +74,14 @@ public:
     // MARK: - Events
     virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
     
-    virtual View*const* subviews() { return _subviews; }
+    template <typename T, typename ...T_Args>
+    std::shared_ptr<T> createSubview(T_Args&&... args) {
+        auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
+        _subviews.push_back(view);
+        return view;
+    }
+    
+    virtual std::vector<Ptr>& subviews() { return _subviews; }
     
     void layoutTree(const Window& win) {
         if (!visible()) return;
@@ -82,8 +91,8 @@ public:
             layoutNeeded(false);
         }
         
-        for (auto views=subviews(); *views; views++) {
-            (*views)->layoutTree(win);
+        for (Ptr view : _subviews) {
+            view->layoutTree(win);
         }
     }
     
@@ -96,8 +105,8 @@ public:
             drawNeeded(false);
         }
         
-        for (auto views=subviews(); *views; views++) {
-            (*views)->drawTree(win);
+        for (Ptr view : _subviews) {
+            view->drawTree(win);
         }
     }
     
@@ -105,8 +114,8 @@ public:
         if (!visible()) return false;
         if (!interaction()) return false;
         // Let the subviews handle the event first
-        for (auto views=subviews(); *views; views++) {
-            if ((*views)->handleEventTree(win, ev)) return true;
+        for (Ptr view : _subviews) {
+            if (view->handleEventTree(win, ev)) return true;
         }
         // None of the subviews wanted the event; let the view itself handle it
         if (handleEvent(win, ev)) return true;
@@ -136,12 +145,14 @@ protected:
     
 private:
     const ColorPalette& _colors;
-    View*const _subviews[1] = { nullptr };
+    std::vector<Ptr> _subviews;
     Rect _frame;
     bool _visible = true;
     bool _interaction = true;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
 };
+
+using ViewPtr = std::shared_ptr<View>;
 
 } // namespace UI

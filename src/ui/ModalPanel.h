@@ -8,9 +8,9 @@ namespace UI {
 
 class ModalPanel : public Panel {
 public:
-    ModalPanel(const ColorPalette& colors) : colors(colors), _title(colors), _message(colors) {
-        _message.centerSingleLine(true);
-        _message.wrap(true);
+    ModalPanel(const ColorPalette& colors) : colors(colors) {
+        _message->centerSingleLine(true);
+        _message->wrap(true);
     }
     
     static constexpr Size BorderSize() { return {5,2}; }
@@ -24,7 +24,7 @@ public:
     
     Size sizeIntrinsic(Size constraint) override {
         const Rect rect = ContentRect(constraint);
-        const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
+        const Size messageSize = _message->sizeIntrinsic({rect.size.x, 0});
         return {
             .x = constraint.x,
             .y = 2*BorderSize().y + messageOffset().y + messageSize.y,
@@ -35,17 +35,17 @@ public:
         const Rect f = frame();
         const Rect rect = contentRect();
         const Point titlePos = {3,0};
-        _title.attr(_color|A_BOLD);
+        _title->attr(_color|A_BOLD);
         
         const int titleWidthMax = f.size.x-2*titlePos.x;
-        const int titleWidth = std::min(titleWidthMax, _title.sizeIntrinsic({}).x);
-        _title.frame({titlePos, {titleWidth, 1}});
+        const int titleWidth = std::min(titleWidthMax, _title->sizeIntrinsic({}).x);
+        _title->frame({titlePos, {titleWidth, 1}});
         
-        const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
-        _message.frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
+        const Size messageSize = _message->sizeIntrinsic({rect.size.x, 0});
+        _message->frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
         
-//        _title.layout(*this);
-//        _message.layout(*this);
+//        _title->layout(*this);
+//        _message->layout(*this);
     }
     
     void draw() override {
@@ -55,14 +55,14 @@ public:
             drawRect(bounds());
         }
         
-//        _title.draw(*this);
-        if (!_title.text().empty()) {
+//        _title->draw(*this);
+        if (!_title->text().empty()) {
             // Add spaces around title
-            drawText(_title.frame().tl()-Size{1,0}, " ");
-            drawText(_title.frame().tr()+Size{1,0}, " ");
+            drawText(_title->frame().tl()-Size{1,0}, " ");
+            drawText(_title->frame().tr()+Size{1,0}, " ");
         }
         
-//        _message.draw(*this);
+//        _message->draw(*this);
     }
     
     bool handleEvent(const Event& ev) override {
@@ -81,10 +81,6 @@ public:
     
     const ColorPalette& colors;
     
-    View*const* subviews() override {
-        return _subviews;
-    }
-    
     const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
     
@@ -98,10 +94,9 @@ private:
     static constexpr int _MessageSpacingTop = 1;
     
     Color _color;
-    Label _title;
-    Label _message;
+    LabelPtr _title     = createSubview<Label>(colors);
+    LabelPtr _message   = createSubview<Label>(colors);
     std::function<void(ModalPanel&)> _dismissAction;
-    View*const _subviews[3] = { &_title, &_message, nullptr };
 };
 
 using ModalPanelPtr = std::shared_ptr<ModalPanel>;

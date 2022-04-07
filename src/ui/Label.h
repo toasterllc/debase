@@ -81,4 +81,6 @@ private:
     std::vector<std::string> _lines;
 };
 
+using LabelPtr = std::shared_ptr<Label>;
+
 } // namespace UI

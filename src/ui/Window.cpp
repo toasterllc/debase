@@ -16,8 +16,8 @@ void Window::layoutTree() {
     layout();
     
     // Layout the window's subviews
-    for (auto views=subviews(); *views; views++) {
-        (*views)->layoutTree(*this);
+    for (ViewPtr view : _s.subviews) {
+        view->layoutTree(*this);
     }
     
     layoutNeeded(false);
@@ -39,8 +39,8 @@ void Window::drawTree() {
     draw();
     
     // Draw the window's subviews
-    for (auto views=subviews(); *views; views++) {
-        (*views)->drawTree(*this);
+    for (ViewPtr view : _s.subviews) {
+        view->drawTree(*this);
     }
     
     drawNeeded(false);
@@ -48,9 +48,10 @@ void Window::drawTree() {
 
 bool Window::handleEventTree(const Event& ev) {
     // Let the subviews handle the event first
-    for (auto views=subviews(); *views; views++) {
-        if ((*views)->handleEventTree(*this, ev)) return true;
+    for (ViewPtr view : _s.subviews) {
+        if (view->handleEventTree(*this, ev)) return true;
     }
+    
     // None of the subviews wanted the event; let the window handle it
     if (handleEvent(ev)) return true;
     return false;

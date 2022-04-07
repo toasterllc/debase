@@ -159,10 +159,6 @@ public:
         Window::track();
     }
     
-    View*const* subviews() override {
-        return _subviews.get();
-    }
-    
     const auto& colors() const { return _colors; }
     
     const auto& title() const { return _title; }
@@ -181,10 +177,9 @@ public:
             });
         }
         
-        // Recreate `_subviews`
-        _subviews = std::make_unique<View*[]>(_buttons.size()+1);
-        for (size_t i=0; i<_buttons.size(); i++) {
-            _subviews[i] = _buttons[i].get();
+        subviews().clear();
+        for (UI::ButtonPtr button : _buttons) {
+            subviews().push_back(button);
         }
         
         layoutNeeded(true);
@@ -215,7 +210,6 @@ private:
     std::string _title;
     std::vector<ButtonPtr> _buttons;
     std::function<void(Menu&)> _dismissAction;
-    std::unique_ptr<View*[]> _subviews;
     
     struct {
         Event startEvent;

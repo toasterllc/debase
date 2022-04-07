@@ -15,18 +15,17 @@ namespace UI {
 // for a particular `Git::Rev` (commit/branch/tag)
 class RevColumn : public View {
 public:
-    RevColumn(const ColorPalette& colors) :
-    View(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
+    RevColumn(const ColorPalette& colors) : View(colors) {
         
-        undoButton.label().text("Undo");
-        undoButton.drawBorder(true);
+        undoButton->label()->text("Undo");
+        undoButton->drawBorder(true);
         
-        redoButton.label().text("Redo");
-        redoButton.drawBorder(true);
+        redoButton->label()->text("Redo");
+        redoButton->drawBorder(true);
         
-        snapshotsButton.label().text("Snapshots…");
-        snapshotsButton.drawBorder(true);
-        snapshotsButton.actionTrigger(Button::ActionTrigger::MouseDown);
+        snapshotsButton->label()->text("Snapshots…");
+        snapshotsButton->drawBorder(true);
+        snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
     }
     
     void layout(const Window& win) override {
@@ -85,17 +84,17 @@ public:
         Rect redoFrame = {pos+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
         Rect snapshotsFrame = {pos+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
         
-        undoButton.frame(undoFrame);
-        redoButton.frame(redoFrame);
-        snapshotsButton.frame(snapshotsFrame);
+        undoButton->frame(undoFrame);
+        redoButton->frame(redoFrame);
+        snapshotsButton->frame(snapshotsFrame);
         
-        undoButton.visible(rev.isMutable());
-        redoButton.visible(rev.isMutable());
-        snapshotsButton.visible(rev.isMutable());
+        undoButton->visible(rev.isMutable());
+        redoButton->visible(rev.isMutable());
+        snapshotsButton->visible(rev.isMutable());
         
-//        undoButton.layout(win);
-//        redoButton.layout(win);
-//        snapshotsButton.layout(win);
+//        undoButton->layout(win);
+//        redoButton->layout(win);
+//        snapshotsButton->layout(win);
     }
     
     bool drawNeeded() const override {
@@ -131,10 +130,6 @@ public:
         }
     }
     
-    View*const* subviews() override {
-        return _subviews;
-    }
-    
     CommitPanelPtr hitTest(const Point& p) {
         for (CommitPanelPtr panel : panels) {
             if (panel->hitTest(p)) return panel;
@@ -145,9 +140,9 @@ public:
     Git::Repo repo;
     Git::Rev rev;
     bool head = false;
-    Button undoButton;
-    Button redoButton;
-    Button snapshotsButton;
+    ButtonPtr undoButton        = createSubview<Button>(colors());
+    ButtonPtr redoButton        = createSubview<Button>(colors());
+    ButtonPtr snapshotsButton   = createSubview<Button>(colors());
     CommitPanelVec panels;
     
 private:
@@ -159,7 +154,6 @@ private:
     static constexpr int _CommitSpacing  = 1;
     
     std::string _name;
-    View*const _subviews[4] = { &undoButton, &redoButton, &snapshotsButton, nullptr };
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;
