@@ -58,7 +58,7 @@ public:
         const Point titlePos = {3,0};
         _title.attr(_color|A_BOLD);
         
-        const int titleWidthMax = f.size.x-titlePos.x;
+        const int titleWidthMax = f.size.x-2*titlePos.x;
         const int titleWidth = std::min(titleWidthMax, _title.sizeIntrinsic({}).x);
         _title.frame({titlePos, {titleWidth, 1}});
         
