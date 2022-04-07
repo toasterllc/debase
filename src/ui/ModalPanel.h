@@ -57,7 +57,10 @@ public:
         const Rect rect = contentRect();
         const Point titlePos = {3,0};
         _title.attr(_color|A_BOLD);
-        _title.frame({titlePos, {f.size.x-titlePos.x, 1}});
+        
+        const int titleWidthMax = f.size.x-titlePos.x;
+        const int titleWidth = std::min(titleWidthMax, _title.sizeIntrinsic({}).x);
+        _title.frame({titlePos, {titleWidth, 1}});
         
         const Size messageSize = _message.sizeIntrinsic({rect.size.x, 0});
         _message.frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
@@ -76,9 +79,13 @@ public:
             drawRect(bounds());
         }
         
-//        drawText(_title.frame().origin, <#const char *txt#>)
-        
         _title.draw(*this);
+        if (!_title.text().empty()) {
+            // Add spaces around title
+            drawText(_title.frame().tl()-Size{1,0}, " ");
+            drawText(_title.frame().tr()+Size{1,0}, " ");
+        }
+        
         _message.draw(*this);
         return true;
     }

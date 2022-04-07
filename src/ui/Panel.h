@@ -9,7 +9,7 @@ public:
         _panel = ::new_panel(*this);
         assert(_panel);
         
-        // Give ourself an initial size (otherwise setPosition
+        // Give ourself an initial size (otherwise origin()
         // doesn't work until the size is set)
         size({1,1});
     }

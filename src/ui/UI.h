@@ -44,6 +44,11 @@ struct Rect {
     
     int ymin() const { return origin.y; }
     int ymax() const { return origin.y+size.y-1; }
+    
+    Point tl() const { return {xmin(), ymin()}; }
+    Point tr() const { return {xmax(), ymin()}; }
+    Point bl() const { return {xmin(), ymax()}; }
+    Point br() const { return {xmax(), ymax()}; }
 };
 
 struct Event {
