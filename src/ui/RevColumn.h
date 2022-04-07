@@ -17,21 +17,15 @@ class RevColumn : public Control {
 public:
     RevColumn(const ColorPalette& colors) :
     Control(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
-    
-        undoButton.label("Undo");
-        undoButton.center(true);
+        
+        undoButton.label().text("Undo");
         undoButton.drawBorder(true);
-        undoButton.insetX(1);
         
-        redoButton.label("Redo");
-        redoButton.center(true);
+        redoButton.label().text("Redo");
         redoButton.drawBorder(true);
-        redoButton.insetX(1);
         
-        snapshotsButton.label("Snapshots…");
-        snapshotsButton.center(true);
+        snapshotsButton.label().text("Snapshots…");
         snapshotsButton.drawBorder(true);
-        snapshotsButton.insetX(1);
         snapshotsButton.actionTrigger(Button::ActionTrigger::MouseDown);
     }
     
@@ -95,6 +89,10 @@ public:
         undoButton.frame(undoFrame);
         redoButton.frame(redoFrame);
         snapshotsButton.frame(snapshotsFrame);
+        
+        undoButton.layout(win);
+        redoButton.layout(win);
+        snapshotsButton.layout(win);
         
         return true;
     }

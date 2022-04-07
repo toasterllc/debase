@@ -51,6 +51,7 @@ public:
             
             // Set button position (after separator)
             button->origin({x,y});
+            button->layout(*this);
             
             // Add space for button
             y += button->size().y;

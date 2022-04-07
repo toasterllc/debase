@@ -31,34 +31,32 @@ public:
         const Rect f = frame();
         
         // Draw lines
-        if (win.erased()) {
-            int offY = 0;
-            for (const std::string& line : _lines) {
-                const size_t lineLen = UTF8::Strlen(line);
-                const int lineWidth = std::min((int)lineLen, f.size.x);
-                
-                // Draw line
-                Align align = _align;
-                if (_centerSingleLine && _lines.size()==1) {
-                    align = Align::Center;
-                }
-                
-                Point p = f.origin + Size{0, offY};
-                switch (_align) {
-                case Align::Left:
-                    break;
-                case Align::Center:
-                    p.x += std::max(0, (f.size.x-lineWidth)/2);
-                    break;
-                case Align::Right:
-                    p.x += std::max(0, (f.size.x-lineWidth));
-                    break;
-                }
-                
-                Window::Attr style = win.attr(_attr);
-                win.drawText(p, lineWidth, line.c_str());
-                offY++;
+        int offY = 0;
+        for (const std::string& line : _lines) {
+            const size_t lineLen = UTF8::Strlen(line);
+            const int lineWidth = std::min((int)lineLen, f.size.x);
+            
+            // Draw line
+            Align align = _align;
+            if (_centerSingleLine && _lines.size()==1) {
+                align = Align::Center;
             }
+            
+            Point p = f.origin + Size{0, offY};
+            switch (_align) {
+            case Align::Left:
+                break;
+            case Align::Center:
+                p.x += std::max(0, (f.size.x-lineWidth)/2);
+                break;
+            case Align::Right:
+                p.x += std::max(0, (f.size.x-lineWidth));
+                break;
+            }
+            
+            Window::Attr style = win.attr(_attr);
+            win.drawText(p, lineWidth, line.c_str());
+            offY++;
         }
         
         return true;

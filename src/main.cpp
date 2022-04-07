@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: add OK / Cancel buttons to RegisterPanel
+    
     #warning TODO: Control -> View
     
     #warning TODO: have Control/View return its subviews to eliminate boilerplate
@@ -101,7 +103,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: add feature requests field in register panel
     
-    #warning TODO: notify about debase updates?
+    #warning TODO: phone home and notify user about debase updates?
     
     #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
         // https://news.ycombinator.com/item?id=30921231

@@ -13,7 +13,7 @@ public:
     }
     
     bool layoutNeeded() const override {
-        return _label.layoutNeeded() || _textField.layoutNeeded();
+        return Control::layoutNeeded() || _label.layoutNeeded() || _textField.layoutNeeded();
     }
     
     bool layout(const Window& win) override {
@@ -32,7 +32,7 @@ public:
     }
     
     bool drawNeeded() const override {
-        return _label.drawNeeded() || _textField.drawNeeded();
+        return Control::drawNeeded() || _label.drawNeeded() || _textField.drawNeeded();
     }
     
     bool draw(const Window& win) override {

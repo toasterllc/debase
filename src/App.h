@@ -438,8 +438,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            State::State state(StateDir());
-            _licenseCheck(state);
+//            State::State state(StateDir());
+//            _licenseCheck(state);
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -689,9 +689,9 @@ private:
     UI::ButtonPtr _makeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
         constexpr int ContextMenuWidth = 12;
         UI::ButtonPtr b = std::make_shared<UI::Button>(_colors);
-        b->label(std::string(label));
-        b->key(std::string(key));
-        b->insetX(0);
+        b->label().text(std::string(label));
+        b->label().align(UI::Align::Left);
+        b->key().text(std::string(key));
         b->action([&] (UI::Button& button) { chosen = &button; });
         b->enabled(enabled);
         b->size({ContextMenuWidth, 1});
@@ -1002,6 +1002,7 @@ private:
         assert(!_selection.commits.empty());
         
         // Draw once before we open the context menu, so that the selection is updated
+        Window::drawNeeded(true);
         refresh();
         
         UI::Button* menuButton = nullptr;

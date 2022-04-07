@@ -18,17 +18,14 @@ public:
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
         _email.label().text ("Email: ");
-        _code.label().text  (" Code: ");
-        
         _email.spacingX     (3);
-        _code.spacingX      (3);
-        
         _email.label().attr (colors.menu|A_BOLD);
-        _code.label().attr  (colors.menu|A_BOLD);
-        
         _email.textField().requestFocus = requestFocus;
         _email.textField().releaseFocus = releaseFocus;
         
+        _code.label().text  (" Code: ");
+        _code.spacingX      (3);
+        _code.label().attr  (colors.menu|A_BOLD);
         _code.textField().requestFocus = requestFocus;
         _code.textField().releaseFocus = releaseFocus;
         

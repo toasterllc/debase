@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "UTF8.h"
 #include "Control.h"
+#include "Label.h"
 
 namespace UI {
 
@@ -17,58 +18,137 @@ public:
         MouseDown,
     };
     
-    Button(const ColorPalette& colors) : Control(colors) {}
+    Button(const ColorPalette& colors) : Control(colors), _label(colors), _key(colors) {
+        _label.align(Align::Center);
+        _label.attr(A_BOLD);
+        _key.align(Align::Right);
+    }
+    
+    bool layoutNeeded() const override {
+        return Control::layoutNeeded() || _label.layoutNeeded() || _key.layoutNeeded();
+    }
+    
+    bool layout(const Window& win) override {
+        if (!Control::layout(win)) return false;
+        
+        const Rect f = frame();
+        _label.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
+        _key.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
+        
+//        _label.frame(f);
+//        _key.frame(f);
+        
+        _label.layout(win);
+        _key.layout(win);
+        
+        
+//        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
+//        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
+//        
+//        _label.layout(win);
+//        _textField.layout(win);
+        return true;
+    }
+    
+    bool drawNeeded() const override {
+        return Control::drawNeeded() || _label.drawNeeded() || _key.drawNeeded();
+    }
     
     bool draw(const Window& win) override {
         if (!Control::draw(win)) return false;
         
         const Rect f = frame();
-        const size_t labelLen = UTF8::Strlen(_label);
-        const size_t keyLen = UTF8::Strlen(_key);
-        const int borderSize = (_drawBorder ? 1 : 0);
-        const int insetX = _insetX+borderSize;
-        const int availWidth = f.size.x-2*insetX;
-        const int labelWidth = std::min((int)labelLen, availWidth);
-        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
-        const int textWidth = labelWidth + (!_key.empty() ? KeySpacing : 0) + keyWidth;
         
+        // Draw border
         if (_drawBorder) {
             Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
             win.drawRect(f);
         }
         
-        int offY = (f.size.y-1)/2;
+        // Update label styles
+        int attr = 0;
+        if (_enabled)                 attr |= A_BOLD;
+        if (_highlighted && _enabled) attr |= colors().menu;
+        else if (!_enabled)           attr |= colors().dimmed;
+        _label.attr(attr);
+        _key.attr(colors().dimmed);
         
-        // Draw label
-        Point plabel;
-        Point pkey;
-        if (_center) {
-            int leftX = insetX + std::max(0, ((f.size.x-2*insetX)-textWidth)/2);
-            plabel = f.origin + Size{leftX, offY};
-            pkey = plabel + Size{labelWidth+KeySpacing, 0};
-        
-        } else {
-            plabel = f.origin + Size{insetX, offY};
-            pkey = f.origin + Size{f.size.x-keyWidth-insetX, offY};
-        }
-        
-        {
-            Window::Attr bold;
-            Window::Attr color;
-            if (_enabled)                 bold = win.attr(A_BOLD);
-            if (_highlighted && _enabled) color = win.attr(colors().menu);
-            else if (!_enabled)           color = win.attr(colors().dimmed);
-            win.drawText(plabel, labelWidth, _label.c_str());
-        }
-        
-        // Draw key
-        {
-            Window::Attr color = win.attr(colors().dimmed);
-            win.drawText(pkey, keyWidth, _key.c_str());
-        }
-        
+        // Draw labels
+        _key.draw(win);
+        _label.draw(win);
         return true;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+//    bool draw(const Window& win) override {
+//        if (!Control::draw(win)) return false;
+//        
+//        const Rect f = frame();
+//        const size_t labelLen = UTF8::Strlen(_label);
+//        const size_t keyLen = UTF8::Strlen(_key);
+//        const int borderSize = (_drawBorder ? 1 : 0);
+//        const int insetX = _insetX+borderSize;
+//        const int availWidth = f.size.x-2*insetX;
+//        const int labelWidth = std::min((int)labelLen, availWidth);
+//        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
+//        const int textWidth = labelWidth + (!_key.empty() ? KeySpacing : 0) + keyWidth;
+//        
+//        if (_drawBorder) {
+//            Window::Attr color = win.attr(_enabled ? colors().normal : colors().dimmed);
+//            win.drawRect(f);
+//        }
+//        
+//        int offY = (f.size.y-1)/2;
+//        
+//        // Draw label
+//        Point plabel;
+//        Point pkey;
+//        if (_center) {
+//            int leftX = insetX + std::max(0, ((f.size.x-2*insetX)-textWidth)/2);
+//            plabel = f.origin + Size{leftX, offY};
+//            pkey = plabel + Size{labelWidth+KeySpacing, 0};
+//        
+//        } else {
+//            plabel = f.origin + Size{insetX, offY};
+//            pkey = f.origin + Size{f.size.x-keyWidth-insetX, offY};
+//        }
+//        
+//        {
+//            Window::Attr bold;
+//            Window::Attr color;
+//            if (_enabled)                 bold = win.attr(A_BOLD);
+//            if (_highlighted && _enabled) color = win.attr(colors().menu);
+//            else if (!_enabled)           color = win.attr(colors().dimmed);
+//            win.drawText(plabel, labelWidth, _label.c_str());
+//        }
+//        
+//        // Draw key
+//        {
+//            Window::Attr color = win.attr(colors().dimmed);
+//            win.drawText(pkey, keyWidth, _key.c_str());
+//        }
+//        
+//        return true;
+//    }
     
     bool handleEvent(const Window& win, const Event& ev) override {
         if (ev.type == Event::Type::Mouse) {
@@ -91,11 +171,8 @@ public:
         return false;
     }
     
-    const auto& label() const { return _label; }
-    template <typename T> void label(const T& x) { _set(_label, x); }
-    
-    const auto& key() const { return _key; }
-    template <typename T> void key(const T& x) { _set(_key, x); }
+    auto& label() { return _label; }
+    auto& key() { return _key; }
     
     const auto& enabled() const { return _enabled; }
     template <typename T> void enabled(const T& x) { _set(_enabled, x); }
@@ -106,14 +183,8 @@ public:
     const auto& mouseActive() const { return _mouseActive; }
     template <typename T> void mouseActive(const T& x) { _set(_mouseActive, x); }
     
-    const auto& center() const { return _center; }
-    template <typename T> void center(const T& x) { _set(_center, x); }
-    
     const auto& drawBorder() const { return _drawBorder; }
     template <typename T> void drawBorder(const T& x) { _set(_drawBorder, x); }
-    
-    const auto& insetX() const { return _insetX; }
-    template <typename T> void insetX(const T& x) { _set(_insetX, x); }
     
     const auto& action() const { return _action; }
     template <typename T> void action(const T& x) { _setAlways(_action, x); }
@@ -163,14 +234,12 @@ private:
         }
     }
     
-    std::string _label;
-    std::string _key;
+    Label _label;
+    Label _key;
     bool _enabled = false;
     bool _highlighted = false;
     bool _mouseActive = false;
-    bool _center = false;
     bool _drawBorder = false;
-    int _insetX = 0;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
     ActionTrigger _actionTrigger = ActionTrigger::MouseUp;

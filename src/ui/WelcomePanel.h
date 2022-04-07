@@ -13,19 +13,16 @@ class WelcomePanel : public ModalPanel {
 public:
     WelcomePanel(const ColorPalette& colors) :
     ModalPanel(colors), _trialButton(colors), _registerButton(colors) {
-        message().align             (Align::Center);
         
-        _trialButton.label          ("Start Free Trial");
-        _trialButton.enabled        (true);
-        _trialButton.insetX         (1);
-        _trialButton.center         (true);
-        _trialButton.drawBorder     (true);
+        message().align(Align::Center);
         
-        _registerButton.label       ("Register");
-        _registerButton.enabled     (true);
-        _registerButton.insetX      (1);
-        _registerButton.center      (true);
-        _registerButton.drawBorder  (true);
+        _trialButton.label().text       ("Start Free Trial");
+        _trialButton.enabled            (true);
+        _trialButton.drawBorder         (true);
+        
+        _registerButton.label().text    ("Register");
+        _registerButton.enabled         (true);
+        _registerButton.drawBorder      (true);
     }
     
     Size sizeIntrinsic(Size constraint) override {
