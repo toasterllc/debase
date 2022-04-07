@@ -1,23 +1,23 @@
 #pragma once
 #include "Window.h"
-#include "Control.h"
+#include "View.h"
 
 namespace UI {
 
-class LabelTextField : public Control {
+class LabelTextField : public View {
 public:
-    LabelTextField(const ColorPalette& colors) : Control(colors), _label(colors), _textField(colors) {}
+    LabelTextField(const ColorPalette& colors) : View(colors), _label(colors), _textField(colors) {}
     
     Size sizeIntrinsic(Size constraint) override {
         return _label.sizeIntrinsic(constraint);
     }
     
     bool layoutNeeded() const override {
-        return Control::layoutNeeded() || _label.layoutNeeded() || _textField.layoutNeeded();
+        return View::layoutNeeded() || _label.layoutNeeded() || _textField.layoutNeeded();
     }
     
     bool layout(const Window& win) override {
-        if (!Control::layout(win)) return false;
+        if (!View::layout(win)) return false;
         
         const Rect f = frame();
         const Size labelSize = _label.sizeIntrinsic({});
@@ -32,11 +32,11 @@ public:
     }
     
     bool drawNeeded() const override {
-        return Control::drawNeeded() || _label.drawNeeded() || _textField.drawNeeded();
+        return View::drawNeeded() || _label.drawNeeded() || _textField.drawNeeded();
     }
     
     bool draw(const Window& win) override {
-        if (!Control::draw(win)) return false;
+        if (!View::draw(win)) return false;
         _label.draw(win);
         _textField.draw(win);
         return true;

@@ -93,11 +93,11 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: View -> View
+    
     #warning TODO: add OK / Cancel buttons to RegisterPanel
     
-    #warning TODO: Control -> View
-    
-    #warning TODO: have Control/View return its subviews to eliminate boilerplate
+    #warning TODO: have View/View return its subviews to eliminate boilerplate
     
     #warning TODO: move ModalPanel colors into Window
     

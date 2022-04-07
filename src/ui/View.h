@@ -3,9 +3,9 @@
 
 namespace UI {
 
-class Control {
+class View {
 public:
-    Control(const ColorPalette& colors) : _colors(colors) {}
+    View(const ColorPalette& colors) : _colors(colors) {}
     
     virtual bool hitTest(const Point& p) const {
         Rect f = _frame;
@@ -87,14 +87,14 @@ protected:
     template <typename X, typename Y>
     void _setAlways(X& x, const Y& y) {
         x = y;
-        Control::drawNeeded(true);
+        View::drawNeeded(true);
     }
     
     template <typename X, typename Y>
     void _set(X& x, const Y& y) {
         if (x == y) return;
         x = y;
-        Control::drawNeeded(true);
+        View::drawNeeded(true);
     }
     
 private:

@@ -2,12 +2,12 @@
 #include <algorithm>
 #include "Window.h"
 #include "UTF8.h"
-#include "Control.h"
+#include "View.h"
 #include "Label.h"
 
 namespace UI {
 
-class Button : public Control {
+class Button : public View {
 public:
 //    static auto Make(const ColorPalette& colors) {
 //        return std::make_shared<Button>(colors);
@@ -18,18 +18,18 @@ public:
         MouseDown,
     };
     
-    Button(const ColorPalette& colors) : Control(colors), _label(colors), _key(colors) {
+    Button(const ColorPalette& colors) : View(colors), _label(colors), _key(colors) {
         _label.align(Align::Center);
         _label.attr(A_BOLD);
         _key.align(Align::Right);
     }
     
     bool layoutNeeded() const override {
-        return Control::layoutNeeded() || _label.layoutNeeded() || _key.layoutNeeded();
+        return View::layoutNeeded() || _label.layoutNeeded() || _key.layoutNeeded();
     }
     
     bool layout(const Window& win) override {
-        if (!Control::layout(win)) return false;
+        if (!View::layout(win)) return false;
         
         const Rect f = frame();
         _label.frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
@@ -51,11 +51,11 @@ public:
     }
     
     bool drawNeeded() const override {
-        return Control::drawNeeded() || _label.drawNeeded() || _key.drawNeeded();
+        return View::drawNeeded() || _label.drawNeeded() || _key.drawNeeded();
     }
     
     bool draw(const Window& win) override {
-        if (!Control::draw(win)) return false;
+        if (!View::draw(win)) return false;
         
         const Rect f = frame();
         
@@ -100,7 +100,7 @@ public:
     
     
 //    bool draw(const Window& win) override {
-//        if (!Control::draw(win)) return false;
+//        if (!View::draw(win)) return false;
 //        
 //        const Rect f = frame();
 //        const size_t labelLen = UTF8::Strlen(_label);

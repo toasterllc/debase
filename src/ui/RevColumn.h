@@ -5,7 +5,7 @@
 #include "Color.h"
 #include "UTF8.h"
 #include "Button.h"
-#include "Control.h"
+#include "View.h"
 
 #include <os/log.h>
 
@@ -13,10 +13,10 @@ namespace UI {
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)
 // for a particular `Git::Rev` (commit/branch/tag)
-class RevColumn : public Control {
+class RevColumn : public View {
 public:
     RevColumn(const ColorPalette& colors) :
-    Control(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
+    View(colors), undoButton(colors), redoButton(colors), snapshotsButton(colors) {
         
         undoButton.label().text("Undo");
         undoButton.drawBorder(true);
@@ -30,7 +30,7 @@ public:
     }
     
     bool layout(const Window& win) override {
-        if (!Control::layout(win)) return false;
+        if (!View::layout(win)) return false;
         const Point pos = origin();
         const int width = size().x;
         
@@ -98,7 +98,7 @@ public:
     }
     
     bool drawNeeded() const override {
-        if (Control::drawNeeded()) return true;
+        if (View::drawNeeded()) return true;
         if (_showButtons()) {
             if (undoButton.drawNeeded()) return true;
             if (redoButton.drawNeeded()) return true;
@@ -113,7 +113,7 @@ public:
     }
     
     bool draw(const Window& win) override {
-        if (!Control::draw(win)) return false;
+        if (!View::draw(win)) return false;
         const Point pos = origin();
         const int width = size().x;
         

@@ -3,9 +3,9 @@
 
 namespace UI {
 
-class Label : public Control {
+class Label : public View {
 public:
-    using Control::Control;
+    using View::View;
     
     Size sizeIntrinsic(Size constraint) override {
         const int textWidth = (int)UTF8::Strlen(_text);
@@ -16,7 +16,7 @@ public:
     }
     
     bool layout(const Window& win) override {
-        if (!Control::layout(win)) return false;
+        if (!View::layout(win)) return false;
         if (!_wrap) {
             _lines = { _text };
         } else {
@@ -26,7 +26,7 @@ public:
     }
     
     bool draw(const Window& win) override {
-        if (!Control::draw(win)) return false;
+        if (!View::draw(win)) return false;
         
         const Rect f = frame();
         

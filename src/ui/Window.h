@@ -239,7 +239,7 @@ public:
     virtual bool draw() {
         if (drawNeeded()) {
             // Remember whether we erased ourself during this draw cycle
-            // This is used by Control instances (Button and TextField)
+            // This is used by View instances (Button and TextField)
             // to know whether they need to be drawn again
             _s.erased = _s.eraseNeeded;
             

@@ -2,18 +2,18 @@
 #include <algorithm>
 #include "Window.h"
 #include "UTF8.h"
-#include "Control.h"
+#include "View.h"
 
 namespace UI {
 
-class TextField : public Control {
+class TextField : public View {
 public:
-    TextField(const ColorPalette& colors) : Control(colors) {}
+    TextField(const ColorPalette& colors) : View(colors) {}
     
     bool layoutNeeded() const override { return true; }
     
     bool layout(const Window& win) override {
-        if (!Control::layout(win)) return false;
+        if (!View::layout(win)) return false;
         _offUpdate();
         
         if (_focus) {
@@ -25,7 +25,7 @@ public:
     }
     
     bool draw(const Window& win) override {
-        if (!Control::draw(win)) return false;
+        if (!View::draw(win)) return false;
         
         Window::Attr underline = win.attr(A_UNDERLINE);
         Window::Attr color;
