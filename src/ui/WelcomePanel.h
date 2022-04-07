@@ -31,6 +31,10 @@ public:
     
 //    bool layoutNeeded() const override { return true; }
     
+    void draw(const Window& win) override {
+        drawBorder();
+    }
+    
     void layout(const Window& win) override {
         const Rect rect = contentRect();
         
@@ -48,7 +52,7 @@ public:
     auto& registerButton() { return _registerButton; }
     
 private:
-    static constexpr int _ContentSpacingTop  = 1;
+    static constexpr int _ContentSpacingTop = 1;
     static constexpr int _ButtonHeight      = 3;
     
     ButtonPtr _trialButton     = createSubview<Button>();

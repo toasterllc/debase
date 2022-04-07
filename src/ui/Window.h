@@ -188,7 +188,7 @@ public:
             _s.sizePrev = View::size();
         }
         
-        View::layoutTree(win);
+        View::layoutTree(*this);
     }
     
     void drawTree(const Window& win) override {
@@ -203,7 +203,11 @@ public:
             _s.eraseNeeded = false;
         }
         
-        View::drawTree(win);
+        View::drawTree(*this);
+    }
+    
+    virtual bool handleEventTree(const Window& win, const Event& ev) override {
+        return View::handleEventTree(*this, ev);
     }
     
     // eraseNeeded(): sets whether the window should be erased the next time it's drawn

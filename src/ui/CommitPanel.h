@@ -5,6 +5,7 @@
 #include "Color.h"
 #include "LineWrap.h"
 #include "UTF8.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -24,6 +25,10 @@ public:
         _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, _commit.message());
         
         size({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
+    }
+    
+    ~CommitPanel() {
+        os_log(OS_LOG_DEFAULT, "~CommitPanel()");
     }
     
     void borderColor(const Color& x) {

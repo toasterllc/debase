@@ -4,6 +4,7 @@
 #include "UTF8.h"
 #include "View.h"
 #include "Label.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -137,11 +138,19 @@ public:
             if (hitTest(ev.mouse.point)) {
                 highlighted(true);
                 
+                os_log(OS_LOG_DEFAULT, "BUTTON: ev.mouseDown(_actionButtons)=%d ev.mouseUp(_actionButtons)=%d",
+                    ev.mouseDown(_actionButtons), ev.mouseUp(_actionButtons));
+                
+                if (ev.mouseUp(_actionButtons)) {
+                    os_log(OS_LOG_DEFAULT, "BUTTON: MOUSE UP!");
+                }
+                
                 // Trigger action
                 if ((_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons)) ||
                     (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons))) {
                     
                     if (_enabled && _action) {
+                        trackStop(); // Cleanup ourself before calling out
                         _action(*this);
                     }
                     

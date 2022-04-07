@@ -352,8 +352,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            State::State state(StateDir());
-            _licenseCheck(state);
+//            State::State state(StateDir());
+//            _licenseCheck(state);
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -653,9 +653,7 @@ private:
         constexpr int ColumnWidth = 32;
         constexpr int ColumnSpacing = 6;
         
-        // Clear our subviews
-        subviews().clear();
-        
+        std::vector<UI::ViewPtr> sv;
         int offX = ColumnInsetX;
         size_t i = 0;
         for (const Git::Rev& rev : _revs) {
@@ -700,9 +698,7 @@ private:
             col->snapshotsButton->enabled(true);
             col->frame({{offX, 0}, {ColumnWidth, size().y}});
             col->layoutNeeded(true);
-            
-            // Add the column to our subviews
-            subviews().push_back(col);
+            sv.push_back(col);
             
             offX += ColumnWidth+ColumnSpacing;
             i++;
@@ -714,6 +710,14 @@ private:
         // range in the middle of the vector was removed) and RevColumn doesn't support
         // moving or assignment
         while (_columns.size() > i) _columns.pop_back();
+        
+        // Append every non-column from the existing subviews() to `sv`
+        std::copy_if(subviews().begin(), subviews().end(),
+            std::back_inserter(sv), [](UI::ViewPtr v) {
+                return !std::dynamic_pointer_cast<UI::RevColumn>(v);
+            });
+        // Update subviews
+        subviews() = sv;
         
         layoutNeeded(true);
     }
