@@ -13,14 +13,15 @@ void Window::layoutTree() {
     }
     
     // Layout the window itself
-    layout();
+    if (layoutNeeded()) {
+        layout();
+        layoutNeeded(false);
+    }
     
     // Layout the window's subviews
     for (ViewPtr view : _s.subviews) {
         view->layoutTree(*this);
     }
-    
-    layoutNeeded(false);
 }
 
 void Window::drawTree() {
@@ -36,14 +37,15 @@ void Window::drawTree() {
     }
     
     // Draw the window itself
-    draw();
+    if (drawNeeded()) {
+        draw();
+        drawNeeded(false);
+    }
     
     // Draw the window's subviews
     for (ViewPtr view : _s.subviews) {
         view->drawTree(*this);
     }
-    
-    drawNeeded(false);
 }
 
 bool Window::handleEventTree(const Event& ev) {
