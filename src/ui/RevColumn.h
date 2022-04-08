@@ -81,7 +81,6 @@ public:
             }
             
             commit = commit.parent();
-//            break;
         }
         
         // Erase excess panels (ones that extend beyond visible region)

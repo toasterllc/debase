@@ -19,7 +19,7 @@ public:
         if (!_wrap) {
             _lines = { _text };
         } else {
-            _lines = LineWrap::Wrap(SIZE_MAX, size().x, _text);
+            _lines = LineWrap::Wrap(size().y, size().x, _text);
         }
     }
     
