@@ -876,9 +876,11 @@ private:
                 };
                 
                 auto currentTime = std::chrono::steady_clock::now();
+                Git::Rev rev = _selection.rev;
                 Git::Commit commit = *_selection.commits.begin();
                 const bool doubleClicked =
-                    doubleClickStatePrev.commit &&
+                    doubleClickStatePrev.rev &&
+                    doubleClickStatePrev.rev==rev &&
                     doubleClickStatePrev.commit==commit &&
                     currentTime-doubleClickStatePrev.mouseUpTime < _DoubleClickThresh;
                 const bool validTarget = _selection.rev.isMutable();
@@ -899,6 +901,7 @@ private:
                 }
                 
                 _doubleClickState = {
+                    .rev = _selection.rev,
                     .commit = *_selection.commits.begin(),
                     .mouseUpTime = currentTime,
                 };
@@ -1587,6 +1590,7 @@ private:
     } _drag;
     
     struct {
+        Git::Rev rev;
         Git::Commit commit;
         std::chrono::steady_clock::time_point mouseUpTime;
     } _doubleClickState;
