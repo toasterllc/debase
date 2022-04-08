@@ -17,15 +17,15 @@ class RevColumn : public View {
 public:
     RevColumn() {
         
-        undoButton->label()->text("Undo");
-        undoButton->drawBorder(true);
+        _undoButton->label()->text("Undo");
+        _undoButton->drawBorder(true);
         
-        redoButton->label()->text("Redo");
-        redoButton->drawBorder(true);
+        _redoButton->label()->text("Redo");
+        _redoButton->drawBorder(true);
         
-        snapshotsButton->label()->text("Snapshots…");
-        snapshotsButton->drawBorder(true);
-        snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
+        _snapshotsButton->label()->text("Snapshots…");
+        _snapshotsButton->drawBorder(true);
+        _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
     }
     
     void layout(const Window& win) override {
@@ -34,9 +34,9 @@ public:
         
         // Set our column name
         {
-            _name = rev.displayName();
+            _name = _rev.displayName();
             
-            if (head && _name!="HEAD") {
+            if (_head && _name!="HEAD") {
                 _name = _name + " (HEAD)";
             }
             
@@ -46,17 +46,17 @@ public:
         
         // Create our CommitPanels for each commit
         int offY = _CommitsInsetY;
-        Git::Commit commit = rev.commit;
-        size_t skip = rev.skip;
+        Git::Commit commit = _rev.commit;
+        size_t skip = _rev.skip;
         size_t i = 0;
         while (commit) {
             if (!skip) {
-                CommitPanelPtr panel = (i<panels.size() ? panels[i] : nullptr);
+                CommitPanelPtr panel = (i<_panels.size() ? _panels[i] : nullptr);
                 
                 // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
                 if (!panel || panel->commit()!=commit) {
                     panel = std::make_shared<CommitPanel>(false, width, commit);
-                    panels.insert(panels.begin()+i, panel);
+                    _panels.insert(_panels.begin()+i, panel);
                 }
                 
                 const Rect f = {pos + Size{0,offY}, panel->size()};
@@ -74,7 +74,7 @@ public:
         }
         
         // Erase excess panels (ones that extend beyond visible region)
-        panels.erase(panels.begin()+i, panels.end());
+        _panels.erase(_panels.begin()+i, _panels.end());
         
         constexpr int UndoWidth      = 8;
         constexpr int RedoWidth      = 8;
@@ -84,13 +84,13 @@ public:
         Rect redoFrame = {pos+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
         Rect snapshotsFrame = {pos+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
         
-        undoButton->frame(undoFrame);
-        redoButton->frame(redoFrame);
-        snapshotsButton->frame(snapshotsFrame);
+        _undoButton->frame(undoFrame);
+        _redoButton->frame(redoFrame);
+        _snapshotsButton->frame(snapshotsFrame);
         
-        undoButton->visible(rev.isMutable());
-        redoButton->visible(rev.isMutable());
-        snapshotsButton->visible(rev.isMutable());
+        _undoButton->visible(_rev.isMutable());
+        _redoButton->visible(_rev.isMutable());
+        _snapshotsButton->visible(_rev.isMutable());
         
 //        undoButton->layout(win);
 //        redoButton->layout(win);
@@ -100,7 +100,7 @@ public:
     bool drawNeeded() const override {
         if (View::drawNeeded()) return true;
         
-        for (CommitPanelPtr p : panels) {
+        for (CommitPanelPtr p : _panels) {
             if (p->drawNeeded()) return true;
         }
         
@@ -118,40 +118,61 @@ public:
             win.drawText(p, _name.c_str());
         }
         
-        if (!rev.isMutable()) {
+        if (!_rev.isMutable()) {
             Window::Attr color = win.attr(Colors().error);
             const char immutableText[] = "read-only";
             const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
             win.drawText(p, immutableText);
         }
         
-        for (CommitPanelPtr p : panels) {
+        for (CommitPanelPtr p : _panels) {
             p->drawTree(win);
         }
     }
     
     CommitPanelPtr hitTest(const Point& p) {
-        for (CommitPanelPtr panel : panels) {
+        for (CommitPanelPtr panel : _panels) {
             if (panel->hitTest(p)) return panel;
         }
         return nullptr;
     }
     
-    Git::Repo repo;
-    Git::Rev rev;
-    bool head = false;
-    ButtonPtr undoButton        = createSubview<Button>();
-    ButtonPtr redoButton        = createSubview<Button>();
-    ButtonPtr snapshotsButton   = createSubview<Button>();
-    CommitPanelVec panels;
+    const auto& repo() const { return _repo; }
+    template <typename T> void repo(const T& x) { _set(_repo, x); }
+    
+    const auto& rev() const { return _rev; }
+    template <typename T> void rev(const T& x) { _set(_rev, x); }
+    
+    const auto& head() const { return _head; }
+    template <typename T> void head(const T& x) { _set(_head, x); }
+    
+    const auto& panels() const { return _panels; }
+    template <typename T> void panels(const T& x) { _set(_panels, x); }
+    
+    const auto& undoButton() const { return _undoButton; }
+    template <typename T> void undoButton(const T& x) { _set(_undoButton, x); }
+    
+    const auto& redoButton() const { return _redoButton; }
+    template <typename T> void redoButton(const T& x) { _set(_redoButton, x); }
+    
+    const auto& snapshotsButton() const { return _snapshotsButton; }
+    template <typename T> void snapshotsButton(const T& x) { _set(_snapshotsButton, x); }
     
 private:
     static constexpr int _TitleInsetY    = 0;
     static constexpr int _ReadonlyInsetY = 2;
     static constexpr int _ButtonsInsetY  = 1;
     static constexpr int _CommitsInsetY  = 5;
-    static constexpr int _ButtonWidth    = 8;
     static constexpr int _CommitSpacing  = 1;
+    
+    Git::Repo _repo;
+    Git::Rev _rev;
+    bool _head = false;
+    CommitPanelVec _panels;
+    
+    ButtonPtr _undoButton       = createSubview<Button>();
+    ButtonPtr _redoButton       = createSubview<Button>();
+    ButtonPtr _snapshotsButton  = createSubview<Button>();
     
     std::string _name;
 };

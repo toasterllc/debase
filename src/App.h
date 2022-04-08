@@ -33,7 +33,7 @@ public:
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
         for (UI::RevColumnPtr col : _columns) {
-            for (UI::CommitPanelPtr panel : col->panels) {
+            for (UI::CommitPanelPtr panel : col->panels()) {
                 const _SelectState selectState = _selectStateGet(col, panel);
                 const bool visible = (selectState!=_SelectState::True ? true : (!dragging || copying));
                 panel->visible(visible);
@@ -91,7 +91,7 @@ public:
         
         bool dragging = (bool)_drag.titlePanel;
         for (UI::RevColumnPtr col : _columns) {
-            for (UI::CommitPanelPtr panel : col->panels) {
+            for (UI::CommitPanelPtr panel : col->panels()) {
                 UI::Color borderColor;
                 _SelectState selectState = _selectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
@@ -398,7 +398,7 @@ private:
     
     struct _InsertionPosition {
         UI::RevColumnPtr col;
-        UI::CommitPanelVecIter iter;
+        UI::CommitPanelIter iter;
     };
     
     struct _HitTestResult {
@@ -510,7 +510,7 @@ private:
     _SelectState _selectStateGet(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
         bool similar = _selection.commits.find(panel->commit()) != _selection.commits.end();
         if (!similar) return _SelectState::False;
-        return (col->rev==_selection.rev ? _SelectState::True : _SelectState::Similar);
+        return (col->rev()==_selection.rev ? _SelectState::True : _SelectState::Similar);
     }
     
     bool _selected(UI::RevColumnPtr col, UI::CommitPanelPtr panel) {
@@ -532,10 +532,10 @@ private:
     
     std::optional<_InsertionPosition> _findInsertionPosition(const UI::Point& p) {
         UI::RevColumnPtr icol;
-        UI::CommitPanelVecIter iiter;
+        UI::CommitPanelIter iiter;
         std::optional<int> leastDistance;
         for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelVec& panels = col->panels;
+            const UI::CommitPanelVec& panels = col->panels();
             // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
             if (panels.empty()) continue;
             const UI::Rect lastFrame = panels.back()->frame();
@@ -559,10 +559,10 @@ private:
         
         if (!icol) return std::nullopt;
         // Ignore immutable columns
-        if (!icol->rev.isMutable()) return std::nullopt;
+        if (!icol->rev().isMutable()) return std::nullopt;
         
         // Adjust the insert point so that it doesn't occur within a selection
-        UI::CommitPanelVec& icolPanels = icol->panels;
+        const UI::CommitPanelVec& icolPanels = icol->panels();
         for (;;) {
             if (iiter == icolPanels.begin()) break;
             UI::CommitPanelPtr prevPanel = *std::prev(iiter);
@@ -575,14 +575,14 @@ private:
     
     UI::RevColumnPtr _columnForRev(Git::Rev rev) {
         for (UI::RevColumnPtr col : _columns) {
-            if (col->rev == rev) return col;
+            if (col->rev() == rev) return col;
         }
         // Programmer error if it doesn't exist
         abort();
     }
     
     UI::CommitPanelPtr _panelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
-        for (UI::CommitPanelPtr panel : col->panels) {
+        for (UI::CommitPanelPtr panel : col->panels()) {
             if (panel->commit() == commit) return panel;
         }
         // Programmer error if it doesn't exist
@@ -669,21 +669,21 @@ private:
                 col = std::make_shared<UI::RevColumn>();
                 _columns.push_back(col);
                 
-                col->repo = _repo;
-                col->head = (rev.displayHead() == _head.commit);
+                col->repo(_repo);
+                col->head((rev.displayHead() == _head.commit));
                 
                 std::weak_ptr<UI::RevColumn> weakCol = col;
-                col->undoButton->action([=] (UI::Button&) {
+                col->undoButton()->action([=] (UI::Button&) {
                     auto col = weakCol.lock();
                     if (col) _undoRedo(col, true);
                 });
                 
-                col->redoButton->action([=] (UI::Button&) {
+                col->redoButton()->action([=] (UI::Button&) {
                     auto col = weakCol.lock();
                     if (col) _undoRedo(col, false);
                 });
                 
-                col->snapshotsButton->action([=] (UI::Button&) {
+                col->snapshotsButton()->action([=] (UI::Button&) {
                     auto col = weakCol.lock();
                     if (col) _trackSnapshotsMenu(col);
                 });
@@ -692,10 +692,10 @@ private:
                 col = _columns[i];
             }
             
-            col->rev = rev; // Ensure all columns' revs are up to date (since refs become stale if they're modified)
-            col->undoButton->enabled(h && !h->begin());
-            col->redoButton->enabled(h && !h->end());
-            col->snapshotsButton->enabled(true);
+            col->rev(rev); // Ensure all columns' revs are up to date (since refs become stale if they're modified)
+            col->undoButton()->enabled(h && !h->begin());
+            col->redoButton()->enabled(h && !h->end());
+            col->snapshotsButton()->enabled(true);
             col->frame({{offX, 0}, {ColumnWidth, size().y}});
             col->layoutNeeded(true);
             sv.push_back(col);
@@ -722,6 +722,7 @@ private:
         subviews() = sv;
         
         layoutNeeded(true);
+        eraseNeeded(true);
     }
     
     // _trackMouseInsideCommitPanel
@@ -738,14 +739,14 @@ private:
         //   - there's no selection; or
         //   - the mouse-down CommitPanel is in a different column than the current selection; or
         //   - an unselected CommitPanel was clicked
-        if (_selection.commits.empty() || (_selection.rev != mouseDownColumn->rev) || !wasSelected) {
+        if (_selection.commits.empty() || (_selection.rev != mouseDownColumn->rev()) || !wasSelected) {
             _selection = {
-                .rev = mouseDownColumn->rev,
+                .rev = mouseDownColumn->rev(),
                 .commits = {mouseDownPanel->commit()},
             };
         
         } else {
-            assert(!_selection.commits.empty() && (_selection.rev == mouseDownColumn->rev));
+            assert(!_selection.commits.empty() && (_selection.rev == mouseDownColumn->rev()));
             _selection.commits.insert(mouseDownPanel->commit());
         }
         
@@ -792,7 +793,7 @@ private:
                     // forceCopy: require copying if the source column isn't mutable (and therefore commits
                     // can't be moved away from it, because that would require deleting the commits from
                     // the source column)
-                    const bool forceCopy = !selectionColumn->rev.isMutable();
+                    const bool forceCopy = !selectionColumn->rev().isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
                     _drag.copy = copy;
                     _drag.titlePanel->headerLabel(_drag.copy ? "Copy" : "Move");
@@ -816,7 +817,7 @@ private:
                 // Update insertion marker
                 if (ipos) {
                     constexpr int InsertionExtraWidth = 6;
-                    UI::CommitPanelVec& ipanels = ipos->col->panels;
+                    const UI::CommitPanelVec& ipanels = ipos->col->panels();
                     const UI::Rect lastFrame = ipanels.back()->frame();
                     const int endY = lastFrame.origin.y + lastFrame.size.y;
                     const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().origin.y : endY+1);
@@ -844,7 +845,7 @@ private:
         std::optional<Git::Op> gitOp;
         if (!abort) {
             if (_drag.titlePanel && ipos) {
-                Git::Commit dstCommit = ((ipos->iter != ipos->col->panels.end()) ? (*ipos->iter)->commit() : nullptr);
+                Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
                 gitOp = Git::Op{
                     .type = (_drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
                     .src = {
@@ -852,7 +853,7 @@ private:
                         .commits = _selection.commits,
                     },
                     .dst = {
-                        .rev = ipos->col->rev,
+                        .rev = ipos->col->rev(),
                         .position = dstCommit,
                     }
                 };
@@ -861,7 +862,7 @@ private:
             // set the selection to the commit that was clicked
             } else if (!mouseDragged) {
                 _selection = {
-                    .rev = mouseDownColumn->rev,
+                    .rev = mouseDownColumn->rev(),
                     .commits = {mouseDownPanel->commit()},
                 };
                 
@@ -932,9 +933,9 @@ private:
             {
                 struct _Selection selectionNew;
                 for (UI::RevColumnPtr col : _columns) {
-                    for (UI::CommitPanelPtr panel : col->panels) {
+                    for (UI::CommitPanelPtr panel : col->panels()) {
                         if (!Empty(Intersection(selectionRect, panel->frame()))) {
-                            selectionNew.rev = col->rev;
+                            selectionNew.rev = col->rev();
                             selectionNew.commits.insert(panel->commit());
                         }
                     }
@@ -979,7 +980,7 @@ private:
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
             _selection = {
-                .rev = mouseDownColumn->rev,
+                .rev = mouseDownColumn->rev(),
                 .commits = {mouseDownPanel->commit()},
             };
         }
@@ -1036,7 +1037,7 @@ private:
     
     void _trackSnapshotsMenu(UI::RevColumnPtr col) {
         UI::SnapshotButton* menuButton = nullptr;
-        Git::Ref ref = col->rev.ref;
+        Git::Ref ref = col->rev().ref;
         std::vector<UI::ButtonPtr> buttons = {
             _makeSnapshotMenuButton(_repo, ref, _repoState.initialSnapshot(ref), true, menuButton),
         };
@@ -1078,8 +1079,8 @@ private:
     }
     
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
-        Git::Rev rev = col->rev;
-        State::History& h = _repoState.history(col->rev.ref);
+        Git::Rev rev = col->rev();
+        State::History& h = _repoState.history(col->rev().ref);
         State::RefState refStatePrev = h.get();
         State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
         

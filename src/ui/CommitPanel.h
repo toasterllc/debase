@@ -103,6 +103,6 @@ private:
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;
 using CommitPanelVec = std::vector<CommitPanelPtr>;
-using CommitPanelVecIter = CommitPanelVec::iterator;
+using CommitPanelIter = CommitPanelVec::const_iterator;
 
 } // namespace UI
