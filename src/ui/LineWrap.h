@@ -35,10 +35,10 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
             // Add the current word
             {
                 const std::string& word = lineInput.front();
-                const size_t wordLen = UTF8::Strlen(word);
+                const size_t wordLen = UTF8::Len(word);
                 const std::string add = (msgline.empty() ? "" : " ") + word;
-                const size_t addLen = UTF8::Strlen(add);
-                const size_t rem = lineLenMax-UTF8::Strlen(msgline);
+                const size_t addLen = UTF8::Len(add);
+                const size_t rem = lineLenMax-UTF8::Len(msgline);
                 // No more space -> next line
                 if (!rem) break;
                 // Check if the line would overflow with `add`
@@ -76,7 +76,7 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         // Our logic guarantees that if the word would have fit, it would've been included in the last line.
         // So since the word isn't included, the length of the line (with the word included) must be larger
         // than `lineLenMax`. So verify that assumption.
-        assert(UTF8::Strlen(line) > lineLenMax);
+        assert(UTF8::Len(line) > lineLenMax);
         line.erase(lineLenMax);
     }
     

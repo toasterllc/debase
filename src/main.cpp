@@ -93,6 +93,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: rapid click of the same commit between 2 different columns triggers double click
+    
+    #warning TODO: Button: remove drawBorder in favor of the borderColor View property
+    
     #warning TODO: RevColumn: make headers a label
     
     #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize

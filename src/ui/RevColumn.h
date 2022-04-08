@@ -26,44 +26,54 @@ public:
         _snapshotsButton->label()->text("Snapshots…");
         _snapshotsButton->drawBorder(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
+        
+        _name->attr(Colors().menu | A_BOLD);
+        _name->align(Align::Center);
+        
+        _readOnly->text("read-only");
+        _readOnly->align(Align::Center);
+        _readOnly->attr(Colors().error);
+        
+//        borderColor(Colors().normal);
     }
     
-    void layout(const Window& win) override {
-        const Point pos = origin();
-        const int width = size().x;
-        
+    void reload(Size size) {
         // Set our column name
-        {
-            _name = _rev.displayName();
-            
-            if (_head && _name!="HEAD") {
-                _name = _name + " (HEAD)";
-            }
-            
-            // Truncate the name to our width
-            _name.erase(std::min(UTF8::Strlen(_name), (size_t)width));
+        _name->text(_rev.displayName());
+        
+        if (_head && _rev.displayName()!="HEAD") {
+            _name->suffix(" (HEAD)");
+        } else {
+            _name->suffix("");
         }
         
+        _readOnly->visible(!_rev.isMutable());
+        
+        _undoButton->visible(_rev.isMutable());
+        _redoButton->visible(_rev.isMutable());
+        _snapshotsButton->visible(_rev.isMutable());
+        
         // Create our CommitPanels for each commit
-        int offY = _CommitsInsetY;
         Git::Commit commit = _rev.commit;
         size_t skip = _rev.skip;
         size_t i = 0;
+        int offY = _CommitsInsetY;
         while (commit) {
             if (!skip) {
                 CommitPanelPtr panel = (i<_panels.size() ? _panels[i] : nullptr);
                 
                 // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
                 if (!panel || panel->commit()!=commit) {
-                    panel = std::make_shared<CommitPanel>(false, width, commit);
+                    panel = createSubview<CommitPanel>();
+                    panel->commit(commit);
                     _panels.insert(_panels.begin()+i, panel);
                 }
                 
-                const Rect f = {pos + Size{0,offY}, panel->size()};
-                if (f.ymax() > frame().ymax()) break;
-                panel->origin(f.origin);
+                const Size panelSize = panel->sizeIntrinsic({size.x, 0});
+                const int rem = size.y-offY;
+                if (panelSize.y > rem) break;
                 
-                offY += panel->size().y + _CommitSpacing;
+                offY += panelSize.y + _CommitSpacing;
                 i++;
             
             } else {
@@ -76,59 +86,68 @@ public:
         // Erase excess panels (ones that extend beyond visible region)
         _panels.erase(_panels.begin()+i, _panels.end());
         
+        layoutNeeded(true);
+    }
+    
+    void layout(const Window& win) override {
         constexpr int UndoWidth      = 8;
         constexpr int RedoWidth      = 8;
         constexpr int SnapshotsWidth = 16;
+            
+        const Rect f = frame();
         
-        Rect undoFrame = {pos+Size{0, _ButtonsInsetY}, {UndoWidth,3}};
-        Rect redoFrame = {pos+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}};
-        Rect snapshotsFrame = {pos+Size{(width-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}};
+        _name->frame({f.origin+Size{0,_NameInsetY}, {f.size.x, 1}});
+        _readOnly->frame({f.origin+Size{0,_ReadonlyInsetY}, {f.size.x, 1}});
         
-        _undoButton->frame(undoFrame);
-        _redoButton->frame(redoFrame);
-        _snapshotsButton->frame(snapshotsFrame);
+        _undoButton->frame({f.origin+Size{0, _ButtonsInsetY}, {UndoWidth,3}});
+        _redoButton->frame({f.origin+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}});
+        _snapshotsButton->frame({f.origin+Size{(f.size.x-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}});
         
-        _undoButton->visible(_rev.isMutable());
-        _redoButton->visible(_rev.isMutable());
-        _snapshotsButton->visible(_rev.isMutable());
-        
-//        undoButton->layout(win);
-//        redoButton->layout(win);
-//        snapshotsButton->layout(win);
-    }
-    
-    bool drawNeeded() const override {
-        if (View::drawNeeded()) return true;
-        
-        for (CommitPanelPtr p : _panels) {
-            if (p->drawNeeded()) return true;
+        int offY = _CommitsInsetY;
+        for (CommitPanelPtr panel : _panels) {
+            const Size ps = panel->sizeIntrinsic({f.size.x, 0});
+            const Rect pf = {f.origin+Size{0,offY}, ps};
+            panel->frame(pf);
+            offY += ps.y + _CommitSpacing;
         }
-        
-        return false;
     }
     
     void draw(const Window& win) override {
-        const Point pos = origin();
-        const int width = size().x;
-        // Draw branch name
-        if (win.erased()) {
-            Window::Attr color = win.attr(Colors().menu);
-            Window::Attr bold = win.attr(A_BOLD);
-            const Point p = pos + Size{(width-(int)UTF8::Strlen(_name))/2, _TitleInsetY};
-            win.drawText(p, _name.c_str());
-        }
-        
-        if (!_rev.isMutable()) {
-            Window::Attr color = win.attr(Colors().error);
-            const char immutableText[] = "read-only";
-            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
-            win.drawText(p, immutableText);
-        }
-        
-        for (CommitPanelPtr p : _panels) {
-            p->drawTree(win);
-        }
+//        win.drawRect(frame());
     }
+    
+//    bool drawNeeded() const override {
+//        if (View::drawNeeded()) return true;
+//        
+//        for (CommitPanelPtr p : _panels) {
+//            if (p->drawNeeded()) return true;
+//        }
+//        
+//        return false;
+//    }
+//    
+//    void draw(const Window& win) override {
+//        const Point pos = origin();
+//        const int width = size().x;
+//        // Draw branch name
+//        if (win.erased()) {
+//            Window::Attr color = win.attr(Colors().menu);
+//            Window::Attr bold = win.attr(A_BOLD);
+//            const Point p = pos + Size{(width-(int)UTF8::Len(_name))/2, _TitleInsetY};
+//            win.drawText(p, _name.c_str());
+//        }
+//        
+//        if (!_rev.isMutable()) {
+//            Window::Attr color = win.attr(Colors().error);
+//            const char immutableText[] = "read-only";
+//            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+//            win.drawText(p, immutableText);
+//        }
+//        
+//        for (CommitPanelPtr p : _panels) {
+//            p->drawTree(win);
+//        }
+//    }
     
     CommitPanelPtr hitTest(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
@@ -159,7 +178,7 @@ public:
     template <typename T> void snapshotsButton(const T& x) { _set(_snapshotsButton, x); }
     
 private:
-    static constexpr int _TitleInsetY    = 0;
+    static constexpr int _NameInsetY    = 0;
     static constexpr int _ReadonlyInsetY = 2;
     static constexpr int _ButtonsInsetY  = 1;
     static constexpr int _CommitsInsetY  = 5;
@@ -170,11 +189,12 @@ private:
     bool _head = false;
     CommitPanelVec _panels;
     
+    LabelPtr _name              = createSubview<Label>();
+    LabelPtr _readOnly          = createSubview<Label>();
+    
     ButtonPtr _undoButton       = createSubview<Button>();
     ButtonPtr _redoButton       = createSubview<Button>();
     ButtonPtr _snapshotsButton  = createSubview<Button>();
-    
-    std::string _name;
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;

@@ -86,8 +86,8 @@ public:
 //        if (!View::draw(win)) return false;
 //        
 //        const Rect f = frame();
-//        const size_t labelLen = UTF8::Strlen(_label);
-//        const size_t keyLen = UTF8::Strlen(_key);
+//        const size_t labelLen = UTF8::Len(_label);
+//        const size_t keyLen = UTF8::Len(_key);
 //        const int borderSize = (_drawBorder ? 1 : 0);
 //        const int insetX = _insetX+borderSize;
 //        const int availWidth = f.size.x-2*insetX;
@@ -184,7 +184,7 @@ public:
     template <typename T> void drawBorder(const T& x) { _set(_drawBorder, x); }
     
     const auto& action() const { return _action; }
-    template <typename T> void action(const T& x) { _setAlways(_action, x); }
+    template <typename T> void action(const T& x) { _setForce(_action, x); }
     
     const auto& actionButtons() const { return _actionButtons; }
     template <typename T> void actionButtons(const T& x) { _set(_actionButtons, x); }

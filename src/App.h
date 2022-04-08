@@ -6,7 +6,6 @@
 #include "ui/Color.h"
 #include "ui/RevColumn.h"
 #include "ui/SnapshotButton.h"
-#include "ui/BorderedPanel.h"
 #include "ui/Menu.h"
 #include "ui/SnapshotMenu.h"
 #include "ui/WelcomePanel.h"
@@ -30,6 +29,24 @@ public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
     void layout(const Window& win) override {
+        
+        // Layout columns
+        int offX = _ColumnInsetX;
+        for (UI::RevColumnPtr col : _columns) {
+            col->frame({{offX, 0}, {_ColumnWidth, size().y}});
+            offX += _ColumnWidth+_ColumnSpacing;
+        }
+        
+//        col->frame({{offX, 0}, {ColumnWidth, size().y}});
+//        
+//        for (UI::RevColumnPtr col : _columns) {
+//            for (UI::CommitPanelPtr panel : col->panels()) {
+//                const _SelectState selectState = _selectStateGet(col, panel);
+//                const bool visible = (selectState!=_SelectState::True ? true : (!dragging || copying));
+//                panel->visible(visible);
+//            }
+//        }
+        
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
         for (UI::RevColumnPtr col : _columns) {
@@ -84,7 +101,7 @@ public:
         if (_drag.titlePanel) {
             _drag.titlePanel->borderColor(selectionColor);
             
-            for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
+            for (UI::PanelPtr panel : _drag.shadowPanels) {
                 panel->borderColor(selectionColor);
             }
         }
@@ -115,7 +132,7 @@ public:
             }
         }
         
-        for (UI::BorderedPanelPtr panel : _drag.shadowPanels) {
+        for (UI::PanelPtr panel : _drag.shadowPanels) {
             panel->drawTree(*panel);
         }
         
@@ -409,6 +426,10 @@ private:
         }
     };
     
+    static constexpr int _ColumnInsetX = 3;
+    static constexpr int _ColumnWidth = 32;
+    static constexpr int _ColumnSpacing = 6;
+    
     static constexpr int _SnapshotMenuWidth = 26;
     static constexpr auto _DoubleClickThresh = std::chrono::milliseconds(300);
     static constexpr mmask_t _SelectionShiftKeys = BUTTON_CTRL | BUTTON_SHIFT;
@@ -648,21 +669,17 @@ private:
             }
         }
         
-        // Create/layout columns
-        constexpr int ColumnInsetX = 3;
-        constexpr int ColumnWidth = 32;
-        constexpr int ColumnSpacing = 6;
-        
+        // Create columns
         std::list<UI::View::WeakPtr> sv;
-        int offX = ColumnInsetX;
-        size_t i = 0;
+        int offX = _ColumnInsetX;
+        size_t colCount = 0;
         for (const Git::Rev& rev : _revs) {
             State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
-            UI::Rect f = {{offX, 0}, {ColumnWidth, size().y}};
-            if (f != Intersection(bounds(), f)) break;
+            const int rem = size().x-offX;
+            if (rem < _ColumnWidth) break;
             
             // Create the column if it doesn't exist yet
-            bool create = (i >= _columns.size());
+            bool create = (colCount >= _columns.size());
             
             UI::RevColumnPtr col;
             if (create) {
@@ -689,36 +706,27 @@ private:
                 });
             
             } else {
-                col = _columns[i];
+                col = _columns[colCount];
             }
             
             col->rev(rev); // Ensure all columns' revs are up to date (since refs become stale if they're modified)
             col->undoButton()->enabled(h && !h->begin());
             col->redoButton()->enabled(h && !h->end());
             col->snapshotsButton()->enabled(true);
-            col->frame({{offX, 0}, {ColumnWidth, size().y}});
-            col->layoutNeeded(true);
+            col->reload({_ColumnWidth, size().y});
             sv.push_back(col);
             
-            offX += ColumnWidth+ColumnSpacing;
-            i++;
+            offX += _ColumnWidth+_ColumnSpacing;
+            colCount++;
         }
         
         // Erase columns that aren't visible
-        // Normally we'd use _columns.erase() here to delete a range of columns, but that
-        // doesn't compile because vector::erase requires moveable elements (in case a
-        // range in the middle of the vector was removed) and RevColumn doesn't support
-        // moving or assignment
-        while (_columns.size() > i) _columns.pop_back();
+        _columns.erase(_columns.begin()+colCount, _columns.end());
         
-        // Append every non-column from the existing subviews() to `sv`
-        std::copy_if(subviews().begin(), subviews().end(),
-            std::back_inserter(sv), [](UI::View::WeakPtr vw) {
-                UI::ViewPtr v = vw.lock();
-                if (!v) return false;
-                return !std::dynamic_pointer_cast<UI::RevColumn>(v);
-            });
         // Update subviews
+        sv.push_back(_messagePanel);
+        sv.push_back(_welcomePanel);
+        sv.push_back(_registerPanel);
         subviews() = sv;
         
         layoutNeeded(true);
@@ -772,12 +780,16 @@ private:
             if (!_drag.titlePanel && mouseDragged && allow) {
                 Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
                 UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
-                _drag.titlePanel = createSubview<UI::CommitPanel>(true, titlePanel->frame().size.x, titleCommit);
+                _drag.titlePanel = createSubview<UI::CommitPanel>();
+                _drag.titlePanel->commit(titleCommit);
+                _drag.titlePanel->size(titlePanel->size());
                 
                 // Create shadow panels
                 UI::Size shadowSize = _drag.titlePanel->frame().size;
                 for (size_t i=0; i<_selection.commits.size()-1; i++) {
-                    _drag.shadowPanels.push_back(createSubview<UI::BorderedPanel>(shadowSize));
+                    UI::PanelPtr shadow = createSubview<UI::Panel>();
+                    shadow->size(shadowSize);
+                    _drag.shadowPanels.push_back(shadow);
                 }
                 
                 // The titlePanel/shadowPanels need layout
@@ -796,7 +808,7 @@ private:
                     const bool forceCopy = !selectionColumn->rev().isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
                     _drag.copy = copy;
-                    _drag.titlePanel->headerLabel(_drag.copy ? "Copy" : "Move");
+                    _drag.titlePanel->header()->text(_drag.copy ? "Copy" : "Move");
                 }
                 
                 // Position title panel / shadow panels
@@ -1572,7 +1584,7 @@ private:
     
     struct {
         UI::CommitPanelPtr titlePanel;
-        std::vector<UI::BorderedPanelPtr> shadowPanels;
+        std::vector<UI::PanelPtr> shadowPanels;
         std::optional<UI::Rect> insertionMarker;
         bool copy = false;
     } _drag;

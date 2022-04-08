@@ -13,7 +13,7 @@ public:
         
         if (_focus) {
             Point p = win.origin() + origin();
-            ssize_t cursorOff = UTF8::Strlen(_left(), _cursor());
+            ssize_t cursorOff = UTF8::Len(_left(), _cursor());
             _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
         }
     }

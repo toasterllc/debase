@@ -19,7 +19,7 @@ public:
         _panel = nullptr;
     }
     
-    virtual void origin(const Point& p) const {
+    void origin(const Point& p) override {
         ::move_panel(*this, p.y, p.x);
     }
     

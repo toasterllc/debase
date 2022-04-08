@@ -34,7 +34,7 @@ public:
         // Draw time
         {
             Window::Attr color = win.attr(Colors().dimmed);
-            int offX = width - (int)UTF8::Strlen(_time);
+            int offX = width - (int)UTF8::Len(_time);
             win.drawText(off + offTextY + Size{offX, 0}, _time.c_str());
         }
         

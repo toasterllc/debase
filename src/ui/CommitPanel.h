@@ -5,6 +5,7 @@
 #include "Color.h"
 #include "LineWrap.h"
 #include "UTF8.h"
+#include "Label.h"
 #include <os/log.h>
 
 namespace UI {
@@ -14,91 +15,95 @@ namespace UI {
 // its containing branch, where the top/first CommitPanel is index 0
 class CommitPanel : public Panel {
 public:
-    CommitPanel(bool header, int width, Git::Commit commit) {
-        _commit = commit;
-        _header = header;
-        _id = Git::DisplayStringForId(_commit.id());
+    CommitPanel() {
+        borderColor(Colors().normal);
         
-        Git::Signature sig = _commit.author();
-        _time = Git::ShortStringForTime(Git::TimeForGitTime(sig.time()));
-        _author = sig.name();
-        _message = LineWrap::Wrap(_LineCountMax, width-2*_LineLenInset, _commit.message());
+        _header->prefix(" ");
+        _header->suffix(" ");
         
-        size({width, (_header ? 1 : 0) + 3 + (int)_message.size()});
+        _author->attr(Colors().dimmed);
+        
+        _message->visible(false);
+        
+        _mergeSymbol->text("𝝠");
+        
+        _time->align(Align::Right);
     }
     
-    ~CommitPanel() {
-        os_log(OS_LOG_DEFAULT, "~CommitPanel()");
+    Size messageSize() const {
+        Size s = _message->sizeIntrinsic({size().x-2*_TextInset, 0});
+        s.y = std::min(_MessageLineCountMax, s.y);
+        return s;
     }
     
-    void borderColor(const Color& x) {
-        if (_borderColor == x) return;
-        _borderColor = x;
-        drawNeeded(true);
+    Size sizeIntrinsic(Size constraint) override {
+        const Size msgSize = messageSize();
+        const int height = (_header ? 1 : 0) + 3 + msgSize.y;
+        return {constraint.x, height};
     }
     
-    void headerLabel(std::string_view x) {
-        assert(_header);
-        if (_headerLabel == x) return;
-        _headerLabel = x;
-        drawNeeded(true);
+    void layout(const Window& win) override {
+        const Rect f = frame();
+        const bool header = !_header->text().empty();
+        const int offY = (header ? 1 : 0);
+        
+        _header->frame({{_TextInset+1,0}, {f.size.x-(_TextInset+1), 1}});
+        _id->frame({{_TextInset, offY}, {f.size.x-2*_TextInset, 1}});
+        _time->frame({{0, offY}, {f.size.x-_TextInset, 1}});
+        _author->frame({{_TextInset, offY+1}, {f.size.x-2*_TextInset, 1}});
+        _message->frame({{_TextInset, offY+2}, messageSize()});
+        _mergeSymbol->frame({{0,1}, {1,1}});
     }
     
     void draw(const Window& win) override {
-        const int offY = (_header ? 1 : 0);
-        int i = 0;
-        for (const std::string& line : _message) {
-            drawText({2, offY+2+i}, line.c_str());
-            i++;
-        }
+        assert(borderColor());
+        const Color color = *borderColor();
+        const bool header = !_header->text().empty();
         
-        {
-            Window::Attr color = attr(_borderColor);
-            drawBorder();
-            
-            if (_commit.isMerge()) {
-                drawText({0, 1}, "𝝠");
-            }
-        }
+        _header->attr(color);
         
-        {
-            Window::Attr bold = attr(A_BOLD);
-            Window::Attr color;
-            if (!_header) color = attr(_borderColor);
-            drawText({2 + (_header ? -1 : 0), offY+0}, " %s ", _id.c_str());
-        }
+        _id->attr(color|A_BOLD);
+        _id->prefix(!header ? " " : "");
+        _id->suffix(!header ? " " : "");
         
-        {
-            constexpr int width = 16;
-            int off = width - (int)UTF8::Strlen(_time);
-            drawText({12 + (_header ? 1 : 0) + off, offY+0}, " %s ", _time.c_str());
-        }
+        _time->prefix(!header ? " " : "");
+        _time->suffix(!header ? " " : "");
         
-        if (_header) {
-            Window::Attr color = attr(_borderColor);
-            drawText({3, 0}, " %s ", _headerLabel.c_str());
-        }
+        _mergeSymbol->attr(color);
         
-        {
-            Window::Attr color = attr(Colors().dimmed);
-            drawText({2, offY+1}, _author.c_str());
-        }
+        // Always redraw _time/_id/_mergeSymbol because our border may have clobbered them
+        _time->drawNeeded(true);
+        _id->drawNeeded(true);
+        _mergeSymbol->drawNeeded(true);
     }
     
-    const Git::Commit commit() const { return _commit; }
+    const auto& commit() const { return _commit; }
+    template <typename T> void commit(const T& x) {
+        _set(_commit, x);
+        
+        const Git::Signature sig = _commit.author();
+        _id->text(Git::DisplayStringForId(_commit.id()));
+        _time->text(Git::ShortStringForTime(Git::TimeForGitTime(sig.time())));
+        _author->text(sig.name());
+        _message->text(_commit.message());
+        
+        _mergeSymbol->visible(_commit.isMerge());
+    }
+    
+    const auto& header() const { return _header; }
+    template <typename T> void header(const T& x) { _set(_header, x); }
     
 private:
-    static constexpr size_t _LineCountMax = 2;
-    static constexpr size_t _LineLenInset = 2;
+    static constexpr int _MessageLineCountMax = 2;
+    static constexpr int _TextInset = 2;
     
     Git::Commit _commit;
-    bool _header = false;
-    std::string _headerLabel;
-    std::string _id;
-    std::string _time;
-    std::string _author;
-    std::vector<std::string> _message;
-    Color _borderColor = Colors().normal;
+    LabelPtr _header        = createSubview<Label>();
+    LabelPtr _id            = createSubview<Label>();
+    LabelPtr _time          = createSubview<Label>();
+    LabelPtr _author        = createSubview<Label>();
+    LabelPtr _message       = createSubview<Label>();
+    LabelPtr _mergeSymbol   = createSubview<Label>();
 };
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;

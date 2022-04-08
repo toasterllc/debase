@@ -87,7 +87,7 @@ public:
             // Draw title
             if (!_title.empty()) {
                 Window::Attr bold = attr(A_BOLD);
-                int offX = (width-(int)UTF8::Strlen(_title))/2;
+                int offX = (width-(int)UTF8::Len(_title))/2;
                 drawText({offX,0}, " %s ", _title.c_str());
             }
         }

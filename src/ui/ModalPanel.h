@@ -11,6 +11,9 @@ public:
     ModalPanel() {
         _message->centerSingleLine(true);
         _message->wrap(true);
+        
+        _title->prefix(" ");
+        _title->suffix(" ");
     }
     
     static constexpr Size BorderSize() { return {5,2}; }
@@ -37,8 +40,7 @@ public:
         const Point titlePos = {3,0};
         _title->attr(_color|A_BOLD);
         
-        const int titleWidthMax = f.size.x-2*titlePos.x;
-        const int titleWidth = std::min(titleWidthMax, _title->sizeIntrinsic({}).x);
+        const int titleWidth = f.size.x-2*titlePos.x;
         _title->frame({titlePos, {titleWidth, 1}});
         
         const Size messageSize = _message->sizeIntrinsic({rect.size.x, 0});
@@ -56,11 +58,11 @@ public:
         }
         
 //        _title->draw(*this);
-        if (!_title->text().empty()) {
-            // Add spaces around title
-            drawText(_title->frame().tl()-Size{1,0}, " ");
-            drawText(_title->frame().tr()+Size{1,0}, " ");
-        }
+//        if (!_title->text().empty()) {
+//            // Add spaces around title
+//            drawText(_title->frame().tl()-Size{1,0}, " ");
+//            drawText(_title->frame().tr()+Size{1,0}, " ");
+//        }
         
 //        _message->draw(*this);
     }
@@ -86,7 +88,7 @@ public:
     auto& message() { return _message; }
     
     const auto& dismissAction() const { return _dismissAction; }
-    template <typename T> void dismissAction(const T& x) { _setAlways(_dismissAction, x); }
+    template <typename T> void dismissAction(const T& x) { _setForce(_dismissAction, x); }
     
 private:
     static constexpr int _MessageSpacingTop = 1;

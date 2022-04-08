@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "Color.h"
 #include "lib/toastbox/Defer.h"
 
@@ -63,6 +64,9 @@ public:
     virtual const bool interaction() const { return _interaction; }
     virtual void interaction(bool x) { _set(_interaction, x); }
     
+    virtual const std::optional<Color> borderColor() const { return _borderColor; }
+    virtual void borderColor(std::optional<Color> x) { _set(_borderColor, x); }
+    
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
     virtual void layoutNeeded(bool x) { _layoutNeeded = x; }
@@ -72,6 +76,7 @@ public:
     virtual bool drawNeeded() const { return _drawNeeded; }
     virtual void drawNeeded(bool x) { _drawNeeded = x; }
     virtual void draw(const Window& win) {}
+    virtual void drawBackground(const Window& win);
     
     // MARK: - Events
     virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
@@ -119,6 +124,7 @@ public:
         //   ∴ we can't call Window functions in View.h
         //
         if (drawNeeded() || _winErased(win)) {
+            drawBackground(win);
             draw(win);
             drawNeeded(false);
         }
@@ -197,7 +203,7 @@ public:
     
 protected:
     template <typename X, typename Y>
-    void _setAlways(X& x, const Y& y) {
+    void _setForce(X& x, const Y& y) {
         x = y;
         View::drawNeeded(true);
     }
@@ -210,9 +216,9 @@ protected:
     }
     
 private:
-    static inline ColorPalette _Colors;
-    
     bool _winErased(const Window& win);
+    
+    static inline ColorPalette _Colors;
     
     std::list<WeakPtr> _subviews;
     Point _origin;
@@ -224,6 +230,8 @@ private:
     bool _tracking = false;
     bool _trackStop = false;
     Event _eventCurrent;
+    
+    std::optional<Color> _borderColor;
 };
 
 using ViewPtr = std::shared_ptr<View>;

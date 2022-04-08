@@ -141,6 +141,13 @@ public:
     
     virtual Attr attr(int attr) const { return Attr(*this, attr); }
     
+    void drawBackground(const Window& win) override {
+        if (borderColor()) {
+            Attr color = attr(*borderColor());
+            win.drawRect(bounds());
+        }
+    }
+    
     bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
     void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
@@ -195,7 +202,7 @@ public:
     
 protected:
     template <typename X, typename Y>
-    void _setAlways(X& x, const Y& y) {
+    void _setForce(X& x, const Y& y) {
         x = y;
         drawNeeded(true);
     }
