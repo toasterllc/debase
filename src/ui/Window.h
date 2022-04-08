@@ -120,61 +120,25 @@ public:
         ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
     }
     
-    // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
-    virtual Point convert(const Point& p) const {
-        return p-origin();
+    Point mousePosition(const Event& ev) const {
+        return ev.mouse.origin-origin();
     }
     
-    // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
-    virtual Event convert(const Event& p) const {
-        Event r = p;
-        if (r.type == Event::Type::Mouse) {
-            r.mouse.point = convert(r.mouse.point);
-        }
-        return r;
-    }
+//    // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
+//    virtual Point convert(const Point& p) const {
+//        return p-origin();
+//    }
+//    
+//    // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
+//    virtual Event convert(const Event& p) const {
+//        Event r = p;
+//        if (r.type == Event::Type::Mouse) {
+//            r.mouse.point = convert(r.mouse.point);
+//        }
+//        return r;
+//    }
     
     virtual Attr attr(int attr) const { return Attr(*this, attr); }
-    
-    virtual Event nextEvent() const {
-        // Wait for another mouse event
-        for (;;) {
-            int ch = ::wgetch(*this);
-            if (ch == ERR) continue;
-            
-            Event ev = {
-                .type = (Event::Type)ch,
-                .time = std::chrono::steady_clock::now(),
-            };
-            switch (ev.type) {
-            case Event::Type::Mouse: {
-                MEVENT mouse = {};
-                int ir = ::getmouse(&mouse);
-                if (ir != OK) continue;
-                ev.mouse = {
-                    .point = {mouse.x, mouse.y},
-                    .bstate = mouse.bstate,
-                };
-                break;
-            }
-            
-            case Event::Type::WindowResize: {
-                throw WindowResize();
-            }
-            
-            case Event::Type::KeyCtrlC:
-            case Event::Type::KeyCtrlD: {
-                throw ExitRequest();
-            }
-            
-            default: {
-                break;
-            }}
-            
-            ev = convert(ev);
-            return ev;
-        }
-    }
     
     bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=View::size(); }
     void layoutNeeded(bool x) override { View::layoutNeeded(x); }

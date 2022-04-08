@@ -96,7 +96,7 @@ public:
     bool handleEvent(const Window& win, const Event& ev) override {
         auto& ts = _trackState;
         const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
-        const Size delta = ev.mouse.point-ts.startEvent.mouse.point;
+        const Size delta = win.mousePosition(ev)-win.mousePosition(ts.startEvent);
         
         // Don't allow buttons to receive events until _ActivateDuration
         // has elapsed and the mouse has moved at least 1 px
@@ -111,7 +111,7 @@ public:
         
         if (ev.type == Event::Type::Mouse) {
             // Update the mouseActive state for all of our buttons
-            bool inside = HitTest(bounds(), ev.mouse.point);
+            bool inside = HitTest(bounds(), win.mousePosition(ev));
             if (ts.active) {
                 for (ButtonPtr button : _buttons) {
                     button->mouseActive(inside);

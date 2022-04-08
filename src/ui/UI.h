@@ -80,8 +80,12 @@ struct Event {
     Type type = Type::None;
     std::chrono::steady_clock::time_point time = {};
     struct {
-        Point point;
+        Point origin; // Screen coordinates
         mmask_t bstate = 0;
+        
+//        Point position(const Window& win) const {
+//            return position-win.origin();
+//        }
     } mouse;
     
     operator bool() const { return type!=Type::None; }
@@ -112,15 +116,53 @@ private:
     }
 };
 
+struct ExitRequest : std::exception {};
+struct WindowResize : std::exception {};
+
 enum class Align {
     Left,
     Center,
     Right,
 };
 
-struct ExitRequest : std::exception {};
-struct WindowResize : std::exception {};
-
+inline Event NextEvent() {
+    // Wait for another mouse event
+    for (;;) {
+        int ch = ::getch();
+        if (ch == ERR) continue;
+        
+        Event ev = {
+            .type = (Event::Type)ch,
+            .time = std::chrono::steady_clock::now(),
+        };
+        switch (ev.type) {
+        case Event::Type::Mouse: {
+            MEVENT mouse = {};
+            int ir = ::getmouse(&mouse);
+            if (ir != OK) continue;
+            ev.mouse = {
+                .origin = {mouse.x, mouse.y},
+                .bstate = mouse.bstate,
+            };
+            break;
+        }
+        
+        case Event::Type::WindowResize: {
+            throw WindowResize();
+        }
+        
+        case Event::Type::KeyCtrlC:
+        case Event::Type::KeyCtrlD: {
+            throw ExitRequest();
+        }
+        
+        default: {
+            break;
+        }}
+        
+        return ev;
+    }
+}
 inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.origin.x, b.origin.x);
     const int maxX = std::min(a.origin.x+a.size.x, b.origin.x+b.size.x);

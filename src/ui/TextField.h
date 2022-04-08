@@ -80,13 +80,13 @@ private:
     
     bool _handleEvent(const Window& win, const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
-            if (ev.mouseDown() && hitTest(ev.mouse.point)) {
+            if (ev.mouseDown() && hitTest(win.mousePosition(ev))) {
                 if (!_focus) {
                     requestFocus(*this);
                 
                 } else {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.point.x-origin().x;
+                    int offX = win.mousePosition(ev).x-origin().x;
                     auto offIt = UTF8::NextN(_left(), value.end(), offX);
                     _offCursor = std::distance(value.begin(), offIt);
                 }

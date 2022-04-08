@@ -152,6 +152,10 @@ public:
 //                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
 //            }
             
+            if (!ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                return false;
+            }
+            
             // Let every column handle the event
             for (UI::RevColumnPtr col : _columns) {
                 bool handled = col->handleEvent(*this, ev);
@@ -160,7 +164,7 @@ public:
             
             switch (ev.type) {
             case UI::Event::Type::Mouse: {
-                const _HitTestResult hitTest = _hitTest(ev.mouse.point);
+                const _HitTestResult hitTest = _hitTest(win.mousePosition(ev));
                 if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
                     const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
                     if (hitTest && !shift) {
@@ -653,7 +657,7 @@ private:
         constexpr int ColumnWidth = 32;
         constexpr int ColumnSpacing = 6;
         
-        std::vector<UI::ViewPtr> sv;
+        std::list<UI::View::WeakPtr> sv;
         int offX = ColumnInsetX;
         size_t i = 0;
         for (const Git::Rev& rev : _revs) {
@@ -713,7 +717,9 @@ private:
         
         // Append every non-column from the existing subviews() to `sv`
         std::copy_if(subviews().begin(), subviews().end(),
-            std::back_inserter(sv), [](UI::ViewPtr v) {
+            std::back_inserter(sv), [](UI::View::WeakPtr vw) {
+                UI::ViewPtr v = vw.lock();
+                if (!v) return false;
                 return !std::dynamic_pointer_cast<UI::RevColumn>(v);
             });
         // Update subviews
@@ -726,7 +732,7 @@ private:
     // Handles clicking/dragging a set of CommitPanels
     std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mouseDownEvent.mouse.point;
+        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mousePosition(mouseDownEvent);
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
         const auto doubleClickStatePrev = _doubleClickState;
@@ -755,8 +761,8 @@ private:
             assert(!_selection.commits.empty());
             UI::RevColumnPtr selectionColumn = _columnForRev(_selection.rev);
             
-            const UI::Point p = ev.mouse.point;
-            const UI::Size delta = mouseDownEvent.mouse.point-p;
+            const UI::Point p = mousePosition(ev);
+            const UI::Size delta = mousePosition(mouseDownEvent)-p;
             const int w = std::abs(delta.x);
             const int h = std::abs(delta.y);
             // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
@@ -831,7 +837,7 @@ private:
             
             eraseNeeded(true); // Need to erase the insertion marker
             refresh(*this);
-            ev = nextEvent();
+            ev = UI::NextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
             if (abort || ev.mouseUp()) {
@@ -910,10 +916,12 @@ private:
         UI::Event ev = mouseDownEvent;
         
         for (;;) {
-            const int x = std::min(mouseDownEvent.mouse.point.x, ev.mouse.point.x);
-            const int y = std::min(mouseDownEvent.mouse.point.y, ev.mouse.point.y);
-            const int w = std::abs(mouseDownEvent.mouse.point.x - ev.mouse.point.x);
-            const int h = std::abs(mouseDownEvent.mouse.point.y - ev.mouse.point.y);
+            UI::Point mouseDownPos = mousePosition(mouseDownEvent);
+            UI::Point pos = mousePosition(ev);
+            const int x = std::min(mouseDownPos.x, pos.x);
+            const int y = std::min(mouseDownPos.y, pos.y);
+            const int w = std::abs(mouseDownPos.x - pos.x);
+            const int h = std::abs(mouseDownPos.y - pos.y);
             const bool dragStart = w>1 || h>1;
             
             // Mouse-down outside of a commit:
@@ -959,7 +967,7 @@ private:
             
             eraseNeeded(true); // Need to erase the selection rect
             refresh(*this);
-            ev = nextEvent();
+            ev = UI::NextEvent();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
                 break;
@@ -994,8 +1002,8 @@ private:
         UI::MenuPtr menu = createSubview<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
         menu->size(menu->sizeIntrinsic({}));
-        menu->origin(mouseDownEvent.mouse.point);
-        menu->track(*menu, menu->convert(mouseDownEvent));
+        menu->origin(mousePosition(mouseDownEvent));
+        menu->track(*menu, mouseDownEvent);
         
         // Handle the clicked button
         std::optional<Git::Op> gitOp;
@@ -1055,7 +1063,7 @@ private:
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
-        menu->track(*menu, menu->convert(eventCurrent()));
+        menu->track(*menu, eventCurrent());
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);

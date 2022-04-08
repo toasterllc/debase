@@ -9,6 +9,7 @@ class Window;
 class View {
 public:
     using Ptr = std::shared_ptr<View>;
+    using WeakPtr = std::weak_ptr<View>;
     
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
@@ -83,7 +84,7 @@ public:
         return view;
     }
     
-    virtual std::vector<Ptr>& subviews() { return _subviews; }
+    virtual std::list<WeakPtr>& subviews() { return _subviews; }
     
     virtual void layoutTree(const Window& win) {
         if (!visible()) return;
@@ -93,8 +94,16 @@ public:
             layoutNeeded(false);
         }
         
-        for (Ptr view : _subviews) {
+        for (auto it=_subviews.begin(); it!=_subviews.end();) {
+            Ptr view = (*it).lock();
+            if (!view) {
+                // Prune and continue
+                it = _subviews.erase(it);
+                continue;
+            }
+            
             view->layoutTree(win);
+            it++;
         }
     }
     
@@ -114,8 +123,16 @@ public:
             drawNeeded(false);
         }
         
-        for (Ptr view : _subviews) {
+        for (auto it=_subviews.begin(); it!=_subviews.end();) {
+            Ptr view = (*it).lock();
+            if (!view) {
+                // Prune and continue
+                it = _subviews.erase(it);
+                continue;
+            }
+            
             view->drawTree(win);
+            it++;
         }
     }
     
@@ -123,9 +140,18 @@ public:
         if (!visible()) return false;
         if (!interaction()) return false;
         // Let the subviews handle the event first
-        for (Ptr view : _subviews) {
+        for (auto it=_subviews.begin(); it!=_subviews.end();) {
+            Ptr view = (*it).lock();
+            if (!view) {
+                // Prune and continue
+                it = _subviews.erase(it);
+                continue;
+            }
+            
             if (view->handleEventTree(win, ev)) return true;
+            it++;
         }
+        
         // None of the subviews wanted the event; let the view itself handle it
         if (handleEvent(win, ev)) return true;
         return false;
@@ -147,7 +173,7 @@ public:
         do {
             refresh(win);
             
-            _eventCurrent = _winNextEvent(win);
+            _eventCurrent = UI::NextEvent();
             Defer(_eventCurrent = {}); // Exception safety
             
             handleEventTree(win, _eventCurrent);
@@ -187,9 +213,8 @@ private:
     static inline ColorPalette _Colors;
     
     bool _winErased(const Window& win);
-    Event _winNextEvent(const Window& win);
     
-    std::vector<Ptr> _subviews;
+    std::list<WeakPtr> _subviews;
     Point _origin;
     Size _size;
     bool _visible = true;
