@@ -1293,8 +1293,8 @@ private:
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
         panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), 0}));
         
-        UI::Size ps = panel->frame().size;
-        UI::Size rs = frame().size;
+        UI::Size ps = panel->size();
+        UI::Size rs = size();
         UI::Point p = {
             (rs.x-ps.x)/2,
             (rs.y-ps.y)/3,

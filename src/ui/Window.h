@@ -115,9 +115,10 @@ public:
     
     Size size() const override { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     void size(const Size& s) override {
+        Size ss = {std::max(1,s.x), std::max(1,s.y)};
         // Short-circuit if the size hasn't changed
-        if (s == size()) return;
-        ::wresize(*this, std::max(1, s.y), std::max(1, s.x));
+        if (ss == size()) return;
+        ::wresize(*this, ss.y, ss.x);
     }
     
     Point mousePosition(const Event& ev) const {
@@ -140,16 +141,19 @@ public:
     
     virtual Attr attr(int attr) const { return Attr(*this, attr); }
     
-    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=View::size(); }
+    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
     void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
     void layoutTree(const Window& win) override {
-        // Detect size changes that can occurs from underneath us
-        // by ncurses (eg by the terminal size changing)
-        if (_s.sizePrev != View::size()) {
-            // We need to erase (and redraw) after resizing
+        // Detect size changes
+        // ncurses can change our size out from under us (eg by the
+        // terminal size changing), so we handle all size changes
+        // here, instead of in the size() setter
+        if (_s.sizePrev != size()) {
+            // We need to erase+redraw after resizing
+            // (eraseNeeded=true implicity sets drawNeeded=true)
             eraseNeeded(true);
-            _s.sizePrev = View::size();
+            _s.sizePrev = size();
         }
         
         View::layoutTree(*this);
