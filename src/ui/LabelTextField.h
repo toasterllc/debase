@@ -10,13 +10,13 @@ public:
         return _label->sizeIntrinsic(constraint);
     }
     
-    void layout(const Window& win) override {
-        const Rect f = frame();
+    void layout() override {
+        const Size s = size();
         const Size labelSize = _label->sizeIntrinsic({});
-        _label->frame({f.origin, labelSize});
+        _label->frame({{}, labelSize});
         
-        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
-        _textField->frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
+        const Size textFieldSize = {s.x-labelSize.x-_spacingX, 1};
+        _textField->frame({{labelSize.x+_spacingX, 0}, textFieldSize});
         
 //        _label.layout(win);
 //        _textField.layout(win);

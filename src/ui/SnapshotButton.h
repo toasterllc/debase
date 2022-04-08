@@ -24,41 +24,40 @@ public:
         size({width, 3});
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         const int width = size().x;
-        const Point off = origin();
         const Size offTextX = Size{_TextInsetX, 0};
         const Size offTextY = Size{0, 0};
-        const Size offText = off+offTextX+offTextY;
+        const Size offText = offTextX+offTextY;
         
         // Draw time
         {
-            Window::Attr color = win.attr(Colors().dimmed);
+            Attr color = attr(Colors().dimmed);
             int offX = width - (int)UTF8::Len(_time);
-            win.drawText(off + offTextY + Size{offX, 0}, _time.c_str());
+            drawText(offTextY + Size{offX, 0}, _time.c_str());
         }
         
         // Draw commit id
         {
-            Window::Attr bold = win.attr(A_BOLD);
-            Window::Attr color;
+            Attr bold = attr(A_BOLD);
+            Attr color;
             if (highlighted() || (activeSnapshot && !mouseActive())) {
-                color = win.attr(Colors().menu);
+                color = attr(Colors().menu);
             }
-            win.drawText(offText, _commit.id.c_str());
+            drawText(offText, _commit.id.c_str());
         }
         
         // Draw author name
         {
-            Window::Attr color = win.attr(Colors().dimmed);
-            win.drawText(offText + Size{0, 1}, _commit.author.c_str());
+            Attr color = attr(Colors().dimmed);
+            drawText(offText + Size{0, 1}, _commit.author.c_str());
         }
         
         // Draw commit message
         {
             int i = 0;
             for (const std::string& line : _commit.message) {
-                win.drawText(offText + Size{0, 2+i}, line.c_str());
+                drawText(offText + Size{0, 2+i}, line.c_str());
                 i++;
             }
         }
@@ -66,21 +65,21 @@ public:
         // Draw highlight
         {
             if (highlighted()) {
-                Window::Attr color = win.attr(Colors().menu|A_BOLD);
-                win.drawText(off + offTextY, "●");
+                Attr color = attr(Colors().menu|A_BOLD);
+                drawText(offTextY, "●");
             
             } else if (activeSnapshot) {
                 if (mouseActive()) {
-                    win.drawText(off + offTextY, "○");
+                    drawText(offTextY, "○");
                 } else {
-                    Window::Attr color = win.attr(Colors().menu|A_BOLD);
-                    win.drawText(off + offTextY, "●");
+                    Attr color = attr(Colors().menu|A_BOLD);
+                    drawText(offTextY, "●");
                 }
             } else {
                 // Draw a space to erase the previous highlight
                 // Otherwise we'd need to erase the panel to get rid of the
                 // previously-drawn ●/○, and this is easier
-                win.drawText(off + offTextY, " ");
+                drawText(offTextY, " ");
             }
         }
     }

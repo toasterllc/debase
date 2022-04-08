@@ -27,12 +27,12 @@ public:
         _snapshotsButton->drawBorder(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
-        _name->attr(Colors().menu | A_BOLD);
+        _name->textAttr(Colors().menu | A_BOLD);
         _name->align(Align::Center);
         
         _readOnly->text("read-only");
         _readOnly->align(Align::Center);
-        _readOnly->attr(Colors().error);
+        _readOnly->textAttr(Colors().error);
         
 //        borderColor(Colors().normal);
     }
@@ -89,31 +89,27 @@ public:
         layoutNeeded(true);
     }
     
-    void layout(const Window& win) override {
+    void layout() override {
         constexpr int UndoWidth      = 8;
         constexpr int RedoWidth      = 8;
         constexpr int SnapshotsWidth = 16;
             
-        const Rect f = frame();
+        const Size s = size();
         
-        _name->frame({f.origin+Size{0,_NameInsetY}, {f.size.x, 1}});
-        _readOnly->frame({f.origin+Size{0,_ReadonlyInsetY}, {f.size.x, 1}});
+        _name->frame({{0,_NameInsetY}, {s.x, 1}});
+        _readOnly->frame({{0,_ReadonlyInsetY}, {s.x, 1}});
         
-        _undoButton->frame({f.origin+Size{0, _ButtonsInsetY}, {UndoWidth,3}});
-        _redoButton->frame({f.origin+Size{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}});
-        _snapshotsButton->frame({f.origin+Size{(f.size.x-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}});
+        _undoButton->frame({{0, _ButtonsInsetY}, {UndoWidth,3}});
+        _redoButton->frame({{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}});
+        _snapshotsButton->frame({{(s.x-SnapshotsWidth), _ButtonsInsetY}, {SnapshotsWidth,3}});
         
         int offY = _CommitsInsetY;
         for (CommitPanelPtr panel : _panels) {
-            const Size ps = panel->sizeIntrinsic({f.size.x, 0});
-            const Rect pf = {f.origin+Size{0,offY}, ps};
+            const Size ps = panel->sizeIntrinsic({s.x, 0});
+            const Rect pf = {{0,offY}, ps};
             panel->frame(pf);
             offY += ps.y + _CommitSpacing;
         }
-    }
-    
-    void draw(const Window& win) override {
-//        win.drawRect(frame());
     }
     
 //    bool drawNeeded() const override {
@@ -126,22 +122,22 @@ public:
 //        return false;
 //    }
 //    
-//    void draw(const Window& win) override {
+//    void draw() override {
 //        const Point pos = origin();
 //        const int width = size().x;
 //        // Draw branch name
 //        if (win.erased()) {
-//            Window::Attr color = win.attr(Colors().menu);
-//            Window::Attr bold = win.attr(A_BOLD);
+//            Attr color = attr(Colors().menu);
+//            Attr bold = attr(A_BOLD);
 //            const Point p = pos + Size{(width-(int)UTF8::Len(_name))/2, _TitleInsetY};
-//            win.drawText(p, _name.c_str());
+//            drawText(p, _name.c_str());
 //        }
 //        
 //        if (!_rev.isMutable()) {
-//            Window::Attr color = win.attr(Colors().error);
+//            Attr color = attr(Colors().error);
 //            const char immutableText[] = "read-only";
 //            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
-//            win.drawText(p, immutableText);
+//            drawText(p, immutableText);
 //        }
 //        
 //        for (CommitPanelPtr p : _panels) {

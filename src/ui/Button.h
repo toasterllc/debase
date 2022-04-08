@@ -17,14 +17,14 @@ public:
     
     Button() {
         _label->align(Align::Center);
-        _label->attr(A_BOLD);
+        _label->textAttr(A_BOLD);
         _key->align(Align::Right);
     }
     
-    void layout(const Window& win) override {
-        const Rect f = frame();
-        _label->frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
-        _key->frame({f.origin+Size{0, (f.size.y-1)/2}, {f.size.x, 1}});
+    void layout() override {
+        const Size s = size();
+        _label->frame({{0, (s.y-1)/2}, {s.x, 1}});
+        _key->frame({{0, (s.y-1)/2}, {s.x, 1}});
         
 //        _label->frame(f);
 //        _key->frame(f);
@@ -40,22 +40,17 @@ public:
 //        _textField.layout(win);
     }
     
-    void draw(const Window& win) override {
-        const Rect f = frame();
-        
-        // Draw border
-        if (_drawBorder) {
-            Window::Attr color = win.attr(_enabled ? Colors().normal : Colors().dimmed);
-            win.drawRect(f);
-        }
+    void draw() override {
+        // Update our border color for View's drawBorder() pass
+        if (_drawBorder) borderColor(_enabled ? Colors().normal : Colors().dimmed);
         
         // Update label styles
         int attr = 0;
         if (_enabled)                 attr |= A_BOLD;
         if (_highlighted && _enabled) attr |= Colors().menu;
         else if (!_enabled)           attr |= Colors().dimmed;
-        _label->attr(attr);
-        _key->attr(Colors().dimmed);
+        _label->textAttr(attr);
+        _key->textAttr(Colors().dimmed);
         
 //        // Draw labels
 //        _key->draw(win);
@@ -82,7 +77,7 @@ public:
     
     
     
-//    bool draw(const Window& win) override {
+//    bool draw() override {
 //        if (!View::draw(win)) return false;
 //        
 //        const Rect f = frame();
@@ -96,7 +91,7 @@ public:
 //        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
 //        
 //        if (_drawBorder) {
-//            Window::Attr color = win.attr(_enabled ? Colors().normal : Colors().dimmed);
+//            Attr color = attr(_enabled ? Colors().normal : Colors().dimmed);
 //            win.drawRect(f);
 //        }
 //        
@@ -116,18 +111,18 @@ public:
 //        }
 //        
 //        {
-//            Window::Attr bold;
-//            Window::Attr color;
-//            if (_enabled)                 bold = win.attr(A_BOLD);
-//            if (_highlighted && _enabled) color = win.attr(Colors().menu);
-//            else if (!_enabled)           color = win.attr(Colors().dimmed);
-//            win.drawText(plabel, labelWidth, _label->c_str());
+//            Attr bold;
+//            Attr color;
+//            if (_enabled)                 bold = attr(A_BOLD);
+//            if (_highlighted && _enabled) color = attr(Colors().menu);
+//            else if (!_enabled)           color = attr(Colors().dimmed);
+//            drawText(plabel, labelWidth, _label->c_str());
 //        }
 //        
 //        // Draw key
 //        {
-//            Window::Attr color = win.attr(Colors().dimmed);
-//            win.drawText(pkey, keyWidth, _key->c_str());
+//            Attr color = attr(Colors().dimmed);
+//            drawText(pkey, keyWidth, _key->c_str());
 //        }
 //        
 //        return true;

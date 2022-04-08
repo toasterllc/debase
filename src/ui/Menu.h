@@ -33,7 +33,7 @@ public:
         return {width, height};
     }
     
-    void layout(const Window& win) override {
+    void layout() override {
         const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
@@ -69,14 +69,14 @@ public:
         }
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         const int width = bounds().size.x;
         
         for (ButtonPtr button : _buttons) {
             // Draw separator
             if (erased()) { // Performance optimization: only draw if the window was erased
                 if (button->visible()) {
-                    Window::Attr color = attr(Colors().menu);
+                    Attr color = attr(Colors().menu);
                     drawLineHoriz({0, button->frame().ymax()+1}, width);
                 }
             }
@@ -84,12 +84,12 @@ public:
         
         // Draw border
         if (erased()) { // Performance optimization: only draw if the window was erased
-            Window::Attr color = attr(Colors().menu);
+            Attr color = attr(Colors().menu);
             drawRect();
             
             // Draw title
             if (!_title.empty()) {
-                Window::Attr bold = attr(A_BOLD);
+                Attr bold = attr(A_BOLD);
                 int offX = (width-(int)UTF8::Len(_title))/2;
                 drawText({offX,0}, " %s ", _title.c_str());
             }

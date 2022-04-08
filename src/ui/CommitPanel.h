@@ -21,7 +21,7 @@ public:
         _header->prefix(" ");
         _header->suffix(" ");
         
-        _author->attr(Colors().dimmed);
+        _author->textAttr(Colors().dimmed);
         
 //        _message->visible(false);
         _message->wrap(true);
@@ -44,7 +44,7 @@ public:
         return {constraint.x, height};
     }
     
-    void layout(const Window& win) override {
+    void layout() override {
         const Rect f = frame();
         const bool header = !_header->text().empty();
         const int offY = (header ? 1 : 0);
@@ -61,21 +61,21 @@ public:
         _mergeSymbol->frame({{0,1}, {1,1}});
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         assert(borderColor());
         const Color color = *borderColor();
         const bool header = !_header->text().empty();
         
-        _header->attr(color);
+        _header->textAttr(color);
         
-        _id->attr(color|A_BOLD);
+        _id->textAttr(color|A_BOLD);
         _id->prefix(!header ? " " : "");
         _id->suffix(!header ? " " : "");
         
         _time->prefix(!header ? " " : "");
         _time->suffix(!header ? " " : "");
         
-        _mergeSymbol->attr(color);
+        _mergeSymbol->textAttr(color);
         
         // Always redraw _time/_id/_mergeSymbol because our border may have clobbered them
         _time->drawNeeded(true);

@@ -13,41 +13,6 @@ namespace UI {
 
 class Window : public View {
 public:
-    class Attr {
-    public:
-        Attr() {}
-        Attr(const Window& win, int attr) : _s({.win=&win, .attr=attr}) {
-//            if (rand() % 2) {
-//                wattron(*_s.win, A_REVERSE);
-//            } else {
-//                wattroff(*_s.win, A_REVERSE);
-//            }
-            
-            wattron(*_s.win, _s.attr);
-        }
-        
-        Attr(const Attr& x) = delete;
-        Attr(Attr&& x) { std::swap(_s, x._s); }
-        Attr& operator =(Attr&& x) { std::swap(_s, x._s); return *this; }
-        
-        ~Attr() {
-            if (_s.win) {
-                wattroff(*_s.win, _s.attr);
-            }
-        }
-    
-    private:
-        struct {
-            const Window* win = nullptr;
-            int attr = 0;
-        } _s;
-    };
-    
-    static Window& DrawWindow() {
-        assert(_DrawWindow);
-        return *_DrawWindow;
-    }
-    
     Window() {}
     
     Window(WINDOW* win) : _s{.win = win} {
@@ -99,13 +64,14 @@ public:
 //        return r;
 //    }
     
-    virtual Attr attr(int attr) const { return Attr(*this, attr); }
+    virtual void drawRect() const override {
+        // For the case where we're drawing the window's border, we attempt
+        // to be more efficent than View's drawRect() by using ::box().
+        ::box(*this, 0, 0);
+    }
     
-    void drawBackground(const Window& win) override {
-        if (borderColor()) {
-            Attr color = attr(*borderColor());
-            win.drawRect(bounds());
-        }
+    virtual void drawRect(const Rect& rect) const override {
+        View::drawRect(rect);
     }
     
     bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
@@ -126,11 +92,7 @@ public:
         View::layoutTree(*this);
     }
     
-    void drawTree(const Window& win) override {
-        Window* drawWindowPrev = _DrawWindow;
-        _DrawWindow = this;
-        Defer(_DrawWindow = drawWindowPrev);
-        
+    void drawTree(const Window& win, Point off={}) override {
         // Remember whether we erased ourself during this draw cycle
         // This is used by View instances (Button and TextField)
         // to know whether they need to be drawn again
@@ -142,7 +104,7 @@ public:
             _s.eraseNeeded = false;
         }
         
-        View::drawTree(*this);
+        View::drawTree(*this, {});
     }
     
     virtual bool handleEventTree(const Window& win, const Event& ev) override {
@@ -179,8 +141,6 @@ protected:
     }
     
 private:
-    static inline Window* _DrawWindow = nullptr;
-    
     struct {
         WINDOW* win = nullptr;
         Size sizePrev;

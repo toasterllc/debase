@@ -8,21 +8,22 @@ namespace UI {
 
 class TextField : public View {
 public:
-    void layout(const Window& win) override {
+    void layout() override {
         _offUpdate();
         
-        if (_focus) {
-            Point p = win.origin() + origin();
-            ssize_t cursorOff = UTF8::Len(_left(), _cursor());
-            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
-        }
+//        #warning TODO: fix cursor position
+//        if (_focus) {
+//            Point p = origin() + origin();
+//            ssize_t cursorOff = UTF8::Len(_left(), _cursor());
+//            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
+//        }
     }
     
-    void draw(const Window& win) override {
-        Window::Attr underline = win.attr(A_UNDERLINE);
-        Window::Attr color;
-        if (!_focus) color = win.attr(Colors().dimmed);
-        win.drawLineHoriz(origin(), size().x, ' ');
+    void draw() override {
+        Attr underline = attr(A_UNDERLINE);
+        Attr color;
+        if (!_focus) color = attr(Colors().dimmed);
+        drawLineHoriz({}, size().x, ' ');
         
         // Print as many runes as will fit our width
         const int width = size().x;
@@ -30,7 +31,7 @@ public:
         auto right = UTF8::NextN(left, value.end(), width);
         
         std::string substr(left, right);
-        win.drawText(origin(), substr.c_str());
+        drawText({}, substr.c_str());
     }
     
     bool focus() const { return _focus; }

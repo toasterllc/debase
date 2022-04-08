@@ -34,11 +34,11 @@ public:
         };
     }
     
-    void layout(const Window& win) override {
+    void layout() override {
         const Rect f = frame();
         const Rect rect = contentRect();
         const Point titlePos = {3,0};
-        _title->attr(_color|A_BOLD);
+        _title->textAttr(_color|A_BOLD);
         
         const int titleWidth = f.size.x-2*titlePos.x;
         _title->frame({titlePos, {titleWidth, 1}});
@@ -50,11 +50,11 @@ public:
 //        _message->layout(*this);
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         if (erased()) {
-            Window::Attr style = attr(_color);
+            Attr style = attr(_color);
 //            drawRect(Inset(bounds(), {2,1}));
-            drawRect(bounds());
+            drawRect();
         }
         
 //        _title->draw(*this);

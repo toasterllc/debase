@@ -15,7 +15,7 @@ public:
         return { width, (int)lines.size() };
     }
     
-    void layout(const Window& win) override {
+    void layout() override {
         if (!_wrap) {
             _lines = { _text };
         } else {
@@ -23,7 +23,7 @@ public:
         }
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         const Rect f = frame();
         const int prefixWidth = (int)UTF8::Len(_prefix);
         const int suffixWidth = (int)UTF8::Len(_suffix);
@@ -48,20 +48,15 @@ public:
                 align = Align::Center;
             }
             
-            Point p = f.origin + Size{0, offY};
+            Point p = {0, offY};
             switch (_align) {
-            case Align::Left:
-                break;
-            case Align::Center:
-                p.x += std::max(0, (f.size.x-lineWidth)/2);
-                break;
-            case Align::Right:
-                p.x += std::max(0, (f.size.x-lineWidth));
-                break;
+            case Align::Left:   break;
+            case Align::Center: p.x += std::max(0, (f.size.x-lineWidth)/2); break;
+            case Align::Right:  p.x += std::max(0, (f.size.x-lineWidth)); break;
             }
             
-            Window::Attr style = win.attr(_attr);
-            win.drawText(p, line.c_str());
+            Attr style = attr(_textAttr);
+            drawText(p, line.c_str());
             offY++;
         }
     }
@@ -75,8 +70,8 @@ public:
     const auto& suffix() const { return _suffix; }
     template <typename T> void suffix(const T& x) { _set(_suffix, x); }
     
-    const auto& attr() const { return _attr; }
-    template <typename T> void attr(const T& x) { _set(_attr, x); }
+    const auto& textAttr() const { return _textAttr; }
+    template <typename T> void textAttr(const T& x) { _set(_textAttr, x); }
     
     const auto& align() const { return _align; }
     template <typename T> void align(const T& x) { _set(_align, x); }
@@ -91,7 +86,7 @@ private:
     std::string _text;
     std::string _prefix;
     std::string _suffix;
-    int _attr = 0;
+    int _textAttr = 0;
     Align _align = Align::Left;
     bool _centerSingleLine = false;
     bool _wrap = false;

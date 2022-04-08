@@ -28,7 +28,7 @@ class App : public UI::Window {
 public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
     
-    void layout(const Window& win) override {
+    void layout() override {
         
         // Layout columns
         int offX = _ColumnInsetX;
@@ -95,7 +95,7 @@ public:
         }
     }
     
-    void draw(const Window& win) override {
+    void draw() override {
         const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         if (_drag.titlePanel) {
@@ -127,7 +127,7 @@ public:
             
             // Draw insertion marker
             if (_drag.insertionMarker) {
-                Window::Attr color = attr(selectionColor);
+                Attr color = attr(selectionColor);
                 drawLineHoriz(_drag.insertionMarker->origin, _drag.insertionMarker->size.x);
             }
         }
@@ -137,7 +137,7 @@ public:
 //        }
         
         if (_selectionRect) {
-            Window::Attr color = attr(_colors.selection);
+            Attr color = attr(_colors.selection);
             drawRect(*_selectionRect);
         }
         

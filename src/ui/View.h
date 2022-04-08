@@ -12,6 +12,37 @@ public:
     using Ptr = std::shared_ptr<View>;
     using WeakPtr = std::weak_ptr<View>;
     
+    class Attr {
+    public:
+        Attr() {}
+        Attr(WINDOW* win, int attr) : _s({.win=win, .attr=attr}) {
+            assert(win);
+//            if (rand() % 2) {
+//                wattron(*_s.win, A_REVERSE);
+//            } else {
+//                wattroff(*_s.win, A_REVERSE);
+//            }
+            // MARK: - Drawing
+            wattron(_s.win, _s.attr);
+        }
+        
+        Attr(const Attr& x) = delete;
+        Attr(Attr&& x) { std::swap(_s, x._s); }
+        Attr& operator =(Attr&& x) { std::swap(_s, x._s); return *this; }
+        
+        ~Attr() {
+            if (_s.win) {
+                wattroff(_s.win, _s.attr);
+            }
+        }
+    
+    private:
+        struct {
+            WINDOW* win = nullptr;
+            int attr = 0;
+        } _s;
+    };
+    
     struct HitTestExpand {
         int l = 0;
         int r = 0;
@@ -64,20 +95,24 @@ public:
     
     virtual Rect bounds() const { return { .size = size() }; }
     
+    // MARK: - Attributes
+    virtual Attr attr(int attr) const { return Attr(_drawWin(), attr); }
+    
     // MARK: - Drawing
     virtual void drawRect() const {
-        ::box(_drawWin(), 0, 0);
+        drawRect({{}, size()});
     }
     
     virtual void drawRect(const Rect& rect) const {
-        const int x1 = rect.origin.x;
-        const int y1 = rect.origin.y;
-        const int x2 = rect.origin.x+rect.size.x-1;
-        const int y2 = rect.origin.y+rect.size.y-1;
-        mvwhline(_drawWin(), y1, x1, 0, rect.size.x);
-        mvwhline(_drawWin(), y2, x1, 0, rect.size.x);
-        mvwvline(_drawWin(), y1, x1, 0, rect.size.y);
-        mvwvline(_drawWin(), y1, x2, 0, rect.size.y);
+        const Rect r = {_drawOff()+rect.origin, rect.size};
+        const int x1 = r.origin.x;
+        const int y1 = r.origin.y;
+        const int x2 = r.origin.x+r.size.x-1;
+        const int y2 = r.origin.y+r.size.y-1;
+        mvwhline(_drawWin(), y1, x1, 0, r.size.x);
+        mvwhline(_drawWin(), y2, x1, 0, r.size.x);
+        mvwvline(_drawWin(), y1, x1, 0, r.size.y);
+        mvwvline(_drawWin(), y1, x2, 0, r.size.y);
         mvwaddch(_drawWin(), y1, x1, ACS_ULCORNER);
         mvwaddch(_drawWin(), y2, x1, ACS_LLCORNER);
         mvwaddch(_drawWin(), y1, x2, ACS_URCORNER);
@@ -85,29 +120,34 @@ public:
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
-        mvwhline(_drawWin(), p.y, p.x, ch, len);
+        const Point off = _drawOff();
+        mvwhline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
-        mvwvline(_drawWin(), p.y, p.x, ch, len);
+        const Point off = _drawOff();
+        mvwvline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
-        mvwprintw(_drawWin(), p.y, p.x, "%s", txt);
+        const Point off = _drawOff();
+        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
+        const Point off = _drawOff();
         widthMax = std::max(0, widthMax);
         
         std::string str = txt;
         auto it = UTF8::NextN(str.begin(), str.end(), widthMax);
         str.resize(std::distance(str.begin(), it));
-        mvwprintw(_drawWin(), p.y, p.x, "%s", str.c_str());
+        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, "%s", str.c_str());
     }
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
-        mvwprintw(_drawWin(), p.y, p.x, fmt, std::forward<T_Args>(args)...);
+        const Point off = _drawOff();
+        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
     // MARK: - Accessors
@@ -126,13 +166,21 @@ public:
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
     virtual void layoutNeeded(bool x) { _layoutNeeded = x; }
-    virtual void layout(const Window& win) {}
+    virtual void layout() {}
     
     // MARK: - Draw
     virtual bool drawNeeded() const { return _drawNeeded; }
     virtual void drawNeeded(bool x) { _drawNeeded = x; }
-    virtual void draw(const Window& win) {}
-    virtual void drawBackground(const Window& win);
+    virtual void draw() {}
+    
+    virtual void drawBackground() {}
+    
+    virtual void drawBorder() {
+        if (_borderColor) {
+            Attr color = attr(*_borderColor);
+            drawRect();
+        }
+    }
     
     // MARK: - Events
     virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
@@ -151,7 +199,7 @@ public:
         if (!visible()) return;
         
         if (layoutNeeded()) {
-            layout(win);
+            layout();
             layoutNeeded(false);
         }
         
@@ -168,7 +216,11 @@ public:
         }
     }
     
-    virtual void drawTree(const Window& win) {
+    virtual void drawTree(const Window& win, Point off={}) {
+        _DrawState drawState = {.win=&win, .off=off};
+        std::swap(_drawState, drawState);
+        Defer(std::swap(_drawState, drawState));
+        
         if (!visible()) return;
         
         // If the window was erased during this draw cycle, we need to redraw.
@@ -180,8 +232,9 @@ public:
         //   ∴ we can't call Window functions in View.h
         //
         if (drawNeeded() || _winErased(win)) {
-            drawBackground(win);
-            draw(win);
+            drawBackground();
+            draw();
+            drawBorder();
             drawNeeded(false);
         }
         
@@ -193,7 +246,7 @@ public:
                 continue;
             }
             
-            view->drawTree(win);
+            view->drawTree(win, _drawState.off+view->origin());
             it++;
         }
     }
@@ -265,11 +318,18 @@ protected:
     }
     
 private:
+    struct _DrawState {
+        const Window* win = nullptr;
+        Point off;
+    };
+    
     bool _winErased(const Window& win) const;
     WINDOW* _drawWin() const;
+    Point _drawOff() const;
     
     static inline ColorPalette _Colors;
     
+    _DrawState _drawState;
     std::list<WeakPtr> _subviews;
     Point _origin;
     Size _size;

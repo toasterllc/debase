@@ -33,7 +33,7 @@ public:
     
 //    bool layoutNeeded() const override { return true; }
     
-    void layout(const Window& win) override {
+    void layout() override {
         const Rect rect = contentRect();
         
         int offY = message()->frame().ymax()+1+_ContentSpacingTop;
