@@ -85,7 +85,7 @@ public:
         // Draw border
         if (erased()) { // Performance optimization: only draw if the window was erased
             Window::Attr color = attr(Colors().menu);
-            drawBorder();
+            drawRect();
             
             // Draw title
             if (!_title.empty()) {

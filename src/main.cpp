@@ -93,9 +93,14 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize
-    
     #warning TODO: can we get rid of the Window requirement from draw/layout/handleEvent?
+    
+    #warning TODO: consider making View::draw() relative to the view's bounds, instead of the window's bounds
+    #warning TODO: we could accomplish this by tracking
+    
+    
+    
+    #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize
     
     #warning TODO: add OK / Cancel buttons to RegisterPanel
     

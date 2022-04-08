@@ -14,6 +14,8 @@ public:
     WelcomePanel() {
         message()->align(Align::Center);
         
+        borderColor(Colors().normal);
+        
         _trialButton->label()->text      ("Start Free Trial");
         _trialButton->enabled            (true);
         _trialButton->drawBorder         (true);
@@ -30,10 +32,6 @@ public:
     }
     
 //    bool layoutNeeded() const override { return true; }
-    
-    void draw(const Window& win) override {
-        drawBorder();
-    }
     
     void layout(const Window& win) override {
         const Rect rect = contentRect();

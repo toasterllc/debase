@@ -123,7 +123,7 @@ public:
         }
         
         if (_drag.titlePanel) {
-            _drag.titlePanel->drawTree(*_drag.titlePanel);
+//            _drag.titlePanel->drawTree(*_drag.titlePanel);
             
             // Draw insertion marker
             if (_drag.insertionMarker) {
@@ -132,9 +132,9 @@ public:
             }
         }
         
-        for (UI::PanelPtr panel : _drag.shadowPanels) {
-            panel->drawTree(*panel);
-        }
+//        for (UI::PanelPtr panel : _drag.shadowPanels) {
+//            panel->drawTree(*panel);
+//        }
         
         if (_selectionRect) {
             Window::Attr color = attr(_colors.selection);

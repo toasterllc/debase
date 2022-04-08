@@ -64,6 +64,52 @@ public:
     
     virtual Rect bounds() const { return { .size = size() }; }
     
+    // MARK: - Drawing
+    virtual void drawRect() const {
+        ::box(_drawWin(), 0, 0);
+    }
+    
+    virtual void drawRect(const Rect& rect) const {
+        const int x1 = rect.origin.x;
+        const int y1 = rect.origin.y;
+        const int x2 = rect.origin.x+rect.size.x-1;
+        const int y2 = rect.origin.y+rect.size.y-1;
+        mvwhline(_drawWin(), y1, x1, 0, rect.size.x);
+        mvwhline(_drawWin(), y2, x1, 0, rect.size.x);
+        mvwvline(_drawWin(), y1, x1, 0, rect.size.y);
+        mvwvline(_drawWin(), y1, x2, 0, rect.size.y);
+        mvwaddch(_drawWin(), y1, x1, ACS_ULCORNER);
+        mvwaddch(_drawWin(), y2, x1, ACS_LLCORNER);
+        mvwaddch(_drawWin(), y1, x2, ACS_URCORNER);
+        mvwaddch(_drawWin(), y2, x2, ACS_LRCORNER);
+    }
+    
+    virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
+        mvwhline(_drawWin(), p.y, p.x, ch, len);
+    }
+    
+    virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
+        mvwvline(_drawWin(), p.y, p.x, ch, len);
+    }
+    
+    virtual void drawText(const Point& p, const char* txt) const {
+        mvwprintw(_drawWin(), p.y, p.x, "%s", txt);
+    }
+    
+    virtual void drawText(const Point& p, int widthMax, const char* txt) const {
+        widthMax = std::max(0, widthMax);
+        
+        std::string str = txt;
+        auto it = UTF8::NextN(str.begin(), str.end(), widthMax);
+        str.resize(std::distance(str.begin(), it));
+        mvwprintw(_drawWin(), p.y, p.x, "%s", str.c_str());
+    }
+    
+    template <typename ...T_Args>
+    void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
+        mvwprintw(_drawWin(), p.y, p.x, fmt, std::forward<T_Args>(args)...);
+    }
+    
     // MARK: - Accessors
     virtual bool visible() const { return _visible; }
     virtual void visible(bool x) { _set(_visible, x); }
@@ -219,7 +265,8 @@ protected:
     }
     
 private:
-    bool _winErased(const Window& win);
+    bool _winErased(const Window& win) const;
+    WINDOW* _drawWin() const;
     
     static inline ColorPalette _Colors;
     
