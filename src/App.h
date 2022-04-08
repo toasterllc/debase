@@ -758,13 +758,16 @@ private:
             _selection.commits.insert(mouseDownPanel->commit());
         }
         
+        UI::RevColumnPtr selectionColumn = _columnForRev(_selection.rev);
+        Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
+        UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
+        
         UI::Event ev = mouseDownEvent;
         std::optional<_InsertionPosition> ipos;
         bool abort = false;
         bool mouseDragged = false;
         for (;;) {
             assert(!_selection.commits.empty());
-            UI::RevColumnPtr selectionColumn = _columnForRev(_selection.rev);
             
             const UI::Point p = mousePosition(ev);
             const UI::Size delta = mousePosition(mouseDownEvent)-p;
@@ -778,18 +781,12 @@ private:
             ipos = _findInsertionPosition(p);
             
             if (!_drag.titlePanel && mouseDragged && allow) {
-                Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
-                UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
                 _drag.titlePanel = createSubview<UI::CommitPanel>();
                 _drag.titlePanel->commit(titleCommit);
-                _drag.titlePanel->size(titlePanel->size());
                 
                 // Create shadow panels
-                UI::Size shadowSize = _drag.titlePanel->frame().size;
                 for (size_t i=0; i<_selection.commits.size()-1; i++) {
-                    UI::PanelPtr shadow = createSubview<UI::Panel>();
-                    shadow->size(shadowSize);
-                    _drag.shadowPanels.push_back(shadow);
+                    _drag.shadowPanels.push_back(createSubview<UI::Panel>());
                 }
                 
                 // The titlePanel/shadowPanels need layout
@@ -811,17 +808,17 @@ private:
                     _drag.titlePanel->header()->text(_drag.copy ? "Copy" : "Move");
                 }
                 
-                // Position title panel / shadow panels
+                // Position/size title panel / shadow panels
                 {
                     const UI::Point pos0 = p + mouseDownOffset;
+                    const UI::Size size = _drag.titlePanel->sizeIntrinsic({titlePanel->size().x, 0});
+                    _drag.titlePanel->frame({pos0, size});
                     
-                    _drag.titlePanel->origin(pos0);
-                    
-                    // Position shadowPanels
+                    // Position/size shadowPanels
                     int off = 1;
                     for (UI::PanelPtr panel : _drag.shadowPanels) {
                         const UI::Point pos = pos0+off;
-                        panel->origin(pos);
+                        panel->frame({pos, size});
                         off++;
                     }
                 }

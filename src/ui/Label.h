@@ -32,6 +32,7 @@ public:
         int offY = 0;
         for (const std::string& l : _lines) {
             if (l.empty()) continue;
+            if (offY >= f.size.y) break;
             
             // Printed line = prefix + base + suffix
             const int availBaseWidth = std::max(0, f.size.x-prefixWidth-suffixWidth);

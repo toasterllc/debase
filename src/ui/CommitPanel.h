@@ -23,22 +23,24 @@ public:
         
         _author->attr(Colors().dimmed);
         
-        _message->visible(false);
+//        _message->visible(false);
+        _message->wrap(true);
         
         _mergeSymbol->text("𝝠");
         
         _time->align(Align::Right);
     }
     
-    Size messageSize() const {
-        Size s = _message->sizeIntrinsic({size().x-2*_TextInset, 0});
+    Size messageSize(int width) const {
+        Size s = _message->sizeIntrinsic({width-2*_TextInset, 0});
         s.y = std::min(_MessageLineCountMax, s.y);
         return s;
     }
     
     Size sizeIntrinsic(Size constraint) override {
-        const Size msgSize = messageSize();
-        const int height = (_header ? 1 : 0) + 3 + msgSize.y;
+        const Size msgSize = messageSize(constraint.x);
+        const bool header = !_header->text().empty();
+        const int height = (header ? 1 : 0) + 3 + msgSize.y;
         return {constraint.x, height};
     }
     
@@ -51,7 +53,11 @@ public:
         _id->frame({{_TextInset, offY}, {f.size.x-2*_TextInset, 1}});
         _time->frame({{0, offY}, {f.size.x-_TextInset, 1}});
         _author->frame({{_TextInset, offY+1}, {f.size.x-2*_TextInset, 1}});
-        _message->frame({{_TextInset, offY+2}, messageSize()});
+        
+        Size ms = messageSize(size().x);
+        ms.y = std::min(_MessageLineCountMax, ms.y);
+        _message->frame({{_TextInset, offY+2}, ms});
+        
         _mergeSymbol->frame({{0,1}, {1,1}});
     }
     
