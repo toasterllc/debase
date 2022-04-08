@@ -152,10 +152,6 @@ public:
 //                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
 //            }
             
-            if (!ev.mouseDown(UI::Event::MouseButtons::Left)) {
-                return false;
-            }
-            
             // Let every column handle the event
             for (UI::RevColumnPtr col : _columns) {
                 bool handled = col->handleEvent(*this, ev);
