@@ -12,6 +12,13 @@ public:
     using Ptr = std::shared_ptr<View>;
     using WeakPtr = std::weak_ptr<View>;
     
+    struct HitTestExpand {
+        int l = 0;
+        int r = 0;
+        int t = 0;
+        int b = 0;
+    };
+    
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
     
@@ -19,15 +26,15 @@ public:
     
     virtual bool hitTest(const Point& p) const {
         Rect f = frame();
-        f.origin.x -= hitTestExpand.l;
-        f.size.x   += hitTestExpand.l;
+        f.origin.x -= _hitTestExpand.l;
+        f.size.x   += _hitTestExpand.l;
         
-        f.size.x   += hitTestExpand.r;
+        f.size.x   += _hitTestExpand.r;
         
-        f.origin.y -= hitTestExpand.t;
-        f.size.y   += hitTestExpand.t;
+        f.origin.y -= _hitTestExpand.t;
+        f.size.y   += _hitTestExpand.t;
         
-        f.size.y   += hitTestExpand.b;
+        f.size.y   += _hitTestExpand.b;
         return HitTest(f, p);
     }
     
@@ -66,6 +73,9 @@ public:
     
     virtual const std::optional<Color> borderColor() const { return _borderColor; }
     virtual void borderColor(std::optional<Color> x) { _set(_borderColor, x); }
+    
+    virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
+    virtual void hitTestExpand(const HitTestExpand& x) { _setForce(_hitTestExpand, x); }
     
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
@@ -194,13 +204,6 @@ public:
     virtual bool tracking() const { return _tracking; }
     virtual const Event& eventCurrent() const { return _eventCurrent; }
     
-    struct {
-        int l = 0;
-        int r = 0;
-        int t = 0;
-        int b = 0;
-    } hitTestExpand;
-    
 protected:
     template <typename X, typename Y>
     void _setForce(X& x, const Y& y) {
@@ -230,6 +233,8 @@ private:
     bool _tracking = false;
     bool _trackStop = false;
     Event _eventCurrent;
+    
+    HitTestExpand _hitTestExpand;
     
     std::optional<Color> _borderColor;
 };

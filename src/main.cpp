@@ -93,27 +93,11 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: fix: rapid click of the same commit between 2 different columns triggers double click
-    
-    #warning TODO: Button: remove drawBorder in favor of the borderColor View property
-    
-    #warning TODO: RevColumn: make headers a label
-    
     #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize
     
     #warning TODO: can we get rid of the Window requirement from draw/layout/handleEvent?
     
-    #warning TODO: move track() into View
-    
-    #warning TODO: make Window inherit from View
-    
-    #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
-    
-    #warning TODO: encapsulate View's hitTestExpand
-    
     #warning TODO: add OK / Cancel buttons to RegisterPanel
-    
-    #warning TODO: move ModalPanel colors into Window
     
     #warning TODO: add feature requests field in register panel
     
@@ -149,6 +133,20 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: encapsulate View's hitTestExpand
+//
+//    #warning TODO: remove colors requirement from View/ModalPanel/etc constructor
+//
+//    #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
+//
+//    #warning TODO: make Window inherit from View
+//
+//    #warning TODO: move track() into View
+//
+//    #warning TODO: RevColumn: make headers a label
+//
+//    #warning TODO: fix: rapid click of the same commit between 2 different columns triggers double click
+//
 //    #warning TODO: have Control/View return its subviews to eliminate boilerplate
 //
 //    #warning TODO: Control -> View
