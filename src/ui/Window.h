@@ -77,7 +77,7 @@ public:
     bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
     void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
-    void layoutTree(const Window& win) override {
+    void layoutTree(const Window& win, const Point& off) override {
         // Detect size changes
         // ncurses can change our size out from under us (eg by the
         // terminal size changing), so we handle all size changes
@@ -89,10 +89,10 @@ public:
             _s.sizePrev = size();
         }
         
-        View::layoutTree(*this);
+        View::layoutTree(*this, {});
     }
     
-    void drawTree(const Window& win, Point off={}) override {
+    void drawTree(const Window& win, const Point& off) override {
         // Remember whether we erased ourself during this draw cycle
         // This is used by View instances (Button and TextField)
         // to know whether they need to be drawn again
@@ -107,8 +107,8 @@ public:
         View::drawTree(*this, {});
     }
     
-    virtual bool handleEventTree(const Window& win, const Event& ev) override {
-        return View::handleEventTree(*this, ev);
+    virtual bool handleEventTree(const Window& win, const Point& off, const Event& ev) override {
+        return View::handleEventTree(*this, {}, ev);
     }
     
     // eraseNeeded(): sets whether the window should be erased the next time it's drawn

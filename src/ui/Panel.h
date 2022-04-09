@@ -20,7 +20,8 @@ public:
     }
     
     void origin(const Point& p) override {
-        ::move_panel(*this, p.y, p.x);
+        const Point off = treeOrigin();
+        ::move_panel(*this, off.y+p.y, off.x+p.x);
     }
     
     bool visible() const override {

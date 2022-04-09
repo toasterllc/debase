@@ -7,13 +7,13 @@ bool View::_winErased(const Window& win) const {
 }
 
 WINDOW* View::_drawWin() const {
-    assert(_drawState.win);
-    return *_drawState.win;
+    assert(_treeState);
+    return *_treeState.win();
 }
 
-Point View::_drawOff() const {
-    assert(_drawState.win);
-    return _drawState.off;
+Point View::_drawOrigin() const {
+    assert(_treeState);
+    return _treeState.origin();
 }
 
 } // namespace UI
