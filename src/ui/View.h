@@ -53,22 +53,22 @@ public:
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
     
-    static Point SubviewFromSuperview(const View& container, const Point& p) { return p-container.origin(); }
-    static Rect SubviewFromSuperview(const View& container, const Rect& r) { return { SubviewFromSuperview(container, r.origin), r.size }; }
-    static Event SubviewFromSuperview(const View& container, const Event& ev) {
+    static Point SubviewConvert(const View& dst, const Point& p) { return p-dst.origin(); }
+    static Rect SubviewConvert(const View& dst, const Rect& r) { return { SubviewConvert(dst, r.origin), r.size }; }
+    static Event SubviewConvert(const View& dst, const Event& ev) {
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
-            r.mouse.origin = SubviewFromSuperview(container, ev.mouse.origin);
+            r.mouse.origin = SubviewConvert(dst, ev.mouse.origin);
         }
         return r;
     }
     
-    static Point SuperviewFromSubview(const View& container, const Point& p) { return p+container.origin(); }
-    static Rect SuperviewFromSubview(const View& container, const Rect& r) { return { SuperviewFromSubview(container, r.origin), r.size }; }
-    static Event SuperviewFromSubview(const View& container, const Event& ev) {
+    static Point SuperviewConvert(const View& src, const Point& p) { return p+src.origin(); }
+    static Rect SuperviewConvert(const View& src, const Rect& r) { return { SuperviewConvert(src, r.origin), r.size }; }
+    static Event SuperviewConvert(const View& src, const Event& ev) {
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
-            r.mouse.origin = SuperviewFromSubview(container, ev.mouse.origin);
+            r.mouse.origin = SuperviewConvert(src, ev.mouse.origin);
         }
         return r;
     }
@@ -231,6 +231,8 @@ public:
     virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
     
     virtual void track(const Window& win, const Event& ev) {
+        _TreeState treeState(_TState, win, {});
+        
         _tracking = true;
         Defer(_tracking = false); // Exception safety
         Defer(_trackStop = false); // Exception safety
@@ -239,9 +241,12 @@ public:
             refresh(win);
             
             _eventCurrent = UI::NextEvent();
+            if (_eventCurrent.type == Event::Type::Mouse) {
+                _eventCurrent.mouse.origin -= _TState.origin();
+            }
             Defer(_eventCurrent = {}); // Exception safety
             
-            handleEventTree(win, _TState.origin(), _eventCurrent);
+            handleEventTree(win, {}, _eventCurrent);
         } while (!_trackStop);
     }
     
@@ -331,7 +336,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewFromSuperview(*view, ev))) return true;
+            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
             it++;
         }
         
@@ -341,8 +346,8 @@ public:
     }
     
     virtual void refresh(const Window& win) {
-        layoutTree(win, {});
-        drawTree(win, {});
+        layoutTree(win, _TState.origin());
+        drawTree(win, _TState.origin());
         CursorState::Draw();
         ::update_panels();
         ::refresh();

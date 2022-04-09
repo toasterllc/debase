@@ -545,7 +545,7 @@ private:
     
     _HitTestResult _hitTest(const UI::Point& p) {
         for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelPtr panel = col->hitTest(View::SubviewFromSuperview(*col, p));
+            UI::CommitPanelPtr panel = col->hitTest(View::SubviewConvert(*col, p));
             if (panel) {
                 return {
                     .column = col,
@@ -564,13 +564,13 @@ private:
             const UI::CommitPanelVec& panels = col->panels();
             // Ignore empty columns (eg if the window is too small to fit a column, it may not have any panels)
             if (panels.empty()) continue;
-            const UI::Rect lastFrame = SuperviewFromSubview(*col, panels.back()->frame());
+            const UI::Rect lastFrame = SuperviewConvert(*col, panels.back()->frame());
             const int midX = lastFrame.origin.x + lastFrame.size.x/2;
             const int endY = lastFrame.origin.y + lastFrame.size.y;
             
             for (auto it=panels.begin();; it++) {
                 UI::CommitPanelPtr panel = (it!=panels.end() ? *it : nullptr);
-                UI::Rect panelFrame = (panel ? SuperviewFromSubview(*col, panel->frame()) : UI::Rect{});
+                UI::Rect panelFrame = (panel ? SuperviewConvert(*col, panel->frame()) : UI::Rect{});
                 const int x = (panel ? panelFrame.origin.x+panelFrame.size.x/2 : midX);
                 const int y = (panel ? panelFrame.origin.y : endY);
                 const int dist = (p.x-x)*(p.x-x)+(p.y-y)*(p.y-y);
@@ -743,7 +743,7 @@ private:
     // Handles clicking/dragging a set of CommitPanels
     std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-        const UI::Size mouseDownOffset = SuperviewFromSubview(*mouseDownColumn, mouseDownPanelFrame.origin) - mouseDownEvent.mouse.origin;
+        const UI::Size mouseDownOffset = SuperviewConvert(*mouseDownColumn, mouseDownPanelFrame.origin) - mouseDownEvent.mouse.origin;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
         const auto doubleClickStatePrev = _doubleClickState;
@@ -837,7 +837,7 @@ private:
                 if (ipos) {
                     constexpr int InsertionExtraWidth = 6;
                     const UI::CommitPanelVec& ipanels = ipos->col->panels();
-                    const UI::Rect lastFrame = SuperviewFromSubview(*ipos->col, ipanels.back()->frame());
+                    const UI::Rect lastFrame = SuperviewConvert(*ipos->col, ipanels.back()->frame());
                     const int endY = lastFrame.origin.y + lastFrame.size.y;
                     const int insertY = (ipos->iter!=ipanels.end() ? (*ipos->iter)->frame().origin.y : endY+1);
                     
@@ -956,7 +956,7 @@ private:
                 struct _Selection selectionNew;
                 for (UI::RevColumnPtr col : _columns) {
                     for (UI::CommitPanelPtr panel : col->panels()) {
-                        const UI::Rect panelFrame = SuperviewFromSubview(*col, panel->frame());
+                        const UI::Rect panelFrame = SuperviewConvert(*col, panel->frame());
                         if (!Empty(Intersection(selectionRect, panelFrame))) {
                             selectionNew.rev = col->rev();
                             selectionNew.commits.insert(panel->commit());
@@ -1083,7 +1083,8 @@ private:
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
-        menu->track(*menu, eventCurrent());
+//        layoutTree(*this, {});
+        menu->track(*this, eventCurrent());
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1185,13 +1186,13 @@ private:
         // so provide a fallback terminfo that usually works.
         nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
         
-        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
-        // in addition to the default mouse-down/up events.
-        //   kmous = the prefix used to detect/parse mouse events
-        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-        //           event mode; 1003=report mouse-moved events in addition to clicks)
-        setenv("TERM_KMOUS", "\x1b[<", true);
-        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+//        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
+//        // in addition to the default mouse-down/up events.
+//        //   kmous = the prefix used to detect/parse mouse events
+//        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+//        //           event mode; 1003=report mouse-moved events in addition to clicks)
+//        setenv("TERM_KMOUS", "\x1b[<", true);
+//        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
         
         ::initscr();
         ::noecho();
