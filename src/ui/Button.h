@@ -132,7 +132,7 @@ public:
         // Only consider mouse events
         if (ev.type != Event::Type::Mouse) return false;
         
-        const bool hit = hitTest(ev.mouse.origin);
+        const bool hit = HitTest(bounds(), ev.mouse.origin);
         const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
         const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
         highlighted(hit);

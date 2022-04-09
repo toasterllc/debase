@@ -151,7 +151,7 @@ public:
     
     CommitPanelPtr hitTest(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
-            if (panel->hitTest(p)) return panel;
+            if (HitTest(panel->frame(), p)) return panel;
         }
         return nullptr;
     }

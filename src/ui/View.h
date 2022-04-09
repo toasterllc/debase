@@ -53,20 +53,39 @@ public:
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
     
+    // Convert(): convert a point from `view`'s parent coordinate system to `view`'s coordinate system
+    static Point Convert(const View& view, const Point& p) {
+        return p-view.origin();
+    }
+    
+    // Convert(): convert a rect from `view`'s parent coordinate system to `view`'s coordinate system
+    static Rect Convert(const View& view, const Rect& r) {
+        return { Convert(view, r.origin), r.size };
+    }
+    
+    // Convert(): convert an event from `view`'s parent coordinate system to `view`'s coordinate system
+    static Event Convert(const View& view, const Event& ev) {
+        Event r = ev;
+        if (r.type == Event::Type::Mouse) {
+            r.mouse.origin = Convert(view, ev.mouse.origin);
+        }
+        return r;
+    }
+    
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
-        Rect b = bounds();
-        b.origin.x -= _hitTestExpand.l;
-        b.size.x   += _hitTestExpand.l;
+        Rect f = frame();
+        f.origin.x -= _hitTestExpand.l;
+        f.size.x   += _hitTestExpand.l;
         
-        b.size.x   += _hitTestExpand.r;
+        f.size.x   += _hitTestExpand.r;
         
-        b.origin.y -= _hitTestExpand.t;
-        b.size.y   += _hitTestExpand.t;
+        f.origin.y -= _hitTestExpand.t;
+        f.size.y   += _hitTestExpand.t;
         
-        b.size.y   += _hitTestExpand.b;
-        return HitTest(b, p);
+        f.size.y   += _hitTestExpand.b;
+        return HitTest(f, p);
     }
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
@@ -292,7 +311,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), _Convert(*view, ev))) return true;
+            if (view->handleEventTree(win, _TState.origin()+view->origin(), Convert(*view, ev))) return true;
             it++;
         }
         
@@ -355,15 +374,6 @@ private:
             Point origin;
         } _s;
     };
-    
-    // _Convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
-    static Event _Convert(const View& view, const Event& ev) {
-        Event r = ev;
-        if (r.type == Event::Type::Mouse) {
-            r.mouse.origin -= view.origin();
-        }
-        return r;
-    }
     
     bool _winErased(const Window& win) const;
     WINDOW* _drawWin() const;

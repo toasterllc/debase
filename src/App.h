@@ -542,7 +542,7 @@ private:
     
     _HitTestResult _hitTest(const UI::Point& p) {
         for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelPtr panel = col->hitTest(p);
+            UI::CommitPanelPtr panel = col->hitTest(View::Convert(*col, p));
             if (panel) {
                 return {
                     .column = col,
@@ -739,7 +739,7 @@ private:
     // Handles clicking/dragging a set of CommitPanels
     std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mouseDownEvent.mouse.origin;
+        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - Convert(*mouseDownColumn, mouseDownEvent.mouse.origin);
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
         const auto doubleClickStatePrev = _doubleClickState;
@@ -806,8 +806,12 @@ private:
                     // the source column)
                     const bool forceCopy = !selectionColumn->rev().isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
+                    const bool copyPrev = _drag.copy;
                     _drag.copy = copy;
                     _drag.titlePanel->header()->text(_drag.copy ? "Copy" : "Move");
+                    if (_drag.copy != copyPrev) {
+                        layoutNeeded(true);
+                    }
                 }
                 
                 // Position/size title panel / shadow panels
@@ -948,7 +952,8 @@ private:
                 struct _Selection selectionNew;
                 for (UI::RevColumnPtr col : _columns) {
                     for (UI::CommitPanelPtr panel : col->panels()) {
-                        if (!Empty(Intersection(selectionRect, panel->frame()))) {
+                        UI::Rect selRect = Convert(*col, selectionRect);
+                        if (!Empty(Intersection(selRect, panel->frame()))) {
                             selectionNew.rev = col->rev();
                             selectionNew.commits.insert(panel->commit());
                         }
@@ -1082,7 +1087,7 @@ private:
             State::Commit commitCur = h.get().head;
             
             if (commitNew != commitCur) {
-                Git::Commit commit = Convert(_repo, commitNew);
+                Git::Commit commit = State::Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
                 _repo.refReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
