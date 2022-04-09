@@ -222,7 +222,7 @@ public:
     
     virtual void layoutTree(const Window& win, const Point& orig) {
         if (!visible()) return;
-        _TreeState treeState(_TState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig);
         
         if (layoutNeeded()) {
             layout();
@@ -237,14 +237,14 @@ public:
                 continue;
             }
             
-            view->layoutTree(win, _TState.origin());
+            view->layoutTree(win, _TState.origin()+view->origin());
             it++;
         }
     }
     
     virtual void drawTree(const Window& win, const Point& orig) {
         if (!visible()) return;
-        _TreeState treeState(_TState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig);
         
         // If the window was erased during this draw cycle, we need to redraw.
         // _winErased() has to be implemented out-of-line because:
@@ -269,7 +269,7 @@ public:
                 continue;
             }
             
-            view->drawTree(win, _TState.origin());
+            view->drawTree(win, _TState.origin()+view->origin());
             it++;
         }
     }
@@ -277,7 +277,7 @@ public:
     virtual bool handleEventTree(const Window& win, const Point& orig, const Event& ev) {
         if (!visible()) return false;
         if (!interaction()) return false;
-        _TreeState treeState(_TState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig);
         
         // Let the subviews handle the event first
         for (auto it=_subviews.begin(); it!=_subviews.end();) {
@@ -288,7 +288,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _TState.origin(), ev)) return true;
+            if (view->handleEventTree(win, _TState.origin()+view->origin(), ev)) return true;
             it++;
         }
         
