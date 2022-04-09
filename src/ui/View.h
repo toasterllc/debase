@@ -95,7 +95,7 @@ public:
     
     virtual Rect bounds() const { return { .size = size() }; }
     
-    virtual Point treeOrigin() const { return _treeState.origin(); }
+    virtual Point treeOrigin() const { return _TState.origin(); }
     
     // MARK: - Attributes
     virtual Attr attr(int attr) const { return Attr(_drawWin(), attr); }
@@ -198,7 +198,7 @@ public:
             _eventCurrent = UI::NextEvent();
             Defer(_eventCurrent = {}); // Exception safety
             
-            handleEventTree(win, _treeState.origin(), _eventCurrent);
+            handleEventTree(win, _TState.origin(), _eventCurrent);
         } while (!_trackStop);
     }
     
@@ -222,7 +222,7 @@ public:
     
     virtual void layoutTree(const Window& win, const Point& orig) {
         if (!visible()) return;
-        _TreeState treeState(_treeState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig+origin());
         
         if (layoutNeeded()) {
             layout();
@@ -237,14 +237,14 @@ public:
                 continue;
             }
             
-            view->layoutTree(win, _treeState.origin());
+            view->layoutTree(win, _TState.origin());
             it++;
         }
     }
     
     virtual void drawTree(const Window& win, const Point& orig) {
         if (!visible()) return;
-        _TreeState treeState(_treeState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig+origin());
         
         // If the window was erased during this draw cycle, we need to redraw.
         // _winErased() has to be implemented out-of-line because:
@@ -269,7 +269,7 @@ public:
                 continue;
             }
             
-            view->drawTree(win, _treeState.origin());
+            view->drawTree(win, _TState.origin());
             it++;
         }
     }
@@ -277,7 +277,7 @@ public:
     virtual bool handleEventTree(const Window& win, const Point& orig, const Event& ev) {
         if (!visible()) return false;
         if (!interaction()) return false;
-        _TreeState treeState(_treeState, win, orig+origin());
+        _TreeState treeState(_TState, win, orig+origin());
         
         // Let the subviews handle the event first
         for (auto it=_subviews.begin(); it!=_subviews.end();) {
@@ -288,7 +288,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _treeState.origin(), ev)) return true;
+            if (view->handleEventTree(win, _TState.origin(), ev)) return true;
             it++;
         }
         
@@ -357,8 +357,8 @@ private:
     Point _drawOrigin() const;
     
     static inline ColorPalette _Colors;
+    static inline _TreeState _TState;
     
-    _TreeState _treeState;
     std::list<WeakPtr> _subviews;
     Point _origin;
     Size _size;
