@@ -53,24 +53,44 @@ public:
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
     
-    // Convert(): convert a point from `view`'s parent coordinate system to `view`'s coordinate system
-    static Point Convert(const View& view, const Point& p) {
-        return p-view.origin();
-    }
-    
-    // Convert(): convert a rect from `view`'s parent coordinate system to `view`'s coordinate system
-    static Rect Convert(const View& view, const Rect& r) {
-        return { Convert(view, r.origin), r.size };
-    }
-    
-    // Convert(): convert an event from `view`'s parent coordinate system to `view`'s coordinate system
-    static Event Convert(const View& view, const Event& ev) {
+    static Point SubviewFromSuperview(const View& container, const Point& p) { return p-container.origin(); }
+    static Rect SubviewFromSuperview(const View& container, const Rect& r) { return { SubviewFromSuperview(container, r.origin), r.size }; }
+    static Event SubviewFromSuperview(const View& container, const Event& ev) {
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
-            r.mouse.origin = Convert(view, ev.mouse.origin);
+            r.mouse.origin = SubviewFromSuperview(container, ev.mouse.origin);
         }
         return r;
     }
+    
+    static Point SuperviewFromSubview(const View& container, const Point& p) { return p+container.origin(); }
+    static Rect SuperviewFromSubview(const View& container, const Rect& r) { return { SuperviewFromSubview(container, r.origin), r.size }; }
+    static Event SuperviewFromSubview(const View& container, const Event& ev) {
+        Event r = ev;
+        if (r.type == Event::Type::Mouse) {
+            r.mouse.origin = SuperviewFromSubview(container, ev.mouse.origin);
+        }
+        return r;
+    }
+    
+//    // Convert(): convert a point from `view`'s parent coordinate system to `view`'s coordinate system
+//    static Point Convert(const View& view, const Point& p) {
+//        return p-view.origin();
+//    }
+//    
+//    // Convert(): convert a rect from `view`'s parent coordinate system to `view`'s coordinate system
+//    static Rect Convert(const View& view, const Rect& r) {
+//        return { Convert(view, r.origin), r.size };
+//    }
+//    
+//    // Convert(): convert an event from `view`'s parent coordinate system to `view`'s coordinate system
+//    static Event Convert(const View& view, const Event& ev) {
+//        Event r = ev;
+//        if (r.type == Event::Type::Mouse) {
+//            r.mouse.origin = Convert(view, ev.mouse.origin);
+//        }
+//        return r;
+//    }
     
     virtual ~View() = default;
     
@@ -311,7 +331,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), Convert(*view, ev))) return true;
+            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewFromSuperview(*view, ev))) return true;
             it++;
         }
         
