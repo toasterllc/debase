@@ -56,17 +56,17 @@ public:
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
-        Rect f = frame();
-        f.origin.x -= _hitTestExpand.l;
-        f.size.x   += _hitTestExpand.l;
+        Rect b = bounds();
+        b.origin.x -= _hitTestExpand.l;
+        b.size.x   += _hitTestExpand.l;
         
-        f.size.x   += _hitTestExpand.r;
+        b.size.x   += _hitTestExpand.r;
         
-        f.origin.y -= _hitTestExpand.t;
-        f.size.y   += _hitTestExpand.t;
+        b.origin.y -= _hitTestExpand.t;
+        b.size.y   += _hitTestExpand.t;
         
-        f.size.y   += _hitTestExpand.b;
-        return HitTest(f, p);
+        b.size.y   += _hitTestExpand.b;
+        return HitTest(b, p);
     }
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
@@ -97,6 +97,10 @@ public:
     
     virtual Point treeOrigin() const { return _TState.origin(); }
     
+//    Point mousePosition(const Event& ev) const {
+//        return ev.mouse.origin-origin();
+//    }
+    
     // MARK: - Attributes
     virtual Attr attr(int attr) const { return Attr(_drawWin(), attr); }
     
@@ -106,7 +110,7 @@ public:
     }
     
     virtual void drawRect(const Rect& rect) const {
-        const Rect r = {_drawOrigin()+rect.origin, rect.size};
+        const Rect r = {treeOrigin()+rect.origin, rect.size};
         const int x1 = r.origin.x;
         const int y1 = r.origin.y;
         const int x2 = r.origin.x+r.size.x-1;
@@ -122,22 +126,22 @@ public:
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
-        const Point off = _drawOrigin();
+        const Point off = treeOrigin();
         mvwhline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
-        const Point off = _drawOrigin();
+        const Point off = treeOrigin();
         mvwvline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
-        const Point off = _drawOrigin();
+        const Point off = treeOrigin();
         mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
-        const Point off = _drawOrigin();
+        const Point off = treeOrigin();
         widthMax = std::max(0, widthMax);
         
         std::string str = txt;
@@ -148,7 +152,7 @@ public:
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
-        const Point off = _drawOrigin();
+        const Point off = treeOrigin();
         mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
@@ -288,7 +292,7 @@ public:
                 continue;
             }
             
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), ev)) return true;
+            if (view->handleEventTree(win, _TState.origin()+view->origin(), _Convert(*view, ev))) return true;
             it++;
         }
         
@@ -352,9 +356,17 @@ private:
         } _s;
     };
     
+    // _Convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
+    static Event _Convert(const View& view, const Event& ev) {
+        Event r = ev;
+        if (r.type == Event::Type::Mouse) {
+            r.mouse.origin -= view.origin();
+        }
+        return r;
+    }
+    
     bool _winErased(const Window& win) const;
     WINDOW* _drawWin() const;
-    Point _drawOrigin() const;
     
     static inline ColorPalette _Colors;
     static inline _TreeState _TState;

@@ -11,9 +11,4 @@ WINDOW* View::_drawWin() const {
     return *_TState.win();
 }
 
-Point View::_drawOrigin() const {
-    assert(_TState);
-    return _TState.origin();
-}
-
 } // namespace UI

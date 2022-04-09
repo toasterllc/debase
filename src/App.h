@@ -3,6 +3,7 @@
 #include "Debase.h"
 #include "git/Git.h"
 #include "ui/Window.h"
+#include "ui/Screen.h"
 #include "ui/Color.h"
 #include "ui/RevColumn.h"
 #include "ui/SnapshotButton.h"
@@ -24,9 +25,10 @@ extern "C" {
     extern char** environ;
 };
 
-class App : public UI::Window {
+class App : public UI::Screen {
 public:
-    App(Git::Repo repo, const std::vector<Git::Rev>& revs) : _repo(repo), _revs(revs) {}
+    App(Git::Repo repo, const std::vector<Git::Rev>& revs) :
+    Screen(Uninit), _repo(repo), _revs(revs) {}
     
     void layout() override {
         
@@ -177,7 +179,7 @@ public:
             
             switch (ev.type) {
             case UI::Event::Type::Mouse: {
-                const _HitTestResult hitTest = _hitTest(win.mousePosition(ev));
+                const _HitTestResult hitTest = _hitTest(ev.mouse.origin);
                 if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
                     const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
                     if (hitTest && !shift) {
@@ -737,7 +739,7 @@ private:
     // Handles clicking/dragging a set of CommitPanels
     std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
-        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mousePosition(mouseDownEvent);
+        const UI::Size mouseDownOffset = mouseDownPanelFrame.origin - mouseDownEvent.mouse.origin;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
         const UI::Rect rootWinBounds = bounds();
         const auto doubleClickStatePrev = _doubleClickState;
@@ -769,8 +771,8 @@ private:
         for (;;) {
             assert(!_selection.commits.empty());
             
-            const UI::Point p = mousePosition(ev);
-            const UI::Size delta = mousePosition(mouseDownEvent)-p;
+            const UI::Point p = ev.mouse.origin;
+            const UI::Size delta = mouseDownEvent.mouse.origin-p;
             const int w = std::abs(delta.x);
             const int h = std::abs(delta.y);
             // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
@@ -925,8 +927,8 @@ private:
         UI::Event ev = mouseDownEvent;
         
         for (;;) {
-            UI::Point mouseDownPos = mousePosition(mouseDownEvent);
-            UI::Point pos = mousePosition(ev);
+            UI::Point mouseDownPos = mouseDownEvent.mouse.origin;
+            UI::Point pos = ev.mouse.origin;
             const int x = std::min(mouseDownPos.x, pos.x);
             const int y = std::min(mouseDownPos.y, pos.y);
             const int w = std::abs(mouseDownPos.x - pos.x);
@@ -1011,7 +1013,7 @@ private:
         UI::MenuPtr menu = createSubview<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
         menu->size(menu->sizeIntrinsic({}));
-        menu->origin(mousePosition(mouseDownEvent));
+        menu->origin(mouseDownEvent.mouse.origin);
         menu->track(*menu, mouseDownEvent);
         
         // Handle the clicked button

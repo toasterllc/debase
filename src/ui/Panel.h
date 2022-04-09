@@ -5,13 +5,13 @@ namespace UI {
 
 class Panel : public Window {
 public:
-    Panel() : Window(nullptr) {
+    Panel() {
         _panel = ::new_panel(*this);
         assert(_panel);
         
-        // Give ourself an initial size (otherwise origin()
-        // doesn't work until the size is set)
-        size({1,1});
+//        // Give ourself an initial size (otherwise origin()
+//        // doesn't work until the size is set)
+//        size({1,1});
     }
     
     ~Panel() {
@@ -19,10 +19,16 @@ public:
         _panel = nullptr;
     }
     
-    void origin(const Point& p) override {
-        const Point off = treeOrigin();
-        ::move_panel(*this, off.y+p.y, off.x+p.x);
+    Point windowOrigin() const override { return Window::windowOrigin(); }
+    void windowOrigin(const Point& p) override {
+        if (p == windowOrigin()) return;
+        ::move_panel(*this, p.y, p.x);
     }
+    
+//    void origin(const Point& p) override {
+//        const Point off = treeOrigin();
+//        ::move_panel(*this, off.y+p.y, off.x+p.x);
+//    }
     
     bool visible() const override {
         return !::panel_hidden(*this);

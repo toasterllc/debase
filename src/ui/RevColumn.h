@@ -145,6 +145,10 @@ public:
 //        }
 //    }
     
+//    void draw() override {
+//        drawRect();
+//    }
+    
     CommitPanelPtr hitTest(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
             if (panel->hitTest(p)) return panel;
