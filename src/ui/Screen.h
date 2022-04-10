@@ -292,8 +292,8 @@ private:
         for (;;) {
             ViewPtr subview = view.subviewsNext(it);
             if (!subview) return {};
-            gstate = _graphicsStateCalc(target, gstate, *subview);
-            if (gstate) return gstate;
+            GraphicsState gsubview = _graphicsStateCalc(target, gstate, *subview);
+            if (gsubview) return gsubview;
         }
     }
     

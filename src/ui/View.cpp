@@ -15,8 +15,8 @@ void View::track(const Event& ev) {
     
     Screen& screen = *_GState.screen;
     const GraphicsState gstate = screen.graphicsStateCalc(*this);
-//    if (!gstate) throw std::runtime_error("findGraphicsState() failed");
-//    
+    if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
+    
 //        if (target) {
 //            gstate = find(*target, gstate, *this);
 //            if (!gstate) throw std::runtime_error("couldn't find target view");

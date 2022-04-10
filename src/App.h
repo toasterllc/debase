@@ -1076,7 +1076,7 @@ private:
         const int heightMax = size().y-p.y;
         
         UI::SnapshotMenuPtr menu = subviewCreate<UI::SnapshotMenu>();
-        menu->title("Session Start");
+        menu->title()->text("Session Start");
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
@@ -1183,13 +1183,13 @@ private:
         // so provide a fallback terminfo that usually works.
         nc_set_default_terminfo(xterm_256color, sizeof(xterm_256color));
         
-//        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
-//        // in addition to the default mouse-down/up events.
-//        //   kmous = the prefix used to detect/parse mouse events
-//        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
-//        //           event mode; 1003=report mouse-moved events in addition to clicks)
-//        setenv("TERM_KMOUS", "\x1b[<", true);
-//        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
+        // Override the terminfo 'kmous' and 'XM' properties to permit mouse-moved events,
+        // in addition to the default mouse-down/up events.
+        //   kmous = the prefix used to detect/parse mouse events
+        //   XM    = the escape string used to enable mouse events (1006=SGR 1006 mouse
+        //           event mode; 1003=report mouse-moved events in addition to clicks)
+        setenv("TERM_KMOUS", "\x1b[<", true);
+        setenv("TERM_XM", "\x1b[?1006;1003%?%p1%{1}%=%th%el%;", true);
         
         ::initscr();
         ::noecho();

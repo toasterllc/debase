@@ -261,6 +261,8 @@ public:
     virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
     virtual void hitTestExpand(const HitTestExpand& x) { _setForce(_hitTestExpand, x); }
     
+    virtual bool erased() { return _GState.erased; }
+    
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
     virtual void layoutNeeded(bool x) { _layoutNeeded = x; }

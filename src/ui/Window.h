@@ -142,7 +142,8 @@ public:
     virtual void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
         windowSize(size());
-        windowOrigin(gstate.originDraw);
+        #warning TODO: is there a better way we can do this? ideally we'd use gstate.originDraw...
+        windowOrigin(gstate.originDraw+origin());
         View::layoutTree(gstate);
     }
     
@@ -160,9 +161,6 @@ public:
     // eraseNeeded(): whether the window should be erased the next time it's drawn
     virtual bool eraseNeeded() { return _s.eraseNeeded; }
     virtual void eraseNeeded(bool x) { _s.eraseNeeded = x; }
-    
-    // erased(): whether the window was erased during this draw cycle
-    virtual bool erased() const { return _s.erased; }
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
@@ -189,8 +187,6 @@ private:
 //        Size sizePrev;
         // eraseNeeded: tracks whether the window needs to be erased the next time it's drawn
         bool eraseNeeded = true;
-        // erased: tracks whether the window was erased in this draw cycle
-        bool erased = false;
     } _s;
 };
 

@@ -13,6 +13,15 @@ public:
         return Size{2*(_BorderSize+_InsetX), 2*_BorderSize};
     }
     
+    Menu() {
+        borderColor(Colors().menu);
+        
+        _title->align(Align::Center);
+        _title->textAttr(Colors().menu|A_BOLD);
+        _title->prefix(" ");
+        _title->suffix(" ");
+    }
+    
     Size sizeIntrinsic(Size constraint) override {
         // First button sets the width
         const int width = (!_buttons.empty() ? _buttons[0]->size().x : 0) + Padding().x;
@@ -34,10 +43,11 @@ public:
     }
     
     void layout() override {
+        _title->frame({{}, {size().x, 1}});
+        
         const int ymax = size().y-_BorderSize;
         const int x = _BorderSize+_InsetX;
         int y = _BorderSize;
-        
         bool first = true;
         bool show = true;
         for (ButtonPtr button : _buttons) {
@@ -79,19 +89,6 @@ public:
                     Attr color = attr(Colors().menu);
                     drawLineHoriz({0, button->frame().ymax()+1}, width);
                 }
-            }
-        }
-        
-        // Draw border
-        if (erased()) { // Performance optimization: only draw if the window was erased
-            Attr color = attr(Colors().menu);
-            drawRect();
-            
-            // Draw title
-            if (!_title.empty()) {
-                Attr bold = attr(A_BOLD);
-                int offX = (width-(int)UTF8::Len(_title))/2;
-                drawText({offX,0}, " %s ", _title.c_str());
             }
         }
     }
@@ -177,7 +174,7 @@ public:
             });
         }
         
-        subviews({});
+        subviews({_title});
         for (UI::ButtonPtr button : _buttons) {
             subviewAdd(button);
         }
@@ -206,7 +203,7 @@ private:
     static constexpr auto _ActivateDuration = std::chrono::milliseconds(150);
     static constexpr auto _StayOpenExpiration = std::chrono::milliseconds(300);
     
-    std::string _title;
+    LabelPtr _title = subviewCreate<Label>();
     std::vector<ButtonPtr> _buttons;
     std::function<void(Menu&)> _dismissAction;
     
