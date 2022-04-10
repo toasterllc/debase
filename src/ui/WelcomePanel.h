@@ -13,8 +13,9 @@ class WelcomePanel : public ModalPanel {
 public:
     WelcomePanel() {
         message()->align(Align::Center);
+        message()->textAttr(Colors().menu|A_BOLD);
         
-        borderColor(Colors().normal);
+        borderColor(Colors().menu);
         
         _trialButton->label()->text      ("Start Free Trial");
         _trialButton->enabled            (true);
@@ -34,6 +35,8 @@ public:
 //    bool layoutNeeded() const override { return true; }
     
     void layout() override {
+        ModalPanel::layout();
+        
         const Rect rect = contentRect();
         
         int offY = message()->frame().ymax()+1+_ContentSpacingTop;

@@ -16,15 +16,15 @@ public:
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email->label()->text   ("Email: ");
-        _email->spacingX        (3);
-        _email->label()->attr   (Colors().menu|A_BOLD);
+        _email->label()->text       ("Email: ");
+        _email->label()->textAttr   (Colors().menu|A_BOLD);
+        _email->spacingX            (3);
         _email->textField()->requestFocus = requestFocus;
         _email->textField()->releaseFocus = releaseFocus;
         
-        _code->label()->text    (" Code: ");
-        _code->spacingX         (3);
-        _code->label()->attr    (Colors().menu|A_BOLD);
+        _code->label()->text        (" Code: ");
+        _code->label()->textAttr    (Colors().menu|A_BOLD);
+        _code->spacingX             (3);
         _code->textField()->requestFocus = requestFocus;
         _code->textField()->releaseFocus = releaseFocus;
         
@@ -40,6 +40,8 @@ public:
 //    bool layoutNeeded() const override { return true; }
     
     void layout() override {
+        ModalPanel::layout();
+        
         const Rect rect = contentRect();
         int offY = message()->frame().ymax()+1;
         
