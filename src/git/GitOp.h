@@ -296,7 +296,7 @@ inline std::optional<OpResult> _Exec_CopyCommits(Repo repo, const Op& op) {
 }
 
 inline std::optional<OpResult> _Exec_DeleteCommits(Repo repo, const Op& op) {
-//    throw RuntimeError("source must be a reference (branch or tag)");
+    throw RuntimeError("source must be a reference (branch or tag)");
     if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
     
     // Remove commits from `op.src`

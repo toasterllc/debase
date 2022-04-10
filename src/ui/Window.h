@@ -48,6 +48,13 @@ public:
         if (!drawNeededPrev) drawNeeded(false);
     }
     
+    Size size() const override { return View::size(); }
+    void size(const Size& x) override {
+        if (x == size()) return;
+        View::size(x);
+        eraseNeeded(true);
+    }
+    
     virtual Point windowOrigin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     virtual void windowOrigin(const Point& p) {
         if (p == windowOrigin()) return;
@@ -153,20 +160,44 @@ public:
     virtual void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
         
+        const Size sizePrev = size();
         windowSize(size());
         windowOrigin(gstate.originScreen);
+        
+//        // Detect size changes
+//        // ncurses can change our size out from under us (eg by the
+//        // terminal size changing), so we handle all size changes
+//        // here, instead of in the size() setter
+//        if (_s.sizePrev != size()) {
+//            // We need to erase+redraw after resizing
+//            // (eraseNeeded=true implicity sets drawNeeded=true)
+//            eraseNeeded(true);
+//            _s.sizePrev = size();
+//        }
         
         // Update our size/origin based on ncurses' adjusted size
         const Size sizeActual = windowSize();
         const Size originScreenActual = windowOrigin();
         const Size originScreenDelta = originScreenActual-gstate.originScreen;
-        if (originScreenDelta.x || originScreenDelta.y) {
-            os_log(OS_LOG_DEFAULT, "originScreenDelta: %d %d", originScreenDelta.x, originScreenDelta.y);
-            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
-        }
+//        if (originScreenDelta.x || originScreenDelta.y) {
+//            layoutNeeded(true);
+//            
+//            os_log(OS_LOG_DEFAULT, "originScreenDelta: %d %d", originScreenDelta.x, originScreenDelta.y);
+//            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
+//        }
         
         size(sizeActual);
         origin(origin()+originScreenDelta);
+        
+        os_log(OS_LOG_DEFAULT, "SIZE %d %d", sizeActual.x, sizeActual.y);
+        
+        if (sizeActual != sizePrev) {
+            os_log(OS_LOG_DEFAULT, "SIZE CHANGED");
+            // We need to erase+redraw after resizing
+            // (eraseNeeded=true implicity triggers a redraw)
+            eraseNeeded(true);
+        }
+        
 //        
 //        if (originScreenDelta.x || originScreenDelta.y) {
 //            os_log(OS_LOG_DEFAULT, "origin AFTER: %d %d", origin().x, origin().y);

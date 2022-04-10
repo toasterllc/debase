@@ -54,11 +54,11 @@ public:
         Attr() {}
         Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
             assert(window);
-            if (rand() % 2) {
-                wattron(_s.window, A_REVERSE);
-            } else {
-                wattroff(_s.window, A_REVERSE);
-            }
+//            if (rand() % 2) {
+//                wattron(_s.window, A_REVERSE);
+//            } else {
+//                wattroff(_s.window, A_REVERSE);
+//            }
             // MARK: - Drawing
             wattron(_s.window, _s.attr);
         }
@@ -165,14 +165,14 @@ public:
     
     virtual Point origin() const { return _origin; }
     virtual void origin(const Point& x) {
-        if (_origin == x) return;
+        if (x == _origin) return;
         _origin = x;
         drawNeeded(true);
     }
     
     virtual Size size() const { return _size; }
     virtual void size(const Size& x) {
-        if (_size == x) return;
+        if (x == _size) return;
         _size = x;
         layoutNeeded(true);
         drawNeeded(true);
@@ -180,7 +180,6 @@ public:
     
     virtual Rect frame() const { return { .origin=origin(), .size=size() }; }
     virtual void frame(const Rect& x) {
-        if (frame() == x) return;
         origin(x.origin);
         size(x.size);
     }

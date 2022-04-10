@@ -31,12 +31,12 @@ public:
         _time->align(Align::Right);
     }
     
-    void drawNeeded(bool x) override {
-        if (x) {
-            for (volatile int i=0; i<10; i++);
-        }
-        Panel::drawNeeded(x);
-    }
+//    void drawNeeded(bool x) override {
+//        if (x) {
+//            for (volatile int i=0; i<10; i++);
+//        }
+//        Panel::drawNeeded(x);
+//    }
     
     Size messageSize(int width) const {
         Size s = _message->sizeIntrinsic({width-2*_TextInset, 0});
