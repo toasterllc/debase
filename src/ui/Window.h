@@ -160,7 +160,7 @@ public:
     virtual void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
         
-        const Size sizePrev = size();
+//        const Size sizePrev = size();
         windowSize(size());
         windowOrigin(gstate.originScreen);
         
@@ -174,11 +174,11 @@ public:
 //            eraseNeeded(true);
 //            _s.sizePrev = size();
 //        }
-        
-        // Update our size/origin based on ncurses' adjusted size
-        const Size sizeActual = windowSize();
-        const Size originScreenActual = windowOrigin();
-        const Size originScreenDelta = originScreenActual-gstate.originScreen;
+//        
+//        // Update our size/origin based on ncurses' adjusted size
+//        const Size sizeActual = windowSize();
+//        const Size originScreenActual = windowOrigin();
+//        const Size originScreenDelta = originScreenActual-gstate.originScreen;
 //        if (originScreenDelta.x || originScreenDelta.y) {
 //            layoutNeeded(true);
 //            
@@ -186,17 +186,15 @@ public:
 //            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
 //        }
         
-        size(sizeActual);
-        origin(origin()+originScreenDelta);
-        
-        os_log(OS_LOG_DEFAULT, "SIZE %d %d", sizeActual.x, sizeActual.y);
-        
-        if (sizeActual != sizePrev) {
-            os_log(OS_LOG_DEFAULT, "SIZE CHANGED");
-            // We need to erase+redraw after resizing
-            // (eraseNeeded=true implicity triggers a redraw)
-            eraseNeeded(true);
-        }
+//        size(sizeActual);
+//        origin(origin()+originScreenDelta);
+//        
+//        if (sizeActual != sizePrev) {
+//            abort();
+//            // We need to erase+redraw after resizing
+//            // (eraseNeeded=true implicity triggers a redraw)
+//            eraseNeeded(true);
+//        }
         
 //        
 //        if (originScreenDelta.x || originScreenDelta.y) {

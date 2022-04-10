@@ -374,8 +374,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-//            State::State state(StateDir());
-//            _licenseCheck(state);
+            State::State state(StateDir());
+            _licenseCheck(state);
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
