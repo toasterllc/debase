@@ -12,18 +12,84 @@ public:
     using Ptr = std::shared_ptr<View>;
     using WeakPtr = std::weak_ptr<View>;
     
+    using Views = std::list<WeakPtr>;
+    using ViewsIter = Views::iterator;
+    
+    struct GraphicsState {
+        GraphicsState() {}
+        const Window* window = nullptr;
+        Point origin;
+        bool erased = false;
+    };
+    
+    using GraphicsStatePtr = std::unique_ptr<GraphicsState>;
+    
+    class GraphicsStateSwapper {
+    public:
+        GraphicsStateSwapper() {}
+        GraphicsStateSwapper(GraphicsState& dst, const GraphicsState& val) : _dst(&dst), _val(val) {
+            std::swap(*_dst, _val);
+        }
+        
+        GraphicsStateSwapper(const GraphicsStateSwapper& x) = delete;
+        GraphicsStateSwapper(GraphicsStateSwapper&& x) = delete;
+        
+        ~GraphicsStateSwapper() {
+            if (_dst) {
+                std::swap(*_dst, _val);
+            }
+        }
+    
+    private:
+        GraphicsState* _dst = nullptr;
+        GraphicsState _val;
+    };
+    
+    
+//    class GraphicsState {
+//    public:
+//        GraphicsState() {}
+//        
+//        GraphicsState(GraphicsState& x, const Window& window, const Point& origin, bool erased) :
+//        _s{.prev=&x, .window=&window, .origin=origin, .erased=erased} {
+//            std::swap(_s, _s.prev->_s);
+//        }
+//        
+//        GraphicsState(const GraphicsState& x) = delete;
+//        GraphicsState(GraphicsState&& x) = delete;
+//        
+//        ~GraphicsState() {
+//            if (_s.prev) {
+//                std::swap(_s, _s.prev->_s);
+//            }
+//        }
+//        
+//        operator bool() const { return _s.prev; }
+//        const Window* window() const { return _s.window; }
+//        const Point& origin() const { return _s.origin; }
+//        bool erased() const { return _s.erased; }
+//    
+//    private:
+//        struct {
+//            GraphicsState* prev = nullptr;
+//            const Window* window = nullptr;
+//            Point origin;
+//            bool erased = false;
+//        } _s;
+//    };
+    
     class Attr {
     public:
         Attr() {}
-        Attr(WINDOW* win, int attr) : _s({.win=win, .attr=attr}) {
-            assert(win);
+        Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
+            assert(window);
 //            if (rand() % 2) {
 //                wattron(*_s.win, A_REVERSE);
 //            } else {
 //                wattroff(*_s.win, A_REVERSE);
 //            }
             // MARK: - Drawing
-            wattron(_s.win, _s.attr);
+            wattron(_s.window, _s.attr);
         }
         
         Attr(const Attr& x) = delete;
@@ -31,14 +97,14 @@ public:
         Attr& operator =(Attr&& x) { std::swap(_s, x._s); return *this; }
         
         ~Attr() {
-            if (_s.win) {
-                wattroff(_s.win, _s.attr);
+            if (_s.window) {
+                wattroff(_s.window, _s.attr);
             }
         }
     
     private:
         struct {
-            WINDOW* win = nullptr;
+            WINDOW* window = nullptr;
             int attr = 0;
         } _s;
     };
@@ -52,6 +118,15 @@ public:
     
     static const ColorPalette& Colors() { return _Colors; }
     static void Colors(const ColorPalette& x) { _Colors = x; }
+    
+    static const GraphicsState& GState() {
+        assert(_GState.window);
+        return _GState;
+    }
+    
+    static auto GStatePush(const GraphicsState& x) {
+        return GraphicsStateSwapper(_GState, x);
+    }
     
     static Point SubviewConvert(const View& dst, const Point& p) { return p-dst.origin(); }
     static Rect SubviewConvert(const View& dst, const Rect& r) { return { SubviewConvert(dst, r.origin), r.size }; }
@@ -134,14 +209,14 @@ public:
     
     virtual Rect bounds() const { return { .size = size() }; }
     
-    virtual Point treeOrigin() const { return _TState.origin(); }
+//    virtual Point _GState.origin const { return _GraphicsState.origin(); }
     
 //    Point mousePosition(const Event& ev) const {
 //        return ev.mouse.origin-origin();
 //    }
     
     // MARK: - Attributes
-    virtual Attr attr(int attr) const { return Attr(_drawWin(), attr); }
+    virtual Attr attr(int attr) const { return Attr(_gstateWindow(), attr); }
     
     // MARK: - Drawing
     virtual void drawRect() const {
@@ -149,50 +224,50 @@ public:
     }
     
     virtual void drawRect(const Rect& rect) const {
-        const Rect r = {treeOrigin()+rect.origin, rect.size};
+        const Rect r = {_GState.origin+rect.origin, rect.size};
         const int x1 = r.origin.x;
         const int y1 = r.origin.y;
         const int x2 = r.origin.x+r.size.x-1;
         const int y2 = r.origin.y+r.size.y-1;
-        mvwhline(_drawWin(), y1, x1, 0, r.size.x);
-        mvwhline(_drawWin(), y2, x1, 0, r.size.x);
-        mvwvline(_drawWin(), y1, x1, 0, r.size.y);
-        mvwvline(_drawWin(), y1, x2, 0, r.size.y);
-        mvwaddch(_drawWin(), y1, x1, ACS_ULCORNER);
-        mvwaddch(_drawWin(), y2, x1, ACS_LLCORNER);
-        mvwaddch(_drawWin(), y1, x2, ACS_URCORNER);
-        mvwaddch(_drawWin(), y2, x2, ACS_LRCORNER);
+        mvwhline(_gstateWindow(), y1, x1, 0, r.size.x);
+        mvwhline(_gstateWindow(), y2, x1, 0, r.size.x);
+        mvwvline(_gstateWindow(), y1, x1, 0, r.size.y);
+        mvwvline(_gstateWindow(), y1, x2, 0, r.size.y);
+        mvwaddch(_gstateWindow(), y1, x1, ACS_ULCORNER);
+        mvwaddch(_gstateWindow(), y2, x1, ACS_LLCORNER);
+        mvwaddch(_gstateWindow(), y1, x2, ACS_URCORNER);
+        mvwaddch(_gstateWindow(), y2, x2, ACS_LRCORNER);
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
-        const Point off = treeOrigin();
-        mvwhline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
+        const Point off = _GState.origin;
+        mvwhline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
-        const Point off = treeOrigin();
-        mvwvline(_drawWin(), off.y+p.y, off.x+p.x, ch, len);
+        const Point off = _GState.origin;
+        mvwvline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
-        const Point off = treeOrigin();
-        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, "%s", txt);
+        const Point off = _GState.origin;
+        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
-        const Point off = treeOrigin();
+        const Point off = _GState.origin;
         widthMax = std::max(0, widthMax);
         
         std::string str = txt;
         auto it = UTF8::NextN(str.begin(), str.end(), widthMax);
         str.resize(std::distance(str.begin(), it));
-        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, "%s", str.c_str());
+        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", str.c_str());
     }
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
-        const Point off = treeOrigin();
-        mvwprintw(_drawWin(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
+        const Point off = _GState.origin;
+        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
     // MARK: - Accessors
@@ -228,34 +303,7 @@ public:
     }
     
     // MARK: - Events
-    virtual bool handleEvent(const Window& win, const Event& ev) { return false; }
-    
-    virtual void track(const Window& win, const Event& ev) {
-        _TreeState treeState(_TState, win, {});
-        
-        _tracking = true;
-        Defer(_tracking = false); // Exception safety
-        Defer(_trackStop = false); // Exception safety
-        
-        do {
-            refresh(win);
-            
-            _eventCurrent = UI::NextEvent();
-            if (_eventCurrent.type == Event::Type::Mouse) {
-                _eventCurrent.mouse.origin -= _TState.origin();
-            }
-            Defer(_eventCurrent = {}); // Exception safety
-            
-            handleEventTree(win, {}, _eventCurrent);
-        } while (!_trackStop);
-    }
-    
-    // Signal track() to return
-    virtual void trackStop() {
-        _trackStop = true;
-    }
-    
-    virtual bool tracking() const { return _tracking; }
+    virtual bool handleEvent(const Window& window, const Event& ev) { return false; }
     
     // MARK: - Subviews
     template <typename T, typename ...T_Args>
@@ -266,94 +314,58 @@ public:
         return view;
     }
     
-    virtual std::list<WeakPtr>& subviews() { return _subviews; }
+//    virtual std::list<WeakPtr>& subviews() { return _subviews; }
     
-    virtual void layoutTree(const Window& win, const Point& orig) {
-        if (!visible()) return;
-        _TreeState treeState(_TState, win, orig);
-        
-        if (layoutNeeded()) {
-            layout();
-            layoutNeeded(false);
-        }
-        
-        for (auto it=_subviews.begin(); it!=_subviews.end();) {
-            Ptr view = (*it).lock();
-            if (!view) {
+    virtual void subviews(const Views& x) {
+        _subviews = x;
+        layoutNeeded(true);
+    }
+    
+    virtual ViewsIter subviews() {
+        return _subviews.begin();
+    }
+    
+    virtual Ptr subviewsNext(ViewsIter& it) {
+        Ptr subview = nullptr;
+        while (it!=_subviews.end() && !subview) {
+            subview = (*it).lock();
+            if (!subview) {
                 // Prune and continue
                 it = _subviews.erase(it);
-                continue;
+            } else {
+                it++;
             }
-            
-            view->layoutTree(win, _TState.origin()+view->origin());
-            it++;
         }
+        return subview;
     }
     
-    virtual void drawTree(const Window& win, const Point& orig) {
-        if (!visible()) return;
-        _TreeState treeState(_TState, win, orig);
-        
-        // If the window was erased during this draw cycle, we need to redraw.
-        // _winErased() has to be implemented out-of-line because:
-        // 
-        //   Window.h includes View.h
-        //   ∴ View.h can't include Window.h
-        //   ∴ View has to forward declare Window
-        //   ∴ we can't call Window functions in View.h
-        //
-        if (drawNeeded() || _winErased(win)) {
-            drawBackground();
-            draw();
-            drawBorder();
-            drawNeeded(false);
-        }
-        
-        for (auto it=_subviews.begin(); it!=_subviews.end();) {
-            Ptr view = (*it).lock();
-            if (!view) {
-                // Prune and continue
-                it = _subviews.erase(it);
-                continue;
-            }
-            
-            view->drawTree(win, _TState.origin()+view->origin());
-            it++;
-        }
-    }
+//    for (auto it=_subviews.begin(); it!=_subviews.end();) {
+//        Ptr subview = (*it).lock();
+//        if (!subview) {
+//            // Prune and continue
+//            it = _subviews.erase(it);
+//            continue;
+//        }
+//        
+//        subview->layoutTree(win, _TState.origin()+subview->origin());
+//        it++;
+//    }
     
-    virtual bool handleEventTree(const Window& win, const Point& orig, const Event& ev) {
-        if (!visible()) return false;
-        if (!interaction()) return false;
-        _TreeState treeState(_TState, win, orig);
-        
-        // Let the subviews handle the event first
-        for (auto it=_subviews.begin(); it!=_subviews.end();) {
-            Ptr view = (*it).lock();
-            if (!view) {
-                // Prune and continue
-                it = _subviews.erase(it);
-                continue;
-            }
-            
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
-            it++;
-        }
-        
-        // None of the subviews wanted the event; let the view itself handle it
-        if (handleEvent(win, ev)) return true;
-        return false;
-    }
-    
-    virtual void refresh(const Window& win) {
-        layoutTree(win, _TState.origin());
-        drawTree(win, _TState.origin());
-        CursorState::Draw();
-        ::update_panels();
-        ::refresh();
-    }
-    
-    virtual const Event& eventCurrent() const { return _eventCurrent; }
+//    virtual std::list<WeakPtr>& subviewsIter() {
+//        
+//        for (auto it=_subviews.begin(); it!=_subviews.end();) {
+//            Ptr subview = (*it).lock();
+//            if (!subview) {
+//                // Prune and continue
+//                it = _subviews.erase(it);
+//                continue;
+//            }
+//            
+//            subview->layoutTree(win, _TState.origin()+subview->origin());
+//            it++;
+//        }
+//        
+//    }
     
 protected:
     template <typename X, typename Y>
@@ -370,41 +382,11 @@ protected:
     }
     
 private:
-    class _TreeState {
-    public:
-        _TreeState() {}
-        
-        _TreeState(_TreeState& x, const Window& win, const Point& origin) :
-        _s{.prev=&x, .win=&win, .origin=origin} {
-            std::swap(_s, _s.prev->_s);
-        }
-        
-        _TreeState(const _TreeState& x) = delete;
-        _TreeState(_TreeState&& x) = delete;
-        
-        ~_TreeState() {
-            if (_s.prev) {
-                std::swap(_s, _s.prev->_s);
-            }
-        }
-        
-        operator bool() const { return _s.prev; }
-        const Window* win() const { return _s.win; }
-        const Point& origin() const { return _s.origin; }
-    
-    private:
-        struct {
-            _TreeState* prev = nullptr;
-            const Window* win = nullptr;
-            Point origin;
-        } _s;
-    };
-    
-    bool _winErased(const Window& win) const;
-    WINDOW* _drawWin() const;
+    bool _windowErased(const Window& window) const;
+    WINDOW* _gstateWindow() const;
     
     static inline ColorPalette _Colors;
-    static inline _TreeState _TState;
+    static inline GraphicsState _GState;
     
     std::list<WeakPtr> _subviews;
     Point _origin;
@@ -413,9 +395,6 @@ private:
     bool _interaction = true;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
-    bool _tracking = false;
-    bool _trackStop = false;
-    Event _eventCurrent;
     
     HitTestExpand _hitTestExpand;
     

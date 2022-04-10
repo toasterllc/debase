@@ -93,55 +93,47 @@ public:
 //    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
 //    void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
-    void layoutTree(const Window& win, const Point& orig) override {
-        windowSize(size());
-        windowOrigin(orig);
-        
-//        if (_s.originPrev != orig) {
-//            
-//            _s.originPrev = orig;
+//    void layoutTree(const Window& win, const Point& orig) override {
+//        windowSize(size());
+//        windowOrigin(orig);
+//        
+////        if (_s.originPrev != orig) {
+////            
+////            _s.originPrev = orig;
+////        }
+////        
+////        // Detect size changes
+////        // ncurses can change our size out from under us (eg by the
+////        // terminal size changing), so we handle all size changes
+////        // here, instead of in the size() setter
+////        if (_s.sizePrev != size()) {
+////            // We need to erase+redraw after resizing
+////            // (eraseNeeded=true implicity sets drawNeeded=true)
+////            eraseNeeded(true);
+////            _s.sizePrev = size();
+////        }
+//        
+//        View::layoutTree(*this, {});
+//    }
+//    
+//    void drawTree(const Window& win, const Point& orig) override {
+//        // Remember whether we erased ourself during this draw cycle
+//        // This is used by View instances (Button and TextField)
+//        // to know whether they need to be drawn again
+//        _s.erased = _s.eraseNeeded;
+//        
+//        // Erase ourself if needed, and remember that we did so
+//        if (_s.eraseNeeded) {
+//            ::werase(*this);
+//            _s.eraseNeeded = false;
 //        }
 //        
-//        // Detect size changes
-//        // ncurses can change our size out from under us (eg by the
-//        // terminal size changing), so we handle all size changes
-//        // here, instead of in the size() setter
-//        if (_s.sizePrev != size()) {
-//            // We need to erase+redraw after resizing
-//            // (eraseNeeded=true implicity sets drawNeeded=true)
-//            eraseNeeded(true);
-//            _s.sizePrev = size();
-//        }
-        
-        View::layoutTree(*this, {});
-    }
+//        View::drawTree(*this, {});
+//    }
     
-    void drawTree(const Window& win, const Point& orig) override {
-        // Remember whether we erased ourself during this draw cycle
-        // This is used by View instances (Button and TextField)
-        // to know whether they need to be drawn again
-        _s.erased = _s.eraseNeeded;
-        
-        // Erase ourself if needed, and remember that we did so
-        if (_s.eraseNeeded) {
-            ::werase(*this);
-            _s.eraseNeeded = false;
-        }
-        
-        View::drawTree(*this, {});
-    }
-    
-    virtual bool handleEventTree(const Window& win, const Point& orig, const Event& ev) override {
-        return View::handleEventTree(*this, {}, ev);
-    }
-    
-    // eraseNeeded(): sets whether the window should be erased the next time it's drawn
-    virtual void eraseNeeded(bool x) {
-        _s.eraseNeeded = x;
-        if (_s.eraseNeeded) {
-            drawNeeded(true);
-        }
-    }
+    // eraseNeeded(): whether the window should be erased the next time it's drawn
+    virtual bool eraseNeeded() { return _s.eraseNeeded; }
+    virtual void eraseNeeded(bool x) { _s.eraseNeeded = x; }
     
     // erased(): whether the window was erased during this draw cycle
     virtual bool erased() const { return _s.erased; }

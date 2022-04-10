@@ -147,18 +147,19 @@ public:
         return false;
     }
     
-    void track(const Window& win, const Event& ev) override {
-        _trackState = {};
-        _trackState.startEvent = ev;
-        
-        // Disable button interaction at the very beginning, to prevent accidental clicks
-        for (UI::ButtonPtr button : _buttons) {
-            button->mouseActive(true);
-            button->interaction(false);
-        }
-        
-        Panel::track(win, ev);
-    }
+    #warning TODO: reintegrate this code somewhere else
+//    void track(const Window& win, const Event& ev) override {
+//        _trackState = {};
+//        _trackState.startEvent = ev;
+//        
+//        // Disable button interaction at the very beginning, to prevent accidental clicks
+//        for (UI::ButtonPtr button : _buttons) {
+//            button->mouseActive(true);
+//            button->interaction(false);
+//        }
+//        
+//        Panel::track(win, ev);
+//    }
     
     const auto& title() const { return _title; }
     template <typename T> void title(const T& x) { _set(_title, x); }

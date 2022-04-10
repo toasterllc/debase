@@ -2,13 +2,13 @@
 
 namespace UI {
 
-bool View::_winErased(const Window& win) const {
-    return win.erased();
+bool View::_windowErased(const Window& window) const {
+    return window.erased();
 }
 
-WINDOW* View::_drawWin() const {
-    assert(_TState);
-    return *_TState.win();
+WINDOW* View::_gstateWindow() const {
+    assert(_GState.window);
+    return *_GState.window;
 }
 
 } // namespace UI
