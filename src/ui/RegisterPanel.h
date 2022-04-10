@@ -33,7 +33,7 @@ public:
     
     Size sizeIntrinsic(Size constraint) override {
         Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += 2*(_FieldSpacingY+_FieldHeight) + _ContentSpacingBottom;
+        s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _ContentSpacingBottom;
         return s;
     }
     
@@ -45,7 +45,8 @@ public:
         const Rect rect = contentRect();
         int offY = message()->frame().ymax()+1;
         
-        offY += _FieldSpacingY;
+        offY += _ContentSpacingTop;
+        
         _email->frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
         offY += _FieldHeight+_FieldSpacingY;
         _code->frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
@@ -57,6 +58,7 @@ public:
 private:
     static constexpr int _FieldSpacingY         = 1;
     static constexpr int _FieldHeight           = 1;
+    static constexpr int _ContentSpacingTop     = 1;
     static constexpr int _ContentSpacingBottom  = 0;
     
     static constexpr int _FieldsExtraHeight = 5;
