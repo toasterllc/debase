@@ -276,7 +276,7 @@ public:
     
 private:
     void _refresh() {
-        GraphicsState gstate = {.screen=this};
+        GraphicsState gstate = graphicsStateCalc(*this);
         layoutTree(gstate);
         drawTree(gstate);
         CursorState::Draw();
@@ -285,9 +285,9 @@ private:
     }
     
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
+        gstate = view.convert(gstate);
         if (&view == &target) return gstate;
         
-        gstate = view.convert(gstate);
         auto it = view.subviews();
         for (;;) {
             ViewPtr subview = view.subviewsNext(it);

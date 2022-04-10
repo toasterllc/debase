@@ -316,7 +316,6 @@ public:
 //            gstate.origin += origin();
 //        }
         
-        gstate = convert(gstate);
         auto gpushed = View::GStatePush(gstate);
         
         if (layoutNeeded()) {
@@ -328,7 +327,7 @@ public:
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
-            subview->layoutTree(gstate);
+            subview->layoutTree(subview->convert(gstate));
         }
     }
     
@@ -351,7 +350,6 @@ public:
 //            gstate.origin += origin();
 //        }
         
-        gstate = convert(gstate);
         auto gpushed = View::GStatePush(gstate);
         
         // Redraw the view if it says it needs it, or if this part of the view tree has been erased
@@ -366,7 +364,7 @@ public:
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
-            subview->drawTree(gstate);
+            subview->drawTree(subview->convert(gstate));
         }
     }
     
@@ -374,12 +372,11 @@ public:
         if (!visible()) return false;
         if (!interaction()) return false;
         
-        gstate = convert(gstate);
         auto it = subviews();
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
-            if (subview->handleEventTree(gstate, ev)) return true;
+            if (subview->handleEventTree(subview->convert(gstate), ev)) return true;
         }
         
         // None of the subviews wanted the event; let the view itself handle it

@@ -142,8 +142,7 @@ public:
     virtual void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
         windowSize(size());
-        #warning TODO: is there a better way we can do this? ideally we'd use gstate.originDraw...
-        windowOrigin(gstate.originDraw+origin());
+        windowOrigin(gstate.originEvent);
         View::layoutTree(gstate);
     }
     
