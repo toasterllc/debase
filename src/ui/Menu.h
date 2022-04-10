@@ -111,7 +111,7 @@ public:
         
         if (ev.type == Event::Type::Mouse) {
             // Update the mouseActive state for all of our buttons
-            bool inside = HitTest(bounds(), ev.mouse.origin);
+            bool inside = hitTest(ev.mouse.origin);
             if (ts.active) {
                 for (ButtonPtr button : _buttons) {
                     button->mouseActive(inside);
@@ -144,19 +144,18 @@ public:
         return false;
     }
     
-    #warning TODO: reintegrate this code somewhere else
-//    void track(const Window& win, const Event& ev) override {
-//        _trackState = {};
-//        _trackState.startEvent = ev;
-//        
-//        // Disable button interaction at the very beginning, to prevent accidental clicks
-//        for (UI::ButtonPtr button : _buttons) {
-//            button->mouseActive(true);
-//            button->interaction(false);
-//        }
-//        
-//        Panel::track(win, ev);
-//    }
+    void track(const Event& ev) override {
+        _trackState = {};
+        _trackState.startEvent = ev;
+        
+        // Disable button interaction at the very beginning, to prevent accidental clicks
+        for (UI::ButtonPtr button : _buttons) {
+            button->mouseActive(true);
+            button->interaction(false);
+        }
+        
+        Panel::track(ev);
+    }
     
     const auto& title() const { return _title; }
     template <typename T> void title(const T& x) { _set(_title, x); }

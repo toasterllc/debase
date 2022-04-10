@@ -62,7 +62,10 @@ public:
     }
     
     const auto& text() const { return _text; }
-    template <typename T> void text(const T& x) { _set(_text, x); }
+    template <typename T> void text(const T& x) {
+        _set(_text, x);
+        layoutNeeded(true);
+    }
     
     const auto& prefix() const { return _prefix; }
     template <typename T> void prefix(const T& x) { _set(_prefix, x); }

@@ -124,8 +124,8 @@ struct GraphicsState {
     
     Screen* screen = nullptr;
     const Window* window = nullptr;
-    Point originDraw; // For drawing purposes (relative to nearest window)
-    Point originEvent; // For event purposes (relative to screen)
+    Point originWindow; // For drawing purposes (relative to nearest window)
+    Point originScreen; // For event purposes (relative to screen)
     bool erased = false;
 };
 

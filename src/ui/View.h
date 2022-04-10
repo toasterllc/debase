@@ -111,7 +111,7 @@ public:
     static Event SubviewConvert(const GraphicsState& dst, const Event& ev) {
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
-            r.mouse.origin = ev.mouse.origin-dst.originEvent;
+            r.mouse.origin = ev.mouse.origin-dst.originScreen;
         }
         return r;
     }
@@ -148,17 +148,17 @@ public:
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
-        Rect f = frame();
-        f.origin.x -= _hitTestExpand.l;
-        f.size.x   += _hitTestExpand.l;
+        Rect b = bounds();
+        b.origin.x -= _hitTestExpand.l;
+        b.size.x   += _hitTestExpand.l;
         
-        f.size.x   += _hitTestExpand.r;
+        b.size.x   += _hitTestExpand.r;
         
-        f.origin.y -= _hitTestExpand.t;
-        f.size.y   += _hitTestExpand.t;
+        b.origin.y -= _hitTestExpand.t;
+        b.size.y   += _hitTestExpand.t;
         
-        f.size.y   += _hitTestExpand.b;
-        return HitTest(f, p);
+        b.size.y   += _hitTestExpand.b;
+        return HitTest(b, p);
     }
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
@@ -202,7 +202,7 @@ public:
     }
     
     virtual void drawRect(const Rect& rect) const {
-        const Rect r = {_GState.originDraw+rect.origin, rect.size};
+        const Rect r = {_GState.originWindow+rect.origin, rect.size};
         const int x1 = r.origin.x;
         const int y1 = r.origin.y;
         const int x2 = r.origin.x+r.size.x-1;
@@ -218,22 +218,22 @@ public:
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
-        const Point off = _GState.originDraw;
+        const Point off = _GState.originWindow;
         mvwhline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
-        const Point off = _GState.originDraw;
+        const Point off = _GState.originWindow;
         mvwvline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
-        const Point off = _GState.originDraw;
+        const Point off = _GState.originWindow;
         mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
-        const Point off = _GState.originDraw;
+        const Point off = _GState.originWindow;
         widthMax = std::max(0, widthMax);
         
         std::string str = txt;
@@ -244,7 +244,7 @@ public:
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
-        const Point off = _GState.originDraw;
+        const Point off = _GState.originWindow;
         mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
@@ -295,8 +295,8 @@ public:
     virtual bool tracking() const { return _tracking; }
     
     virtual GraphicsState convert(GraphicsState x) {
-        x.originDraw += origin();
-        x.originEvent += origin();
+        x.originWindow += origin();
+        x.originScreen += origin();
         return x;
     }
     

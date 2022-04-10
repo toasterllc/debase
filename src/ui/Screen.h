@@ -11,19 +11,13 @@ public:
         return { getbegx((WINDOW*)(*this)), getbegy((WINDOW*)(*this)) };
     }
     
-    void origin(const Point& x) override {
-        // Can't set screen origin
-        abort();
-    }
+    void origin(const Point& x) override {} // Ignore attempts to set screen origin
     
     Size size() const override {
         return { getmaxx((WINDOW*)(*this)), getmaxy((WINDOW*)(*this)) };
     }
     
-    void size(const Size& x) override {
-        // Can't set screen size
-        abort();
-    }
+    void size(const Size& x) override {} // Ignore attempts to set screen size
     
     Size windowSize() const override { return Window::windowSize(); }
     void windowSize(const Size& s) override {} // Ignore attempts to set screen size

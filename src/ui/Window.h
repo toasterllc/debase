@@ -8,6 +8,7 @@
 #include "CursorState.h"
 #include "UTF8.h"
 #include "View.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -134,15 +135,39 @@ public:
     
     virtual GraphicsState convert(GraphicsState x) override {
         x.window = this;
-        x.originDraw = {};
-        x.originEvent += origin();
+        x.originWindow = {};
+        x.originScreen += origin();
         return x;
     }
     
     virtual void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
+        
         windowSize(size());
-        windowOrigin(gstate.originEvent);
+        windowOrigin(gstate.originScreen);
+        
+//        // Update our size/origin based on ncurses' adjusted size
+//        const Size sizeActual = windowSize();
+//        const Size originScreenActual = windowOrigin();
+//        const Size originScreenDelta = originScreenActual-gstate.originScreen;
+//        if (originScreenDelta.x || originScreenDelta.y) {
+//            os_log(OS_LOG_DEFAULT, "originScreenDelta: %d %d", originScreenDelta.x, originScreenDelta.y);
+//            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
+//        }
+//        
+//        size(sizeActual);
+//        origin(origin()+originScreenDelta);
+//        
+//        if (originScreenDelta.x || originScreenDelta.y) {
+//            os_log(OS_LOG_DEFAULT, "origin AFTER: %d %d", origin().x, origin().y);
+//        }
+//        
+//        // Update our gstate based on ncurses' adjusted size
+//        gstate.originWindow += originScreenDelta;
+//        gstate.originScreen += originScreenDelta;
+//        
+//        layoutNeeded(true);
+        
         View::layoutTree(gstate);
     }
     

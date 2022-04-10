@@ -810,17 +810,17 @@ private:
                     // the source column)
                     const bool forceCopy = !selectionColumn->rev().isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
-                    const bool copyPrev = _drag.copy;
+//                    const bool copyPrev = _drag.copy;
                     _drag.copy = copy;
                     _drag.titlePanel->header()->text(_drag.copy ? "Copy" : "Move");
-                    if (_drag.copy != copyPrev) {
-                        layoutNeeded(true);
-                    }
+//                    if (_drag.copy != copyPrev) {
+//                        layoutNeeded(true);
+//                    }
                 }
                 
                 // Position/size title panel / shadow panels
                 {
-                    const UI::Point pos0 = p + mouseDownOffset;
+                    const UI::Point pos0 = p + mouseDownOffset + UI::Size{0,-1}; // -1 to account for the additional header line while dragging
                     const UI::Size size = _drag.titlePanel->sizeIntrinsic({titlePanel->size().x, 0});
                     _drag.titlePanel->frame({pos0, size});
                     
