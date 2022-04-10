@@ -14,9 +14,9 @@ void View::track(const Event& ev) {
     assert(!_tracking);
     
     Screen& screen = *_GState.screen;
-    const GraphicsState gstate = screen.findGraphicsState(*this);
-    if (!gstate) throw std::runtime_error("findGraphicsState() failed");
-    
+    const GraphicsState gstate = screen.graphicsStateCalc(*this);
+//    if (!gstate) throw std::runtime_error("findGraphicsState() failed");
+//    
 //        if (target) {
 //            gstate = find(*target, gstate, *this);
 //            if (!gstate) throw std::runtime_error("couldn't find target view");
@@ -30,12 +30,10 @@ void View::track(const Event& ev) {
     Defer(_trackStop = false); // Exception safety
     
     do {
-        screen.refresh();
-        
-        _eventCurrent = UI::NextEvent();
+        _eventCurrent = screen.nextEvent();
         Defer(_eventCurrent = {}); // Exception safety
         
-        Screen::HandleEventTree(gstate, *this, SubviewConvert(gstate, ev));
+        handleEventTree(gstate, _eventCurrent);
     } while (!_trackStop);
     
     

@@ -78,91 +78,6 @@ public:
     
     
     
-    static void LayoutTree(GraphicsState gstate, View& view) {
-        if (!view.visible()) return;
-        
-        // When we hit a window, set the window's size/origin according to the gstate, and reset gstate
-        // to reference the new window, and the origin to {0,0}
-        if (Window* win = dynamic_cast<Window*>(&view)) {
-            win->windowSize(win->size());
-            win->windowOrigin(gstate.origin);
-            
-            gstate.window = win;
-            gstate.origin = {};
-        
-        } else {
-            gstate.origin += view.origin();
-        }
-        
-        auto gpushed = View::GStatePush(gstate);
-        
-        if (view.layoutNeeded()) {
-            view.layout();
-            view.layoutNeeded(false);
-        }
-        
-        auto it = view.subviews();
-        for (;;) {
-            ViewPtr subview = view.subviewsNext(it);
-            if (!subview) break;
-            LayoutTree(gstate, *subview);
-        }
-    }
-    
-    static void DrawTree(GraphicsState gstate, View& view) {
-        if (!view.visible()) return;
-        
-        // When we hit a window, reset gstate to reference the new window, and the origin to {0,0}
-        // Also, erase the window if needed, and remember that we did so in the gstate
-        if (Window* win = dynamic_cast<Window*>(&view)) {
-            gstate.window = win;
-            gstate.origin = {};
-            
-            if (win->eraseNeeded()) {
-                gstate.erased = true;
-                ::werase(*win);
-                win->eraseNeeded(false);
-            }
-        
-        } else {
-            gstate.origin += view.origin();
-        }
-        
-        auto gpushed = View::GStatePush(gstate);
-        
-        // Redraw the view if it says it needs it, or if this part of the view tree has been erased
-        if (view.drawNeeded() || gstate.erased) {
-            view.drawBackground();
-            view.draw();
-            view.drawBorder();
-            view.drawNeeded(false);
-        }
-        
-        auto it = view.subviews();
-        for (;;) {
-            ViewPtr subview = view.subviewsNext(it);
-            if (!subview) break;
-            DrawTree(gstate, *subview);
-        }
-    }
-    
-    static bool HandleEventTree(GraphicsState gstate, View& view, const Event& ev) {
-        if (!view.visible()) return false;
-        if (!view.interaction()) return false;
-        
-        gstate.origin += view.origin();
-        
-        auto it = view.subviews();
-        for (;;) {
-            ViewPtr subview = view.subviewsNext(it);
-            if (!subview) break;
-            if (HandleEventTree(gstate, *subview, ev)) return true;
-        }
-        
-        // None of the subviews wanted the event; let the view itself handle it
-        return view.handleEvent(SubviewConvert(gstate, ev));
-    }
-    
     
     
     
@@ -282,16 +197,49 @@ public:
     
     
     
-    void refresh() {
-        LayoutTree({}, *this);
-        DrawTree({}, *this);
-        CursorState::Draw();
-        ::update_panels();
-        ::refresh();
+    Event nextEvent() {
+        _refresh();
+        
+        // Wait for another event
+        for (;;) {
+            int ch = ::wgetch(*this);
+            if (ch == ERR) continue;
+            
+            Event ev = {
+                .type = (Event::Type)ch,
+                .time = std::chrono::steady_clock::now(),
+            };
+            switch (ev.type) {
+            case Event::Type::Mouse: {
+                MEVENT mouse = {};
+                int ir = ::getmouse(&mouse);
+                if (ir != OK) continue;
+                ev.mouse = {
+                    .origin = {mouse.x, mouse.y},
+                    .bstate = mouse.bstate,
+                };
+                break;
+            }
+            
+            case Event::Type::WindowResize: {
+                throw WindowResize();
+            }
+            
+            case Event::Type::KeyCtrlC:
+            case Event::Type::KeyCtrlD: {
+                throw ExitRequest();
+            }
+            
+            default: {
+                break;
+            }}
+            
+            return ev;
+        }
     }
     
-    GraphicsState findGraphicsState(View& target) {
-        return _findGraphicsState(target, { .screen=this }, *this);
+    GraphicsState graphicsStateCalc(View& target) {
+        return _graphicsStateCalc(target, {.screen=this}, *this);
     }
     
 //    void track(View& target, const Event& ev) {
@@ -327,19 +275,31 @@ public:
 //    const Event& eventCurrent() const { return _eventCurrent; }
     
 private:
-    GraphicsState _findGraphicsState(View& target, GraphicsState gstate, View& view) const {
+    void _refresh() {
+        GraphicsState gstate = {.screen=this};
+        layoutTree(gstate);
+        drawTree(gstate);
+        CursorState::Draw();
+        ::update_panels();
+        ::refresh();
+    }
+    
+    GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
         if (&view == &target) return gstate;
         
-        gstate.origin += view.origin();
+        gstate = view.convert(gstate);
         auto it = view.subviews();
         for (;;) {
             ViewPtr subview = view.subviewsNext(it);
             if (!subview) return {};
-            gstate = _findGraphicsState(target, gstate, *subview);
+            gstate = _graphicsStateCalc(target, gstate, *subview);
             if (gstate) return gstate;
         }
     }
     
+    _GraphicsStateSwapper _gpushed = View::GStatePush({.screen=this});
+    
+//    
 //    bool _tracking = false;
 //    bool _trackStop = false;
 //    Event _eventCurrent;

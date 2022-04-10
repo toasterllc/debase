@@ -111,7 +111,7 @@ public:
     static Event SubviewConvert(const GraphicsState& dst, const Event& ev) {
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
-            r.mouse.origin = ev.mouse.origin-dst.origin;
+            r.mouse.origin = ev.mouse.origin-dst.originEvent;
         }
         return r;
     }
@@ -202,7 +202,7 @@ public:
     }
     
     virtual void drawRect(const Rect& rect) const {
-        const Rect r = {_GState.origin+rect.origin, rect.size};
+        const Rect r = {_GState.originDraw+rect.origin, rect.size};
         const int x1 = r.origin.x;
         const int y1 = r.origin.y;
         const int x2 = r.origin.x+r.size.x-1;
@@ -218,22 +218,22 @@ public:
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
-        const Point off = _GState.origin;
+        const Point off = _GState.originDraw;
         mvwhline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
-        const Point off = _GState.origin;
+        const Point off = _GState.originDraw;
         mvwvline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
-        const Point off = _GState.origin;
+        const Point off = _GState.originDraw;
         mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
-        const Point off = _GState.origin;
+        const Point off = _GState.originDraw;
         widthMax = std::max(0, widthMax);
         
         std::string str = txt;
@@ -244,7 +244,7 @@ public:
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
-        const Point off = _GState.origin;
+        const Point off = _GState.originDraw;
         mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
@@ -291,6 +291,109 @@ public:
     }
     
     virtual bool tracking() const { return _tracking; }
+    
+    virtual GraphicsState convert(GraphicsState x) {
+        x.originDraw += origin();
+        x.originEvent += origin();
+        return x;
+    }
+    
+    virtual void layoutTree(GraphicsState gstate) {
+        if (!visible()) return;
+//        
+//        // When we hit a window, set the window's size/origin according to the gstate, and reset gstate
+//        // to reference the new window, and the origin to {0,0}
+//        if (Window* win = dynamic_cast<Window*>(&view)) {
+//            win->windowSize(win->size());
+//            win->windowOrigin(gstate.origin);
+//            
+//            gstate.window = win;
+//            gstate.origin = {};
+//        
+//        } else {
+//            gstate.origin += origin();
+//        }
+        
+        gstate = convert(gstate);
+        auto gpushed = View::GStatePush(gstate);
+        
+        if (layoutNeeded()) {
+            layout();
+            layoutNeeded(false);
+        }
+        
+        auto it = subviews();
+        for (;;) {
+            Ptr subview = subviewsNext(it);
+            if (!subview) break;
+            subview->layoutTree(gstate);
+        }
+    }
+    
+    virtual void drawTree(GraphicsState gstate) {
+        if (!visible()) return;
+        
+//        // When we hit a window, reset gstate to reference the new window, and the origin to {0,0}
+//        // Also, erase the window if needed, and remember that we did so in the gstate
+//        if (Window* win = dynamic_cast<Window*>(&view)) {
+//            gstate.window = win;
+//            gstate.origin = {};
+//            
+//            if (win->eraseNeeded()) {
+//                gstate.erased = true;
+//                ::werase(*win);
+//                win->eraseNeeded(false);
+//            }
+//        
+//        } else {
+//            gstate.origin += origin();
+//        }
+        
+        gstate = convert(gstate);
+        auto gpushed = View::GStatePush(gstate);
+        
+        // Redraw the view if it says it needs it, or if this part of the view tree has been erased
+        if (drawNeeded() || gstate.erased) {
+            drawBackground();
+            draw();
+            drawBorder();
+            drawNeeded(false);
+        }
+        
+        auto it = subviews();
+        for (;;) {
+            Ptr subview = subviewsNext(it);
+            if (!subview) break;
+            subview->drawTree(gstate);
+        }
+    }
+    
+    virtual bool handleEventTree(GraphicsState gstate, const Event& ev) {
+        if (!visible()) return false;
+        if (!interaction()) return false;
+        
+        gstate = convert(gstate);
+        auto it = subviews();
+        for (;;) {
+            Ptr subview = subviewsNext(it);
+            if (!subview) break;
+            if (subview->handleEventTree(gstate, ev)) return true;
+        }
+        
+        // None of the subviews wanted the event; let the view itself handle it
+        return handleEvent(SubviewConvert(gstate, ev));
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     // MARK: - Subviews
     
@@ -373,7 +476,7 @@ protected:
         View::drawNeeded(true);
     }
     
-private:
+protected:
     class _GraphicsStateSwapper {
     public:
         _GraphicsStateSwapper() {}
@@ -395,6 +498,7 @@ private:
         GraphicsState _val;
     };
     
+private:
     WINDOW* _gstateWindow() const;
     
     static inline ColorPalette _Colors;

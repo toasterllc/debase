@@ -852,8 +852,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the insertion marker
-            refresh();
-            ev = UI::NextEvent();
+            ev = nextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
             if (abort || ev.mouseUp()) {
@@ -986,8 +985,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the selection rect
-            refresh();
-            ev = UI::NextEvent();
+            ev = nextEvent();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
                 break;
@@ -1012,7 +1010,6 @@ private:
         
         // Draw once before we open the context menu, so that the selection is updated
         drawNeeded(true);
-        refresh();
         
         UI::Button* menuButton = nullptr;
         UI::ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);

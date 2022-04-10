@@ -131,6 +131,32 @@ public:
 //        View::drawTree(*this, {});
 //    }
     
+    
+    virtual GraphicsState convert(GraphicsState x) override {
+        x.window = this;
+        x.originDraw = {};
+        x.originEvent += origin();
+        return x;
+    }
+    
+    virtual void layoutTree(GraphicsState gstate) override {
+        if (!visible()) return;
+        windowSize(size());
+        windowOrigin(gstate.originDraw);
+        View::layoutTree(gstate);
+    }
+    
+    virtual void drawTree(GraphicsState gstate) override {
+        if (!visible()) return;
+        if (eraseNeeded()) {
+            gstate.erased = true;
+            ::werase(*this);
+            eraseNeeded(false);
+        }
+        
+        View::drawTree(gstate);
+    }
+    
     // eraseNeeded(): whether the window should be erased the next time it's drawn
     virtual bool eraseNeeded() { return _s.eraseNeeded; }
     virtual void eraseNeeded(bool x) { _s.eraseNeeded = x; }
