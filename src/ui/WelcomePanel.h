@@ -53,8 +53,8 @@ private:
     static constexpr int _ContentSpacingTop = 1;
     static constexpr int _ButtonHeight      = 3;
     
-    ButtonPtr _trialButton     = createSubview<Button>();
-    ButtonPtr _registerButton  = createSubview<Button>();
+    ButtonPtr _trialButton     = subviewCreate<Button>();
+    ButtonPtr _registerButton  = subviewCreate<Button>();
 };
 
 using WelcomePanelPtr = std::shared_ptr<WelcomePanel>;

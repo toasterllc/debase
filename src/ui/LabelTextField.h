@@ -29,8 +29,8 @@ public:
     template <typename T> void spacingX(const T& x) { _set(_spacingX, x); }
     
 private:
-    LabelPtr _label         = createSubview<Label>();
-    TextFieldPtr _textField = createSubview<TextField>();
+    LabelPtr _label         = subviewCreate<Label>();
+    TextFieldPtr _textField = subviewCreate<TextField>();
     int _spacingX = 0;
 };
 

@@ -64,7 +64,7 @@ public:
                 
                 // Create the panel if it doesn't already exist, or if it does but contains the wrong commit
                 if (!panel || panel->commit()!=commit) {
-                    panel = createSubview<CommitPanel>();
+                    panel = subviewCreate<CommitPanel>();
                     panel->commit(commit);
                     _panels.insert(_panels.begin()+i, panel);
                 }
@@ -189,12 +189,12 @@ private:
     bool _head = false;
     CommitPanelVec _panels;
     
-    LabelPtr _name              = createSubview<Label>();
-    LabelPtr _readOnly          = createSubview<Label>();
+    LabelPtr _name              = subviewCreate<Label>();
+    LabelPtr _readOnly          = subviewCreate<Label>();
     
-    ButtonPtr _undoButton       = createSubview<Button>();
-    ButtonPtr _redoButton       = createSubview<Button>();
-    ButtonPtr _snapshotsButton  = createSubview<Button>();
+    ButtonPtr _undoButton       = subviewCreate<Button>();
+    ButtonPtr _redoButton       = subviewCreate<Button>();
+    ButtonPtr _snapshotsButton  = subviewCreate<Button>();
 };
 
 using RevColumnPtr = std::shared_ptr<RevColumn>;

@@ -128,7 +128,7 @@ public:
 //        return true;
 //    }
     
-    bool handleEvent(const Window& win, const Event& ev) override {
+    bool handleEvent(const Event& ev) override {
         // Only consider mouse events
         if (ev.type != Event::Type::Mouse) return false;
         
@@ -156,7 +156,7 @@ public:
         // triggers the Button action via this function.
         if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
             // Track mouse
-            track(win, ev);
+            track(ev);
             return true;
         }
         
@@ -190,8 +190,8 @@ public:
 private:
     static constexpr int KeySpacing = 2;
     
-    LabelPtr _label = createSubview<Label>();
-    LabelPtr _key = createSubview<Label>();
+    LabelPtr _label = subviewCreate<Label>();
+    LabelPtr _key = subviewCreate<Label>();
     
     bool _enabled = false;
     bool _highlighted = false;

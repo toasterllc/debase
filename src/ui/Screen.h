@@ -146,6 +146,25 @@ public:
         }
     }
     
+    static bool HandleEventTree(GraphicsState gstate, View& view, const Event& ev) {
+        if (!view.visible()) return false;
+        if (!view.interaction()) return false;
+        
+        gstate.origin += view.origin();
+        
+        auto it = view.subviews();
+        for (;;) {
+            ViewPtr subview = view.subviewsNext(it);
+            if (!subview) break;
+            if (HandleEventTree(gstate, *subview, ev)) return true;
+        }
+        
+        // None of the subviews wanted the event; let the view itself handle it
+        return view.handleEvent(SubviewConvert(gstate, ev));
+    }
+    
+    
+    
     
     
     
@@ -215,28 +234,28 @@ public:
 //        }
 //    }
     
-    static bool HandleEventTree(const Window& win, const Point& orig, const Event& ev) {
-        if (!visible()) return false;
-        if (!interaction()) return false;
-        _TreeState treeState(_TState, win, orig);
-        
-        // Let the subviews handle the event first
-        for (auto it=_subviews.begin(); it!=_subviews.end();) {
-            Ptr view = (*it).lock();
-            if (!view) {
-                // Prune and continue
-                it = _subviews.erase(it);
-                continue;
-            }
-            
-            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
-            it++;
-        }
-        
-        // None of the subviews wanted the event; let the view itself handle it
-        if (handleEvent(win, ev)) return true;
-        return false;
-    }
+//    static bool HandleEventTree(const Window& win, const Point& orig, const Event& ev) {
+//        if (!visible()) return false;
+//        if (!interaction()) return false;
+//        _TreeState treeState(_TState, win, orig);
+//        
+//        // Let the subviews handle the event first
+//        for (auto it=_subviews.begin(); it!=_subviews.end();) {
+//            Ptr view = (*it).lock();
+//            if (!view) {
+//                // Prune and continue
+//                it = _subviews.erase(it);
+//                continue;
+//            }
+//            
+//            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
+//            it++;
+//        }
+//        
+//        // None of the subviews wanted the event; let the view itself handle it
+//        if (handleEvent(win, ev)) return true;
+//        return false;
+//    }
     
     
     
@@ -263,7 +282,7 @@ public:
     
     
     
-    virtual void refresh() {
+    void refresh() {
         LayoutTree({}, *this);
         DrawTree({}, *this);
         CursorState::Draw();
@@ -271,36 +290,59 @@ public:
         ::refresh();
     }
     
-    virtual void track(const Window& win, const Event& ev) {
-//        _TreeState treeState(_TState, win, {});
-        
-        _tracking = true;
-        Defer(_tracking = false); // Exception safety
-        Defer(_trackStop = false); // Exception safety
-        
-        do {
-            refresh();
-            
-            _eventCurrent = UI::NextEvent();
-            Defer(_eventCurrent = {}); // Exception safety
-            
-            handleEventTree(*this, {}, _eventCurrent);
-        } while (!_trackStop);
+    GraphicsState findGraphicsState(View& target) {
+        return _findGraphicsState(target, { .screen=this }, *this);
     }
     
-    // Signal track() to return
-    virtual void trackStop() {
-        _trackStop = true;
-    }
+//    void track(View& target, const Event& ev) {
+//        _track(target, ev);
+//    }
     
-    virtual bool tracking() const { return _tracking; }
+//    // Signal track() to return
+//    void trackStop() {
+//        _trackStop = true;
+//    }
     
-    virtual const Event& eventCurrent() const { return _eventCurrent; }
+    
+    
+//    virtual void track(const Window& win, const Event& ev) {
+////        _TreeState treeState(_TState, win, {});
+//        
+//        _tracking = true;
+//        Defer(_tracking = false); // Exception safety
+//        Defer(_trackStop = false); // Exception safety
+//        
+//        do {
+//            refresh();
+//            
+//            _eventCurrent = UI::NextEvent();
+//            Defer(_eventCurrent = {}); // Exception safety
+//            
+//            handleEventTree(*this, {}, _eventCurrent);
+//        } while (!_trackStop);
+//    }
+    
+//    virtual bool tracking() const { return _tracking; }
+    
+//    const Event& eventCurrent() const { return _eventCurrent; }
     
 private:
-    bool _tracking = false;
-    bool _trackStop = false;
-    Event _eventCurrent;
+    GraphicsState _findGraphicsState(View& target, GraphicsState gstate, View& view) const {
+        if (&view == &target) return gstate;
+        
+        gstate.origin += view.origin();
+        auto it = view.subviews();
+        for (;;) {
+            ViewPtr subview = view.subviewsNext(it);
+            if (!subview) return {};
+            gstate = _findGraphicsState(target, gstate, *subview);
+            if (gstate) return gstate;
+        }
+    }
+    
+//    bool _tracking = false;
+//    bool _trackStop = false;
+//    Event _eventCurrent;
 };
 
 using ScreenPtr = std::shared_ptr<Screen>;

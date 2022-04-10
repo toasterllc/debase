@@ -97,10 +97,10 @@ private:
         }
     }
     
-    LabelTextFieldPtr _email    = createSubview<LabelTextField>();
-    LabelTextFieldPtr _code     = createSubview<LabelTextField>();
-    ButtonPtr _okButton         = createSubview<Button>();
-    ButtonPtr _cancelButton     = createSubview<Button>();
+    LabelTextFieldPtr _email    = subviewCreate<LabelTextField>();
+    LabelTextFieldPtr _code     = subviewCreate<LabelTextField>();
+    ButtonPtr _okButton         = subviewCreate<Button>();
+    ButtonPtr _cancelButton     = subviewCreate<Button>();
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;

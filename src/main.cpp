@@ -142,7 +142,7 @@ int main(int argc, const char* argv[]) {
 //
 //    #warning TODO: remove colors requirement from View/ModalPanel/etc constructor
 //
-//    #warning TODO: switch to a createSubview() model so our subclasses don't have to maintain the list of subviews
+//    #warning TODO: switch to a subviewCreate() model so our subclasses don't have to maintain the list of subviews
 //
 //    #warning TODO: make Window inherit from View
 //

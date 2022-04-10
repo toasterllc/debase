@@ -67,7 +67,7 @@ public:
 //        _message->draw(*this);
     }
     
-    bool handleEvent(const Window& win, const Event& ev) override {
+    bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
         if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right) ||
             ev.type == Event::Type::KeyEscape) {
@@ -94,8 +94,8 @@ private:
     static constexpr int _MessageSpacingTop = 1;
     
     Color _color;
-    LabelPtr _title     = createSubview<Label>();
-    LabelPtr _message   = createSubview<Label>();
+    LabelPtr _title     = subviewCreate<Label>();
+    LabelPtr _message   = subviewCreate<Label>();
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

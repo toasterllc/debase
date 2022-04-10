@@ -6,6 +6,7 @@
 namespace UI {
 
 class Window;
+class Screen;
 
 class View {
 public:
@@ -14,36 +15,6 @@ public:
     
     using Views = std::list<WeakPtr>;
     using ViewsIter = Views::iterator;
-    
-    struct GraphicsState {
-        GraphicsState() {}
-        const Window* window = nullptr;
-        Point origin;
-        bool erased = false;
-    };
-    
-    using GraphicsStatePtr = std::unique_ptr<GraphicsState>;
-    
-    class GraphicsStateSwapper {
-    public:
-        GraphicsStateSwapper() {}
-        GraphicsStateSwapper(GraphicsState& dst, const GraphicsState& val) : _dst(&dst), _val(val) {
-            std::swap(*_dst, _val);
-        }
-        
-        GraphicsStateSwapper(const GraphicsStateSwapper& x) = delete;
-        GraphicsStateSwapper(GraphicsStateSwapper&& x) = delete;
-        
-        ~GraphicsStateSwapper() {
-            if (_dst) {
-                std::swap(*_dst, _val);
-            }
-        }
-    
-    private:
-        GraphicsState* _dst = nullptr;
-        GraphicsState _val;
-    };
     
     
 //    class GraphicsState {
@@ -120,12 +91,12 @@ public:
     static void Colors(const ColorPalette& x) { _Colors = x; }
     
     static const GraphicsState& GState() {
-        assert(_GState.window);
+        assert(_GState);
         return _GState;
     }
     
     static auto GStatePush(const GraphicsState& x) {
-        return GraphicsStateSwapper(_GState, x);
+        return _GraphicsStateSwapper(_GState, x);
     }
     
     static Point SubviewConvert(const View& dst, const Point& p) { return p-dst.origin(); }
@@ -134,6 +105,13 @@ public:
         Event r = ev;
         if (r.type == Event::Type::Mouse) {
             r.mouse.origin = SubviewConvert(dst, ev.mouse.origin);
+        }
+        return r;
+    }
+    static Event SubviewConvert(const GraphicsState& dst, const Event& ev) {
+        Event r = ev;
+        if (r.type == Event::Type::Mouse) {
+            r.mouse.origin = ev.mouse.origin-dst.origin;
         }
         return r;
     }
@@ -303,16 +281,18 @@ public:
     }
     
     // MARK: - Events
-    virtual bool handleEvent(const Window& window, const Event& ev) { return false; }
+    virtual bool handleEvent(const Event& ev) { return false; }
+    virtual const Event& eventCurrent() const { return _eventCurrent; }
+    
+    virtual void track(const Event& ev);
+    
+    virtual void trackStop() {
+        _trackStop = true;
+    }
+    
+    virtual bool tracking() const { return _tracking; }
     
     // MARK: - Subviews
-    template <typename T, typename ...T_Args>
-    std::shared_ptr<T> createSubview(T_Args&&... args) {
-        auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
-        _subviews.push_back(view);
-        layoutNeeded(true);
-        return view;
-    }
     
 //    virtual std::list<WeakPtr>& subviews() { return _subviews; }
     
@@ -337,6 +317,18 @@ public:
             }
         }
         return subview;
+    }
+    
+    template <typename T, typename ...T_Args>
+    std::shared_ptr<T> subviewCreate(T_Args&&... args) {
+        auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
+        _subviews.push_back(view);
+        layoutNeeded(true);
+        return view;
+    }
+    
+    void subviewAdd(Ptr view) {
+        _subviews.push_back(view);
     }
     
 //    for (auto it=_subviews.begin(); it!=_subviews.end();) {
@@ -382,7 +374,27 @@ protected:
     }
     
 private:
-    bool _windowErased(const Window& window) const;
+    class _GraphicsStateSwapper {
+    public:
+        _GraphicsStateSwapper() {}
+        _GraphicsStateSwapper(GraphicsState& dst, const GraphicsState& val) : _dst(&dst), _val(val) {
+            std::swap(*_dst, _val);
+        }
+        
+        _GraphicsStateSwapper(const _GraphicsStateSwapper& x) = delete;
+        _GraphicsStateSwapper(_GraphicsStateSwapper&& x) = delete;
+        
+        ~_GraphicsStateSwapper() {
+            if (_dst) {
+                std::swap(*_dst, _val);
+            }
+        }
+    
+    private:
+        GraphicsState* _dst = nullptr;
+        GraphicsState _val;
+    };
+    
     WINDOW* _gstateWindow() const;
     
     static inline ColorPalette _Colors;
@@ -395,9 +407,10 @@ private:
     bool _interaction = true;
     bool _layoutNeeded = true;
     bool _drawNeeded = true;
-    
+    bool _tracking = false;
+    bool _trackStop = false;
+    Event _eventCurrent;
     HitTestExpand _hitTestExpand;
-    
     std::optional<Color> _borderColor;
 };
 

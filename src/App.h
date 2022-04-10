@@ -159,7 +159,7 @@ public:
 //        }
     }
     
-    bool handleEvent(const Window& win, const UI::Event& ev) override {
+    bool handleEvent(const UI::Event& ev) override {
         std::string errorMsg;
         try {
 //            if (_messagePanel) {
@@ -174,11 +174,11 @@ public:
 //                return _registerPanel->handleEvent(win, _registerPanel->convert(ev));
 //            }
             
-            // Let every column handle the event
-            for (UI::RevColumnPtr col : _columns) {
-                bool handled = col->handleEvent(*this, ev);
-                if (handled) return true;
-            }
+//            // Let every column handle the event
+//            for (UI::RevColumnPtr col : _columns) {
+//                bool handled = col->handleEvent(ev);
+//                if (handled) return true;
+//            }
             
             switch (ev.type) {
             case UI::Event::Type::Mouse: {
@@ -299,7 +299,7 @@ public:
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
             
-            _messagePanel = createSubview<UI::ModalPanel>();
+            _messagePanel = subviewCreate<UI::ModalPanel>();
             _messagePanel->color            (_colors.error);
             _messagePanel->title()->text    ("Error");
             _messagePanel->message()->text  (errorMsg);
@@ -312,7 +312,7 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         
-        return Window::handleEvent(win, ev);
+        return true;
     }
     
     void run() {
@@ -389,7 +389,7 @@ public:
                 _reload();
                 
                 try {
-                    track(*this, {});
+                    track({});
                 } catch (const UI::WindowResize&) {
                     // Continue the loop, which calls _reload()
                 }
@@ -733,7 +733,7 @@ private:
         sv.push_back(_messagePanel);
         sv.push_back(_welcomePanel);
         sv.push_back(_registerPanel);
-        subviews() = sv;
+        subviews(sv);
         
         layoutNeeded(true);
         eraseNeeded(true);
@@ -787,12 +787,12 @@ private:
             ipos = _findInsertionPosition(p);
             
             if (!_drag.titlePanel && mouseDragged && allow) {
-                _drag.titlePanel = createSubview<UI::CommitPanel>();
+                _drag.titlePanel = subviewCreate<UI::CommitPanel>();
                 _drag.titlePanel->commit(titleCommit);
                 
                 // Create shadow panels
                 for (size_t i=0; i<_selection.commits.size()-1; i++) {
-                    _drag.shadowPanels.push_back(createSubview<UI::Panel>());
+                    _drag.shadowPanels.push_back(subviewCreate<UI::Panel>());
                 }
                 
                 // The titlePanel/shadowPanels need layout
@@ -852,7 +852,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the insertion marker
-            refresh(*this);
+            refresh();
             ev = UI::NextEvent();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
@@ -986,7 +986,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the selection rect
-            refresh(*this);
+            refresh();
             ev = UI::NextEvent();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
@@ -1012,18 +1012,18 @@ private:
         
         // Draw once before we open the context menu, so that the selection is updated
         drawNeeded(true);
-        refresh(*this);
+        refresh();
         
         UI::Button* menuButton = nullptr;
         UI::ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);
         UI::ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
         UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
         
-        UI::MenuPtr menu = createSubview<UI::Menu>();
+        UI::MenuPtr menu = subviewCreate<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
         menu->size(menu->sizeIntrinsic({}));
         menu->origin(mouseDownEvent.mouse.origin);
-        menu->track(*menu, mouseDownEvent);
+        menu->track(mouseDownEvent);
         
         // Handle the clicked button
         std::optional<Git::Op> gitOp;
@@ -1078,13 +1078,13 @@ private:
         const UI::Point p = {col->origin().x+(col->size().x-width)/2, 2};
         const int heightMax = size().y-p.y;
         
-        UI::SnapshotMenuPtr menu = createSubview<UI::SnapshotMenu>();
+        UI::SnapshotMenuPtr menu = subviewCreate<UI::SnapshotMenu>();
         menu->title("Session Start");
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
 //        layoutTree(*this, {});
-        menu->track(*this, eventCurrent());
+        menu->track(eventCurrent());
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1337,7 +1337,7 @@ private:
             _registerPanel = _registerPanelCreate();
         };
         
-        UI::WelcomePanelPtr p = createSubview<UI::WelcomePanel>();
+        UI::WelcomePanelPtr p = subviewCreate<UI::WelcomePanel>();
         p->color                    (View::Colors().menu);
         p->title()->text            ("");
         p->message()->text          ("Welcome to debase!");
@@ -1348,7 +1348,7 @@ private:
     
     UI::RegisterPanelPtr _registerPanelCreate(std::string_view title, std::string_view message) {
         UI::RegisterPanelPtr p;
-        p = createSubview<UI::RegisterPanel>();
+        p = subviewCreate<UI::RegisterPanel>();
         p->color            (View::Colors().menu);
         p->title()->text    (title);
         p->message()->text  (message);

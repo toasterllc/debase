@@ -116,6 +116,18 @@ private:
     }
 };
 
+class Screen;
+class Window;
+struct GraphicsState {
+//        GraphicsState() {}
+    operator bool() const { return screen; }
+    
+    Screen* screen = nullptr;
+    const Window* window = nullptr;
+    Point origin;
+    bool erased = false;
+};
+
 struct ExitRequest : std::exception {};
 struct WindowResize : std::exception {};
 

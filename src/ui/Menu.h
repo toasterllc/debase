@@ -96,7 +96,7 @@ public:
         }
     }
     
-    bool handleEvent(const Window& win, const Event& ev) override {
+    bool handleEvent(const Event& ev) override {
         auto& ts = _trackState;
         const auto duration = std::chrono::steady_clock::now()-ts.startEvent.time;
         const Size delta = ev.mouse.origin-ts.startEvent.mouse.origin;
@@ -177,9 +177,9 @@ public:
             });
         }
         
-        subviews().clear();
+        subviews({});
         for (UI::ButtonPtr button : _buttons) {
-            subviews().push_back(button);
+            subviewAdd(button);
         }
         
         layoutNeeded(true);

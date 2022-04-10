@@ -104,12 +104,12 @@ private:
     static constexpr int _TextInset = 2;
     
     Git::Commit _commit;
-    LabelPtr _header        = createSubview<Label>();
-    LabelPtr _id            = createSubview<Label>();
-    LabelPtr _time          = createSubview<Label>();
-    LabelPtr _author        = createSubview<Label>();
-    LabelPtr _message       = createSubview<Label>();
-    LabelPtr _mergeSymbol   = createSubview<Label>();
+    LabelPtr _header        = subviewCreate<Label>();
+    LabelPtr _id            = subviewCreate<Label>();
+    LabelPtr _time          = subviewCreate<Label>();
+    LabelPtr _author        = subviewCreate<Label>();
+    LabelPtr _message       = subviewCreate<Label>();
+    LabelPtr _mergeSymbol   = subviewCreate<Label>();
 };
 
 using CommitPanelPtr = std::shared_ptr<CommitPanel>;
