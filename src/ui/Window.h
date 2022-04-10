@@ -44,6 +44,7 @@ public:
     void origin(const Point& x) override {
         const bool drawNeededPrev = drawNeeded();
         View::origin(x);
+        // Suppress View's behavior of dirtying ourself when changing the origin
         if (!drawNeededPrev) drawNeeded(false);
     }
     
