@@ -138,6 +138,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: everything is redrawing when dragging commits
+//
 //    #warning TODO: context menu hit test expand doesn't seem to be working
 //
 //    #warning TODO: encapsulate View's hitTestExpand

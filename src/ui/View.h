@@ -54,11 +54,11 @@ public:
         Attr() {}
         Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
             assert(window);
-//            if (rand() % 2) {
-//                wattron(*_s.win, A_REVERSE);
-//            } else {
-//                wattroff(*_s.win, A_REVERSE);
-//            }
+            if (rand() % 2) {
+                wattron(_s.window, A_REVERSE);
+            } else {
+                wattroff(_s.window, A_REVERSE);
+            }
             // MARK: - Drawing
             wattron(_s.window, _s.attr);
         }

@@ -39,6 +39,14 @@ public:
         }
     }
     
+    Point origin() const override { return View::origin(); }
+    
+    void origin(const Point& x) override {
+        const bool drawNeededPrev = drawNeeded();
+        View::origin(x);
+        if (!drawNeededPrev) drawNeeded(false);
+    }
+    
     virtual Point windowOrigin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     virtual void windowOrigin(const Point& p) {
         if (p == windowOrigin()) return;
@@ -137,6 +145,7 @@ public:
         x.window = this;
         x.originWindow = {};
         x.originScreen += origin();
+        x.erased = false;
         return x;
     }
     
