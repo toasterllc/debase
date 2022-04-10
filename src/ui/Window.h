@@ -146,17 +146,17 @@ public:
         windowSize(size());
         windowOrigin(gstate.originScreen);
         
-//        // Update our size/origin based on ncurses' adjusted size
-//        const Size sizeActual = windowSize();
-//        const Size originScreenActual = windowOrigin();
-//        const Size originScreenDelta = originScreenActual-gstate.originScreen;
-//        if (originScreenDelta.x || originScreenDelta.y) {
-//            os_log(OS_LOG_DEFAULT, "originScreenDelta: %d %d", originScreenDelta.x, originScreenDelta.y);
-//            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
-//        }
-//        
-//        size(sizeActual);
-//        origin(origin()+originScreenDelta);
+        // Update our size/origin based on ncurses' adjusted size
+        const Size sizeActual = windowSize();
+        const Size originScreenActual = windowOrigin();
+        const Size originScreenDelta = originScreenActual-gstate.originScreen;
+        if (originScreenDelta.x || originScreenDelta.y) {
+            os_log(OS_LOG_DEFAULT, "originScreenDelta: %d %d", originScreenDelta.x, originScreenDelta.y);
+            os_log(OS_LOG_DEFAULT, "origin BEFORE: %d %d", origin().x, origin().y);
+        }
+        
+        size(sizeActual);
+        origin(origin()+originScreenDelta);
 //        
 //        if (originScreenDelta.x || originScreenDelta.y) {
 //            os_log(OS_LOG_DEFAULT, "origin AFTER: %d %d", origin().x, origin().y);

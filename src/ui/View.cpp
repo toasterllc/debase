@@ -14,8 +14,7 @@ void View::track(const Event& ev) {
     assert(!_tracking);
     
     Screen& screen = *_GState.screen;
-    const GraphicsState gstate = screen.graphicsStateCalc(*this);
-    if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
+    GraphicsState gstate;
     
 //        if (target) {
 //            gstate = find(*target, gstate, *this);
@@ -32,6 +31,16 @@ void View::track(const Event& ev) {
     do {
         _eventCurrent = screen.nextEvent();
         Defer(_eventCurrent = {}); // Exception safety
+        
+        // Get our gstate after calling nextEvent first, so that the gstate is calculated after
+        // a full render pass (which occurs at the start of nextEvent), instead of before.
+        // This is necessary when tracking eg menus that ncurses shifts away from the edge of
+        // the window. In this case, the origin that's initially set for the menu changes
+        // during the layout pass, and so the gstate calculated before layout is incorrect.
+        if (!gstate) {
+            gstate = screen.graphicsStateCalc(*this);
+            if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
+        }
         
         handleEventTree(gstate, _eventCurrent);
     } while (!_trackStop);
