@@ -90,7 +90,7 @@ inline Status Unseal(const uint8_t* publicKey, const SealedLicense& sealed, Lice
 }
 
 // Validate: determines whether license is valid for a given `Context`
-inline Status Validate(const License& license, const Context& ctx) {
+inline Status Validate(const Context& ctx, const License& license) {
     // Check if the licensed version is lower than the current version
     if (license.version < ctx.version) return Status::InvalidVersion;
     // Check that the licensed machine id is the current machine id

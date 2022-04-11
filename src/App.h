@@ -789,10 +789,12 @@ private:
                 subviewAdd(_drag.titlePanel);
                 
                 // The titlePanel/shadowPanels need layout
-                Window::layoutNeeded(true);
+                layoutNeeded(true);
             
             } else if (!allow) {
                 _drag = {};
+                // The titlePanel/shadowPanels need layout
+                layoutNeeded(true);
             }
             
             if (_drag.titlePanel) {
@@ -1296,12 +1298,10 @@ private:
 //        
 //    }
     
-    static License::Status _LicenseUnseal(const License::Context& ctx,
-        const License::SealedLicense& sealed, License::License& license) {
-        
+    License::Status _licenseUnseal(const License::SealedLicense& sealed, License::License& license) {
         License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
         if (st != License::Status::Valid) return st;
-        return License::Validate(license, ctx);
+        return License::Validate(_licenseCtxGet(), license);
     }
     
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
@@ -1329,7 +1329,7 @@ private:
         try {
             Network::Request(DebaseLicenseURL, req, resp);
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("An error occurred when trying to talk to the server: ") + e.what());
+            _errorMessageShow(std::string("A network error occurred: ") + e.what());
             return;
         }
         
@@ -1341,7 +1341,7 @@ private:
         // Validate response
         License::SealedLicense sealed = resp.license;
         License::License license;
-        License::Status st = _LicenseUnseal(ctx, sealed, license);
+        License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
             _errorMessageShow("The license supplied by the server is invalid.");
             return;
@@ -1350,6 +1350,7 @@ private:
         // License is valid; save it and dismiss
         State::State state(StateDir());
         state.license(sealed);
+        state.write();
         
         _welcomePanel = nullptr;
     }
@@ -1385,7 +1386,7 @@ private:
         try {
             Network::Request(DebaseLicenseURL, req, resp);
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("An error occurred when trying to talk to the server: ") + e.what());
+            _errorMessageShow(std::string("A network error occurred: ") + e.what());
             return;
         }
         
@@ -1397,7 +1398,7 @@ private:
         // Validate response
         License::SealedLicense sealed = resp.license;
         License::License license;
-        License::Status st = _LicenseUnseal(ctx, sealed, license);
+        License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
             _errorMessageShow("The license supplied by the server is invalid.");
             return;
@@ -1406,6 +1407,7 @@ private:
         // License is valid; save it and dismiss
         State::State state(StateDir());
         state.license(sealed);
+        state.write();
         
         _infoMessageShow("Thank you for supporting debase!");
         _registerPanel = nullptr;
@@ -1473,7 +1475,7 @@ private:
         
         const License::Context& ctx = _licenseCtxGet();
         License::License license;
-        License::Status st = _LicenseUnseal(ctx, state.license(), license);
+        License::Status st = _licenseUnseal(state.license(), license);
         
         if (st == License::Status::Empty) {
             if (!state.trialExpired()) {
