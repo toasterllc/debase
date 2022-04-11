@@ -363,7 +363,6 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            _licenseCtx = _LicenseContext(_repo.path());
             _licenseCheck();
             
 //            {
@@ -776,13 +775,18 @@ private:
             ipos = _findInsertionPosition(p);
             
             if (!_drag.titlePanel && mouseDragged && allow) {
-                _drag.titlePanel = subviewCreate<UI::CommitPanel>();
+                _drag.titlePanel = std::make_shared<UI::CommitPanel>();
                 _drag.titlePanel->commit(titleCommit);
                 
                 // Create shadow panels
                 for (size_t i=0; i<_selection.commits.size()-1; i++) {
-                    _drag.shadowPanels.push_back(subviewCreate<UI::Panel>());
+                    _drag.shadowPanels.push_back(std::make_shared<UI::Panel>());
                 }
+                
+                for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
+                    subviewAdd(*it);
+                }
+                subviewAdd(_drag.titlePanel);
                 
                 // The titlePanel/shadowPanels need layout
                 Window::layoutNeeded(true);
@@ -799,12 +803,12 @@ private:
                     // the source column)
                     const bool forceCopy = !selectionColumn->rev().isMutable();
                     const bool copy = (ev.mouse.bstate & BUTTON_ALT) || forceCopy;
-//                    const bool copyPrev = _drag.copy;
+                    const bool copyPrev = _drag.copy;
                     _drag.copy = copy;
                     _drag.titlePanel->header()->text(_drag.copy ? "Copy" : "Move");
-//                    if (_drag.copy != copyPrev) {
-//                        layoutNeeded(true);
-//                    }
+                    if (_drag.copy != copyPrev) {
+                        layoutNeeded(true);
+                    }
                 }
                 
                 // Position/size title panel / shadow panels
@@ -1313,33 +1317,66 @@ private:
 //        panel->orderFront();
     }
     
+    void _welcomePanelTrial() {
+        assert(_welcomePanel);
+        
+        const License::Context& ctx = _licenseCtxGet();
+        const License::Request req = {
+            .machineId = ctx.machineId,
+        };
+        
+        License::RequestResponse resp;
+        try {
+            Network::Request(DebaseLicenseURL, req, resp);
+        } catch (const std::exception& e) {
+            _errorMessageShow(std::string("An error occurred when trying to talk to the server: ") + e.what());
+            return;
+        }
+        
+        if (!resp.error.empty()) {
+            _errorMessageShow(resp.error);
+            return;
+        }
+        
+        // Validate response
+        License::SealedLicense sealed = resp.license;
+        License::License license;
+        License::Status st = _LicenseUnseal(ctx, sealed, license);
+        if (st != License::Status::Valid) {
+            _errorMessageShow("The license supplied by the server is invalid.");
+            return;
+        }
+        
+        // License is valid; save it and dismiss
+        State::State state(StateDir());
+        state.license(sealed);
+        
+        _welcomePanel = nullptr;
+    }
+    
+    void _welcomePanelRegister() {
+        _registerPanelShow();
+    }
+    
     void _welcomePanelShow() {
-        auto trialAction = [=] (UI::Button&) {
-            #warning TODO: request trial license from server
-        };
-        
-        auto registerAction = [=] (UI::Button&) {
-//            _welcomePanel = nullptr;
-            _registerPanelShow();
-        };
-        
         _welcomePanel = subviewCreate<UI::WelcomePanel>();
         _welcomePanel->color                    (View::Colors().menu);
         _welcomePanel->title()->text            ("");
         _welcomePanel->message()->text          ("Welcome to debase!");
-        _welcomePanel->trialButton()->action    (trialAction);
-        _welcomePanel->registerButton()->action (registerAction);
+        _welcomePanel->trialButton()->action    (std::bind(&App::_welcomePanelTrial, this));
+        _welcomePanel->registerButton()->action (std::bind(&App::_welcomePanelRegister, this));
     }
     
     void _registerPanelRegister() {
         assert(_registerPanel);
         
+        const License::Context& ctx = _licenseCtxGet();
         const std::string email = _registerPanel->email()->value();
         const std::string registerCode = _registerPanel->code()->value();
         const License::UserId userId = License::UserIdForEmail(DebaseProductId, email);
         
         const License::Request req = {
-            .machineId = _licenseCtx.machineId,
+            .machineId = ctx.machineId,
             .userId = userId,
             .registerCode = registerCode,
         };
@@ -1360,7 +1397,7 @@ private:
         // Validate response
         License::SealedLicense sealed = resp.license;
         License::License license;
-        License::Status st = _LicenseUnseal(_licenseCtx, sealed, license);
+        License::Status st = _LicenseUnseal(ctx, sealed, license);
         if (st != License::Status::Valid) {
             _errorMessageShow("The license supplied by the server is invalid.");
             return;
@@ -1434,8 +1471,9 @@ private:
     void _licenseCheck(bool networkAllowed=true) {
         State::State state(StateDir());
         
+        const License::Context& ctx = _licenseCtxGet();
         License::License license;
-        License::Status st = _LicenseUnseal(_licenseCtx, state.license(), license);
+        License::Status st = _LicenseUnseal(ctx, state.license(), license);
         
         if (st == License::Status::Empty) {
             if (!state.trialExpired()) {
@@ -1465,7 +1503,10 @@ private:
         }
     }
     
-    
+    const License::Context& _licenseCtxGet() {
+        if (!_licenseCtx) _licenseCtx = _LicenseContext(_repo.path());
+        return *_licenseCtx;
+    }
     
     
     
@@ -1654,7 +1695,7 @@ private:
     
     UI::ColorPalette _colors;
     UI::ColorPalette _colorsPrev;
-    License::Context _licenseCtx;
+    std::optional<License::Context> _licenseCtx;
     State::RepoState _repoState;
     Git::Rev _head;
     std::vector<UI::RevColumnPtr> _columns;
