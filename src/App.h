@@ -1335,12 +1335,31 @@ private:
         License::RequestResponse resp;
         Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); });
         
+        // Wait on the async or for stdin input
+        while (!async.done()) {
+            int fds[] = { STDIN_FILENO, async.signal() };
+            Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(50));
+            
+            // Iterate over the fds that are ready for reading
+            // (Select() modifies its input array)
+            for (int fd : fds) {
+                if (fd == STDIN_FILENO) {
+                    handleEventTree(nextEvent());
+                }
+            }
+            
+            // Update animation
+        }
+        
         try {
             async.get();
         } catch (const std::exception& e) {
             _errorMessageShow(std::string("A network error occurred: ") + e.what());
             return;
         }
+        
+        
+        
         
         if (!resp.error.empty()) {
             _errorMessageShow(resp.error);

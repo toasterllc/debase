@@ -182,6 +182,11 @@ public:
         }
     }
     
+    bool handleEventTree(const Event& ev) {
+        const GraphicsState gstate = graphicsStateCalc(*this);
+        return View::handleEventTree(gstate, ev);
+    }
+    
     GraphicsState graphicsStateCalc(View& target) {
         return _graphicsStateCalc(target, {.screen=this}, *this);
     }
