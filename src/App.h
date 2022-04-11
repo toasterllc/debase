@@ -1313,23 +1313,19 @@ private:
         panel->origin(p);
     }
     
-    void _welcomePanelTrial() {
-        assert(_welcomePanel);
-        
-        const License::Context& ctx = _licenseCtxGet();
-        const License::Request req = {
-            .machineId = ctx.machineId,
-        };
+    bool _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+        panel->dropEvents(true);
+        Defer(panel->dropEvents(false));
         
         // Request license and wait until we get a response
         License::RequestResponse resp;
-        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); });
+        Async async([&] () {
+//            for (;;) sleep(1);
+            Network::Request(DebaseLicenseURL, req, resp);
+        });
         {
-            _welcomePanel->dropEvents(true);
-            Defer(_welcomePanel->dropEvents(false));
-            
             // Animate until we get a response
-            UI::ButtonSpinner spinner(_welcomePanel->trialButton());
+            UI::ButtonSpinner spinner(panel, animateButton);
             std::chrono::steady_clock::time_point nextFrameTime;
             while (!async.done()) {
                 if (std::chrono::steady_clock::now() > nextFrameTime) {
@@ -1345,12 +1341,12 @@ private:
             async.get();
         } catch (const std::exception& e) {
             _errorMessageShow(std::string("A network error occurred: ") + e.what());
-            return;
+            return false;
         }
         
         if (!resp.error.empty()) {
             _errorMessageShow(resp.error);
-            return;
+            return false;
         }
         
         // Validate response
@@ -1359,7 +1355,7 @@ private:
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
             _errorMessageShow("The license supplied by the server is invalid.");
-            return;
+            return false;
         }
         
         // License is valid; save it and dismiss
@@ -1367,7 +1363,17 @@ private:
         state.license(sealed);
         state.write();
         
-        _welcomePanel = nullptr;
+        return true;
+    }
+    
+    void _welcomePanelTrial() {
+        assert(_welcomePanel);
+        
+        const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
+        bool ok = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), trialReq);
+        if (ok) {
+            _welcomePanel = nullptr;
+        }
     }
     
     void _welcomePanelRegister() {
@@ -1386,46 +1392,21 @@ private:
     void _registerPanelRegister() {
         assert(_registerPanel);
         
-        const License::Context& ctx = _licenseCtxGet();
         const std::string email = _registerPanel->email()->value();
         const std::string registerCode = _registerPanel->code()->value();
         const License::UserId userId = License::UserIdForEmail(DebaseProductId, email);
         
-        const License::Request req = {
-            .machineId = ctx.machineId,
+        const License::Request registerReq = {
+            .machineId = _licenseCtxGet().machineId,
             .userId = userId,
             .registerCode = registerCode,
         };
         
-        License::RequestResponse resp;
-        try {
-            Network::Request(DebaseLicenseURL, req, resp);
-        } catch (const std::exception& e) {
-            _errorMessageShow(std::string("A network error occurred: ") + e.what());
-            return;
+        bool ok = _licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);
+        if (ok) {
+            _registerPanel = nullptr;
+            _infoMessageShow("Thank you for supporting debase!");
         }
-        
-        if (!resp.error.empty()) {
-            _errorMessageShow(resp.error);
-            return;
-        }
-        
-        // Validate response
-        License::SealedLicense sealed = resp.license;
-        License::License license;
-        License::Status st = _licenseUnseal(sealed, license);
-        if (st != License::Status::Valid) {
-            _errorMessageShow("The license supplied by the server is invalid.");
-            return;
-        }
-        
-        // License is valid; save it and dismiss
-        State::State state(StateDir());
-        state.license(sealed);
-        state.write();
-        
-        _infoMessageShow("Thank you for supporting debase!");
-        _registerPanel = nullptr;
     }
     
     void _registerPanelDismiss() {

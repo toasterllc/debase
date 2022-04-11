@@ -7,14 +7,19 @@ class ButtonSpinner {
 public:
     ButtonSpinner() {}
     
-    ButtonSpinner(ButtonPtr b) : _button(b), _backup(*_button) {
+    ButtonSpinner(PanelPtr panel, ButtonPtr button) :
+    _panel(panel), _button(button), _backupButton(*_button), _backupLabel(*(_button->label())) {
         _button->enabled(true);
         _button->interaction(false);
         _button->label()->prefix(std::string("  "));
     }
     
     ~ButtonSpinner() {
-        if (_button) *_button = _backup;
+        if (_panel) {
+            _panel->eraseNeeded(true); // Hack to make sure label gets redraw properly
+            *_button = _backupButton;
+            *_button->label() = _backupLabel;
+        }
     }
     
     void animate() {
@@ -25,8 +30,10 @@ public:
     
 private:
     static constexpr const char* _Animation[] = { "|", "/", "-", "\\" };
+    PanelPtr _panel;
     ButtonPtr _button;
-    Button _backup;
+    Button _backupButton;
+    Label _backupLabel;
     size_t _idx = 0;
 };
 
