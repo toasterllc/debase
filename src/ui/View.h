@@ -16,6 +16,8 @@ public:
     using Views = std::list<WeakPtr>;
     using ViewsIter = Views::iterator;
     
+    using Deadline = std::chrono::steady_clock::time_point;
+    static constexpr Deadline Forever = std::chrono::steady_clock::time_point();
     
 //    class GraphicsState {
 //    public:
@@ -292,7 +294,7 @@ public:
     virtual bool handleEvent(const Event& ev) { return false; }
     virtual const Event& eventCurrent() const { return _eventCurrent; }
     
-    virtual void track(const Event& ev);
+    virtual void track(const Event& ev, Deadline deadline=Forever);
     
     virtual void trackStop() {
         _trackStop = true;

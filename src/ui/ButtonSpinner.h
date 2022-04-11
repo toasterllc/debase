@@ -8,7 +8,9 @@ public:
     ButtonSpinner() {}
     
     ButtonSpinner(ButtonPtr b) : _button(b), _backup(*_button) {
+        _button->enabled(true);
         _button->interaction(false);
+        _button->label()->prefix(std::string("  "));
     }
     
     ~ButtonSpinner() {
@@ -16,7 +18,7 @@ public:
     }
     
     void animate() {
-        _button->label()->text(_Animation[_idx]);
+        _button->label()->suffix(std::string(" ") + _Animation[_idx]);
         _idx++;
         if (_idx >= std::size(_Animation)) _idx = 0;
     }

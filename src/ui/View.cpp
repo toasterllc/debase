@@ -9,8 +9,8 @@ WINDOW* View::_gstateWindow() const {
     return *_GState.window;
 }
 
-void View::track(const Event& ev) {
-    assert(!_tracking);
+void View::track(const Event& ev, Deadline deadline) {
+    using namespace std::chrono;
     
     class Screen& screen = Screen();
     GraphicsState gstate;
@@ -23,13 +23,23 @@ void View::track(const Event& ev) {
 //            target = this;
 //        }
     
+    const bool trackingPrev = _tracking;
+    const bool trackStopPrev = _trackStop;
+    const Event eventCurrentPrev = _eventCurrent;
+    
     _tracking = true;
-    Defer(_tracking = false); // Exception safety
-    Defer(_trackStop = false); // Exception safety
+    _trackStop = false;
+    
+    // Exception-safe state restore
+    Defer(
+        _tracking = trackingPrev;
+        _trackStop = trackStopPrev;
+        _eventCurrent = eventCurrentPrev;
+    );
     
     do {
-        _eventCurrent = screen.nextEvent();
-        Defer(_eventCurrent = {}); // Exception safety
+        _eventCurrent = screen.nextEvent(deadline);
+        if (!_eventCurrent) return; // Deadline passed
         
         // Get our gstate after calling nextEvent first, so that the gstate is calculated after
         // a full render pass (which occurs at the start of nextEvent), instead of before.

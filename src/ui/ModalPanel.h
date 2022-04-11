@@ -58,6 +58,12 @@ public:
 //        _message->draw(*this);
     }
     
+    bool handleEvent(GraphicsState gstate, const Event& ev) override {
+        // Intercept and drop events before subviews get a chance
+        if (_dropEvents) return true;
+        return Panel::handleEvent(gstate, ev);
+    }
+    
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
         if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right) ||
@@ -92,6 +98,9 @@ public:
     auto& title() { return _title; }
     auto& message() { return _message; }
     
+    const auto& dropEvents() const { return _dropEvents; }
+    template <typename T> void dropEvents(const T& x) { _setForce(_dropEvents, x); }
+    
     const auto& dismissAction() const { return _dismissAction; }
     template <typename T> void dismissAction(const T& x) { _setForce(_dismissAction, x); }
     
@@ -101,6 +110,7 @@ private:
     Color _color;
     LabelPtr _title     = subviewCreate<Label>();
     LabelPtr _message   = subviewCreate<Label>();
+    bool _dropEvents    = false;
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

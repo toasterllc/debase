@@ -144,7 +144,7 @@ public:
         return false;
     }
     
-    void track(const Event& ev) override {
+    void track(const Event& ev, Deadline deadline=Forever) override {
         _trackState = {};
         _trackState.startEvent = ev;
         
@@ -154,7 +154,7 @@ public:
             button->interaction(false);
         }
         
-        Panel::track(ev);
+        Panel::track(ev, deadline);
     }
     
     const auto& title() const { return _title; }

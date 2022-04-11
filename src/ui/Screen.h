@@ -141,7 +141,7 @@ public:
 //        return false;
 //    }
     
-    void refresh() {
+    virtual void refresh() {
         GraphicsState gstate = graphicsStateCalc(*this);
         gstate.orderPanels = _orderPanelsNeeded;
         
@@ -163,29 +163,36 @@ public:
         _orderPanelsNeeded = false;
     }
     
-    Event nextEvent(std::chrono::steady_clock::time_point deadline=std::chrono::steady_clock::time_point()) {
+    virtual Event nextEvent(Deadline deadline=Forever) {
+        using namespace std::chrono;
+        
         refresh();
         
         // Wait for another event
         for (;;) {
-            // Set our timeout to finite or infinite
-            // Recursive calls to nextEvent() will clobber each other's timeouts,
-            // so we set this every time.
+            // Set the appropriate timeout according to the deadline
             {
                 int ms = -1;
-                if (deadline.time_since_epoch().count()) {
-                    auto rem = deadline-std::chrono::steady_clock::now();
-                    ms = std::max(0, (int)rem.count());
+                if (deadline != Forever) {
+                    ms = std::max(0, (int)duration_cast<milliseconds>(deadline-steady_clock::now()).count());
                 }
                 wtimeout(*this, ms);
             }
             
             int ch = ::wgetch(*this);
-            if (ch == ERR) continue;
+            if (ch == ERR) {
+                // We got an error:
+                //   if timeout isn't enabled, wait for an event again
+                //   if timeout is enabled and it's expired, return an empty event
+                if (deadline == Forever) continue;
+                // >= and not > so that deadline=now() can be given and we're
+                // guaranteed to perform a single iteration
+                if (steady_clock::now() >= deadline) return {};
+            }
             
             Event ev = {
                 .type = (Event::Type)ch,
-                .time = std::chrono::steady_clock::now(),
+                .time = steady_clock::now(),
             };
             switch (ev.type) {
             case Event::Type::Mouse: {
@@ -216,16 +223,16 @@ public:
         }
     }
     
-    Event nextEvent(std::chrono::milliseconds timeout) {
+    virtual Event nextEvent(std::chrono::milliseconds timeout) {
         return nextEvent(std::chrono::steady_clock::now()+timeout);
     }
     
-    bool dispatchEvent(const Event& ev) {
+    virtual bool dispatchEvent(const Event& ev) {
         const GraphicsState gstate = graphicsStateCalc(*this);
         return View::handleEvent(gstate, ev);
     }
     
-    GraphicsState graphicsStateCalc(View& target) {
+    virtual GraphicsState graphicsStateCalc(View& target) {
         return _graphicsStateCalc(target, {.screen=this}, *this);
     }
     
@@ -261,8 +268,8 @@ public:
     
 //    const Event& eventCurrent() const { return _eventCurrent; }
     
-    bool orderPanelsNeeded() { return _orderPanelsNeeded; }
-    void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
+    virtual bool orderPanelsNeeded() { return _orderPanelsNeeded; }
+    virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
     
 private:
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
