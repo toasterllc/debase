@@ -13,29 +13,32 @@ class RegisterPanel : public ModalPanel {
 public:
     RegisterPanel() {
     
+        auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email->label()->text           ("Email: ");
-        _email->label()->textAttr       (Colors().menu|A_BOLD);
-        _email->spacingX                (3);
-        _email->textField()->requestFocus = requestFocus;
-        _email->textField()->releaseFocus = releaseFocus;
-        _email->textField()->focus(true);
+        _email->label()->text               ("Email: ");
+        _email->label()->textAttr           (Colors().menu|A_BOLD);
+        _email->spacingX                    (3);
+        _email->textField()->valueChanged   (valueChanged);
+        _email->textField()->requestFocus   (requestFocus);
+        _email->textField()->releaseFocus   (releaseFocus);
+        _email->textField()->focus          (true);
         
-        _code->label()->text            (" Code: ");
-        _code->label()->textAttr        (Colors().menu|A_BOLD);
-        _code->spacingX                 (3);
-        _code->textField()->requestFocus = requestFocus;
-        _code->textField()->releaseFocus = releaseFocus;
+        _code->label()->text                (" Code: ");
+        _code->label()->textAttr            (Colors().menu|A_BOLD);
+        _code->spacingX                     (3);
+        _code->textField()->valueChanged    (valueChanged);
+        _code->textField()->requestFocus    (requestFocus);
+        _code->textField()->releaseFocus    (releaseFocus);
         
-        _okButton->label()->text        ("OK");
-        _okButton->enabled              (true);
-        _okButton->drawBorder           (true);
+        _okButton->label()->text            ("OK");
+        _okButton->enabled                  (false);
+        _okButton->drawBorder               (true);
         
-        _cancelButton->label()->text    ("Cancel");
-        _cancelButton->enabled          (true);
-        _cancelButton->drawBorder       (true);
+        _cancelButton->label()->text        ("Cancel");
+        _cancelButton->enabled              (true);
+        _cancelButton->drawBorder           (true);
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -78,6 +81,14 @@ private:
     static constexpr int _FieldLabelWidth   = 10;
     static constexpr int _FieldValueInsetX  = _FieldLabelWidth;
     
+    void _fieldValueChanged(TextField& field) {
+        const bool fieldsValue =
+            !_code->textField()->value().empty()    &&
+            !_email->textField()->value().empty()   ;
+        
+        _okButton->enabled(fieldsValue);
+    }
+    
     void _fieldRequestFocus(TextField& field) {
         _email->textField()->focus(false);
         _code->textField()->focus(false);
@@ -88,18 +99,18 @@ private:
         _email->textField()->focus(false);
         _code->textField()->focus(false);
         
-        bool fieldsFilled = !_email->textField()->value.empty() && !_code->textField()->value.empty();
+        bool fieldsFilled = !_email->textField()->value().empty() && !_code->textField()->value().empty();
         if (done) {
             if (fieldsFilled) {
                 beep();
             
             } else {
-                if (field.value.empty()) {
+                if (field.value().empty()) {
                     field.focus(true);
                 
                 } else {
-                    if (_email->textField()->value.empty())     _email->textField()->focus(true);
-                    else if (_code->textField()->value.empty()) _code->textField()->focus(true);
+                    if (_email->textField()->value().empty())     _email->textField()->focus(true);
+                    else if (_code->textField()->value().empty()) _code->textField()->focus(true);
                 }
             }
         

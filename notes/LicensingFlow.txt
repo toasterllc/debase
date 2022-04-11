@@ -11,8 +11,10 @@
 * Licensing flow
 
     SealedLicense empty?
-        yes && expired==0 -> show welcome panel
-        yes && expired==1 -> show register panel with custom message ("trial expired")
+        yes ->
+            expired==0 -> show welcome panel
+            expired==1 -> show register panel with custom message ("trial expired")
+        
         no -> _LicenseUnseal()
             success -> done (debase is registered)
             invalid machine id && !trial -> renew license

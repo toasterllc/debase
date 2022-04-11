@@ -1345,6 +1345,7 @@ private:
     
     UI::RegisterPanelPtr _registerPanelCreate(std::string_view title, std::string_view message) {
         auto okAction = [=] (UI::Button&) {
+            
         };
         
         auto cancelAction = [=] (UI::Button&) {

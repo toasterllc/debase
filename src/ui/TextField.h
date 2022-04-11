@@ -29,7 +29,7 @@ public:
         // Print as many runes as will fit our width
         const int width = size().x;
         auto left = _left();
-        auto right = UTF8::NextN(left, value.end(), width);
+        auto right = UTF8::NextN(left, _value.end(), width);
         
         std::string substr(left, right);
         drawText({}, substr.c_str());
@@ -50,37 +50,45 @@ public:
         drawNeeded(true);
     }
     
-    std::function<void(TextField&)> requestFocus;
-    std::function<void(TextField&, bool)> releaseFocus;
-    std::string value;
+    const auto& value() const { return _value; }
+    template <typename T> void value(const T& x) { _set(_value, x); }
+    
+    const auto& valueChanged() const { return _valueChanged; }
+    template <typename T> void valueChanged(const T& x) { _setForce(_valueChanged, x); }
+    
+    const auto& requestFocus() const { return _requestFocus; }
+    template <typename T> void requestFocus(const T& x) { _setForce(_requestFocus, x); }
+    
+    const auto& releaseFocus() const { return _releaseFocus; }
+    template <typename T> void releaseFocus(const T& x) { _setForce(_releaseFocus, x); }
     
 private:
     static constexpr int KeySpacing = 2;
     
     std::string::iterator _left() {
-        assert(_offLeft <= value.size());
-        return value.begin()+_offLeft;
+        assert(_offLeft <= _value.size());
+        return _value.begin()+_offLeft;
     }
     
-    std::string::iterator _leftMin() { return value.begin(); }
+    std::string::iterator _leftMin() { return _value.begin(); }
     std::string::iterator _leftMax() {
-        return UTF8::NextN(value.end(), value.begin(), -size().x);
+        return UTF8::NextN(_value.end(), _value.begin(), -size().x);
     }
     
     std::string::iterator _cursor() {
-        assert(_offCursor <= value.size());
-        return value.begin()+_offCursor;
+        assert(_offCursor <= _value.size());
+        return _value.begin()+_offCursor;
     }
     
     std::string::iterator _cursorMin() { return _left(); }
     std::string::iterator _cursorMax() {
-        return UTF8::NextN(_cursorMin(), value.end(), size().x);
+        return UTF8::NextN(_cursorMin(), _value.end(), size().x);
     }
     
-    ssize_t _offLeftMin() { return std::distance(value.begin(), _leftMin()); }
-    ssize_t _offLeftMax() { return std::distance(value.begin(), _leftMax()); }
-    ssize_t _offCursorMin() { return std::distance(value.begin(), _cursorMin()); }
-    ssize_t _offCursorMax() { return std::distance(value.begin(), _cursorMax()); }
+    ssize_t _offLeftMin() { return std::distance(_value.begin(), _leftMin()); }
+    ssize_t _offLeftMax() { return std::distance(_value.begin(), _leftMax()); }
+    ssize_t _offCursorMin() { return std::distance(_value.begin(), _cursorMin()); }
+    ssize_t _offCursorMax() { return std::distance(_value.begin(), _cursorMax()); }
     
     void _offUpdate() {
         _offLeft = std::clamp(_offLeft, _offLeftMin(), _offLeftMax());
@@ -92,14 +100,14 @@ private:
             const bool hit = hitTest(ev.mouse.origin);
             
             if (ev.mouseDown() && hit && !_focus) {
-                requestFocus(*this);
+                if (_requestFocus) _requestFocus(*this);
             }
             
             if ((ev.mouseDown() && hit) || tracking()) {
                 // Update the cursor position to the clicked point
                 int offX = ev.mouse.origin.x;
-                auto offIt = UTF8::NextN(_left(), value.end(), offX);
-                _offCursor = std::distance(value.begin(), offIt);
+                auto offIt = UTF8::NextN(_left(), _value.end(), offX);
+                _offCursor = std::distance(_value.begin(), offIt);
             }
             
             if (ev.mouseDown() && hit && !tracking()) {
@@ -115,50 +123,54 @@ private:
         } else if (_focus) {
             if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
-                if (cursor == value.begin()) return true;
+                if (cursor == _value.begin()) return true;
                 
-                auto eraseBegin = UTF8::Prev(cursor, value.begin());
+                auto eraseBegin = UTF8::Prev(cursor, _value.begin());
                 size_t eraseSize = std::distance(eraseBegin, cursor);
-                value.erase(eraseBegin, cursor);
+                _value.erase(eraseBegin, cursor);
                 _offCursor -= eraseSize;
                 _offUpdate();
+                
+                if (_valueChanged) _valueChanged(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyFnDelete) {
                 auto cursor = _cursor();
-                if (cursor == value.end()) return true;
+                if (cursor == _value.end()) return true;
                 
-                auto eraseEnd = UTF8::Next(cursor, value.end());
-                value.erase(cursor, eraseEnd);
+                auto eraseEnd = UTF8::Next(cursor, _value.end());
+                _value.erase(cursor, eraseEnd);
                 _offUpdate();
+                
+                if (_valueChanged) _valueChanged(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyLeft) {
                 auto cursor = _cursor();
-                if (cursor == value.begin()) return true;
+                if (cursor == _value.begin()) return true;
                 
                 // If the cursor's at the display-beginning, shift view left
                 if (cursor == _cursorMin()) {
-                    auto left = UTF8::Prev(_left(), value.begin());
-                    _offLeft = std::distance(value.begin(), left);
+                    auto left = UTF8::Prev(_left(), _value.begin());
+                    _offLeft = std::distance(_value.begin(), left);
                 }
                 
-                auto it = UTF8::Prev(cursor, value.begin());
-                _offCursor = std::distance(value.begin(), it);
+                auto it = UTF8::Prev(cursor, _value.begin());
+                _offCursor = std::distance(_value.begin(), it);
                 return true;
             
             } else if (ev.type == Event::Type::KeyRight) {
                 auto cursor = _cursor();
-                if (cursor == value.end()) return true;
+                if (cursor == _value.end()) return true;
                 
                 // If the cursor's at the display-end, shift view right
                 if (cursor == _cursorMax()) {
-                    auto left = UTF8::Next(_left(), value.end());
-                    _offLeft = std::distance(value.begin(), left);
+                    auto left = UTF8::Next(_left(), _value.end());
+                    _offLeft = std::distance(_value.begin(), left);
                 }
                 
-                auto it = UTF8::Next(cursor, value.end());
-                _offCursor = std::distance(value.begin(), it);
+                auto it = UTF8::Next(cursor, _value.end());
+                _offCursor = std::distance(_value.begin(), it);
                 return true;
             
             } else if (ev.type == Event::Type::KeyUp) {
@@ -174,15 +186,15 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                releaseFocus(*this, false);
+                if (_releaseFocus) _releaseFocus(*this, false);
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                releaseFocus(*this, false);
+                if (_releaseFocus) _releaseFocus(*this, false);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                releaseFocus(*this, true);
+                if (_releaseFocus) _releaseFocus(*this, true);
                 return true;
             
             } else {
@@ -192,19 +204,26 @@ private:
                 
                 // If the cursor's at the display-end, shift view right
                 if (_cursor() == _cursorMax()) {
-                    auto left = UTF8::Next(_left(), value.end());
-                    _offLeft = std::distance(value.begin(), left);
+                    auto left = UTF8::Next(_left(), _value.end());
+                    _offLeft = std::distance(_value.begin(), left);
                 }
                 
-                value.insert(_cursor(), c);
+                _value.insert(_cursor(), c);
                 _offCursor++;
                 _offUpdate();
+                
+                if (_valueChanged) _valueChanged(*this);
                 return true;
             }
         }
         
         return false;
     }
+    
+    std::string _value;
+    std::function<void(TextField&)> _valueChanged;
+    std::function<void(TextField&)> _requestFocus;
+    std::function<void(TextField&, bool)> _releaseFocus;
     
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
