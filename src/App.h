@@ -298,18 +298,7 @@ public:
         
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
-            
-            _messagePanel = subviewCreate<UI::ModalPanel>();
-            _messagePanel->color            (_colors.error);
-            _messagePanel->title()->text    ("Error");
-            _messagePanel->message()->text  (errorMsg);
-            _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
-            
-            // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
-            // as a result of pressing a keyboard key. For some reason showing panels
-            // due to a mouse event doesn't trigger the flicker, only keyboard events.
-            // For some reason sleeping a short time fixes it.
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            _errorMessageShow(errorMsg);
         }
         
         return true;
@@ -374,8 +363,8 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            State::State state(StateDir());
-            _licenseCheck(state);
+            _licenseCtx = _LicenseContext(_repo.path());
+            _licenseCheck();
             
 //            {
 //                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
@@ -1303,11 +1292,11 @@ private:
 //        
 //    }
     
-    static License::Status _LicenseUnseal(const _Path& repoDir, const License::SealedLicense& sealed, License::License& license) {
+    static License::Status _LicenseUnseal(const License::Context& ctx,
+        const License::SealedLicense& sealed, License::License& license) {
+        
         License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
         if (st != License::Status::Valid) return st;
-        // Unsealing was successful; validate the license payload
-        License::Context ctx = _LicenseContext(repoDir);
         return License::Validate(license, ctx);
     }
     
@@ -1324,67 +1313,137 @@ private:
         panel->orderFront();
     }
     
-    UI::WelcomePanelPtr _welcomePanelCreate() {
+    void _registerPanelRegister() {
+        assert(_registerPanel);
+        
+        const std::string email = _registerPanel->email()->value();
+        const std::string registerCode = _registerPanel->code()->value();
+        const License::UserId userId = License::UserIdForEmail(DebaseProductId, email);
+        
+        const License::Request req = {
+            .machineId = _licenseCtx.machineId,
+            .userId = userId,
+            .registerCode = registerCode,
+        };
+        
+        License::RequestResponse resp;
+        try {
+            Network::Request(DebaseLicenseURL, req, resp);
+        } catch (const std::exception& e) {
+            _errorMessageShow(std::string("A network error occurred: ") + e.what());
+            return;
+        }
+        
+        if (!resp.error.empty()) {
+            _errorMessageShow(resp.error);
+            return;
+        }
+        
+        // Validate response
+        License::SealedLicense sealed = resp.license;
+        License::License license;
+        License::Status st = _LicenseUnseal(_licenseCtx, sealed, license);
+        if (st != License::Status::Valid) {
+            _errorMessageShow("The license supplied by the server is invalid.");
+            return;
+        }
+        
+        // License is valid; save it and dismiss
+        State::State state(StateDir());
+        state.license(sealed);
+        
+        _infoMessageShow("Thank you for supporting debase!");
+        _registerPanel = nullptr;
+    }
+    
+    void _registerPanelDismiss() {
+        assert(_registerPanel);
+        _registerPanel = nullptr;
+    }
+    
+    void _welcomePanelShow() {
         auto trialAction = [=] (UI::Button&) {
             #warning TODO: request trial license from server
         };
         
         auto registerAction = [=] (UI::Button&) {
 //            _welcomePanel = nullptr;
-            _registerPanel = _registerPanelCreate();
+            _registerPanelShow();
         };
         
-        UI::WelcomePanelPtr p = subviewCreate<UI::WelcomePanel>();
-        p->color                    (View::Colors().menu);
-        p->title()->text            ("");
-        p->message()->text          ("Welcome to debase!");
-        p->trialButton()->action    (trialAction);
-        p->registerButton()->action (registerAction);
-        return p;
+        _welcomePanel = subviewCreate<UI::WelcomePanel>();
+        _welcomePanel->color                    (View::Colors().menu);
+        _welcomePanel->title()->text            ("");
+        _welcomePanel->message()->text          ("Welcome to debase!");
+        _welcomePanel->trialButton()->action    (trialAction);
+        _welcomePanel->registerButton()->action (registerAction);
     }
     
-    UI::RegisterPanelPtr _registerPanelCreate(std::string_view title, std::string_view message) {
-        auto okAction = [=] (UI::Button&) {
-            
-        };
-        
-        auto cancelAction = [=] (UI::Button&) {
-            _registerPanel = nullptr;
-        };
-        
-        UI::RegisterPanelPtr p;
-        p = subviewCreate<UI::RegisterPanel>();
-        p->color                    (View::Colors().menu);
-        p->title()->text            (title);
-        p->message()->text          (message);
-        p->okButton()->action       (okAction);
-        p->cancelButton()->action   (cancelAction);
-        return p;
+    void _registerPanelShow(std::string_view title, std::string_view message, bool dismissAllowed) {
+        _registerPanel = subviewCreate<UI::RegisterPanel>();
+        _registerPanel->color               (View::Colors().menu);
+        _registerPanel->title()->text       (title);
+        _registerPanel->message()->text     (message);
+        _registerPanel->okButton()->action  (std::bind(&App::_registerPanelRegister, this));
+        if (dismissAllowed) {
+            _registerPanel->dismissAction   (std::bind(&App::_registerPanelDismiss, this));
+        }
     }
     
-    UI::RegisterPanelPtr _trialExpiredPanelCreate() {
+    void _infoMessageShow(std::string_view msg) {
+        _messagePanel = subviewCreate<UI::ModalPanel>();
+        _messagePanel->color            (_colors.menu);
+//        _messagePanel->title()->text    ("Error");
+        _messagePanel->message()->text  (msg);
+        _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
+        
+        // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
+        // as a result of pressing a keyboard key. For some reason showing panels
+        // due to a mouse event doesn't trigger the flicker, only keyboard events.
+        // For some reason sleeping a short time fixes it.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    
+    void _errorMessageShow(std::string_view msg) {
+        _messagePanel = subviewCreate<UI::ModalPanel>();
+        _messagePanel->color            (_colors.error);
+        _messagePanel->title()->text    ("Error");
+        _messagePanel->message()->text  (msg);
+        _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
+        _messagePanel->orderFront();
+        
+        // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
+        // as a result of pressing a keyboard key. For some reason showing panels
+        // due to a mouse event doesn't trigger the flicker, only keyboard events.
+        // For some reason sleeping a short time fixes it.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    
+    void _trialExpiredPanelShow() {
         constexpr const char* Title     = "Trial Expired";
         constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
-        return _registerPanelCreate(Title, Message);
+        _registerPanelShow(Title, Message, false);
     }
     
-    UI::RegisterPanelPtr _registerPanelCreate() {
+    void _registerPanelShow() {
         constexpr const char* Title     = "Register debase";
         constexpr const char* Message   = "Please enter your registration information.";
-        return _registerPanelCreate(Title, Message);
+        _registerPanelShow(Title, Message, true);
     }
     
-    void _licenseCheck(State::State& state, bool networkAllowed=true) {
+    void _licenseCheck(bool networkAllowed=true) {
+        State::State state(StateDir());
+        
         License::License license;
-        License::Status st = _LicenseUnseal(_repo.path(), state.license(), license);
+        License::Status st = _LicenseUnseal(_licenseCtx, state.license(), license);
         
         if (st == License::Status::Empty) {
             if (!state.trialExpired()) {
-                _welcomePanel = _welcomePanelCreate();
+                _welcomePanelShow();
             
             } else {
                 // Show trial-expired panel
-                _registerPanel = _trialExpiredPanelCreate();
+                _trialExpiredPanelShow();
             }
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
@@ -1394,7 +1453,7 @@ private:
             // Delete license, set expired=1, show trial-expired panel
             state.license({});
             state.trialExpired(true);
-            _registerPanel = _trialExpiredPanelCreate();
+            _trialExpiredPanelShow();
         
         } else if (st == License::Status::Valid) {
             // Done; debase is registered
@@ -1402,7 +1461,7 @@ private:
         } else {
             // Delete license, show welcome panel
             state.license({});
-            _welcomePanel = _welcomePanelCreate();
+            _welcomePanelShow();
         }
     }
     
@@ -1595,6 +1654,7 @@ private:
     
     UI::ColorPalette _colors;
     UI::ColorPalette _colorsPrev;
+    License::Context _licenseCtx;
     State::RepoState _repoState;
     Git::Rev _head;
     std::vector<UI::RevColumnPtr> _columns;

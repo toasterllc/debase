@@ -482,14 +482,16 @@ protected:
     template <typename X, typename Y>
     void _setForce(X& x, const Y& y) {
         x = y;
-        View::drawNeeded(true);
+        layoutNeeded(true);
+        drawNeeded(true);
     }
     
     template <typename X, typename Y>
     void _set(X& x, const Y& y) {
         if (x == y) return;
         x = y;
-        View::drawNeeded(true);
+        layoutNeeded(true);
+        drawNeeded(true);
     }
     
 protected:

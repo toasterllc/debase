@@ -17,9 +17,11 @@ public:
     }
     
     static constexpr Size BorderSize() { return {5,2}; }
+    static constexpr Rect InteriorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
     
     Size sizeIntrinsic(Size constraint) override {
-        const int messageHeight = _message->sizeIntrinsic({constraint.x, 0}).y;
+        const Rect interiorFrame = InteriorFrame({{}, constraint});
+        const int messageHeight = _message->sizeIntrinsic({interiorFrame.w(), 0}).y;
         return {
             .x = constraint.x,
             .y = 2*BorderSize().y + messageHeight,
@@ -71,9 +73,9 @@ public:
 //    Rect contentRect() { return ContentRect(size()); }
     
     Rect messageFrame() const {
-        Rect f = Inset(bounds(), BorderSize());
-        f.size.y = _message->sizeIntrinsic({f.size.x, 0}).y;
-        return f;
+        Rect interiorFrame = InteriorFrame(bounds());
+        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), 0}).y;
+        return interiorFrame;
     }
     
     Rect contentFrame() const {

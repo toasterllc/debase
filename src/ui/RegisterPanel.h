@@ -33,12 +33,12 @@ public:
         _code->textField()->releaseFocus    (releaseFocus);
         
         _okButton->label()->text            ("OK");
-        _okButton->enabled                  (false);
         _okButton->drawBorder               (true);
         
         _cancelButton->label()->text        ("Cancel");
-        _cancelButton->enabled              (true);
         _cancelButton->drawBorder           (true);
+        _cancelButton->action               (std::bind(&RegisterPanel::_actionCancel, this));
+        _cancelButton->enabled              (true);
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -46,6 +46,11 @@ public:
         s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
         return s;
     }
+    
+//    void draw() override {
+//        ModalPanel::draw();
+//        drawRect(contentFrame());
+//    }
     
     void layout() override {
         ModalPanel::layout();
@@ -62,8 +67,12 @@ public:
         
         _okButton->frame({{cf.r()-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
         _cancelButton->frame({{_okButton->frame().l()-_ButtonSpacingX-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
+        
+        _cancelButton->visible((bool)dismissAction());
     }
     
+    auto& email() { return _email->textField(); }
+    auto& code() { return _code->textField(); }
     auto& okButton() { return _okButton; }
     auto& cancelButton() { return _cancelButton; }
     
@@ -74,7 +83,7 @@ private:
     static constexpr int _ButtonHeight          = 3;
     static constexpr int _ButtonSpacingX        = 1;
     static constexpr int _ContentSpacingTop     = 0;
-    static constexpr int _ContentSpacingBottom  = 1;
+    static constexpr int _ContentSpacingBottom  = 0;
     
     static constexpr int _FieldsExtraHeight = 5;
     static constexpr int _FieldLabelInsetX  = 0;
@@ -121,6 +130,12 @@ private:
             } else if (&field == _code->textField().get()) {
                 _email->textField()->focus(true);
             }
+        }
+    }
+    
+    void _actionCancel() {
+        if (dismissAction()) {
+            dismissAction()(*this);
         }
     }
     

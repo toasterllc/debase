@@ -200,7 +200,7 @@ private:
             } else {
                 const int c = (int)ev.type;
                 // Ignore the character if it's not UTF-8 (>=256), or if it's non-printable ASCII
-                if (c>=256 || (c<128 && !isprint(c))) return true;
+                if (c>=256 || (c<128 && !isprint(c))) return false;
                 
                 // If the cursor's at the display-end, shift view right
                 if (_cursor() == _cursorMax()) {
