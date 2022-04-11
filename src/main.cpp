@@ -93,7 +93,7 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: add OK / Cancel buttons to RegisterPanel
+    #warning TODO: show animation while performing network IO
     
     #warning TODO: add feature requests field in register panel
     
@@ -102,7 +102,7 @@ int main(int argc, const char* argv[]) {
     #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
         // https://news.ycombinator.com/item?id=30921231
     
-    #warning TODO: add installation affordances: suggest movinig debase to a permanent location, add git alias
+    #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
     
     #warning TODO: consider collecting telemetry from users: OS type, location
     
@@ -129,6 +129,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: add OK / Cancel buttons to RegisterPanel
+//    
 //    #warning TODO: fix: events should be handled from back of subviews() to front, so that ModalPanel's can eat all the events
 //
 //    #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize
