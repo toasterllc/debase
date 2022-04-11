@@ -141,7 +141,7 @@ public:
 //        }
 //        
 //        for (CommitPanelPtr p : _panels) {
-//            p->drawTree(win);
+//            p->draw(win);
 //        }
 //    }
     

@@ -41,7 +41,7 @@ void View::track(const Event& ev) {
             if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
         }
         
-        handleEventTree(gstate, _eventCurrent);
+        handleEvent(gstate, _eventCurrent);
     } while (!_trackStop);
     
     
@@ -95,7 +95,7 @@ void View::track(const Event& ev) {
 //            _eventCurrent = UI::NextEvent();
 //            Defer(_eventCurrent = {}); // Exception safety
 //            
-//            handleEventTree(*this, {}, _eventCurrent);
+//            handleEvent(*this, {}, _eventCurrent);
 //        } while (!_trackStop);
 }
 

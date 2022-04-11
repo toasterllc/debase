@@ -24,13 +24,13 @@ public:
         ::move_panel(*this, p.y, p.x);
     }
     
-    void layoutTree(GraphicsState gstate) override {
+    void layout(GraphicsState gstate) override {
         if (!visible()) return;
         
         // If panels need to be ordered during this layout pass, do so now
         if (gstate.orderPanels) ::top_panel(*this);
         
-        Window::layoutTree(gstate);
+        Window::layout(gstate);
     }
     
 //    void origin(const Point& p) override {

@@ -14,12 +14,14 @@ public:
         
         std::thread([=] {
             try {
-                // Non-void return type
-                if constexpr (!std::is_same_v<RetType, void>) {
-                    _state->val = fn();
                 // Void return type
-                } else {
+                if constexpr (_RetTypeEmpty) {
                     fn();
+                    _state->val = _Empty();
+                
+                // Non-void return type
+                } else {
+                    _state->val = fn();
                 }
             } catch (...) {
                 _state->err = std::current_exception();
@@ -55,7 +57,8 @@ public:
     
 private:
     struct _Empty {};
-    using _RetTypeOrEmpty = std::conditional_t<!std::is_same_v<RetType, void>, RetType, _Empty>;
+    static constexpr bool _RetTypeEmpty = std::is_same_v<RetType, void>;
+    using _RetTypeOrEmpty = std::conditional_t<_RetTypeEmpty, _Empty, RetType>;
     
     struct _State {
         SignalDescriptor signal;

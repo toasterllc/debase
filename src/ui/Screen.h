@@ -22,7 +22,7 @@ public:
     Size windowSize() const override { return Window::windowSize(); }
     void windowSize(const Size& s) override {} // Ignore attempts to set screen size
     
-//    void layoutTree(const Window& win, const Point& orig) override {
+//    void layout(const Window& win, const Point& orig) override {
 //        windowSize(size());
 //        windowOrigin(orig);
 //        
@@ -42,10 +42,10 @@ public:
 ////            _s.sizePrev = size();
 ////        }
 //        
-//        View::layoutTree(*this, {});
+//        View::layout(*this, {});
 //    }
 //    
-//    void drawTree(const Window& win, const Point& orig) override {
+//    void draw(const Window& win, const Point& orig) override {
 //        // Remember whether we erased ourself during this draw cycle
 //        // This is used by View instances (Button and TextField)
 //        // to know whether they need to be drawn again
@@ -57,7 +57,7 @@ public:
 //            _s.eraseNeeded = false;
 //        }
 //        
-//        View::drawTree(*this, {});
+//        View::draw(*this, {});
 //    }
     
 //    static void DrawTree(Window* window, Point origin, View& view) {
@@ -113,7 +113,7 @@ public:
 //                continue;
 //            }
 //            
-//            view->drawTree(win, _TState.origin()+view->origin());
+//            view->draw(win, _TState.origin()+view->origin());
 //            it++;
 //        }
 //    }
@@ -132,7 +132,7 @@ public:
 //                continue;
 //            }
 //            
-//            if (view->handleEventTree(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
+//            if (view->handleEvent(win, _TState.origin()+view->origin(), SubviewConvert(*view, ev))) return true;
 //            it++;
 //        }
 //        
@@ -141,11 +141,45 @@ public:
 //        return false;
 //    }
     
-    Event nextEvent() {
-        _refresh();
+    void refresh() {
+        GraphicsState gstate = graphicsStateCalc(*this);
+        gstate.orderPanels = _orderPanelsNeeded;
+        
+        layout(gstate);
+        
+        // If _orderPanelsNeeded=false at function entry, but _orderPanelsNeeded=true after a layout pass,
+        // do another layout pass specifically to order the panels. If we didn't do this, we'd draw a
+        // single frame where the panels have the wrong z-ordering.
+        if (!gstate.orderPanels && _orderPanelsNeeded) {
+            gstate.orderPanels = true;
+            layout(gstate);
+        }
+        
+        draw(gstate);
+        CursorState::Draw();
+        ::update_panels();
+        ::refresh();
+        
+        _orderPanelsNeeded = false;
+    }
+    
+    Event nextEvent(std::chrono::steady_clock::time_point deadline=std::chrono::steady_clock::time_point()) {
+        refresh();
         
         // Wait for another event
         for (;;) {
+            // Set our timeout to finite or infinite
+            // Recursive calls to nextEvent() will clobber each other's timeouts,
+            // so we set this every time.
+            {
+                int ms = -1;
+                if (deadline.time_since_epoch().count()) {
+                    auto rem = deadline-std::chrono::steady_clock::now();
+                    ms = std::max(0, (int)rem.count());
+                }
+                wtimeout(*this, ms);
+            }
+            
             int ch = ::wgetch(*this);
             if (ch == ERR) continue;
             
@@ -182,9 +216,13 @@ public:
         }
     }
     
-    bool handleEventTree(const Event& ev) {
+    Event nextEvent(std::chrono::milliseconds timeout) {
+        return nextEvent(std::chrono::steady_clock::now()+timeout);
+    }
+    
+    bool dispatchEvent(const Event& ev) {
         const GraphicsState gstate = graphicsStateCalc(*this);
-        return View::handleEventTree(gstate, ev);
+        return View::handleEvent(gstate, ev);
     }
     
     GraphicsState graphicsStateCalc(View& target) {
@@ -215,7 +253,7 @@ public:
 //            _eventCurrent = UI::NextEvent();
 //            Defer(_eventCurrent = {}); // Exception safety
 //            
-//            handleEventTree(*this, {}, _eventCurrent);
+//            handleEvent(*this, {}, _eventCurrent);
 //        } while (!_trackStop);
 //    }
     
@@ -227,28 +265,6 @@ public:
     void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
     
 private:
-    void _refresh() {
-        GraphicsState gstate = graphicsStateCalc(*this);
-        gstate.orderPanels = _orderPanelsNeeded;
-        
-        layoutTree(gstate);
-        
-        // If _orderPanelsNeeded=false at function entry, but _orderPanelsNeeded=true after a layout pass,
-        // do another layout pass specifically to order the panels. If we didn't do this, we'd draw a
-        // single frame where the panels have the wrong z-ordering.
-        if (!gstate.orderPanels && _orderPanelsNeeded) {
-            gstate.orderPanels = true;
-            layoutTree(gstate);
-        }
-        
-        drawTree(gstate);
-        CursorState::Draw();
-        ::update_panels();
-        ::refresh();
-        
-        _orderPanelsNeeded = false;
-    }
-    
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
         gstate = view.convert(gstate);
         if (&view == &target) return gstate;

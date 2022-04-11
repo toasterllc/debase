@@ -307,7 +307,7 @@ public:
     }
     
     // MARK: - Tree Traversal
-    virtual void layoutTree(GraphicsState gstate) {
+    virtual void layout(GraphicsState gstate) {
         if (!visible()) return;
 //        
 //        // When we hit a window, set the window's size/origin according to the gstate, and reset gstate
@@ -334,11 +334,11 @@ public:
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
-            subview->layoutTree(subview->convert(gstate));
+            subview->layout(subview->convert(gstate));
         }
     }
     
-    virtual void drawTree(GraphicsState gstate) {
+    virtual void draw(GraphicsState gstate) {
         if (!visible()) return;
         
 //        // When we hit a window, reset gstate to reference the new window, and the origin to {0,0}
@@ -371,11 +371,11 @@ public:
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
-            subview->drawTree(subview->convert(gstate));
+            subview->draw(subview->convert(gstate));
         }
     }
     
-    virtual bool handleEventTree(GraphicsState gstate, const Event& ev) {
+    virtual bool handleEvent(GraphicsState gstate, const Event& ev) {
         if (!visible()) return false;
         if (!interaction()) return false;
         
@@ -383,7 +383,7 @@ public:
         for (;;) {
             Ptr subview = subviewsPrev(it);
             if (!subview) break;
-            if (subview->handleEventTree(subview->convert(gstate), ev)) return true;
+            if (subview->handleEvent(subview->convert(gstate), ev)) return true;
         }
         
         // None of the subviews wanted the event; let the view itself handle it
@@ -477,7 +477,7 @@ public:
 //            continue;
 //        }
 //        
-//        subview->layoutTree(win, _TState.origin()+subview->origin());
+//        subview->layout(win, _TState.origin()+subview->origin());
 //        it++;
 //    }
     
@@ -491,7 +491,7 @@ public:
 //                continue;
 //            }
 //            
-//            subview->layoutTree(win, _TState.origin()+subview->origin());
+//            subview->layout(win, _TState.origin()+subview->origin());
 //            it++;
 //        }
 //        

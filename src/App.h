@@ -12,6 +12,7 @@
 #include "ui/WelcomePanel.h"
 #include "ui/ModalPanel.h"
 #include "ui/RegisterPanel.h"
+#include "ui/ButtonSpinner.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -127,7 +128,7 @@ public:
         }
         
         if (_drag.titlePanel) {
-//            _drag.titlePanel->drawTree(*_drag.titlePanel);
+//            _drag.titlePanel->draw(*_drag.titlePanel);
             
             // Draw insertion marker
             if (_drag.insertionMarker) {
@@ -139,7 +140,7 @@ public:
         }
         
 //        for (UI::PanelPtr panel : _drag.shadowPanels) {
-//            panel->drawTree(*panel);
+//            panel->draw(*panel);
 //        }
         
         if (_selectionRect) {
@@ -148,15 +149,15 @@ public:
         }
         
 //        if (_messagePanel) {
-//            _messagePanel->drawTree(*_messagePanel);
+//            _messagePanel->draw(*_messagePanel);
 //        }
 //        
 //        if (_welcomePanel) {
-//            _welcomePanel->drawTree(*_welcomePanel);
+//            _welcomePanel->draw(*_welcomePanel);
 //        }
 //        
 //        if (_registerPanel) {
-//            _registerPanel->drawTree(*_registerPanel);
+//            _registerPanel->draw(*_registerPanel);
 //        }
     }
     
@@ -365,24 +366,7 @@ public:
             Window::operator =(Window(::stdscr));
             
             _licenseCheck();
-            
-//            {
-//                _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-//                _registerPanel->color           = _colors.menu;
-//                _registerPanel->messageInsetY   = 1;
-//                _registerPanel->title           = "Register";
-//                _registerPanel->message         = "Please register debase";
-//            }
-            
-            for (;;) {
-                _reload();
-                
-                try {
-                    track({});
-                } catch (const UI::WindowResize&) {
-                    // Continue the loop, which calls _reload()
-                }
-            }
+            track({});
             
         } catch (const UI::ExitRequest&) {
             // Nothing to do
@@ -391,6 +375,18 @@ public:
         }
         
         _repoState.write();
+    }
+    
+    void track(const UI::Event& ev) override {
+        for (;;) {
+            _reload();
+            
+            try {
+                Screen::track({});
+            } catch (const UI::WindowResize&) {
+                // Continue the loop, which calls _reload()
+            }
+        }
     }
     
 private:
@@ -1076,7 +1072,7 @@ private:
         menu->buttons(buttons);
         menu->size(menu->sizeIntrinsic({0, heightMax}));
         menu->origin(p);
-//        layoutTree(*this, {});
+//        layout(*this, {});
         menu->track(eventCurrent());
         
         if (menuButton) {
@@ -1332,24 +1328,71 @@ private:
             .machineId = ctx.machineId,
         };
         
+        UI::ButtonSpinner spinner(_welcomePanel->trialButton());
+        
         License::RequestResponse resp;
-        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); });
+        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); for (;;) sleep(1); });
+        
+        
+        for (;;) {
+            try {
+                int fds[] = { STDIN_FILENO, async.signal() };
+                const bool ready = Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(100));
+                if (ready) {
+                    // Iterate over the fds that are ready for reading
+                    // (Select() modifies its input array)
+                    for (int fd : fds) {
+                        if (fd == STDIN_FILENO) {
+                            os_log(OS_LOG_DEFAULT, "STDIN CAN READ");
+                            
+                            dispatchEvent(nextEvent());
+                        }
+                    }
+                }
+                
+                // Update animation
+                spinner.animate();
+                refresh();
+            
+            } catch (const UI::WindowResize&) {
+                // Continue the loop, which calls _reload()
+                os_log(OS_LOG_DEFAULT, "TERMINAL RESIZED");
+                _reload();
+            }
+        }
+        
+        
+        
+        
         
         // Wait on the async or for stdin input
-        while (!async.done()) {
-            int fds[] = { STDIN_FILENO, async.signal() };
-            Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(50));
-            
-            // Iterate over the fds that are ready for reading
-            // (Select() modifies its input array)
-            for (int fd : fds) {
-                if (fd == STDIN_FILENO) {
-                    handleEventTree(nextEvent());
-                }
-            }
-            
-            // Update animation
-        }
+//        while (!async.done()) {
+//        for (;;) {
+//            try {
+//                int fds[] = { STDIN_FILENO, async.signal() };
+//                const bool ready = Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(100));
+//                if (ready) {
+//                    // Iterate over the fds that are ready for reading
+//                    // (Select() modifies its input array)
+//                    for (int fd : fds) {
+//                        if (fd == STDIN_FILENO) {
+//                            os_log(OS_LOG_DEFAULT, "STDIN CAN READ");
+//                            
+//                            dispatchEvent(nextEvent());
+//                        }
+//                    }
+//                }
+//                
+//                // Update animation
+//                spinner.animate();
+//                refresh();
+//            
+//            } catch (const UI::WindowResize&) {
+//                // Continue the loop, which calls _reload()
+//                os_log(OS_LOG_DEFAULT, "TERMINAL RESIZED");
+//                _reload();
+//            }
+//        }
         
         try {
             async.get();
@@ -1357,9 +1400,6 @@ private:
             _errorMessageShow(std::string("A network error occurred: ") + e.what());
             return;
         }
-        
-        
-        
         
         if (!resp.error.empty()) {
             _errorMessageShow(resp.error);

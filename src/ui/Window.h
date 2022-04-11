@@ -110,7 +110,7 @@ public:
 //    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
 //    void layoutNeeded(bool x) override { View::layoutNeeded(x); }
     
-//    void layoutTree(const Window& win, const Point& orig) override {
+//    void layout(const Window& win, const Point& orig) override {
 //        windowSize(size());
 //        windowOrigin(orig);
 //        
@@ -130,10 +130,10 @@ public:
 ////            _s.sizePrev = size();
 ////        }
 //        
-//        View::layoutTree(*this, {});
+//        View::layout(*this, {});
 //    }
 //    
-//    void drawTree(const Window& win, const Point& orig) override {
+//    void draw(const Window& win, const Point& orig) override {
 //        // Remember whether we erased ourself during this draw cycle
 //        // This is used by View instances (Button and TextField)
 //        // to know whether they need to be drawn again
@@ -145,7 +145,7 @@ public:
 //            _s.eraseNeeded = false;
 //        }
 //        
-//        View::drawTree(*this, {});
+//        View::draw(*this, {});
 //    }
     
     
@@ -157,7 +157,7 @@ public:
         return x;
     }
     
-    virtual void layoutTree(GraphicsState gstate) override {
+    virtual void layout(GraphicsState gstate) override {
         if (!visible()) return;
         
 //        const Size sizePrev = size();
@@ -210,10 +210,10 @@ public:
 //        
 //        layoutNeeded(true);
         
-        View::layoutTree(gstate);
+        View::layout(gstate);
     }
     
-    virtual void drawTree(GraphicsState gstate) override {
+    virtual void draw(GraphicsState gstate) override {
         if (!visible()) return;
         if (eraseNeeded()) {
             gstate.erased = true;
@@ -221,7 +221,7 @@ public:
             eraseNeeded(false);
         }
         
-        View::drawTree(gstate);
+        View::draw(gstate);
     }
     
     // eraseNeeded(): whether the window should be erased the next time it's drawn
