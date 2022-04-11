@@ -6,14 +6,21 @@
 template <typename Fn>
 class Async {
 public:
-    using Val = typename std::invoke_result<Fn>::type;
+    using RetType = typename std::invoke_result<Fn>::type;
+    using RetTypeRef = std::add_lvalue_reference_t<RetType>;
     
     Async(Fn&& fn) {
         _state = std::make_shared<_State>();
         
         std::thread([=] {
             try {
-                _state->val = fn();
+                // Non-void return type
+                if constexpr (!std::is_same_v<RetType, void>) {
+                    _state->val = fn();
+                // Void return type
+                } else {
+                    fn();
+                }
             } catch (...) {
                 _state->err = std::current_exception();
             }
@@ -23,15 +30,19 @@ public:
         }).detach();
     }
     
-    Val& get() {
+    RetTypeRef get() {
         // Wait for the signal
         _state->signal.wait();
+        
         // We must either have a value or an exception
         assert(_state->val || _state->err);
         if (_state->err) {
             std::rethrow_exception(_state->err);
         }
-        return *_state->val;
+        
+        if constexpr (!std::is_same_v<RetType, void>) {
+            return *_state->val;
+        }
     }
     
     const Toastbox::FileDescriptor& signal() {
@@ -43,10 +54,13 @@ public:
     }
     
 private:
+    struct _Empty {};
+    using _RetTypeOrEmpty = std::conditional_t<!std::is_same_v<RetType, void>, RetType, _Empty>;
+    
     struct _State {
         SignalDescriptor signal;
         std::exception_ptr err;
-        std::optional<Val> val; // Optional so that a default constructor isn't required
+        std::optional<_RetTypeOrEmpty> val; // Optional so that a default constructor isn't required
     };
     using _StatePtr = std::shared_ptr<_State>;
     

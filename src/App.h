@@ -20,6 +20,7 @@
 #include "network/Network.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
+#include "Async.h"
 #include <os/log.h>
 
 extern "C" {
@@ -1332,8 +1333,10 @@ private:
         };
         
         License::RequestResponse resp;
+        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); });
+        
         try {
-            Network::Request(DebaseLicenseURL, req, resp);
+            async.get();
         } catch (const std::exception& e) {
             _errorMessageShow(std::string("A network error occurred: ") + e.what());
             return;
