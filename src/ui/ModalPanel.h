@@ -67,7 +67,8 @@ public:
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
         if (ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right) ||
-            ev.type == Event::Type::KeyEscape) {
+            ev.type == Event::Type::KeyReturn ||
+            ev.type == Event::Type::KeyEscape ) {
             
             if (_dismissAction) {
                 _dismissAction(*this);
