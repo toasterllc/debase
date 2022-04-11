@@ -39,16 +39,18 @@ struct Rect {
     bool operator ==(const Rect& x) const { return origin==x.origin && size==x.size; }
     bool operator !=(const Rect& x) const { return !(*this == x); }
     
-    int xmin() const { return origin.x; }
-    int xmax() const { return origin.x+size.x-1; }
+    int w() const { return size.x; }
+    int h() const { return size.y; }
     
-    int ymin() const { return origin.y; }
-    int ymax() const { return origin.y+size.y-1; }
+    int l() const { return origin.x; }
+    int r() const { return origin.x+size.x; }
+    int t() const { return origin.y; }
+    int b() const { return origin.y+size.y; }
     
-    Point tl() const { return {xmin(), ymin()}; }
-    Point tr() const { return {xmax(), ymin()}; }
-    Point bl() const { return {xmin(), ymax()}; }
-    Point br() const { return {xmax(), ymax()}; }
+    Point tl() const { return {l(), t()}; }
+    Point tr() const { return {r(), t()}; }
+    Point bl() const { return {l(), b()}; }
+    Point br() const { return {r(), b()}; }
 };
 
 struct Event {

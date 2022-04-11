@@ -19,7 +19,7 @@ public:
             if (visibleButtonCount() > 1) {
                 ButtonPtr button0 = buttons()[0];
                 Attr color = attr(Colors().menu);
-                Point p = {1, button0->frame().ymax()+1};
+                Point p = {1, button0->frame().b()};
                 int len = width-2;
                 cchar_t c = { .chars = L"╍" };
                 mvwhline_set(*this, p.y, p.x, &c, len);

@@ -17,34 +17,26 @@ public:
     }
     
     static constexpr Size BorderSize() { return {5,2}; }
-    static constexpr Rect ContentRect(Size size) {
-        return Inset({{},size}, BorderSize());
-    }
     
-    Size messageOffset() const {
-        return {0, 0};
+    static constexpr Rect MessageFrame(Rect bounds) {
+        return Inset(bounds, BorderSize());
     }
     
     Size sizeIntrinsic(Size constraint) override {
-        const Rect rect = ContentRect(constraint);
-        const Size messageSize = _message->sizeIntrinsic({rect.size.x, 0});
         return {
             .x = constraint.x,
-            .y = 2*BorderSize().y + messageOffset().y + messageSize.y,
+            .y = 2*BorderSize().y + messageFrame().size.y,
         };
     }
     
     void layout() override {
         const Rect f = frame();
-        const Rect rect = contentRect();
         const Point titlePos = {3,0};
         _title->textAttr(_color|A_BOLD);
         
         const int titleWidth = f.size.x-2*titlePos.x;
         _title->frame({titlePos, {titleWidth, 1}});
-        
-        const Size messageSize = _message->sizeIntrinsic({rect.size.x, 0});
-        _message->frame({rect.origin + messageOffset(), {rect.size.x, messageSize.y}});
+        _message->frame(messageFrame());
         
 //        _title->layout(*this);
 //        _message->layout(*this);
@@ -79,7 +71,21 @@ public:
         return true;
     }
     
-    Rect contentRect() { return ContentRect(size()); }
+//    Rect contentRect() { return ContentRect(size()); }
+    
+    Rect messageFrame() const {
+        Rect f = MessageFrame(bounds());
+        f.size.y = _message->sizeIntrinsic({f.size.x, 0}).y;
+        return f;
+    }
+    
+    Rect contentFrame() const {
+        const Rect mf = messageFrame();
+        return {
+            {BorderSize().x, mf.b()+_MessageSpacingBottom},
+            {mf.w(), bounds().b()-(mf.b()+_MessageSpacingBottom)}
+        };
+    }
     
     const auto& color() const { return _color; }
     template <typename T> void color(const T& x) { _set(_color, x); }
@@ -91,7 +97,7 @@ public:
     template <typename T> void dismissAction(const T& x) { _setForce(_dismissAction, x); }
     
 private:
-    static constexpr int _MessageSpacingTop = 1;
+    static constexpr int _MessageSpacingBottom = 1;
     
     Color _color;
     LabelPtr _title     = subviewCreate<Label>();

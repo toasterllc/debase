@@ -87,7 +87,7 @@ public:
             if (erased()) { // Performance optimization: only draw if the window was erased
                 if (button->visible()) {
                     Attr color = attr(Colors().menu);
-                    drawLineHoriz({0, button->frame().ymax()+1}, width);
+                    drawLineHoriz({0, button->frame().b()}, width);
                 }
             }
         }

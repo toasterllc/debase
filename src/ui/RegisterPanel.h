@@ -16,24 +16,31 @@ public:
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
-        _email->label()->text       ("Email: ");
-        _email->label()->textAttr   (Colors().menu|A_BOLD);
-        _email->spacingX            (3);
+        _email->label()->text           ("Email: ");
+        _email->label()->textAttr       (Colors().menu|A_BOLD);
+        _email->spacingX                (3);
         _email->textField()->requestFocus = requestFocus;
         _email->textField()->releaseFocus = releaseFocus;
+        _email->textField()->focus(true);
         
-        _code->label()->text        (" Code: ");
-        _code->label()->textAttr    (Colors().menu|A_BOLD);
-        _code->spacingX             (3);
+        _code->label()->text            (" Code: ");
+        _code->label()->textAttr        (Colors().menu|A_BOLD);
+        _code->spacingX                 (3);
         _code->textField()->requestFocus = requestFocus;
         _code->textField()->releaseFocus = releaseFocus;
         
-        _email->textField()->focus(true);
+        _okButton->label()->text        ("OK");
+        _okButton->enabled              (true);
+        _okButton->drawBorder           (true);
+        
+        _cancelButton->label()->text    ("Cancel");
+        _cancelButton->enabled          (true);
+        _cancelButton->drawBorder       (true);
     }
     
     Size sizeIntrinsic(Size constraint) override {
         Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _ContentSpacingBottom;
+        s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
         return s;
     }
     
@@ -42,24 +49,35 @@ public:
     void layout() override {
         ModalPanel::layout();
         
-        const Rect rect = contentRect();
-        int offY = message()->frame().ymax()+1;
+        const Rect cf = contentFrame();
+        int offY = cf.t();
         
         offY += _ContentSpacingTop;
         
-        _email->frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
+        _email->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
         offY += _FieldHeight+_FieldSpacingY;
-        _code->frame({{rect.origin.x, offY}, {rect.size.x, _FieldHeight}});
-//        
-//        _email->layout(*this);
-//        _code->layout(*this);
+        _code->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
+        offY += _FieldHeight+_FieldSpacingY;
+        
+        _okButton->frame({{cf.r()-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
+        _cancelButton->frame({{_okButton->frame().l()-_ButtonSpacingX-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
     }
+    
+//    void draw() override {
+//        ModalPanel::draw();
+//        
+//        const Rect cf = contentFrame();
+//        drawRect(cf);
+//    }
     
 private:
     static constexpr int _FieldSpacingY         = 1;
     static constexpr int _FieldHeight           = 1;
-    static constexpr int _ContentSpacingTop     = 1;
-    static constexpr int _ContentSpacingBottom  = 0;
+    static constexpr int _ButtonWidth           = 10;
+    static constexpr int _ButtonHeight          = 3;
+    static constexpr int _ButtonSpacingX        = 1;
+    static constexpr int _ContentSpacingTop     = 0;
+    static constexpr int _ContentSpacingBottom  = 1;
     
     static constexpr int _FieldsExtraHeight = 5;
     static constexpr int _FieldLabelInsetX  = 0;
