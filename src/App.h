@@ -1311,11 +1311,9 @@ private:
             (rs.y-ps.y)/3,
         };
         panel->origin(p);
-//        panel->orderFront();
     }
     
     void _welcomePanelTrial() {
-        #warning TODO: show animation while performing network IO
         assert(_welcomePanel);
         
         const License::Context& ctx = _licenseCtxGet();
@@ -1323,91 +1321,25 @@ private:
             .machineId = ctx.machineId,
         };
         
-        _welcomePanel->dropEvents(true);
-        
-        // Request license
+        // Request license and wait until we get a response
         License::RequestResponse resp;
-        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); for (;;) sleep(1); });
-        
-        // Animate until we get a response
-        UI::ButtonSpinner spinner(_welcomePanel->trialButton());
-        std::chrono::steady_clock::time_point nextFrameTime;
-        while (!async.done()) {
-            if (std::chrono::steady_clock::now() > nextFrameTime) {
-                spinner.animate();
-                nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
-            }
+        Async async([&] () { Network::Request(DebaseLicenseURL, req, resp); });
+        {
+            _welcomePanel->dropEvents(true);
+            Defer(_welcomePanel->dropEvents(false));
             
-            track({}, nextFrameTime);
+            // Animate until we get a response
+            UI::ButtonSpinner spinner(_welcomePanel->trialButton());
+            std::chrono::steady_clock::time_point nextFrameTime;
+            while (!async.done()) {
+                if (std::chrono::steady_clock::now() > nextFrameTime) {
+                    spinner.animate();
+                    nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
+                }
+                
+                track({}, nextFrameTime);
+            }
         }
-        
-        _welcomePanel->dropEvents(false);
-        
-        
-        
-        
-        
-        
-        
-//        for (;;) {
-//            try {
-//                int fds[] = { STDIN_FILENO, async.signal() };
-//                const bool ready = Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(100));
-//                if (ready) {
-//                    // Iterate over the fds that are ready for reading
-//                    // (Select() modifies its input array)
-//                    for (int fd : fds) {
-//                        if (fd == STDIN_FILENO) {
-//                            os_log(OS_LOG_DEFAULT, "STDIN CAN READ");
-//                            
-//                            dispatchEvent(nextEvent());
-//                        }
-//                    }
-//                }
-//                
-//                // Update animation
-//                spinner.animate();
-//                refresh();
-//            
-//            } catch (const UI::WindowResize&) {
-//                // Continue the loop, which calls _reload()
-//                os_log(OS_LOG_DEFAULT, "TERMINAL RESIZED");
-//                _reload();
-//            }
-//        }
-        
-        
-        
-        
-        
-        // Wait on the async or for stdin input
-//        while (!async.done()) {
-//        for (;;) {
-//            try {
-//                int fds[] = { STDIN_FILENO, async.signal() };
-//                const bool ready = Toastbox::Select(fds, std::size(fds), nullptr, 0, std::chrono::milliseconds(100));
-//                if (ready) {
-//                    // Iterate over the fds that are ready for reading
-//                    // (Select() modifies its input array)
-//                    for (int fd : fds) {
-//                        if (fd == STDIN_FILENO) {
-//                            os_log(OS_LOG_DEFAULT, "STDIN CAN READ");
-//                            
-//                            dispatchEvent(nextEvent());
-//                        }
-//                    }
-//                }
-//                
-//                // Update animation
-//                spinner.animate();
-//                refresh();
-//            
-//            } catch (const UI::WindowResize&) {
-//                // Continue the loop, which calls _reload()
-//                os_log(OS_LOG_DEFAULT, "TERMINAL RESIZED");
-//                _reload();
-//            }
-//        }
         
         try {
             async.get();
