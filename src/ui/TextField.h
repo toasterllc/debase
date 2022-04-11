@@ -35,13 +35,55 @@ public:
         drawText({}, substr.c_str());
     }
     
+    
+    
+//    bool handleEvent(const Event& ev) override {
+//        // Only consider mouse events
+//        if (ev.type != Event::Type::Mouse) return false;
+//        
+//        const bool hit = hitTest(ev.mouse.origin);
+//        const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
+//        const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
+//        highlighted(hit);
+//        
+//        // Trigger action
+//        if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
+//            
+//            // Cleanup ourself before calling out
+//            trackStop();
+//            
+//            if (hit && _enabled && _action) {
+//                _action(*this);
+//            }
+//            
+//            return true;
+//        }
+//        
+//        // We allow both mouse-down and mouse-up events to trigger tracking.
+//        // Mouse-up events are to allow Menu to use this function for context
+//        // menus: right-mouse-down opens the menu, while the right-mouse-up
+//        // triggers the Button action via this function.
+//        if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
+//            // Track mouse
+//            track(ev);
+//            return true;
+//        }
+//        
+//        return false;
+//    }
+    
+    
+    
+    
+    
+    
+    
     bool handleEvent(const Event& ev) override {
         bool handled = _handleEvent(ev);
         if (!handled) return false;
         drawNeeded(true);
         return true;
     }
-
     
     bool focus() const { return _focus; }
     void focus(bool x) {
@@ -90,17 +132,58 @@ private:
     
     bool _handleEvent(const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
-            if (ev.mouseDown() && hitTest(ev.mouse.origin)) {
-                if (!_focus) {
-                    requestFocus(*this);
-                
-                } else {
-                    // Update the cursor position to the clicked point
-                    int offX = ev.mouse.origin.x;
-                    auto offIt = UTF8::NextN(_left(), value.end(), offX);
-                    _offCursor = std::distance(value.begin(), offIt);
-                }
-                
+            
+            
+            const bool hit = hitTest(ev.mouse.origin);
+//            const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
+//            const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
+//            highlighted(hit);
+//            
+//            // Trigger action
+//            if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
+//                
+//                // Cleanup ourself before calling out
+//                trackStop();
+//                
+//                if (hit && _enabled && _action) {
+//                    _action(*this);
+//                }
+//                
+//                return true;
+//            }
+//            
+//            // We allow both mouse-down and mouse-up events to trigger tracking.
+//            // Mouse-up events are to allow Menu to use this function for context
+//            // menus: right-mouse-down opens the menu, while the right-mouse-up
+//            // triggers the Button action via this function.
+//            if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
+//                // Track mouse
+//                track(ev);
+//                return true;
+//            }
+            
+            
+            
+            
+            
+            if (ev.mouseDown() && hit && !_focus) {
+                requestFocus(*this);
+            }
+            
+            if ((ev.mouseDown() && hit) || tracking()) {
+                // Update the cursor position to the clicked point
+                int offX = ev.mouse.origin.x;
+                auto offIt = UTF8::NextN(_left(), value.end(), offX);
+                _offCursor = std::distance(value.begin(), offIt);
+            }
+            
+            if (ev.mouseDown() && hit && !tracking()) {
+                // Track mouse
+                track(ev);
+                return true;
+            
+            } else if (ev.mouseUp() && tracking()) {
+                trackStop();
                 return true;
             }
         
