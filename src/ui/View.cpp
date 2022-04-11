@@ -10,10 +10,9 @@ WINDOW* View::_gstateWindow() const {
 }
 
 void View::track(const Event& ev) {
-    assert(_GState);
     assert(!_tracking);
     
-    Screen& screen = *_GState.screen;
+    class Screen& screen = Screen();
     GraphicsState gstate;
     
 //        if (target) {

@@ -74,18 +74,13 @@ public:
         
 //        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
-        // Order all the title panel and shadow panels
-        if (dragging) {
-            for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
-                (*it)->orderFront();
-            }
-            _drag.titlePanel->orderFront();
-        }
-        
-        if (_messagePanel) {
-            constexpr int MessagePanelWidth = 40;
-            _layoutModalPanel(_messagePanel, MessagePanelWidth);
-        }
+//        // Order all the title panel and shadow panels
+//        if (dragging) {
+//            for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
+//                (*it)->orderFront();
+//            }
+//            _drag.titlePanel->orderFront();
+//        }
         
         if (_welcomePanel) {
             constexpr int WelcomePanelWidth = 40;
@@ -95,6 +90,11 @@ public:
         if (_registerPanel) {
             constexpr int RegisterPanelWidth = 50;
             _layoutModalPanel(_registerPanel, RegisterPanelWidth);
+        }
+        
+        if (_messagePanel) {
+            constexpr int MessagePanelWidth = 40;
+            _layoutModalPanel(_messagePanel, MessagePanelWidth);
         }
     }
     
@@ -665,7 +665,7 @@ private:
         }
         
         // Create columns
-        std::list<UI::View::WeakPtr> sv;
+        std::list<UI::ViewPtr> sv;
         int offX = _ColumnInsetX;
         size_t colCount = 0;
         for (const Git::Rev& rev : _revs) {
@@ -719,9 +719,9 @@ private:
         _columns.erase(_columns.begin()+colCount, _columns.end());
         
         // Update subviews
-        sv.push_back(_messagePanel);
-        sv.push_back(_welcomePanel);
-        sv.push_back(_registerPanel);
+        if (_welcomePanel) sv.push_back(_welcomePanel);
+        if (_registerPanel) sv.push_back(_registerPanel);
+        if (_messagePanel) sv.push_back(_messagePanel);
         subviews(sv);
         
         layoutNeeded(true);
@@ -1310,7 +1310,25 @@ private:
             (rs.y-ps.y)/3,
         };
         panel->origin(p);
-        panel->orderFront();
+//        panel->orderFront();
+    }
+    
+    void _welcomePanelShow() {
+        auto trialAction = [=] (UI::Button&) {
+            #warning TODO: request trial license from server
+        };
+        
+        auto registerAction = [=] (UI::Button&) {
+//            _welcomePanel = nullptr;
+            _registerPanelShow();
+        };
+        
+        _welcomePanel = subviewCreate<UI::WelcomePanel>();
+        _welcomePanel->color                    (View::Colors().menu);
+        _welcomePanel->title()->text            ("");
+        _welcomePanel->message()->text          ("Welcome to debase!");
+        _welcomePanel->trialButton()->action    (trialAction);
+        _welcomePanel->registerButton()->action (registerAction);
     }
     
     void _registerPanelRegister() {
@@ -1330,7 +1348,7 @@ private:
         try {
             Network::Request(DebaseLicenseURL, req, resp);
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("A network error occurred: ") + e.what());
+            _errorMessageShow(std::string("An error occurred when trying to talk to the server: ") + e.what());
             return;
         }
         
@@ -1359,24 +1377,6 @@ private:
     void _registerPanelDismiss() {
         assert(_registerPanel);
         _registerPanel = nullptr;
-    }
-    
-    void _welcomePanelShow() {
-        auto trialAction = [=] (UI::Button&) {
-            #warning TODO: request trial license from server
-        };
-        
-        auto registerAction = [=] (UI::Button&) {
-//            _welcomePanel = nullptr;
-            _registerPanelShow();
-        };
-        
-        _welcomePanel = subviewCreate<UI::WelcomePanel>();
-        _welcomePanel->color                    (View::Colors().menu);
-        _welcomePanel->title()->text            ("");
-        _welcomePanel->message()->text          ("Welcome to debase!");
-        _welcomePanel->trialButton()->action    (trialAction);
-        _welcomePanel->registerButton()->action (registerAction);
     }
     
     void _registerPanelShow(std::string_view title, std::string_view message, bool dismissAllowed) {
@@ -1410,7 +1410,7 @@ private:
         _messagePanel->title()->text    ("Error");
         _messagePanel->message()->text  (msg);
         _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
-        _messagePanel->orderFront();
+//        _messagePanel->orderFront();
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
@@ -1677,7 +1677,7 @@ private:
     _Selection _selection;
     std::optional<UI::Rect> _selectionRect;
     
-    UI::ModalPanelPtr _messagePanel;
     UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
+    UI::ModalPanelPtr _messagePanel;
 };

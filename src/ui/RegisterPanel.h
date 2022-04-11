@@ -71,6 +71,14 @@ public:
         _cancelButton->visible((bool)dismissAction());
     }
     
+    bool handleEvent(const Event& ev) override {
+        // Dismiss upon mouse-up
+        if (ev.type == Event::Type::KeyEscape) {
+            _actionCancel();
+        }
+        return true;
+    }
+    
     auto& email() { return _email->textField(); }
     auto& code() { return _code->textField(); }
     auto& okButton() { return _okButton; }
@@ -105,15 +113,18 @@ private:
     }
     
     void _fieldReleaseFocus(TextField& field, bool done) {
-        _email->textField()->focus(false);
-        _code->textField()->focus(false);
-        
-        bool fieldsFilled = !_email->textField()->value().empty() && !_code->textField()->value().empty();
+        // Return behavior
         if (done) {
+            const bool fieldsFilled = !_email->textField()->value().empty() && !_code->textField()->value().empty();
             if (fieldsFilled) {
-                beep();
+                if (_okButton->action()) {
+                    _okButton->action()(*_okButton);
+                }
             
             } else {
+                _email->textField()->focus(false);
+                _code->textField()->focus(false);
+                
                 if (field.value().empty()) {
                     field.focus(true);
                 
@@ -123,13 +134,22 @@ private:
                 }
             }
         
+        // Tab behavior
         } else {
-            // Tab behavior
+            _email->textField()->focus(false);
+            _code->textField()->focus(false);
+            
             if (&field == _email->textField().get()) {
                 _code->textField()->focus(true);
             } else if (&field == _code->textField().get()) {
                 _email->textField()->focus(true);
             }
+        }
+    }
+    
+    void _actionOK() {
+        if (dismissAction()) {
+            dismissAction()(*this);
         }
     }
     

@@ -8,7 +8,6 @@ public:
     Panel() {
         _panel = ::new_panel(*this);
         assert(_panel);
-        
 //        // Give ourself an initial size (otherwise origin()
 //        // doesn't work until the size is set)
 //        size({1,1});
@@ -25,6 +24,14 @@ public:
         ::move_panel(*this, p.y, p.x);
     }
     
+    void layoutTree(GraphicsState gstate) override {
+        if (!visible()) return;
+        if (gstate.orderPanelsNeeded) {
+            ::top_panel(*this);
+        }
+        Window::layoutTree(gstate);
+    }
+    
 //    void origin(const Point& p) override {
 //        const Point off = treeOrigin();
 //        ::move_panel(*this, off.y+p.y, off.x+p.x);
@@ -36,21 +43,35 @@ public:
     
     void visible(bool v) override {
         if (visible() == v) return;
-        if (v)  ::show_panel(*this);
-        else    ::hide_panel(*this);
+        if (v) {
+            ::show_panel(*this);
+            Screen().orderPanelsNeeded(true);
+        
+        } else {
+            ::hide_panel(*this);
+        }
     }
     
-    void orderFront() {
-        ::top_panel(*this);
+    void addedToSuperview(View& superview) override {
+        Window::addedToSuperview(superview);
+        Screen().orderPanelsNeeded(true);
     }
     
-    void orderBack() {
-        ::bottom_panel(*this);
-    }
+//    void orderFront() {
+//        ::top_panel(*this);
+//    }
+//    
+//    void orderBack() {
+//        ::bottom_panel(*this);
+//    }
     
     operator PANEL*() const { return _panel; }
     
 private:
+//    void _orderFront() {
+//        ::top_panel(*this);
+//    }
+    
     PANEL* _panel = nullptr;
     Point _pos;
 };

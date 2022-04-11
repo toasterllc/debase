@@ -22,11 +22,6 @@ public:
     Size windowSize() const override { return Window::windowSize(); }
     void windowSize(const Size& s) override {} // Ignore attempts to set screen size
     
-    
-    
-    
-    
-    
 //    void layoutTree(const Window& win, const Point& orig) override {
 //        windowSize(size());
 //        windowOrigin(orig);
@@ -64,26 +59,6 @@ public:
 //        
 //        View::drawTree(*this, {});
 //    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
 //    static void DrawTree(Window* window, Point origin, View& view) {
 //        if (!view.visible()) return;
@@ -166,31 +141,6 @@ public:
 //        return false;
 //    }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     Event nextEvent() {
         _refresh();
         
@@ -268,14 +218,21 @@ public:
     
 //    const Event& eventCurrent() const { return _eventCurrent; }
     
+    bool orderPanelsNeeded() { return _orderPanelsNeeded; }
+    void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
+    
 private:
     void _refresh() {
         GraphicsState gstate = graphicsStateCalc(*this);
+        gstate.orderPanelsNeeded = _orderPanelsNeeded;
+        
         layoutTree(gstate);
         drawTree(gstate);
         CursorState::Draw();
         ::update_panels();
         ::refresh();
+        
+        _orderPanelsNeeded = false;
     }
     
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
@@ -292,6 +249,7 @@ private:
     }
     
     _GraphicsStateSwapper _gpushed = View::GStatePush({.screen=this});
+    bool _orderPanelsNeeded = false;
     
 //    
 //    bool _tracking = false;

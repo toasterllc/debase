@@ -95,6 +95,11 @@ public:
         return _GState;
     }
     
+    static Screen& Screen() {
+        assert(_GState);
+        return *_GState.screen;
+    }
+    
     static auto GStatePush(const GraphicsState& x) {
         return _GraphicsStateSwapper(_GState, x);
     }
@@ -165,15 +170,17 @@ public:
     
     virtual Point origin() const { return _origin; }
     virtual void origin(const Point& x) {
-        if (x == _origin) return;
-        _origin = x;
+        const Point xadj = {std::max(0,x.x), std::max(0,x.y)};
+        if (xadj == _origin) return;
+        _origin = xadj;
         drawNeeded(true);
     }
     
     virtual Size size() const { return _size; }
     virtual void size(const Size& x) {
-        if (x == _size) return;
-        _size = x;
+        const Point xadj = {std::max(0,x.x), std::max(0,x.y)};
+        if (xadj == _size) return;
+        _size = xadj;
         layoutNeeded(true);
         drawNeeded(true);
     }
@@ -398,9 +405,17 @@ public:
     
 //    virtual std::list<WeakPtr>& subviews() { return _subviews; }
     
-    virtual void subviews(const Views& x) {
-        _subviews = x;
-        layoutNeeded(true);
+    virtual void subviews(const std::list<Ptr>& x) {
+//        // Copy `x` into `svs` using strong pointers
+//        // We can't just clear `_subviews`
+//        std::list<Ptr> svs;
+//        for (WeakPtr svweak : x) {
+//            Ptr sv = svweak.lock();
+//            if (sv) svs.push_back(sv);
+//        }
+        
+        _subviews = {};
+        for (Ptr sv : x) subviewAdd(sv);
     }
     
     virtual ViewsIter subviewsBegin() {
@@ -441,14 +456,18 @@ public:
     template <typename T, typename ...T_Args>
     std::shared_ptr<T> subviewCreate(T_Args&&... args) {
         auto view = std::make_shared<T>(std::forward<T_Args>(args)...);
-        _subviews.push_back(view);
-        layoutNeeded(true);
+        subviewAdd(view);
         return view;
     }
     
-    void subviewAdd(Ptr view) {
+    virtual void subviewAdd(Ptr view) {
+        assert(view);
         _subviews.push_back(view);
+        view->addedToSuperview(*this);
+        layoutNeeded(true);
     }
+    
+    virtual void addedToSuperview(View& superview) {}
     
 //    for (auto it=_subviews.begin(); it!=_subviews.end();) {
 //        Ptr subview = (*it).lock();
@@ -522,7 +541,7 @@ private:
     static inline ColorPalette _Colors;
     static inline GraphicsState _GState;
     
-    std::list<WeakPtr> _subviews;
+    Views _subviews;
     Point _origin;
     Size _size;
     bool _visible = true;
