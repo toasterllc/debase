@@ -1330,7 +1330,7 @@ private:
         };
         
         auto registerAction = [=] (UI::Button&) {
-            _welcomePanel = nullptr;
+//            _welcomePanel = nullptr;
             _registerPanel = _registerPanelCreate();
         };
         
@@ -1344,11 +1344,20 @@ private:
     }
     
     UI::RegisterPanelPtr _registerPanelCreate(std::string_view title, std::string_view message) {
+        auto okAction = [=] (UI::Button&) {
+        };
+        
+        auto cancelAction = [=] (UI::Button&) {
+            _registerPanel = nullptr;
+        };
+        
         UI::RegisterPanelPtr p;
         p = subviewCreate<UI::RegisterPanel>();
-        p->color            (View::Colors().menu);
-        p->title()->text    (title);
-        p->message()->text  (message);
+        p->color                    (View::Colors().menu);
+        p->title()->text            (title);
+        p->message()->text          (message);
+        p->okButton()->action       (okAction);
+        p->cancelButton()->action   (cancelAction);
         return p;
     }
     

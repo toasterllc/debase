@@ -282,7 +282,7 @@ private:
         gstate = view.convert(gstate);
         if (&view == &target) return gstate;
         
-        auto it = view.subviews();
+        auto it = view.subviewsBegin();
         for (;;) {
             ViewPtr subview = view.subviewsNext(it);
             if (!subview) return {};

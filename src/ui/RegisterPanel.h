@@ -44,8 +44,6 @@ public:
         return s;
     }
     
-//    bool layoutNeeded() const override { return true; }
-    
     void layout() override {
         ModalPanel::layout();
         
@@ -63,12 +61,8 @@ public:
         _cancelButton->frame({{_okButton->frame().l()-_ButtonSpacingX-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
     }
     
-//    void draw() override {
-//        ModalPanel::draw();
-//        
-//        const Rect cf = contentFrame();
-//        drawRect(cf);
-//    }
+    auto& okButton() { return _okButton; }
+    auto& cancelButton() { return _cancelButton; }
     
 private:
     static constexpr int _FieldSpacingY         = 1;

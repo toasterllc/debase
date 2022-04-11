@@ -299,6 +299,7 @@ public:
         return x;
     }
     
+    // MARK: - Tree Traversal
     virtual void layoutTree(GraphicsState gstate) {
         if (!visible()) return;
 //        
@@ -322,7 +323,7 @@ public:
             layoutNeeded(false);
         }
         
-        auto it = subviews();
+        auto it = subviewsBegin();
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
@@ -359,7 +360,7 @@ public:
             drawNeeded(false);
         }
         
-        auto it = subviews();
+        auto it = subviewsBegin();
         for (;;) {
             Ptr subview = subviewsNext(it);
             if (!subview) break;
@@ -371,9 +372,9 @@ public:
         if (!visible()) return false;
         if (!interaction()) return false;
         
-        auto it = subviews();
+        auto it = subviewsEnd();
         for (;;) {
-            Ptr subview = subviewsNext(it);
+            Ptr subview = subviewsPrev(it);
             if (!subview) break;
             if (subview->handleEventTree(subview->convert(gstate), ev)) return true;
         }
@@ -402,8 +403,12 @@ public:
         layoutNeeded(true);
     }
     
-    virtual ViewsIter subviews() {
+    virtual ViewsIter subviewsBegin() {
         return _subviews.begin();
+    }
+    
+    virtual ViewsIter subviewsEnd() {
+        return _subviews.end();
     }
     
     virtual Ptr subviewsNext(ViewsIter& it) {
@@ -415,6 +420,19 @@ public:
                 it = _subviews.erase(it);
             } else {
                 it++;
+            }
+        }
+        return subview;
+    }
+    
+    virtual Ptr subviewsPrev(ViewsIter& it) {
+        Ptr subview = nullptr;
+        while (it!=_subviews.begin() && !subview) {
+            it--;
+            subview = (*it).lock();
+            if (!subview) {
+                // Prune and continue
+                it = _subviews.erase(it);
             }
         }
         return subview;
