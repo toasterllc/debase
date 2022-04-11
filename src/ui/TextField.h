@@ -35,49 +35,6 @@ public:
         drawText({}, substr.c_str());
     }
     
-    
-    
-//    bool handleEvent(const Event& ev) override {
-//        // Only consider mouse events
-//        if (ev.type != Event::Type::Mouse) return false;
-//        
-//        const bool hit = hitTest(ev.mouse.origin);
-//        const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
-//        const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
-//        highlighted(hit);
-//        
-//        // Trigger action
-//        if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
-//            
-//            // Cleanup ourself before calling out
-//            trackStop();
-//            
-//            if (hit && _enabled && _action) {
-//                _action(*this);
-//            }
-//            
-//            return true;
-//        }
-//        
-//        // We allow both mouse-down and mouse-up events to trigger tracking.
-//        // Mouse-up events are to allow Menu to use this function for context
-//        // menus: right-mouse-down opens the menu, while the right-mouse-up
-//        // triggers the Button action via this function.
-//        if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
-//            // Track mouse
-//            track(ev);
-//            return true;
-//        }
-//        
-//        return false;
-//    }
-    
-    
-    
-    
-    
-    
-    
     bool handleEvent(const Event& ev) override {
         bool handled = _handleEvent(ev);
         if (!handled) return false;
@@ -132,39 +89,7 @@ private:
     
     bool _handleEvent(const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
-            
-            
             const bool hit = hitTest(ev.mouse.origin);
-//            const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
-//            const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
-//            highlighted(hit);
-//            
-//            // Trigger action
-//            if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
-//                
-//                // Cleanup ourself before calling out
-//                trackStop();
-//                
-//                if (hit && _enabled && _action) {
-//                    _action(*this);
-//                }
-//                
-//                return true;
-//            }
-//            
-//            // We allow both mouse-down and mouse-up events to trigger tracking.
-//            // Mouse-up events are to allow Menu to use this function for context
-//            // menus: right-mouse-down opens the menu, while the right-mouse-up
-//            // triggers the Button action via this function.
-//            if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
-//                // Track mouse
-//                track(ev);
-//                return true;
-//            }
-            
-            
-            
-            
             
             if (ev.mouseDown() && hit && !_focus) {
                 requestFocus(*this);
