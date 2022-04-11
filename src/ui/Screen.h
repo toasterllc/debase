@@ -224,15 +224,15 @@ public:
 private:
     void _refresh() {
         GraphicsState gstate = graphicsStateCalc(*this);
-        gstate.orderPanelsNeeded = _orderPanelsNeeded;
+        gstate.orderPanels = _orderPanelsNeeded;
         
         layoutTree(gstate);
         
         // If _orderPanelsNeeded=false at function entry, but _orderPanelsNeeded=true after a layout pass,
         // do another layout pass specifically to order the panels. If we didn't do this, we'd draw a
         // single frame where the panels have the wrong z-ordering.
-        if (!gstate.orderPanelsNeeded && _orderPanelsNeeded) {
-            gstate.orderPanelsNeeded = true;
+        if (!gstate.orderPanels && _orderPanelsNeeded) {
+            gstate.orderPanels = true;
             layoutTree(gstate);
         }
         

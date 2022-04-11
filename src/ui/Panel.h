@@ -26,9 +26,10 @@ public:
     
     void layoutTree(GraphicsState gstate) override {
         if (!visible()) return;
-        if (gstate.orderPanelsNeeded) {
-            ::top_panel(*this);
-        }
+        
+        // If panels need to be ordered during this layout pass, do so now
+        if (gstate.orderPanels) ::top_panel(*this);
+        
         Window::layoutTree(gstate);
     }
     

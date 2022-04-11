@@ -1298,6 +1298,11 @@ private:
 //        
 //    }
     
+    const License::Context& _licenseCtxGet() {
+        if (!_licenseCtx) _licenseCtx = _LicenseContext(_repo.path());
+        return *_licenseCtx;
+    }
+    
     License::Status _licenseUnseal(const License::SealedLicense& sealed, License::License& license) {
         License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
         if (st != License::Status::Valid) return st;
@@ -1318,6 +1323,7 @@ private:
     }
     
     void _welcomePanelTrial() {
+        #warning TODO: show animation while performing network IO
         assert(_welcomePanel);
         
         const License::Context& ctx = _licenseCtxGet();
@@ -1473,10 +1479,8 @@ private:
     void _licenseCheck(bool networkAllowed=true) {
         State::State state(StateDir());
         
-        const License::Context& ctx = _licenseCtxGet();
         License::License license;
         License::Status st = _licenseUnseal(state.license(), license);
-        
         if (st == License::Status::Empty) {
             if (!state.trialExpired()) {
                 _welcomePanelShow();
@@ -1493,6 +1497,8 @@ private:
             // Delete license, set expired=1, show trial-expired panel
             state.license({});
             state.trialExpired(true);
+            state.write();
+            
             _trialExpiredPanelShow();
         
         } else if (st == License::Status::Valid) {
@@ -1501,13 +1507,10 @@ private:
         } else {
             // Delete license, show welcome panel
             state.license({});
+            state.write();
+            
             _welcomePanelShow();
         }
-    }
-    
-    const License::Context& _licenseCtxGet() {
-        if (!_licenseCtx) _licenseCtx = _LicenseContext(_repo.path());
-        return *_licenseCtx;
     }
     
     

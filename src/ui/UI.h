@@ -129,7 +129,7 @@ struct GraphicsState {
     Point originWindow; // For drawing purposes (relative to nearest window)
     Point originScreen; // For event purposes (relative to screen)
     bool erased = false;
-    bool orderPanelsNeeded = false;
+    bool orderPanels = false;
 };
 
 struct ExitRequest : std::exception {};
