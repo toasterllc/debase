@@ -42,6 +42,8 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     // Decode response
     j = nlohmann::json::parse(respStream.str());
     j.get_to(resp);
+    
+//    for (;;) sleep(10);
 }
 
 } // namespace Network

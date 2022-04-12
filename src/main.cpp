@@ -93,7 +93,9 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: show animation while performing network IO
+    #warning TODO: make trial countdown overlay
+    
+    #warning TODO: hide cursor when modal panel opens with textfield in the background window
     
     #warning TODO: add feature requests field in register panel
     
@@ -129,6 +131,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: show animation while performing network IO
+//
 //    #warning TODO: add OK / Cancel buttons to RegisterPanel
 //    
 //    #warning TODO: fix: events should be handled from back of subviews() to front, so that ModalPanel's can eat all the events
