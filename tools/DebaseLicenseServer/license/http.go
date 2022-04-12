@@ -2,23 +2,13 @@ package license
 
 // HTTP Structs
 
-type HTTPTrialLicense struct {
-	MachineId  MachineId `json:"machineId"`
-	Version    uint32    `json:"version"`
-	Expiration int64     `json:"expiration"`
-}
-
-type HTTPUserLicense struct {
+type HTTPLicense struct {
 	UserId      UserId      `json:"userId"`
 	LicenseCode LicenseCode `json:"licenseCode"`
 	MachineId   MachineId   `json:"machineId"`
 	Version     uint32      `json:"version"`
+	Expiration  int64       `json:"expiration"`
 }
-
-// TODO: bring back once gcloud supports go 1.18/generics
-// type HTTPLicense interface {
-//     HTTPTrialLicense | HTTPUserLicense
-// }
 
 type HTTPSealedLicense struct {
 	Payload   string `json:"payload"`

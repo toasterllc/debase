@@ -100,41 +100,18 @@ func reqSanitize(req license.HTTPRequest) (license.HTTPRequest, error) {
 	}
 
 	return req, nil
-
-	// // Validate the machine id, which is always required
-	// if len(req.MachineId) != MachineIdLen {
-	//     return license.HTTPRequest{}, fmt.Errorf("invalid request")
-	// }
-	//
-	//     req.MachineId = strings.ToLower(req.MachineId)
-	//     validHex := regexp.MustCompile(`^[a-f0-9]+$`)
-	//     if !validHex.MatchString(req.MachineId) {
-	//         return license.HTTPRequest{}, fmt.Errorf("invalid request")
-	//     }
-	//
-	// // Required
-	// MachineId MachineId `json:"machineId"`
-	// // Optional
-	// UserId       UserId       `json:"userId"`
-	// LicenseCode LicenseCode `json:"licenseCode"`
 }
 
-func trialLicenseCreate(mid license.MachineId) license.TrialLicense {
+func trialLicenseCreate(mid license.MachineId) license.DBTrialLicense {
 	expiration := time.Now().Add(TrialDuration)
-	return license.TrialLicense{
+	return license.DBTrialLicense{
 		MachineId:  mid,
 		Version:    uint32(C.DebaseVersion),
 		Expiration: expiration.Unix(),
 	}
 }
 
-func sealedLicense(lic interface{}) (license.HTTPSealedLicense, error) {
-	switch lic.(type) {
-	case license.HTTPTrialLicense, license.HTTPUserLicense:
-	default:
-		panic("invalid type")
-	}
-
+func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	// Convert `lic` to json
 	payload, err := json.Marshal(lic)
 	if err != nil {
@@ -150,29 +127,12 @@ func sealedLicense(lic interface{}) (license.HTTPSealedLicense, error) {
 	}, nil
 }
 
-// TODO: replace the above sealedLicense() (that uses interface{}) with this, once gcloud supports go 1.18/generics
-// func sealedLicense[T license.HTTPLicense](lic T) (license.HTTPSealedLicense, error) {
-//     // Convert `lic` to json
-//     payload, err := json.Marshal(lic)
-//     if err != nil {
-//         return license.HTTPSealedLicense{}, fmt.Errorf("json.Marshal failed: %w", err)
-//     }
-//
-//     seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
-//     key := ed25519.NewKeyFromSeed(seed[:])
-//     sig := ed25519.Sign(key, payload)
-//     return license.HTTPSealedLicense{
-//         Payload:   string(payload),
-//         Signature: hex.EncodeToString(sig),
-//     }, nil
-// }
-
 func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (license.HTTPResponse, error) {
-	var licenseNotFoundErr = errors.New("license not found")
-	var machineLimitErr = errors.New("the maximum number of machines has already been registered for this license code")
+	var licenseNotFoundErr = errors.New("No matching license was found.")
+	var machineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
 
 	var respErr error
-	var userLic license.UserLicense
+	var userLic license.DBUserLicense
 	userLicsRef := db.Collection(LicensesCollection).Doc(string(req.UserId))
 	err := db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins
@@ -188,14 +148,14 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 			return fmt.Errorf("tx.Get() failed for UserId=%v LicenseCode=%v: %w", req.UserId, req.LicenseCode, err)
 		}
 
-		var userLics license.UserLicenses
+		var userLics license.DBUserLicenses
 		err = userLicsDoc.DataTo(&userLics)
 		if err != nil {
 			return fmt.Errorf("userLicsDoc.DataTo failed: %w", err)
 		}
 
 		// Find a license that matches the given license code
-		var match *license.UserLicense
+		var match *license.DBUserLicense
 		for _, userLic := range userLics.Licenses {
 			if userLic.LicenseCode == req.LicenseCode {
 				match = &userLic
@@ -243,7 +203,7 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 		}
 	}
 
-	sealed, err := sealedLicense(license.HTTPUserLicense{
+	sealed, err := sealedLicense(license.HTTPLicense{
 		UserId:      req.UserId,
 		LicenseCode: userLic.LicenseCode,
 		MachineId:   req.MachineId,
@@ -256,36 +216,10 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 }
 
 func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (license.HTTPResponse, error) {
-	// type TrialRecord struct {
-	//     license.MachineId     `json:"machineId"`
-	//     license.HTTPSealedLicense `json:"license"`
-	// }
-
-	// // Create trial, convert to json
-	// lic := trialLicenseCreate(mid)
-	// payloadb, err := json.Marshal(lic)
-	// if err != nil {
-	//     return fmt.Errorf("json.Marshal failed: %w", err)
-	// }
-	// payload := string(payloadb)
-	//
-	// //     //
-	// // h := sha512.New512_256()
-	// // h.Write(licb)
-	// // sigb := h.Sum(nil)
-	//
-	// key := ed25519.PrivateKey(*(*[]byte)(unsafe.Pointer(&C.DebaseKeyPrivate)))
-	// sigb := ed25519.Sign(key, payloadb)
-	// sig := hex.EncodeToString(sigb)
-	// sealed := license.HTTPSealedLicense{
-	//     Payload:   payload,
-	//     Signature: sig,
-	// }
-
 	// Create the trial license that we'll insert if one doesn't already exist
 	trialLicNew := trialLicenseCreate(mid)
 
-	var trialLic license.TrialLicense
+	var trialLic license.DBTrialLicense
 	trialLicRef := db.Collection(TrialsCollection).Doc(string(mid))
 	err := db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Get the license
@@ -330,7 +264,7 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 		return license.HTTPResponse{Error: "trial expired"}, nil
 	}
 
-	sealed, err := sealedLicense(license.HTTPTrialLicense{
+	sealed, err := sealedLicense(license.HTTPLicense{
 		MachineId:  trialLic.MachineId,
 		Version:    trialLic.Version,
 		Expiration: trialLic.Expiration,
