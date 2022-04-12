@@ -229,7 +229,7 @@ func entry(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if req.UserId != "" {
-		// Register request
+		// License request
 		err = HandlerLicense(ctx, w, req)
 		if err != nil {
 			return fmt.Errorf("HandlerLicense failed: %w", err)

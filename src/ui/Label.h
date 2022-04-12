@@ -19,16 +19,21 @@ public:
     }
     
     void layout() override {
-        if (!_wrap) {
-            _lines = { _text };
-        } else {
-            _lines = LineWrap::Wrap(size().y, size().x, _text);
-        }
+        // Anytime we layout, draw() needs to recreate its lines
+        _lines.clear();
     }
     
     void draw() override {
-        // Confirm assumption that we should never have more than one line unless we're wrapping
-        assert(_lines.size()<=1 || _wrap);
+        // Re-create lines
+        // We do this in draw() (and not layout()) because the superview may set our text in its draw(),
+        // so creating _lines in our layout() would occur before the superview set our text.
+        if (_lines.empty()) {
+            if (!_wrap) {
+                _lines = { _text };
+            } else {
+                _lines = LineWrap::Wrap(size().y, size().x, _text);
+            }
+        }
         
         const Size s = size();
         const std::string prefix = (!_wrap ? _prefix : "");
@@ -70,10 +75,7 @@ public:
     }
     
     const auto& text() const { return _text; }
-    template <typename T> void text(const T& x) {
-        _set(_text, x);
-        layoutNeeded(true);
-    }
+    template <typename T> void text(const T& x) { _set(_text, x); }
     
     const auto& prefix() const { return _prefix; }
     template <typename T> void prefix(const T& x) { _set(_prefix, x); }

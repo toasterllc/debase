@@ -27,7 +27,7 @@ type SealedLicense struct {
 type Request struct {
 	// Required
 	MachineId MachineId `json:"machineId"`
-	// Optional (present=register request, absent=trial request)
+	// Optional (present=license request, absent=trial request)
 	UserId       UserId       `json:"userId"`
 	RegisterCode RegisterCode `json:"registerCode"`
 }

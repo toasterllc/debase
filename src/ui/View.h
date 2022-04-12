@@ -57,11 +57,11 @@ public:
         Attr() {}
         Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
             assert(window);
-            if (rand() % 2) {
-                wattron(_s.window, A_REVERSE);
-            } else {
-                wattroff(_s.window, A_REVERSE);
-            }
+//            if (rand() % 2) {
+//                wattron(_s.window, A_REVERSE);
+//            } else {
+//                wattroff(_s.window, A_REVERSE);
+//            }
             // MARK: - Drawing
             wattron(_s.window, _s.attr);
         }
@@ -550,11 +550,12 @@ protected:
     }
     
     template <typename X, typename Y>
-    void _set(X& x, const Y& y) {
-        if (x == y) return;
+    bool _set(X& x, const Y& y) {
+        if (x == y) return false;
         x = y;
         layoutNeeded(true);
         drawNeeded(true);
+        return true;
     }
     
 protected:

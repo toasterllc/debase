@@ -601,7 +601,7 @@ private:
         
         bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
         UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
-        b->activeSnapshot = activeSnapshot;
+        b->activeSnapshot(activeSnapshot);
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
         b->enabled(true);
         return b;
@@ -1072,7 +1072,7 @@ private:
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
-            State::Commit commitNew = menuButton->snapshot.head;
+            State::Commit commitNew = menuButton->snapshot().head;
             State::Commit commitCur = h.get().head;
             
             if (commitNew != commitCur) {
