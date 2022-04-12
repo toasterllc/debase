@@ -90,28 +90,28 @@ public:
     }
     
     const auto& text() const { return _text; }
-    template <typename T> void text(const T& x) { _set(_text, x); }
+    template <typename T> bool text(const T& x) { return _set(_text, x); }
     
     const auto& prefix() const { return _prefix; }
-    template <typename T> void prefix(const T& x) { _set(_prefix, x); }
+    template <typename T> bool prefix(const T& x) { return _set(_prefix, x); }
     
     const auto& suffix() const { return _suffix; }
-    template <typename T> void suffix(const T& x) { _set(_suffix, x); }
+    template <typename T> bool suffix(const T& x) { return _set(_suffix, x); }
     
     const auto& textAttr() const { return _textAttr; }
-    template <typename T> void textAttr(const T& x) { _set(_textAttr, x); }
+    template <typename T> bool textAttr(const T& x) { return _set(_textAttr, x); }
     
     const auto& align() const { return _align; }
-    template <typename T> void align(const T& x) { _set(_align, x); }
+    template <typename T> bool align(const T& x) { return _set(_align, x); }
     
     const auto& centerSingleLine() const { return _centerSingleLine; }
-    template <typename T> void centerSingleLine(const T& x) { _set(_centerSingleLine, x); }
+    template <typename T> bool centerSingleLine(const T& x) { return _set(_centerSingleLine, x); }
     
     const auto& wrap() const { return _wrap; }
-    template <typename T> void wrap(const T& x) { _set(_wrap, x); }
+    template <typename T> bool wrap(const T& x) { return _set(_wrap, x); }
     
     const auto& allowEmptyLines() const { return _allowEmptyLines; }
-    template <typename T> void allowEmptyLines(const T& x) { _set(_allowEmptyLines, x); }
+    template <typename T> bool allowEmptyLines(const T& x) { return _set(_allowEmptyLines, x); }
     
 private:
 //    template <typename X, typename Y>

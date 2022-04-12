@@ -41,6 +41,36 @@ public:
         _cancelButton->enabled              (true);
     }
     
+    LabelTextFieldPtr focus() const {
+        if (_email->textField()->focus()) return _email;
+        else if (_code->textField()->focus()) return _code;
+        return nullptr;
+    }
+    
+    bool focus(LabelTextFieldPtr field) {
+        _email->textField()->focus(false);
+        _code->textField()->focus(false);
+        if (field) field->textField()->focus(true);
+        return true;
+    }
+    
+    // MARK: - ModalPanel Overrides
+    bool suppressEvents(bool x) override {
+        if (!ModalPanel::suppressEvents(x)) return false;
+        if (ModalPanel::suppressEvents()) {
+            // Save focused field
+            _focusPrev = focus();
+            focus(nullptr);
+        } else {
+            // Restore focused field
+            focus(_focusPrev);
+            _focusPrev = nullptr;
+        }
+        return true;
+    }
+    
+    // MARK: - View Overrides
+    
     Size sizeIntrinsic(Size constraint) override {
         Size s = ModalPanel::sizeIntrinsic(constraint);
         s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
@@ -163,6 +193,8 @@ private:
     LabelTextFieldPtr _code     = subviewCreate<LabelTextField>();
     ButtonPtr _okButton         = subviewCreate<Button>();
     ButtonPtr _cancelButton     = subviewCreate<Button>();
+    
+    LabelTextFieldPtr _focusPrev;
 };
 
 using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;

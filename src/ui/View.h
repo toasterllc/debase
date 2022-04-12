@@ -266,19 +266,19 @@ public:
     
     // MARK: - Accessors
     virtual bool visible() const { return _visible; }
-    virtual void visible(bool x) { _set(_visible, x); }
+    virtual bool visible(bool x) { return _set(_visible, x); }
     
     virtual const bool interaction() const { return _interaction; }
-    virtual void interaction(bool x) { _set(_interaction, x); }
+    virtual bool interaction(bool x) { return _set(_interaction, x); }
     
     virtual const std::optional<Color> borderColor() const { return _borderColor; }
-    virtual void borderColor(std::optional<Color> x) { _set(_borderColor, x); }
+    virtual bool borderColor(std::optional<Color> x) { return _set(_borderColor, x); }
     
     virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
-    virtual void hitTestExpand(const HitTestExpand& x) { _setForce(_hitTestExpand, x); }
+    virtual bool hitTestExpand(const HitTestExpand& x) { return _setForce(_hitTestExpand, x); }
     
     virtual const bool inhibitErase() const { return _inhibitErase; }
-    virtual void inhibitErase(bool x) { _set(_inhibitErase, x); }
+    virtual bool inhibitErase(bool x) { return _set(_inhibitErase, x); }
     
     virtual bool erased() { return _GState.erased; }
     
@@ -544,10 +544,11 @@ public:
     
 protected:
     template <typename X, typename Y>
-    void _setForce(X& x, const Y& y) {
+    bool _setForce(X& x, const Y& y) {
         x = y;
         layoutNeeded(true);
         drawNeeded(true);
+        return true;
     }
     
     template <typename X, typename Y>

@@ -1317,8 +1317,8 @@ private:
         constexpr const char* SupportMessage =
             "If you believe this is an error, please contact " _DebaseSupportEmail ".";
         
-        panel->dropEvents(true);
-        Defer(panel->dropEvents(false));
+        panel->suppressEvents(true);
+        Defer(panel->suppressEvents(false));
         
         // Request license and wait until we get a response
         License::RequestResponse resp;

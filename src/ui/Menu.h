@@ -159,11 +159,11 @@ public:
     }
     
     const auto& title() const { return _title; }
-    template <typename T> void title(const T& x) { _set(_title, x); }
+    template <typename T> bool title(const T& x) { return _set(_title, x); }
     
     const auto& buttons() const { return _buttons; }
-    void buttons(const std::vector<UI::ButtonPtr>& x) {
-        _set(_buttons, x);
+    bool buttons(const std::vector<UI::ButtonPtr>& x) {
+        _setForce(_buttons, x);
         
         // Update every button action to invoke dismiss(), and then call the original action
         for (UI::ButtonPtr button : _buttons) {
@@ -180,6 +180,7 @@ public:
         }
         
         layoutNeeded(true);
+        return true;
     }
     
     void dismiss() {
@@ -188,7 +189,7 @@ public:
     }
     
     const auto& dismissAction() const { return _dismissAction; }
-    template <typename T> void dismissAction(const T& x) { _set(_dismissAction, x); }
+    template <typename T> bool dismissAction(const T& x) { return _set(_dismissAction, x); }
     
 //    const auto& subviews() const { return _subviews; }
 //    template <typename T> void subviews(const T& x) { _set(_subviews, x); }

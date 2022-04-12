@@ -192,20 +192,6 @@ public:
     
     virtual operator WINDOW*() const { return _s.win; }
     
-protected:
-    template <typename X, typename Y>
-    void _setForce(X& x, const Y& y) {
-        x = y;
-        drawNeeded(true);
-    }
-    
-    template <typename X, typename Y>
-    void _set(X& x, const Y& y) {
-        if (x == y) return;
-        x = y;
-        drawNeeded(true);
-    }
-    
 private:
     struct {
         WINDOW* win = nullptr;

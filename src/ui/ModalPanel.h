@@ -21,6 +21,24 @@ public:
     static constexpr Size BorderSize() { return {5,2}; }
     static constexpr Rect InteriorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
     
+    Rect messageFrame() const {
+        Rect interiorFrame = InteriorFrame(bounds());
+        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
+        return interiorFrame;
+    }
+    
+    Rect contentFrame() const {
+        const Rect mf = messageFrame();
+        return {
+            {BorderSize().x, mf.b()+_MessageSpacingBottom},
+            {mf.w(), bounds().b()-(mf.b()+_MessageSpacingBottom)}
+        };
+    }
+    
+    virtual bool suppressEvents() const { return _suppressEvents; }
+    virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
+    
+    // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
         const Rect interiorFrame = InteriorFrame({{}, constraint});
         const int messageHeight = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
@@ -62,7 +80,7 @@ public:
     
     bool handleEvent(GraphicsState gstate, const Event& ev) override {
         // Intercept and drop events before subviews get a chance
-        if (_dropEvents) return true;
+        if (_suppressEvents) return true;
         return Panel::handleEvent(gstate, ev);
     }
     
@@ -81,31 +99,15 @@ public:
     
 //    Rect contentRect() { return ContentRect(size()); }
     
-    Rect messageFrame() const {
-        Rect interiorFrame = InteriorFrame(bounds());
-        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
-        return interiorFrame;
-    }
-    
-    Rect contentFrame() const {
-        const Rect mf = messageFrame();
-        return {
-            {BorderSize().x, mf.b()+_MessageSpacingBottom},
-            {mf.w(), bounds().b()-(mf.b()+_MessageSpacingBottom)}
-        };
-    }
-    
+    // MARK: - Accessors
     const auto& color() const { return _color; }
-    template <typename T> void color(const T& x) { _set(_color, x); }
+    template <typename T> bool color(const T& x) { return _set(_color, x); }
     
     auto& title() { return _title; }
     auto& message() { return _message; }
     
-    const auto& dropEvents() const { return _dropEvents; }
-    template <typename T> void dropEvents(const T& x) { _setForce(_dropEvents, x); }
-    
     const auto& dismissAction() const { return _dismissAction; }
-    template <typename T> void dismissAction(const T& x) { _setForce(_dismissAction, x); }
+    template <typename T> bool dismissAction(const T& x) { return _setForce(_dismissAction, x); }
     
 private:
     static constexpr int _MessageSpacingBottom = 1;
@@ -113,7 +115,7 @@ private:
     Color _color;
     LabelPtr _title     = subviewCreate<Label>();
     LabelPtr _message   = subviewCreate<Label>();
-    bool _dropEvents    = false;
+    bool _suppressEvents    = false;
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

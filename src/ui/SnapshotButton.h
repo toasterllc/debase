@@ -75,7 +75,7 @@ public:
     const auto& width() const { return _width; }
     
     const auto& activeSnapshot() const { return _activeSnapshot; }
-    template <typename T> void activeSnapshot(const T& x) { _set(_activeSnapshot, x); }
+    template <typename T> bool activeSnapshot(const T& x) { return _set(_activeSnapshot, x); }
     
 private:
     static constexpr int _CommitIdWidth = 7;

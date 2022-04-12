@@ -161,25 +161,25 @@ public:
     }
     
     const auto& repo() const { return _repo; }
-    template <typename T> void repo(const T& x) { _set(_repo, x); }
+    template <typename T> bool repo(const T& x) { return _set(_repo, x); }
     
     const auto& rev() const { return _rev; }
-    template <typename T> void rev(const T& x) { _set(_rev, x); }
+    template <typename T> bool rev(const T& x) { return _set(_rev, x); }
     
     const auto& head() const { return _head; }
-    template <typename T> void head(const T& x) { _set(_head, x); }
+    template <typename T> bool head(const T& x) { return _set(_head, x); }
     
     const auto& panels() const { return _panels; }
-    template <typename T> void panels(const T& x) { _set(_panels, x); }
+    template <typename T> bool panels(const T& x) { return _set(_panels, x); }
     
     const auto& undoButton() const { return _undoButton; }
-    template <typename T> void undoButton(const T& x) { _set(_undoButton, x); }
+    template <typename T> bool undoButton(const T& x) { return _set(_undoButton, x); }
     
     const auto& redoButton() const { return _redoButton; }
-    template <typename T> void redoButton(const T& x) { _set(_redoButton, x); }
+    template <typename T> bool redoButton(const T& x) { return _set(_redoButton, x); }
     
     const auto& snapshotsButton() const { return _snapshotsButton; }
-    template <typename T> void snapshotsButton(const T& x) { _set(_snapshotsButton, x); }
+    template <typename T> bool snapshotsButton(const T& x) { return _set(_snapshotsButton, x); }
     
 private:
     static constexpr int _NameInsetY    = 0;

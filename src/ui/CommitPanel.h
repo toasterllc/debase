@@ -122,8 +122,8 @@ public:
     }
     
     const auto& commit() const { return _commit; }
-    template <typename T> void commit(const T& x) {
-        _set(_commit, x);
+    template <typename T> bool commit(const T& x) {
+        if (!_set(_commit, x)) return false;
         
         const Git::Signature sig = _commit.author();
         _id->text(Git::DisplayStringForId(_commit.id(), _CommitIdWidth));
@@ -132,6 +132,7 @@ public:
         _message->text(_commit.message());
         
         _mergeSymbol->visible(_commit.isMerge());
+        return true;
     }
     
     const auto& header() const { return _header; }

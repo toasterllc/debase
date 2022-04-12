@@ -26,7 +26,7 @@ public:
     auto& textField() { return _textField; }
     
     const auto& spacingX() const { return _spacingX; }
-    template <typename T> void spacingX(const T& x) { _set(_spacingX, x); }
+    template <typename T> bool spacingX(const T& x) { return _set(_spacingX, x); }
     
 private:
     LabelPtr _label         = subviewCreate<Label>();

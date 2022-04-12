@@ -43,24 +43,23 @@ public:
     }
     
     bool focus() const { return _focus; }
-    void focus(bool x) {
-        if (_focus == x) return;
-        _focus = x;
+    bool focus(bool x) {
+        if (!_set(_focus, x)) return false;
         if (_cursorState) _cursorState.restore();
-        drawNeeded(true);
+        return true;
     }
     
     const auto& value() const { return _value; }
-    template <typename T> void value(const T& x) { _set(_value, x); }
+    template <typename T> bool value(const T& x) { return _set(_value, x); }
     
     const auto& valueChanged() const { return _valueChanged; }
-    template <typename T> void valueChanged(const T& x) { _setForce(_valueChanged, x); }
+    template <typename T> bool valueChanged(const T& x) { return _setForce(_valueChanged, x); }
     
     const auto& requestFocus() const { return _requestFocus; }
-    template <typename T> void requestFocus(const T& x) { _setForce(_requestFocus, x); }
+    template <typename T> bool requestFocus(const T& x) { return _setForce(_requestFocus, x); }
     
     const auto& releaseFocus() const { return _releaseFocus; }
-    template <typename T> void releaseFocus(const T& x) { _setForce(_releaseFocus, x); }
+    template <typename T> bool releaseFocus(const T& x) { return _setForce(_releaseFocus, x); }
     
 private:
     static constexpr int KeySpacing = 2;

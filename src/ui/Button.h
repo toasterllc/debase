@@ -168,25 +168,25 @@ public:
     auto& key() { return _key; }
     
     const auto& enabled() const { return _enabled; }
-    template <typename T> void enabled(const T& x) { _set(_enabled, x); }
+    template <typename T> bool enabled(const T& x) { return _set(_enabled, x); }
     
     const auto& highlighted() const { return _highlighted; }
-    template <typename T> void highlighted(const T& x) { _set(_highlighted, x); }
+    template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
     
     const auto& mouseActive() const { return _mouseActive; }
-    template <typename T> void mouseActive(const T& x) { _set(_mouseActive, x); }
+    template <typename T> bool mouseActive(const T& x) { return _set(_mouseActive, x); }
     
     const auto& drawBorder() const { return _drawBorder; }
-    template <typename T> void drawBorder(const T& x) { _set(_drawBorder, x); }
+    template <typename T> bool drawBorder(const T& x) { return _set(_drawBorder, x); }
     
     const auto& action() const { return _action; }
-    template <typename T> void action(const T& x) { _setForce(_action, x); }
+    template <typename T> bool action(const T& x) { return _setForce(_action, x); }
     
     const auto& actionButtons() const { return _actionButtons; }
-    template <typename T> void actionButtons(const T& x) { _set(_actionButtons, x); }
+    template <typename T> bool actionButtons(const T& x) { return _set(_actionButtons, x); }
     
     const auto& actionTrigger() const { return _actionTrigger; }
-    template <typename T> void actionTrigger(const T& x) { _set(_actionTrigger, x); }
+    template <typename T> bool actionTrigger(const T& x) { return _set(_actionTrigger, x); }
     
 private:
     static constexpr int KeySpacing = 2;
