@@ -36,3 +36,9 @@ type Response struct {
 	Error   string        `json:"error"`
 	License SealedLicense `json:"license"`
 }
+
+type UserLicenses struct {
+	UserId   UserId    `json:"userId"`
+	Email    string    `json:"email"`
+	Licenses []License `json:"licenses"`
+}

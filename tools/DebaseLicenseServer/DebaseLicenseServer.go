@@ -68,11 +68,12 @@ func userIdSanitize(uid license.UserId) (license.UserId, error) {
 }
 
 func registerCodeSanitize(code license.RegisterCode) (license.RegisterCode, error) {
+	str := strings.ToLower(string(code))
 	regex := regexp.MustCompile(`^[a-z0-9]+$`)
-	if !regex.MatchString(string(code)) {
+	if !regex.MatchString(str) {
 		return "", fmt.Errorf("invalid characters")
 	}
-	return code, nil
+	return license.RegisterCode(str), nil
 }
 
 func reqSanitize(req license.Request) (license.Request, error) {
@@ -125,11 +126,50 @@ func trialLicenseCreate(mid license.MachineId) license.License {
 	}
 }
 
-func HandlerLicense(ctx context.Context, w http.ResponseWriter, req license.Request) error {
+func sealedLicenseForLicense(lic license.License) (license.SealedLicense, error) {
+	// Convert `lic` to json
+	payload, err := json.Marshal(lic)
+	if err != nil {
+		return license.SealedLicense{}, fmt.Errorf("json.Marshal failed: %w", err)
+	}
+
+	seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
+	key := ed25519.NewKeyFromSeed(seed[:])
+	sig := ed25519.Sign(key, payload)
+	return license.SealedLicense{
+		Payload:   string(payload),
+		Signature: hex.EncodeToString(sig),
+	}, nil
+}
+
+func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.Request) (license.Response, error) {
+	userLicsRef := db.Collection(LicensesCollection).Doc(string(req.UserId))
+	userLicsDoc, err := userLicsRef.Get(ctx)
+	if err != nil {
+		return license.Response{}, fmt.Errorf("userLicsRef.Get failed: %w", err)
+	}
+
+	var userLics license.UserLicenses
+	err = userLicsDoc.DataTo(&userLics)
+	if err != nil {
+		return license.Response{}, fmt.Errorf("userLicsDoc.DataTo failed: %w", err)
+	}
+
+	var match *license.License
+	for _, lic := range userLics.Licenses {
+		if lic.RegisterCode == req.RegisterCode {
+			match = &lic
+		}
+	}
+
+	if match == nil {
+		return license.Response{Error: "no matching license"}, nil
+	}
+
 	return nil
 }
 
-func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) error {
+func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (license.Response, error) {
 	// type TrialRecord struct {
 	//     license.MachineId     `json:"machineId"`
 	//     license.SealedLicense `json:"license"`
@@ -156,6 +196,7 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	//     Signature: sig,
 	// }
 
+	// Create the trial license that we'll insert if one doesn't already exist
 	licNew := trialLicenseCreate(mid)
 
 	var lic license.License
@@ -189,32 +230,28 @@ func HandlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	})
 
 	if err != nil {
-		return fmt.Errorf("db.RunTransaction failed: %w", err)
+		return license.Response{}, fmt.Errorf("db.RunTransaction failed: %w", err)
 	}
 
-	// Convert `lic` to json
-	payload, err := json.Marshal(lic)
+	// Check if license is expired
+	// If so, we return an error rather than return a signed license, otherwise the client
+	// could more easily get the license and rollback the time of their machine.
+	// The way we implemented debase, it deletes the license on disk after it expires, and
+	// since we (the server) no longer supply the license after it expires, the license is
+	// hopefully unrecoverable.
+	expiration := time.Unix(lic.Expiration, 0)
+	if time.Now().After(expiration) {
+		return license.Response{Error: "trial has expired"}, nil
+	}
+
+	sealed, err := sealedLicenseForLicense(lic)
 	if err != nil {
-		return fmt.Errorf("json.Marshal failed: %w", err)
+		return license.Response{}, fmt.Errorf("sealedLicenseForLicense failed: %w", err)
 	}
-
-	seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
-	key := ed25519.NewKeyFromSeed(seed[:])
-	sig := ed25519.Sign(key, payload)
-	sealed := license.SealedLicense{
-		Payload:   string(payload),
-		Signature: hex.EncodeToString(sig),
-	}
-
-	resp := license.Response{License: sealed}
-	err = json.NewEncoder(w).Encode(&resp)
-	if err != nil {
-		return fmt.Errorf("json.NewEncoder(w).Encode failed: %w", err)
-	}
-	return nil
+	return license.Response{License: sealed}, nil
 }
 
-func entry(w http.ResponseWriter, r *http.Request) error {
+func handler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	var req license.Request
@@ -228,29 +265,25 @@ func entry(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("reqSanitize failed: %w", err)
 	}
 
+	var resp license.Response
 	if req.UserId != "" {
 		// License request
-		err = HandlerLicense(ctx, w, req)
+		resp, err = handlerLicense(ctx, w, req)
 		if err != nil {
-			return fmt.Errorf("HandlerLicense failed: %w", err)
+			return fmt.Errorf("handlerLicense failed: %w", err)
 		}
 
 	} else {
 		// Trial request
-		err = HandlerTrial(ctx, w, req.MachineId)
+		resp, err = handlerTrial(ctx, w, req.MachineId)
 		if err != nil {
-			return fmt.Errorf("HandlerTrial failed: %w", err)
+			return fmt.Errorf("handlerTrial failed: %w", err)
 		}
+	}
 
-		// return HandlerTrial(ctx, req.MachineId)
-		//
-		// // Trial request
-		// sealed, err := trialCreate(req.MachineId)
-		// if err != nil {
-		//     log.Printf("trialCreate failed: %w", err)
-		//     return license.Response{}, fmt.Errorf("trialCreate failed")
-		// }
-
+	err = json.NewEncoder(w).Encode(&resp)
+	if err != nil {
+		return fmt.Errorf("json.NewEncoder(w).Encode failed: %w", err)
 	}
 
 	return nil
@@ -258,9 +291,10 @@ func entry(w http.ResponseWriter, r *http.Request) error {
 
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
-	err := entry(w, r)
+	err := handler(w, r)
 	if err != nil {
 		log.Printf("Error: %v", err)
+		// TODO: don't return the actual error to the client, for security and to protect our licensing scheme
 		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusBadRequest) // Intentionally not divulging the error in the response
 		return
 	}
