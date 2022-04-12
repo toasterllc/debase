@@ -4,15 +4,16 @@
 
 namespace UI {
 
-WINDOW* View::_gstateWindow() const {
+bool View::cursorState(CursorState x) {
     assert(_GState);
-    return *_GState.window;
+    x.origin += _GState.originScreen;
+    return screen().cursorState(x);
 }
 
 void View::track(const Event& ev, Deadline deadline) {
     using namespace std::chrono;
     
-    class Screen& screen = Screen();
+    class Screen& scr = screen();
     GraphicsState gstate;
     
 //        if (target) {
@@ -38,7 +39,7 @@ void View::track(const Event& ev, Deadline deadline) {
     );
     
     do {
-        _eventCurrent = screen.nextEvent(deadline);
+        _eventCurrent = scr.nextEvent(deadline);
         if (!_eventCurrent) return; // Deadline passed
         
         // Get our gstate after calling nextEvent first, so that the gstate is calculated after
@@ -47,7 +48,7 @@ void View::track(const Event& ev, Deadline deadline) {
         // the window. In this case, the origin that's initially set for the menu changes
         // during the layout pass, and so the gstate calculated before layout is incorrect.
         if (!gstate) {
-            gstate = screen.graphicsStateCalc(*this);
+            gstate = scr.graphicsStateCalc(*this);
             if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
         }
         
@@ -110,6 +111,9 @@ void View::track(const Event& ev, Deadline deadline) {
 }
 
 
+WINDOW* View::_window() const {
+    return (WINDOW*)window();
+}
 
 //void View::track(const Event& ev) {
 //    assert(_GState);

@@ -36,38 +36,39 @@ public:
         _okButton->drawBorder               (true);
         
         _cancelButton->label()->text        ("Cancel");
+        _cancelButton->label()->textAttr    (A_NORMAL);
         _cancelButton->drawBorder           (true);
         _cancelButton->action               (std::bind(&RegisterPanel::_actionCancel, this));
         _cancelButton->enabled              (true);
     }
     
-    LabelTextFieldPtr focus() const {
-        if (_email->textField()->focus()) return _email;
-        else if (_code->textField()->focus()) return _code;
-        return nullptr;
-    }
-    
-    bool focus(LabelTextFieldPtr field) {
-        _email->textField()->focus(false);
-        _code->textField()->focus(false);
-        if (field) field->textField()->focus(true);
-        return true;
-    }
-    
+//    LabelTextFieldPtr focus() const {
+//        if (_email->textField()->focus()) return _email;
+//        else if (_code->textField()->focus()) return _code;
+//        return nullptr;
+//    }
+//    
+//    bool focus(LabelTextFieldPtr field) {
+//        _email->textField()->focus(false);
+//        _code->textField()->focus(false);
+//        if (field) field->textField()->focus(true);
+//        return true;
+//    }
+//    
     // MARK: - ModalPanel Overrides
-    bool suppressEvents(bool x) override {
-        if (!ModalPanel::suppressEvents(x)) return false;
-        if (ModalPanel::suppressEvents()) {
-            // Save focused field
-            _focusPrev = focus();
-            focus(nullptr);
-        } else {
-            // Restore focused field
-            focus(_focusPrev);
-            _focusPrev = nullptr;
-        }
-        return true;
-    }
+//    bool suppressEvents(bool x) override {
+//        if (!ModalPanel::suppressEvents(x)) return false;
+//        if (ModalPanel::suppressEvents()) {
+//            // Save focused field
+//            _focusPrev = focus();
+//            focus(nullptr);
+//        } else {
+//            // Restore focused field
+//            focus(_focusPrev);
+//            _focusPrev = nullptr;
+//        }
+//        return true;
+//    }
     
     // MARK: - View Overrides
     

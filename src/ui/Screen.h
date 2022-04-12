@@ -18,7 +18,12 @@ public:
     bool size(const Size& x) override { return false; } // Ignore attempts to set screen size
     
     Size windowSize() const override { return Window::windowSize(); }
-    void windowSize(const Size& s) override {} // Ignore attempts to set screen size
+    bool windowSize(const Size& s) override { return false; } // Ignore attempts to set screen size
+    
+    bool cursorState(CursorState x) override {
+        _cursorState = x;
+        return true;
+    }
     
 //    void layout(const Window& win, const Point& orig) override {
 //        windowSize(size());
@@ -143,6 +148,10 @@ public:
         GraphicsState gstate = graphicsStateCalc(*this);
         gstate.orderPanels = _orderPanelsNeeded;
         
+        // Reset cursor state
+        // The last view in the last window to set the cursor state, wins
+        _cursorState = {};
+        
         layout(gstate);
         
         // If _orderPanelsNeeded=false at function entry, but _orderPanelsNeeded=true after a layout pass,
@@ -154,7 +163,7 @@ public:
         }
         
         draw(gstate);
-        CursorState::Draw();
+        _CursorDraw(_cursorState);
         ::update_panels();
         ::refresh();
         
@@ -270,6 +279,11 @@ public:
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
     
 private:
+    static void _CursorDraw(const CursorState& cs) {
+        ::move(cs.origin.y, cs.origin.x);
+        ::curs_set(cs.visible);
+    }
+    
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {
         gstate = view.convert(gstate);
         if (&view == &target) return gstate;
@@ -284,8 +298,8 @@ private:
     }
     
     _GraphicsStateSwapper _gpushed = View::GStatePush({.screen=this});
+    CursorState _cursorState;
     bool _orderPanelsNeeded = false;
-    
 //    
 //    bool _tracking = false;
 //    bool _trackStop = false;

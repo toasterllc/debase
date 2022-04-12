@@ -126,6 +126,11 @@ private:
     }
 };
 
+struct CursorState {
+    bool visible = false;
+    Point origin;
+};
+
 class Screen;
 class Window;
 struct GraphicsState {
@@ -133,7 +138,8 @@ struct GraphicsState {
     operator bool() const { return screen; }
     
     Screen* screen = nullptr;
-    const Window* window = nullptr;
+    Window* window = nullptr;
+//    Window* finalWindow = nullptr;
     Point originWindow; // For drawing purposes (relative to nearest window)
     Point originScreen; // For event purposes (relative to screen)
     bool erased = false;

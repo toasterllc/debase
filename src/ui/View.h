@@ -98,11 +98,6 @@ public:
         return _GState;
     }
     
-    static Screen& Screen() {
-        assert(_GState);
-        return *_GState.screen;
-    }
-    
     static auto GStatePush(const GraphicsState& x) {
         return _GraphicsStateSwapper(_GState, x);
     }
@@ -210,7 +205,7 @@ public:
 //    }
     
     // MARK: - Attributes
-    virtual Attr attr(int attr) const { return Attr(_gstateWindow(), attr); }
+    virtual Attr attr(int attr) const { return Attr(_window(), attr); }
     
     // MARK: - Drawing
     virtual void drawRect() const {
@@ -223,29 +218,29 @@ public:
         const int y1 = r.origin.y;
         const int x2 = r.origin.x+r.size.x-1;
         const int y2 = r.origin.y+r.size.y-1;
-        mvwhline(_gstateWindow(), y1, x1, 0, r.size.x);
-        mvwhline(_gstateWindow(), y2, x1, 0, r.size.x);
-        mvwvline(_gstateWindow(), y1, x1, 0, r.size.y);
-        mvwvline(_gstateWindow(), y1, x2, 0, r.size.y);
-        mvwaddch(_gstateWindow(), y1, x1, ACS_ULCORNER);
-        mvwaddch(_gstateWindow(), y2, x1, ACS_LLCORNER);
-        mvwaddch(_gstateWindow(), y1, x2, ACS_URCORNER);
-        mvwaddch(_gstateWindow(), y2, x2, ACS_LRCORNER);
+        mvwhline(_window(), y1, x1, 0, r.size.x);
+        mvwhline(_window(), y2, x1, 0, r.size.x);
+        mvwvline(_window(), y1, x1, 0, r.size.y);
+        mvwvline(_window(), y1, x2, 0, r.size.y);
+        mvwaddch(_window(), y1, x1, ACS_ULCORNER);
+        mvwaddch(_window(), y2, x1, ACS_LLCORNER);
+        mvwaddch(_window(), y1, x2, ACS_URCORNER);
+        mvwaddch(_window(), y2, x2, ACS_LRCORNER);
     }
     
     virtual void drawLineHoriz(const Point& p, int len, chtype ch=0) const {
         const Point off = _GState.originWindow;
-        mvwhline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
+        mvwhline(_window(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawLineVert(const Point& p, int len, chtype ch=0) const {
         const Point off = _GState.originWindow;
-        mvwvline(_gstateWindow(), off.y+p.y, off.x+p.x, ch, len);
+        mvwvline(_window(), off.y+p.y, off.x+p.x, ch, len);
     }
     
     virtual void drawText(const Point& p, const char* txt) const {
         const Point off = _GState.originWindow;
-        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", txt);
+        mvwprintw(_window(), off.y+p.y, off.x+p.x, "%s", txt);
     }
     
     virtual void drawText(const Point& p, int widthMax, const char* txt) const {
@@ -255,13 +250,13 @@ public:
         std::string str = txt;
         auto it = UTF8::NextN(str.begin(), str.end(), widthMax);
         str.resize(std::distance(str.begin(), it));
-        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, "%s", str.c_str());
+        mvwprintw(_window(), off.y+p.y, off.x+p.x, "%s", str.c_str());
     }
     
     template <typename ...T_Args>
     void drawText(const Point& p, const char* fmt, T_Args&&... args) const {
         const Point off = _GState.originWindow;
-        mvwprintw(_gstateWindow(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
+        mvwprintw(_window(), off.y+p.y, off.x+p.x, fmt, std::forward<T_Args>(args)...);
     }
     
     // MARK: - Accessors
@@ -280,7 +275,22 @@ public:
     virtual const bool inhibitErase() const { return _inhibitErase; }
     virtual bool inhibitErase(bool x) { return _set(_inhibitErase, x); }
     
-    virtual bool erased() { return _GState.erased; }
+    virtual Screen& screen() const {
+        assert(_GState);
+        return *_GState.screen;
+    }
+    
+    virtual Window& window() const {
+        assert(_GState);
+        return *_GState.window;
+    }
+    
+    virtual bool erased() const {
+        assert(_GState);
+        return _GState.erased;
+    }
+    
+    virtual bool cursorState(CursorState x);
     
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
@@ -583,7 +593,7 @@ protected:
     };
     
 private:
-    WINDOW* _gstateWindow() const;
+    WINDOW* _window() const;
     
     static inline ColorPalette _Colors;
     static inline GraphicsState _GState;

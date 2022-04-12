@@ -5,7 +5,6 @@
 #include "lib/ncurses/include/panel.h"
 #include "Bitfield.h"
 #include "UI.h"
-#include "CursorState.h"
 #include "UTF8.h"
 #include "View.h"
 #include <os/log.h>
@@ -49,6 +48,15 @@ public:
         return changed;
     }
     
+    GraphicsState convert(GraphicsState x) override {
+        x.window = this;
+//        x.finalWindow = this;
+        x.originWindow = {};
+        x.originScreen += origin();
+        x.erased = false;
+        return x;
+    }
+    
 //    Size size() const override { return View::size(); }
 //    bool size(const Size& x) override {
 //        const bool changed = View::size(x);
@@ -63,11 +71,12 @@ public:
     }
     
     virtual Size windowSize() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
-    virtual void windowSize(const Size& s) {
-        if (s == windowSize()) return;
+    virtual bool windowSize(const Size& s) {
+        if (s == windowSize()) return false;
 //        const Size ss = {std::max(1,s.x), std::max(1,s.y)};
 //        if (ss == windowSize()) return;
         ::wresize(*this, s.y, s.x);
+        return true;
     }
     
 //    Point origin() const override { return { getbegx(_s.win), getbegy(_s.win) }; }
@@ -119,6 +128,10 @@ public:
 //        const Size sizePrev = size();
         windowSize(size());
         windowOrigin(gstate.originScreen);
+        
+        // Reset the cursor state when a new window is encountered
+        // This way, the last window (the one on top) gets to decide the cursor state
+        cursorState({});
         
 //        os_log(OS_LOG_DEFAULT, "SIZE CHANGED %d", windowSize().y);
 //        
@@ -179,14 +192,6 @@ public:
 //        
 //        View::draw(gstate);
 //    }
-    
-    GraphicsState convert(GraphicsState x) override {
-        x.window = this;
-        x.originWindow = {};
-        x.originScreen += origin();
-        x.erased = false;
-        return x;
-    }
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     

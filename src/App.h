@@ -1194,7 +1194,7 @@ private:
         // Set _colors as the color pallette used by all Views
         View::Colors(_colors);
         
-        _cursorState = UI::CursorState(false, {});
+//        _cursorState = UI::CursorState(false, {});
         
     //    // Hide cursor
     //    ::curs_set(0);
@@ -1208,7 +1208,7 @@ private:
     void _cursesDeinit() noexcept {
     //    ::mousemask(0, NULL);
         
-        _cursorState.restore();
+//        _cursorState.restore();
         
         _ColorsSet(_colorsPrev);
         ::endwin();
@@ -1697,7 +1697,7 @@ private:
     State::RepoState _repoState;
     Git::Rev _head;
     std::vector<UI::RevColumnPtr> _columns;
-    UI::CursorState _cursorState;
+//    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
     
     struct {

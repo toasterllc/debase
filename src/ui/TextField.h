@@ -14,9 +14,8 @@ public:
         _offUpdate();
         
         if (_focus) {
-            Point p = GState().originScreen;
             const ssize_t cursorOff = UTF8::Len(_left(), _cursor());
-            _cursorState = CursorState(true, {p.x+(int)cursorOff, p.y});
+            cursorState({.visible=true, .origin={(int)cursorOff, 0}});
         }
     }
     
@@ -42,12 +41,15 @@ public:
         return true;
     }
     
-    bool focus() const { return _focus; }
-    bool focus(bool x) {
-        if (!_set(_focus, x)) return false;
-        if (_cursorState) _cursorState.restore();
-        return true;
-    }
+//    bool focus() const { return _focus; }
+//    bool focus(bool x) {
+//        if (!_set(_focus, x)) return false;
+//        if (_cursorState) _cursorState.restore();
+//        return true;
+//    }
+    
+    const auto& focus() const { return _focus; }
+    template <typename T> bool focus(const T& x) { return _set(_focus, x); }
     
     const auto& value() const { return _value; }
     template <typename T> bool value(const T& x) { return _set(_value, x); }

@@ -18,6 +18,8 @@ public:
     Button() {
         _label->align(Align::Center);
         _label->textAttr(A_BOLD);
+        
+        _key->textAttr(Colors().dimmed);
     }
     
     void layout() override {
@@ -45,13 +47,13 @@ public:
         // Update our border color for View's drawBorder() pass
         if (_drawBorder) borderColor(_enabled ? Colors().normal : Colors().dimmed);
         
+        if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
+        
         // Update label styles
-        int attr = 0;
-        if (_enabled)                 attr |= A_BOLD;
-        if (_highlighted && _enabled) attr |= Colors().menu;
+        int attr = *_labelDefaultAttr;
+        if (_highlighted && _enabled) attr |= A_BOLD|Colors().menu;
         else if (!_enabled)           attr |= Colors().dimmed;
         _label->textAttr(attr);
-        _key->textAttr(Colors().dimmed);
         
 //        // Draw labels
 //        _key->draw(win);
@@ -198,6 +200,7 @@ private:
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _drawBorder = false;
+    std::optional<int> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
     ActionTrigger _actionTrigger = ActionTrigger::MouseUp;

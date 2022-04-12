@@ -46,7 +46,7 @@ public:
         if (visible() == v) return false;
         if (v) {
             ::show_panel(*this);
-            Screen().orderPanelsNeeded(true);
+            screen().orderPanelsNeeded(true);
         
         } else {
             ::hide_panel(*this);
@@ -56,7 +56,7 @@ public:
     
     void addedToSuperview(View& superview) override {
         Window::addedToSuperview(superview);
-        Screen().orderPanelsNeeded(true);
+        screen().orderPanelsNeeded(true);
     }
     
 //    void orderFront() {
