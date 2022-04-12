@@ -1,7 +1,7 @@
 #pragma once
 #include "UserId.h"
 #include "MachineId.h"
-#include "RegisterCode.h"
+#include "LicenseCode.h"
 #include "License.h"
 
 namespace License {
@@ -12,10 +12,10 @@ struct Request {
     MachineId machineId;
     // Only used for registration (not trials)
     UserId userId;
-    RegisterCode registerCode;
+    LicenseCode licenseCode;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, userId, registerCode, machineId);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, userId, licenseCode, machineId);
 
 // RequestResponse: the server's response to `Request` (above)
 struct RequestResponse {

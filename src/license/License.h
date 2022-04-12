@@ -3,7 +3,7 @@
 #include "lib/toastbox/IntForStr.h"
 #include "UserId.h"
 #include "MachineId.h"
-#include "RegisterCode.h"
+#include "LicenseCode.h"
 
 extern "C" {
 #include "lib/c25519/src/edsign.h"
@@ -20,13 +20,13 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 
 struct License {
     UserId userId;              // Hashed from email
-    RegisterCode registerCode;  // Code supplied to user upon purchase
+    LicenseCode licenseCode;    // Code supplied to user upon purchase
     MachineId machineId;        // Stable, unique identifier for the licensed machine
     uint32_t version = 0;       // Software version
     int64_t expiration = 0;     // Expiration (non-zero only for trial licenses)
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, registerCode, machineId, version, expiration);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, licenseCode, machineId, version, expiration);
 
 struct Context {
     MachineId machineId;

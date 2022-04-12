@@ -1393,13 +1393,13 @@ private:
         assert(_registerPanel);
         
         const std::string email = _registerPanel->email()->value();
-        const std::string registerCode = _registerPanel->code()->value();
+        const std::string licenseCode = _registerPanel->code()->value();
         const License::UserId userId = License::UserIdForEmail(DebaseProductId, email);
         
         const License::Request registerReq = {
             .machineId = _licenseCtxGet().machineId,
             .userId = userId,
-            .registerCode = registerCode,
+            .licenseCode = licenseCode,
         };
         
         bool ok = _licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);

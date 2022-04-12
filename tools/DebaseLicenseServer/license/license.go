@@ -5,40 +5,25 @@ import (
 )
 
 type UserId string
-type RegisterCode string
+type LicenseCode string
 type MachineId string
 
 const UserIdLen = 2 * sha512.Size256    // 2* because 1 byte == 2 hex characters
 const MachineIdLen = 2 * sha512.Size256 // 2* because 1 byte == 2 hex characters
 
-type License struct {
-	UserId       UserId       `json:"userId"`
-	RegisterCode RegisterCode `json:"registerCode"`
-	MachineId    MachineId    `json:"machineId"`
-	Version      uint32       `json:"version"`
-	Expiration   int64        `json:"expiration"`
+type TrialLicense struct {
+	MachineId  MachineId
+	Version    uint32
+	Expiration int64
 }
 
-type SealedLicense struct {
-	Payload   string `json:"payload"`
-	Signature string `json:"signature"`
-}
-
-type Request struct {
-	// Required
-	MachineId MachineId `json:"machineId"`
-	// Optional (present=license request, absent=trial request)
-	UserId       UserId       `json:"userId"`
-	RegisterCode RegisterCode `json:"registerCode"`
-}
-
-type Response struct {
-	Error   string        `json:"error"`
-	License SealedLicense `json:"license"`
+type UserLicense struct {
+	LicenseCode LicenseCode
+	MachineIds  []MachineId
+	Version     uint32
 }
 
 type UserLicenses struct {
-	UserId   UserId    `json:"userId"`
-	Email    string    `json:"email"`
-	Licenses []License `json:"licenses"`
+	Email    string
+	Licenses []UserLicense
 }
