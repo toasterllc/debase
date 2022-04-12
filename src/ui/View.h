@@ -2,6 +2,7 @@
 #include <optional>
 #include "Color.h"
 #include "lib/toastbox/Defer.h"
+#include <os/log.h>
 
 namespace UI {
 
@@ -56,11 +57,11 @@ public:
         Attr() {}
         Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
             assert(window);
-//            if (rand() % 2) {
-//                wattron(_s.window, A_REVERSE);
-//            } else {
-//                wattroff(_s.window, A_REVERSE);
-//            }
+            if (rand() % 2) {
+                wattron(_s.window, A_REVERSE);
+            } else {
+                wattroff(_s.window, A_REVERSE);
+            }
             // MARK: - Drawing
             wattron(_s.window, _s.attr);
         }
@@ -290,6 +291,7 @@ public:
     virtual void eraseNeeded(bool x) { _eraseNeeded = x; }
     virtual void erase() {
         if (!_inhibitErase) {
+//            os_log(OS_LOG_DEFAULT, "VIEW ERASE");
             const Size s = size();
             for (int y=0; y<s.y; y++) drawLineHoriz({0,y}, s.x, ' ');
         }
@@ -398,10 +400,8 @@ public:
         
         // If the superview erased itself, then we don't need to erase ourself since we're
         // a subview of the superview, and therefore have already been erased
-        if (!erasedPrev && erased) {
-            erase();
-            eraseNeeded(false);
-        }
+        if (!erasedPrev && erased) erase();
+        eraseNeeded(false);
         
         // Redraw the view if it says it needs it, or if this part of the view tree has been erased
         if (drawNeeded() || gstate.erased) {
