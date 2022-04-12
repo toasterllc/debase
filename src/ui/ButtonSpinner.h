@@ -31,7 +31,7 @@ public:
     }
     
 private:
-    static constexpr const char* _Animation[] = { "|", "/", "-", "\\" };
+    static constexpr const char* _Animation[] = { "◐", "◓", "◑", "◒" };
     PanelPtr _panel;
     ButtonPtr _button;
     Button _backupButton;

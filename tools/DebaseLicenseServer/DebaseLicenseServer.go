@@ -128,7 +128,13 @@ func trialLicenseCreate(mid license.MachineId) license.TrialLicense {
 	}
 }
 
-func sealedLicense[T license.HTTPLicense](lic T) (license.HTTPSealedLicense, error) {
+func sealedLicense(lic interface{}) (license.HTTPSealedLicense, error) {
+	switch lic.(type) {
+	case license.HTTPTrialLicense, license.HTTPUserLicense:
+	default:
+		panic("invalid type")
+	}
+
 	// Convert `lic` to json
 	payload, err := json.Marshal(lic)
 	if err != nil {
@@ -143,6 +149,23 @@ func sealedLicense[T license.HTTPLicense](lic T) (license.HTTPSealedLicense, err
 		Signature: hex.EncodeToString(sig),
 	}, nil
 }
+
+// TODO: replace the above sealedLicense() (that uses interface{}) with this, once gcloud supports go 1.18/generics
+// func sealedLicense[T license.HTTPLicense](lic T) (license.HTTPSealedLicense, error) {
+//     // Convert `lic` to json
+//     payload, err := json.Marshal(lic)
+//     if err != nil {
+//         return license.HTTPSealedLicense{}, fmt.Errorf("json.Marshal failed: %w", err)
+//     }
+//
+//     seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
+//     key := ed25519.NewKeyFromSeed(seed[:])
+//     sig := ed25519.Sign(key, payload)
+//     return license.HTTPSealedLicense{
+//         Payload:   string(payload),
+//         Signature: hex.EncodeToString(sig),
+//     }, nil
+// }
 
 func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (license.HTTPResponse, error) {
 	var licenseNotFoundErr = errors.New("license not found")

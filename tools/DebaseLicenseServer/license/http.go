@@ -15,9 +15,10 @@ type HTTPUserLicense struct {
 	Version     uint32      `json:"version"`
 }
 
-type HTTPLicense interface {
-	HTTPTrialLicense | HTTPUserLicense
-}
+// TODO: bring back once gcloud supports go 1.18/generics
+// type HTTPLicense interface {
+//     HTTPTrialLicense | HTTPUserLicense
+// }
 
 type HTTPSealedLicense struct {
 	Payload   string `json:"payload"`
