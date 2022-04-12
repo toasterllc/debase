@@ -19,6 +19,8 @@ public:
 //            _panel->eraseNeeded(true); // Hack to make sure label gets redraw properly
             *_button = _backupButton;
             *_button->label() = _backupLabel;
+            // Ensure a redraw
+            _button->eraseNeeded(true);
         }
     }
     

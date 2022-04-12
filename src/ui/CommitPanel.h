@@ -18,8 +18,14 @@ public:
     CommitPanel() {
         borderColor(Colors().normal);
         
+        _header->inhibitErase(true);
         _header->prefix(" ");
         _header->suffix(" ");
+        
+        _id->inhibitErase(true);
+        
+        _time->align(Align::Right);
+        _time->inhibitErase(true);
         
         _author->textAttr(Colors().dimmed);
         
@@ -28,7 +34,6 @@ public:
         
         _mergeSymbol->text("𝝠");
         
-//        _time->align(Align::Center);
 //        _time->visible(false);
 //        _header->visible(false);
     }
@@ -54,7 +59,7 @@ public:
     }
     
     void layout() override {
-        const Rect b = bounds();
+        const Size s = size();
         const bool header = !_header->text().empty();
         const int offY = (header ? 1 : 0);
         
@@ -64,14 +69,24 @@ public:
         _time->prefix(!header ? " " : "");
         _time->suffix(!header ? " " : "");
         
-        _header->sizeToFit();
-        _header->origin({_TextInset+1,0});
+        _header->frame({{_TextInset+1,0}, {s.x-(_TextInset+1), 1}});
+        _id->frame({{_TextInset, offY}, {s.x-2*_TextInset, 1}});
+        _time->frame({{0, offY}, {s.x-_TextInset, 1}});
+        _author->frame({{_TextInset, offY+1}, {s.x-2*_TextInset, 1}});
         
-        _id->sizeToFit();
-        _id->origin({_TextInset, offY});
         
-        _time->sizeToFit();
-        _time->origin({b.r()-_TextInset-_time->size().x, offY});
+        
+        
+        
+//        _header->sizeToFit();
+//        _header->origin({_TextInset+1,0});
+//        
+//        _id->sizeToFit();
+//        _id->origin({_TextInset, offY});
+//        
+//        _time->sizeToFit();
+//        _time->origin({b.r()-_TextInset-_time->size().x, offY});
+        
 //        _time->frame(Inset(_time->frame(), {-1,0}));
 //        _time->frame({{b.r()-_TextInset-_time->size().x-2, offY}, {_time->size().x+2, 1}});
         
@@ -79,7 +94,7 @@ public:
 //        _time->origin({b.r()-_TextInset-_time->size().x, offY});
 //        _time->frame({{0, offY}, {b.size.x-_TextInset, 1}});
         
-        _author->frame({{_TextInset, offY+1}, {b.size.x-2*_TextInset, 1}});
+//        _author->frame({{_TextInset, offY+1}, {s.x-2*_TextInset, 1}});
         
         Size ms = messageSize(size().x);
         ms.y = std::min(_MessageLineCountMax, ms.y);

@@ -16,6 +16,7 @@ public:
     Menu() {
         borderColor(Colors().menu);
         
+        _title->inhibitErase(true);
         _title->align(Align::Center);
         _title->textAttr(Colors().menu|A_BOLD);
         _title->prefix(" ");

@@ -275,6 +275,9 @@ public:
     virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
     virtual void hitTestExpand(const HitTestExpand& x) { _setForce(_hitTestExpand, x); }
     
+    virtual const bool inhibitErase() const { return _inhibitErase; }
+    virtual void inhibitErase(bool x) { _set(_inhibitErase, x); }
+    
     virtual bool erased() { return _GState.erased; }
     
     // MARK: - Layout
@@ -286,8 +289,10 @@ public:
     virtual bool eraseNeeded() const { return _eraseNeeded; }
     virtual void eraseNeeded(bool x) { _eraseNeeded = x; }
     virtual void erase() {
-        const Size s = size();
-        for (int y=0; y<s.y; y++) drawLineHoriz({0,y}, s.x, ' ');
+        if (!_inhibitErase) {
+            const Size s = size();
+            for (int y=0; y<s.y; y++) drawLineHoriz({0,y}, s.x, ' ');
+        }
     }
     
     // MARK: - Draw
@@ -386,11 +391,14 @@ public:
 //            gstate.origin += origin();
 //        }
         
+        const bool erasedPrev = gstate.erased;
+        const bool erased = eraseNeeded();
+        gstate.erased |= erased;
         auto gpushed = View::GStatePush(gstate);
         
-        #warning TODO: if the superview's been erased (gstate.erased==true), we dont need to erase the current view (by calling erase())
-        if (eraseNeeded()) {
-            gstate.erased = true;
+        // If the superview erased itself, then we don't need to erase ourself since we're
+        // a subview of the superview, and therefore have already been erased
+        if (!erasedPrev && erased) {
             erase();
             eraseNeeded(false);
         }
@@ -587,6 +595,7 @@ private:
     bool _drawNeeded = true;
     bool _tracking = false;
     bool _trackStop = false;
+    bool _inhibitErase = false;
     Event _eventCurrent;
     HitTestExpand _hitTestExpand;
     std::optional<Color> _borderColor;

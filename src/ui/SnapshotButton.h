@@ -24,6 +24,11 @@ public:
         size({width, 3});
     }
     
+    void layout() override {
+        // Don't call super::layout(), because we don't want Button to layout its
+        // label (because it'll overlap our content and erase it)
+    }
+    
     void draw() override {
         const int width = size().x;
         const Size offTextX = Size{_TextInsetX, 0};

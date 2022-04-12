@@ -12,6 +12,7 @@ public:
         _message->centerSingleLine(true);
         _message->wrap(true);
         
+        _title->inhibitErase(true); // Title overlaps border, so don't erase
         _title->prefix(" ");
         _title->suffix(" ");
     }
