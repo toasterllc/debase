@@ -808,7 +808,7 @@ private:
                 // Position/size title panel / shadow panels
                 {
                     const UI::Point pos0 = p + mouseDownOffset + UI::Size{0,-1}; // -1 to account for the additional header line while dragging
-                    const UI::Size size = _drag.titlePanel->sizeIntrinsic({titlePanel->size().x, 0});
+                    const UI::Size size = _drag.titlePanel->sizeIntrinsic({titlePanel->size().x, ConstraintNone});
                     _drag.titlePanel->frame({pos0, size});
                     
                     // Position/size shadowPanels
@@ -1005,7 +1005,7 @@ private:
         
         UI::MenuPtr menu = subviewCreate<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
-        menu->size(menu->sizeIntrinsic({}));
+        menu->sizeToFit();
         menu->origin(mouseDownEvent.mouse.origin);
         menu->track(mouseDownEvent);
         
@@ -1065,7 +1065,7 @@ private:
         UI::SnapshotMenuPtr menu = subviewCreate<UI::SnapshotMenu>();
         menu->title()->text("Session Start");
         menu->buttons(buttons);
-        menu->size(menu->sizeIntrinsic({0, heightMax}));
+        menu->size(menu->sizeIntrinsic({ConstraintNone, heightMax}));
         menu->origin(p);
 //        layout(*this, {});
         menu->track(eventCurrent());
@@ -1302,7 +1302,7 @@ private:
     }
     
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
-        panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), 0}));
+        panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), ConstraintNone}));
         
         UI::Size ps = panel->size();
         UI::Size rs = size();
@@ -1314,6 +1314,9 @@ private:
     }
     
     bool _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+        constexpr const char* SupportMessage =
+            "If you believe this is an error, please contact " _DebaseSupportEmail ".";
+        
         panel->dropEvents(true);
         Defer(panel->dropEvents(false));
         
@@ -1345,7 +1348,7 @@ private:
         }
         
         if (!resp.error.empty()) {
-            _errorMessageShow(resp.error);
+            _errorMessageShow(resp.error + "\n\n" + SupportMessage);
             return false;
         }
         
@@ -1354,7 +1357,7 @@ private:
         License::License license;
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
-            _errorMessageShow("The license supplied by the server is invalid.");
+            _errorMessageShow(std::string("The license supplied by the server is invalid.\n\n") + SupportMessage);
             return false;
         }
         

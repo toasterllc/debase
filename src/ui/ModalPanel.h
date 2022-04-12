@@ -11,6 +11,7 @@ public:
     ModalPanel() {
         _message->centerSingleLine(true);
         _message->wrap(true);
+        _message->allowEmptyLines(true);
         
         _title->inhibitErase(true); // Title overlaps border, so don't erase
         _title->prefix(" ");
@@ -22,7 +23,7 @@ public:
     
     Size sizeIntrinsic(Size constraint) override {
         const Rect interiorFrame = InteriorFrame({{}, constraint});
-        const int messageHeight = _message->sizeIntrinsic({interiorFrame.w(), 0}).y;
+        const int messageHeight = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
         return {
             .x = constraint.x,
             .y = 2*BorderSize().y + messageHeight,
@@ -82,7 +83,7 @@ public:
     
     Rect messageFrame() const {
         Rect interiorFrame = InteriorFrame(bounds());
-        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), 0}).y;
+        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
         return interiorFrame;
     }
     

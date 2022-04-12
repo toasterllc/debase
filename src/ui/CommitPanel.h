@@ -46,7 +46,7 @@ public:
 //    }
     
     Size messageSize(int width) const {
-        Size s = _message->sizeIntrinsic({width-2*_TextInset, 0});
+        Size s = _message->sizeIntrinsic({width-2*_TextInset, ConstraintNone});
         s.y = std::min(_MessageLineCountMax, s.y);
         return s;
     }

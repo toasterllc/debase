@@ -6,17 +6,23 @@
 
 namespace UI::LineWrap {
 
-inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std::string_view str) {
+struct Options {
+    size_t width            = SIZE_MAX;
+    size_t height           = SIZE_MAX;
+    bool allowEmptyLines    = false;
+};
+
+inline std::vector<std::string> Wrap(const Options& opts, std::string_view str) {
     using Line = std::deque<std::string>;
     using Lines = std::deque<Line>;
-    if (!lineLenMax) return { std::string(str) };
+    if (opts.width == SIZE_MAX) return { std::string(str) };
     
     Lines linesInput;
     {
         std::istringstream stream((std::string)str);
         std::string line;
         while (std::getline(stream, line)) {
-            if (line.empty()) continue;
+            if (!opts.allowEmptyLines && line.empty()) continue;
             
             Line& lineInput = linesInput.emplace_back();
             std::istringstream linestream(line);
@@ -27,37 +33,35 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
     
     std::vector<std::string> lines;
     Line* lastLine = nullptr;
-    while (lines.size()<lineCountMax && !linesInput.empty()) {
+    while (lines.size()<opts.height && !linesInput.empty()) {
         Line& lineInput = linesInput.front();
         std::string& msgline = lines.emplace_back();
         
         while (!lineInput.empty()) {
             // Add the current word
-            {
-                const std::string& word = lineInput.front();
-                const size_t wordLen = UTF8::Len(word);
-                const std::string add = (msgline.empty() ? "" : " ") + word;
-                const size_t addLen = UTF8::Len(add);
-                const size_t rem = lineLenMax-UTF8::Len(msgline);
-                // No more space -> next line
-                if (!rem) break;
-                // Check if the line would overflow with `add`
-                if (addLen > rem) {
-                    // The word (without potential space) would fit by itself on a line -> next line
-                    if (wordLen <= lineLenMax) break;
-                    // The word wouldn't fit by itself on a line -> split word
-                    std::string head = add.substr(0, rem);
-                    std::string tail = add.substr(rem, addLen-rem);
-                    
-                    msgline += head;
-                    lineInput.pop_front();
-                    lineInput.push_front(tail);
-                    continue;
-                }
+            const std::string& word = lineInput.front();
+            const size_t wordLen = UTF8::Len(word);
+            const std::string add = (msgline.empty() ? "" : " ") + word;
+            const size_t addLen = UTF8::Len(add);
+            const size_t rem = opts.width-UTF8::Len(msgline);
+            // No more space -> next line
+            if (!rem) break;
+            // Check if the line would overflow with `add`
+            if (addLen > rem) {
+                // The word (without potential space) would fit by itself on a line -> next line
+                if (wordLen <= opts.width) break;
+                // The word wouldn't fit by itself on a line -> split word
+                std::string head = add.substr(0, rem);
+                std::string tail = add.substr(rem, addLen-rem);
                 
-                msgline += add;
+                msgline += head;
                 lineInput.pop_front();
+                lineInput.push_front(tail);
+                continue;
             }
+            
+            msgline += add;
+            lineInput.pop_front();
         }
         
         if (lineInput.empty()) {
@@ -75,9 +79,9 @@ inline std::vector<std::string> Wrap(size_t lineCountMax, size_t lineLenMax, std
         line += (line.empty() ? "" : " ") + word;
         // Our logic guarantees that if the word would have fit, it would've been included in the last line.
         // So since the word isn't included, the length of the line (with the word included) must be larger
-        // than `lineLenMax`. So verify that assumption.
-        assert(UTF8::Len(line) > lineLenMax);
-        line.erase(lineLenMax);
+        // than `width`. So verify that assumption.
+        assert(UTF8::Len(line) > opts.width);
+        line.erase(opts.width);
     }
     
     return lines;

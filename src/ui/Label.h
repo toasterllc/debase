@@ -8,13 +8,23 @@ public:
     using View::View;
     
     Size sizeIntrinsic(Size constraint) override {
-        const int prefixWidth = (!_wrap ? (int)UTF8::Len(_prefix) : 0);
-        const int suffixWidth = (!_wrap ? (int)UTF8::Len(_suffix) : 0);
-        const int fullWidth = prefixWidth + (int)UTF8::Len(_text) + suffixWidth;
-        const int width = constraint.x ? std::min(constraint.x, fullWidth) : fullWidth;
-        if (!_wrap) return {width, 1};
+        assert(constraint.x >= 0);
+        assert(constraint.y >= 0);
         
-        std::vector<std::string> lines = LineWrap::Wrap(SIZE_MAX, width, _text);
+        if (!_wrap) {
+            const int prefixWidth = (int)UTF8::Len(_prefix);
+            const int suffixWidth = (int)UTF8::Len(_suffix);
+            const int fullWidth = prefixWidth + (int)UTF8::Len(_text) + suffixWidth;
+            const int width = constraint.x!=ConstraintNone ? std::min(constraint.x, fullWidth) : fullWidth;
+            return {width, 1};
+        }
+        
+        const int width = constraint.x!=ConstraintNone ? constraint.x : (int)UTF8::Len(_text);
+        const LineWrap::Options opts = {
+            .width = (size_t)width,
+            .allowEmptyLines = _allowEmptyLines,
+        };
+        std::vector<std::string> lines = LineWrap::Wrap(opts, _text);
         return { width, (int)lines.size() };
     }
     
@@ -27,11 +37,16 @@ public:
         // Re-create lines
         // We do this in draw() (and not layout()) because the superview may set our text in its draw(),
         // so creating _lines in our layout() would occur before the superview set our text.
-        if (_lines.empty()) {
+        if (_lines.empty() && !_text.empty()) {
             if (!_wrap) {
                 _lines = { _text };
             } else {
-                _lines = LineWrap::Wrap(size().y, size().x, _text);
+                const LineWrap::Options opts = {
+                    .width = (size_t)size().x,
+                    .height = (size_t)size().y,
+                    .allowEmptyLines = _allowEmptyLines,
+                };
+                _lines = LineWrap::Wrap(opts, _text);
             }
         }
         
@@ -44,7 +59,7 @@ public:
         // Draw lines
         int offY = 0;
         for (const std::string& l : _lines) {
-            if (l.empty()) continue;
+//            if (l.empty()) continue;
             if (offY >= s.y) break;
             
             // Printed line = prefix + base + suffix
@@ -95,6 +110,9 @@ public:
     const auto& wrap() const { return _wrap; }
     template <typename T> void wrap(const T& x) { _set(_wrap, x); }
     
+    const auto& allowEmptyLines() const { return _allowEmptyLines; }
+    template <typename T> void allowEmptyLines(const T& x) { _set(_allowEmptyLines, x); }
+    
 private:
 //    template <typename X, typename Y>
 //    void _set(X& x, const Y& y) {
@@ -112,6 +130,7 @@ private:
     Align _align = Align::Left;
     bool _centerSingleLine = false;
     bool _wrap = false;
+    bool _allowEmptyLines = false;
     
     std::vector<std::string> _lines;
 };

@@ -169,8 +169,9 @@ public:
         return HitTest(b, p);
     }
     
+    static constexpr int ConstraintNone = INT_MAX;
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
-    virtual void sizeToFit(Size constraint={}) { size(sizeIntrinsic(constraint)); }
+    virtual void sizeToFit(Size constraint={ConstraintNone, ConstraintNone}) { size(sizeIntrinsic(constraint)); }
     
     virtual Point origin() const { return _origin; }
     virtual bool origin(const Point& x) {

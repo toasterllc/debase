@@ -73,7 +73,7 @@ public:
                     _panels.insert(_panels.begin()+i, panel);
                 }
                 
-                const Size panelSize = panel->sizeIntrinsic({size.x, 0});
+                const Size panelSize = panel->sizeIntrinsic({size.x, ConstraintNone});
                 const int rem = size.y-offY;
                 if (panelSize.y > rem) break;
                 
@@ -109,7 +109,7 @@ public:
         
         int offY = _CommitsInsetY;
         for (CommitPanelPtr panel : _panels) {
-            const Size ps = panel->sizeIntrinsic({s.x, 0});
+            const Size ps = panel->sizeIntrinsic({s.x, ConstraintNone});
             const Rect pf = {{0,offY}, ps};
             panel->frame(pf);
             offY += ps.y + _CommitSpacing;

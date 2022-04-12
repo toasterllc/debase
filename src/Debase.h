@@ -5,13 +5,15 @@
 #define inline // Go can't handle 'inline' below
 #endif
 
-#define _DebaseShortURL             "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer"
-#define _DebaseURL                  "https://" _DebaseShortURL
+#define _DebaseShortURL         "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer"
+#define _DebaseURL              "https://" _DebaseShortURL
+#define _DebaseSupportEmail     "support@heytoaster.com"
 
-inline const uint32_t DebaseVersion = 1;
-inline const char* DebaseProductId  = "com.heytoaster.debase";
-inline const char* DebaseDisplayURL = _DebaseShortURL;
-inline const char* DebaseLicenseURL = _DebaseURL "/license";
+inline const uint32_t DebaseVersion     = 1;
+inline const char* DebaseProductId      = "com.heytoaster.debase";
+inline const char* DebaseDisplayURL     = _DebaseShortURL;
+inline const char* DebaseLicenseURL     = _DebaseURL "/license";
+inline const char* DebaseSupportEmail   = _DebaseSupportEmail;
 
 #if DebaseLicenseServer
 inline const uint8_t DebaseKeyPrivate[] = {

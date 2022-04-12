@@ -12,9 +12,9 @@ public:
     
     void layout() override {
         const Size s = size();
-        const Size labelSize = _label->sizeIntrinsic({});
-        _label->frame({{}, labelSize});
+        _label->sizeToFit();
         
+        const Size labelSize = _label->size();
         const Size textFieldSize = {s.x-labelSize.x-_spacingX, 1};
         _textField->frame({{labelSize.x+_spacingX, 0}, textFieldSize});
         
