@@ -26,9 +26,10 @@ inline std::string StringForId(const git_oid& oid) {
     return git_oid_tostr_s(&oid);
 }
 
-inline std::string DisplayStringForId(const git_oid& oid) {
-    char str[8];
-    git_oid_tostr(str, sizeof(str), &oid);
+inline std::string DisplayStringForId(const git_oid& oid, size_t len) {
+    assert(len <= GIT_OID_HEXSZ);
+    char str[GIT_OID_HEXSZ+1];
+    git_oid_tostr(str, std::min(sizeof(str), len+1), &oid);
     return str;
 }
 
@@ -468,8 +469,9 @@ public:
     }
     
     std::string displayName() const {
+        constexpr size_t Len = 7;
         if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
-        return DisplayStringForId(commit.id());
+        return DisplayStringForId(commit.id(), Len);
     }
     
     // displayHead(): returns the head commit considering `skip`

@@ -8,9 +8,12 @@ public:
     using View::View;
     
     Size sizeIntrinsic(Size constraint) override {
-        const int textWidth = (int)UTF8::Len(_text);
-        const int width = constraint.x ? std::min(constraint.x, textWidth) : textWidth;
+        const int prefixWidth = (!_wrap ? (int)UTF8::Len(_prefix) : 0);
+        const int suffixWidth = (!_wrap ? (int)UTF8::Len(_suffix) : 0);
+        const int fullWidth = prefixWidth + (int)UTF8::Len(_text) + suffixWidth;
+        const int width = constraint.x ? std::min(constraint.x, fullWidth) : fullWidth;
         if (!_wrap) return {width, 1};
+        
         std::vector<std::string> lines = LineWrap::Wrap(SIZE_MAX, width, _text);
         return { width, (int)lines.size() };
     }
@@ -24,22 +27,27 @@ public:
     }
     
     void draw() override {
-        const Rect f = frame();
-        const int prefixWidth = (int)UTF8::Len(_prefix);
-        const int suffixWidth = (int)UTF8::Len(_suffix);
+        // Confirm assumption that we should never have more than one line unless we're wrapping
+        assert(_lines.size()<=1 || _wrap);
+        
+        const Size s = size();
+        const std::string prefix = (!_wrap ? _prefix : "");
+        const std::string suffix = (!_wrap ? _suffix : "");
+        const int prefixWidth = (int)UTF8::Len(prefix);
+        const int suffixWidth = (int)UTF8::Len(suffix);
         
         // Draw lines
         int offY = 0;
         for (const std::string& l : _lines) {
             if (l.empty()) continue;
-            if (offY >= f.size.y) break;
+            if (offY >= s.y) break;
             
             // Printed line = prefix + base + suffix
-            const int availBaseWidth = std::max(0, f.size.x-prefixWidth-suffixWidth);
+            const int availBaseWidth = std::max(0, s.x-prefixWidth-suffixWidth);
             // Truncate `base` to `availBaseWidth`
             const std::string base = UTF8::Truncated(l, availBaseWidth);
             // Truncate `line` to our frame width
-            const std::string line = UTF8::Truncated(_prefix+base+_suffix, f.size.x);
+            const std::string line = UTF8::Truncated(prefix+base+suffix, s.x);
             const int lineWidth = (int)UTF8::Len(line);
             
             // Draw line
@@ -51,8 +59,8 @@ public:
             Point p = {0, offY};
             switch (_align) {
             case Align::Left:   break;
-            case Align::Center: p.x += std::max(0, (f.size.x-lineWidth)/2); break;
-            case Align::Right:  p.x += std::max(0, (f.size.x-lineWidth)); break;
+            case Align::Center: p.x += std::max(0, (s.x-lineWidth)/2); break;
+            case Align::Right:  p.x += std::max(0, (s.x-lineWidth)); break;
             }
             
             Attr style = attr(_textAttr);
@@ -86,6 +94,15 @@ public:
     template <typename T> void wrap(const T& x) { _set(_wrap, x); }
     
 private:
+//    template <typename X, typename Y>
+//    void _set(X& x, const Y& y) {
+//        if (x == y) return;
+//        x = y;
+//        layoutNeeded(true);
+//        eraseNeeded(true);
+//        drawNeeded(true);
+//    }
+    
     std::string _text;
     std::string _prefix;
     std::string _suffix;

@@ -41,19 +41,20 @@ public:
     
     Point origin() const override { return View::origin(); }
     
-    void origin(const Point& x) override {
+    bool origin(const Point& x) override {
         const bool drawNeededPrev = drawNeeded();
-        View::origin(x);
+        const bool changed = View::origin(x);
         // Suppress View's behavior of dirtying ourself when changing the origin
         if (!drawNeededPrev) drawNeeded(false);
+        return changed;
     }
     
-    Size size() const override { return View::size(); }
-    void size(const Size& x) override {
-        if (x == size()) return;
-        View::size(x);
-        eraseNeeded(true);
-    }
+//    Size size() const override { return View::size(); }
+//    bool size(const Size& x) override {
+//        const bool changed = View::size(x);
+//        if (changed) eraseNeeded(true);
+//        return changed;
+//    }
     
     virtual Point windowOrigin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     virtual void windowOrigin(const Point& p) {
@@ -97,67 +98,22 @@ public:
 //        return r;
 //    }
     
-    virtual void drawRect() const override {
+    void drawRect() const override {
         // For the case where we're drawing the window's border, we attempt
         // to be more efficent than View's drawRect() by using ::box().
         ::box(*this, 0, 0);
     }
     
-    virtual void drawRect(const Rect& rect) const override {
+    void drawRect(const Rect& rect) const override {
         View::drawRect(rect);
     }
     
-//    bool layoutNeeded() const override { return View::layoutNeeded() || _s.sizePrev!=size(); }
-//    void layoutNeeded(bool x) override { View::layoutNeeded(x); }
-    
-//    void layout(const Window& win, const Point& orig) override {
-//        windowSize(size());
-//        windowOrigin(orig);
-//        
-////        if (_s.originPrev != orig) {
-////            
-////            _s.originPrev = orig;
-////        }
-////        
-////        // Detect size changes
-////        // ncurses can change our size out from under us (eg by the
-////        // terminal size changing), so we handle all size changes
-////        // here, instead of in the size() setter
-////        if (_s.sizePrev != size()) {
-////            // We need to erase+redraw after resizing
-////            // (eraseNeeded=true implicity sets drawNeeded=true)
-////            eraseNeeded(true);
-////            _s.sizePrev = size();
-////        }
-//        
-//        View::layout(*this, {});
-//    }
-//    
-//    void draw(const Window& win, const Point& orig) override {
-//        // Remember whether we erased ourself during this draw cycle
-//        // This is used by View instances (Button and TextField)
-//        // to know whether they need to be drawn again
-//        _s.erased = _s.eraseNeeded;
-//        
-//        // Erase ourself if needed, and remember that we did so
-//        if (_s.eraseNeeded) {
-//            ::werase(*this);
-//            _s.eraseNeeded = false;
-//        }
-//        
-//        View::draw(*this, {});
-//    }
-    
-    
-    virtual GraphicsState convert(GraphicsState x) override {
-        x.window = this;
-        x.originWindow = {};
-        x.originScreen += origin();
-        x.erased = false;
-        return x;
+    void erase() override {
+        // Don't call super because View's implementation will be redundant
+        ::werase(*this);
     }
     
-    virtual void layout(GraphicsState gstate) override {
+    void layout(GraphicsState gstate) override {
         if (!visible()) return;
         
 //        const Size sizePrev = size();
@@ -213,20 +169,24 @@ public:
         View::layout(gstate);
     }
     
-    virtual void draw(GraphicsState gstate) override {
-        if (!visible()) return;
-        if (eraseNeeded()) {
-            gstate.erased = true;
-            ::werase(*this);
-            eraseNeeded(false);
-        }
-        
-        View::draw(gstate);
-    }
+//    virtual void draw(GraphicsState gstate) override {
+//        if (!visible()) return;
+//        if (eraseNeeded()) {
+//            gstate.erased = true;
+//            ::werase(*this);
+//            eraseNeeded(false);
+//        }
+//        
+//        View::draw(gstate);
+//    }
     
-    // eraseNeeded(): whether the window should be erased the next time it's drawn
-    virtual bool eraseNeeded() { return _s.eraseNeeded; }
-    virtual void eraseNeeded(bool x) { _s.eraseNeeded = x; }
+    GraphicsState convert(GraphicsState x) override {
+        x.window = this;
+        x.originWindow = {};
+        x.originScreen += origin();
+        x.erased = false;
+        return x;
+    }
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     
@@ -249,10 +209,6 @@ protected:
 private:
     struct {
         WINDOW* win = nullptr;
-//        Point originPrev;
-//        Size sizePrev;
-        // eraseNeeded: tracks whether the window needs to be erased the next time it's drawn
-        bool eraseNeeded = true;
     } _s;
 };
 

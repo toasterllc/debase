@@ -28,7 +28,9 @@ public:
         
         _mergeSymbol->text("𝝠");
         
-        _time->align(Align::Right);
+//        _time->align(Align::Center);
+//        _time->visible(false);
+//        _header->visible(false);
     }
     
 //    void drawNeeded(bool x) override {
@@ -52,14 +54,32 @@ public:
     }
     
     void layout() override {
-        const Rect f = frame();
+        const Rect b = bounds();
         const bool header = !_header->text().empty();
         const int offY = (header ? 1 : 0);
         
-        _header->frame({{_TextInset+1,0}, {f.size.x-(_TextInset+1), 1}});
-        _id->frame({{_TextInset, offY}, {f.size.x-2*_TextInset, 1}});
-        _time->frame({{0, offY}, {f.size.x-_TextInset, 1}});
-        _author->frame({{_TextInset, offY+1}, {f.size.x-2*_TextInset, 1}});
+        _id->prefix(!header ? " " : "");
+        _id->suffix(!header ? " " : "");
+        
+        _time->prefix(!header ? " " : "");
+        _time->suffix(!header ? " " : "");
+        
+        _header->sizeToFit();
+        _header->origin({_TextInset+1,0});
+        
+        _id->sizeToFit();
+        _id->origin({_TextInset, offY});
+        
+        _time->sizeToFit();
+        _time->origin({b.r()-_TextInset-_time->size().x, offY});
+//        _time->frame(Inset(_time->frame(), {-1,0}));
+//        _time->frame({{b.r()-_TextInset-_time->size().x-2, offY}, {_time->size().x+2, 1}});
+        
+        
+//        _time->origin({b.r()-_TextInset-_time->size().x, offY});
+//        _time->frame({{0, offY}, {b.size.x-_TextInset, 1}});
+        
+        _author->frame({{_TextInset, offY+1}, {b.size.x-2*_TextInset, 1}});
         
         Size ms = messageSize(size().x);
         ms.y = std::min(_MessageLineCountMax, ms.y);
@@ -71,19 +91,15 @@ public:
     void draw() override {
         assert(borderColor());
         const Color color = *borderColor();
-        const bool header = !_header->text().empty();
+//        const bool header = !_header->text().empty();
         
         _header->textAttr(color);
         
         _id->textAttr(color|A_BOLD);
-        _id->prefix(!header ? " " : "");
-        _id->suffix(!header ? " " : "");
-        
-        _time->prefix(!header ? " " : "");
-        _time->suffix(!header ? " " : "");
         
         _mergeSymbol->textAttr(color);
         
+//        #warning TODO: revisit
         // Always redraw _time/_id/_mergeSymbol because our border may have clobbered them
         _time->drawNeeded(true);
         _id->drawNeeded(true);
@@ -95,7 +111,7 @@ public:
         _set(_commit, x);
         
         const Git::Signature sig = _commit.author();
-        _id->text(Git::DisplayStringForId(_commit.id()));
+        _id->text(Git::DisplayStringForId(_commit.id(), _CommitIdWidth));
         _time->text(Git::ShortStringForTime(Git::TimeForGitTime(sig.time())));
         _author->text(sig.name());
         _message->text(_commit.message());
@@ -107,6 +123,7 @@ public:
     template <typename T> void header(const T& x) { _set(_header, x); }
     
 private:
+    static constexpr int _CommitIdWidth = 7;
     static constexpr int _MessageLineCountMax = 2;
     static constexpr int _TextInset = 2;
     

@@ -18,13 +18,14 @@ public:
     Button() {
         _label->align(Align::Center);
         _label->textAttr(A_BOLD);
-        _key->align(Align::Right);
     }
     
     void layout() override {
-        const Size s = size();
-        _label->frame({{0, (s.y-1)/2}, {s.x, 1}});
-        _key->frame({{0, (s.y-1)/2}, {s.x, 1}});
+        const Rect r = Inset(bounds(), {(_drawBorder?1:0), 0});
+        _key->sizeToFit();
+        
+        _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
+        _key->origin({r.r()-_key->size().x, r.my()});
         
 //        _label->frame(f);
 //        _key->frame(f);

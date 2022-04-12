@@ -17,7 +17,7 @@ public:
         Git::Signature sig = commit.author();
         
         _time = Time::RelativeTimeDisplayString(snapshot.creationTime);
-        _commit.id = Git::DisplayStringForId(commit.id());
+        _commit.id = Git::DisplayStringForId(commit.id(), _CommitIdWidth);
         _commit.author = sig.name();
         _commit.message = LineWrap::Wrap(1, width-_TextInsetX, commit.message());
         
@@ -89,7 +89,8 @@ public:
     bool activeSnapshot = false;
     
 private:
-    static constexpr int _TextInsetX = 2;
+    static constexpr int _CommitIdWidth = 7;
+    static constexpr int _TextInsetX    = 2;
     
     std::string _time;
     struct {

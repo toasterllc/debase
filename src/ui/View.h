@@ -169,28 +169,34 @@ public:
     }
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
+    virtual void sizeToFit(Size constraint={}) { size(sizeIntrinsic(constraint)); }
     
     virtual Point origin() const { return _origin; }
-    virtual void origin(const Point& x) {
+    virtual bool origin(const Point& x) {
         const Point xadj = {std::max(0,x.x), std::max(0,x.y)};
-        if (xadj == _origin) return;
+        if (xadj == _origin) return false;
         _origin = xadj;
         drawNeeded(true);
+        return true;
     }
     
     virtual Size size() const { return _size; }
-    virtual void size(const Size& x) {
+    virtual bool size(const Size& x) {
         const Point xadj = {std::max(0,x.x), std::max(0,x.y)};
-        if (xadj == _size) return;
+        if (xadj == _size) return false;
         _size = xadj;
         layoutNeeded(true);
+        eraseNeeded(true);
         drawNeeded(true);
+        return true;
     }
     
     virtual Rect frame() const { return { .origin=origin(), .size=size() }; }
-    virtual void frame(const Rect& x) {
-        origin(x.origin);
-        size(x.size);
+    virtual bool frame(const Rect& x) {
+        bool changed = false;
+        changed |= origin(x.origin);
+        changed |= size(x.size);
+        return changed;
     }
     
     virtual Rect bounds() const { return { .size = size() }; }
@@ -276,6 +282,14 @@ public:
     virtual void layoutNeeded(bool x) { _layoutNeeded = x; }
     virtual void layout() {}
     
+    // MARK: - Erase
+    virtual bool eraseNeeded() const { return _eraseNeeded; }
+    virtual void eraseNeeded(bool x) { _eraseNeeded = x; }
+    virtual void erase() {
+        const Size s = size();
+        for (int y=0; y<s.y; y++) drawLineHoriz({0,y}, s.x, ' ');
+    }
+    
     // MARK: - Draw
     virtual bool drawNeeded() const { return _drawNeeded; }
     virtual void drawNeeded(bool x) { _drawNeeded = x; }
@@ -340,6 +354,19 @@ public:
         }
     }
     
+    
+//    virtual void draw(GraphicsState gstate) override {
+//        if (!visible()) return;
+//        if (eraseNeeded()) {
+//            gstate.erased = true;
+//            ::werase(*this);
+//            eraseNeeded(false);
+//        }
+//        
+//        View::draw(gstate);
+//    }
+    
+    
     virtual void draw(GraphicsState gstate) {
         if (!visible()) return;
         
@@ -360,6 +387,13 @@ public:
 //        }
         
         auto gpushed = View::GStatePush(gstate);
+        
+        #warning TODO: if the superview's been erased (gstate.erased==true), we dont need to erase the current view (by calling erase())
+        if (eraseNeeded()) {
+            gstate.erased = true;
+            erase();
+            eraseNeeded(false);
+        }
         
         // Redraw the view if it says it needs it, or if this part of the view tree has been erased
         if (drawNeeded() || gstate.erased) {
@@ -549,6 +583,7 @@ private:
     bool _visible = true;
     bool _interaction = true;
     bool _layoutNeeded = true;
+    bool _eraseNeeded = false;
     bool _drawNeeded = true;
     bool _tracking = false;
     bool _trackStop = false;

@@ -16,7 +16,7 @@ public:
     
     ~ButtonSpinner() {
         if (_panel) {
-            _panel->eraseNeeded(true); // Hack to make sure label gets redraw properly
+//            _panel->eraseNeeded(true); // Hack to make sure label gets redraw properly
             *_button = _backupButton;
             *_button->label() = _backupLabel;
         }

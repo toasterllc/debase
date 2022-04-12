@@ -29,6 +29,7 @@ public:
         
         _name->textAttr(Colors().menu | A_BOLD);
         _name->align(Align::Center);
+//        _name->visible(false);
         
         _readOnly->text("read-only");
         _readOnly->align(Align::Center);
@@ -52,6 +53,9 @@ public:
         _undoButton->visible(_rev.isMutable());
         _redoButton->visible(_rev.isMutable());
         _snapshotsButton->visible(_rev.isMutable());
+        
+//        _redoButton->visible(false);
+//        _snapshotsButton->visible(false);
         
         // Create our CommitPanels for each commit
         Git::Commit commit = _rev.commit;
