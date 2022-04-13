@@ -27,7 +27,7 @@ public:
     }
     
     // MARK: - ModalPanel Overrides
-    int contentHeight() const override {
+    int contentHeight(int width) const override {
         return 2*_ButtonHeight;
     }
     

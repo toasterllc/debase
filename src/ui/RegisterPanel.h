@@ -6,13 +6,22 @@
 #include "ModalPanel.h"
 #include "TextField.h"
 #include "LabelTextField.h"
+#include "LinkButton.h"
 
 namespace UI {
 
 class RegisterPanel : public ModalPanel {
 public:
     RegisterPanel() {
-    
+        message()->centerSingleLine(false);
+        
+        _purchaseMessage->text("To purchase a license, please visit:");
+        _purchaseMessage->wrap(true);
+        
+        _purchaseLink->label()->text(ToasterDisplayURL);
+        _purchaseLink->link(DebasePurchaseURL);
+        _purchaseLink->enabled(true);
+        
         auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
@@ -43,8 +52,14 @@ public:
     }
     
     // MARK: - ModalPanel Overrides
-    int contentHeight() const override {
-        return 2*(_FieldHeight + _FieldSpacingY) + _ButtonHeight;
+    int contentHeight(int width) const override {
+        const int purchaseMessageHeight = _purchaseMessage->sizeIntrinsic({width, ConstraintNone}).y;
+        return
+            purchaseMessageHeight + _ElementSpacingY +
+            _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY +
+            _FieldHeight + _ElementSpacingY +
+            _FieldHeight + _ElementSpacingY +
+            _ButtonHeight;
     }
     
 //    LabelTextFieldPtr focus() const {
@@ -88,10 +103,17 @@ public:
         const Rect cf = contentFrame();
         int offY = cf.t();
         
+        _purchaseMessage->sizeToFit({cf.w(), ConstraintNone});
+        _purchaseMessage->origin({cf.origin.x, offY});
+        offY += _purchaseMessage->frame().h() + _ElementSpacingY;
+        
+        _purchaseLink->frame({{cf.origin.x, offY}, {cf.w(), _PurchaseLinkHeight}});
+        offY += _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY;
+        
         _email->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
-        offY += _FieldHeight+_FieldSpacingY;
+        offY += _FieldHeight+_ElementSpacingY;
         _code->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
-        offY += _FieldHeight+_FieldSpacingY;
+        offY += _FieldHeight+_ElementSpacingY;
         
         _okButton->frame({{cf.r()-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
         _cancelButton->frame({{_okButton->frame().l()-_ButtonSpacingX-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
@@ -113,16 +135,12 @@ public:
     auto& cancelButton() { return _cancelButton; }
     
 private:
-    static constexpr int _FieldSpacingY         = 1;
+    static constexpr int _ElementSpacingY       = 1;
+    static constexpr int _PurchaseLinkHeight    = 1;
     static constexpr int _FieldHeight           = 1;
     static constexpr int _ButtonWidth           = 10;
     static constexpr int _ButtonHeight          = 3;
     static constexpr int _ButtonSpacingX        = 1;
-    
-    static constexpr int _FieldsExtraHeight = 5;
-    static constexpr int _FieldLabelInsetX  = 0;
-    static constexpr int _FieldLabelWidth   = 10;
-    static constexpr int _FieldValueInsetX  = _FieldLabelWidth;
     
     void _fieldValueChanged(TextField& field) {
         const bool fieldsValue =
@@ -184,6 +202,9 @@ private:
             dismissAction()(*this);
         }
     }
+    
+    LabelPtr _purchaseMessage   = subviewCreate<Label>();
+    LinkButtonPtr _purchaseLink = subviewCreate<LinkButton>();
     
     LabelTextFieldPtr _email    = subviewCreate<LabelTextField>();
     LabelTextFieldPtr _code     = subviewCreate<LabelTextField>();

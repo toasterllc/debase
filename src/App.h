@@ -1325,7 +1325,7 @@ private:
     
     std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
         constexpr const char* SupportMessage =
-            "For support, please contact " _DebaseSupportEmail ".";
+            "For support, please contact " _ToasterSupportEmail ".";
         
         panel->suppressEvents(true);
         Defer(panel->suppressEvents(false));
@@ -1334,7 +1334,7 @@ private:
         License::RequestResponse resp;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseURL, req, resp);
+            Network::Request(DebaseLicenseAPIURL, req, resp);
         });
         {
             // Animate until we get a response
@@ -1443,6 +1443,9 @@ private:
         assert(license.expiration);
         _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(license.expiration);
         _trialCountdownPanel->color(View::Colors().menu);
+        _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
+            _registerPanelShow();
+        });
     }
     
     void _infoMessageShow(std::string_view msg) {
@@ -1476,7 +1479,7 @@ private:
     
     void _trialExpiredPanelShow() {
         constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.\n\nTo purchase a license, please visit:heytoaster.com";
+        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
         _registerPanelShow(Title, Message, false);
     }
     

@@ -29,10 +29,10 @@ public:
     
     Rect contentFrame() const {
         const Rect mf = messageFrame();
-        return {mf.bl()+Size{0,1}, {mf.w(), contentHeight()}};
+        return {mf.bl()+Size{0,1}, {mf.w(), contentHeight(mf.w())}};
     }
     
-    virtual int contentHeight() const { return 0; }
+    virtual int contentHeight(int width) const { return 0; }
     virtual bool suppressEvents() const { return _suppressEvents; }
     virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
     
@@ -40,7 +40,7 @@ public:
     Size sizeIntrinsic(Size constraint) override {
         const Rect f = InteriorFrame({{}, constraint});
         const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
-        const int heightContent = contentHeight();
+        const int heightContent = contentHeight(constraint.x);
         const int heightBottomSpacing = (heightContent ? 1 : 0);
         return {
             .x = constraint.x,

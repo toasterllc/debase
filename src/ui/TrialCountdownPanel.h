@@ -12,6 +12,7 @@ public:
         
         _registerButton->label()->text  ("Register");
         _registerButton->drawBorder     (true);
+        _registerButton->enabled        (true);
         
         title()->text("debase trial");
         title()->align(Align::Center);
@@ -39,7 +40,7 @@ public:
     }
     
     // MARK: - ModalPanel Overrides
-    int contentHeight() const override {
+    int contentHeight(int width) const override {
         return _ButtonHeight;
     }
     
