@@ -1312,7 +1312,7 @@ private:
     }
     
     void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
-        panel->size(panel->sizeIntrinsic({std::min(width, bounds().size.x), ConstraintNone}));
+        panel->size(panel->sizeIntrinsic({std::min(width, bounds().w()), ConstraintNone}));
         
         UI::Size ps = panel->size();
         UI::Size rs = size();

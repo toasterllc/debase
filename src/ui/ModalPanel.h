@@ -40,7 +40,7 @@ public:
     Size sizeIntrinsic(Size constraint) override {
         const Rect f = InteriorFrame({{}, constraint});
         const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
-        const int heightContent = contentHeight(constraint.x);
+        const int heightContent = contentHeight(f.w());
         const int heightBottomSpacing = (heightContent ? 1 : 0);
         return {
             .x = constraint.x,
