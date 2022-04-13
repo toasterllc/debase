@@ -163,7 +163,7 @@ public:
         }
         
         draw(gstate);
-        _CursorDraw(_cursorState);
+        _cursorDraw();
         ::update_panels();
         ::refresh();
         
@@ -279,9 +279,14 @@ public:
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
     
 private:
-    static void _CursorDraw(const CursorState& cs) {
-        ::move(cs.origin.y, cs.origin.x);
-        ::curs_set(cs.visible);
+    void _cursorDraw() {
+        if (hitTest(_cursorState.origin)) {
+            ::move(_cursorState.origin.y, _cursorState.origin.x);
+            ::curs_set(_cursorState.visible);
+        
+        } else {
+            ::curs_set(false);
+        }
     }
     
     GraphicsState _graphicsStateCalc(View& target, GraphicsState gstate, View& view) const {

@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: hide cursor on start -- it flickers
+    
     #warning TODO: add hidden --machineId flag for end user debugging
     
     #warning TODO: implement URL-opening on linux

@@ -19,9 +19,10 @@ public:
     }
     
     Point windowOrigin() const override { return Window::windowOrigin(); }
-    void windowOrigin(const Point& p) override {
-        if (p == windowOrigin()) return;
+    bool windowOrigin(const Point& p) override {
+        if (p == windowOrigin()) return false;
         ::move_panel(*this, p.y, p.x);
+        return true;
     }
     
     void layout(GraphicsState gstate) override {

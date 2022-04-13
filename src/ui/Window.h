@@ -65,9 +65,10 @@ public:
 //    }
     
     virtual Point windowOrigin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
-    virtual void windowOrigin(const Point& p) {
-        if (p == windowOrigin()) return;
+    virtual bool windowOrigin(const Point& p) {
+        if (p == windowOrigin()) return false;
         ::wmove(*this, p.y, p.x);
+        return true;
     }
     
     virtual Size windowSize() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
@@ -77,6 +78,14 @@ public:
 //        if (ss == windowSize()) return;
         ::wresize(*this, s.y, s.x);
         return true;
+    }
+    
+    virtual Rect windowFrame() const { return { .origin=windowOrigin(), .size=windowSize() }; }
+    virtual bool windowFrame(const Rect& x) {
+        bool changed = false;
+        changed |= windowSize(x.size);
+        changed |= windowOrigin(x.origin);
+        return changed;
     }
     
 //    Point origin() const override { return { getbegx(_s.win), getbegy(_s.win) }; }
@@ -125,13 +134,35 @@ public:
     void layout(GraphicsState gstate) override {
         if (!visible()) return;
         
-//        const Size sizePrev = size();
-        windowSize(size());
-        windowOrigin(gstate.originScreen);
+        // If the frame that we previously set doesn't match our current frame, then ncurses changed
+        // our frame out from beneath us. In that case, we need to do a full redraw.
+        // This handles the case where the window is clipped due to going offscreen, in which case
+        // the offscreen parts are lost (hence the need to redraw).
+        if (windowFrame() != _s.framePrev) {
+            eraseNeeded(true);
+        }
+        
+        const bool frameChanged = windowFrame({gstate.originScreen, size()});
+        _s.framePrev = windowFrame();
+        
+//        const Rect sb = _screenBounds();
+//        const Rect wf = windowFrame();
+//        const bool clipped = Intersection(sb, wf) != wf;
+//        const bool frameChanged = windowFrame({gstate.originScreen, size()});
+//        
+//        os_log(OS_LOG_DEFAULT, "screenBounds={%d %d}, windowFrame={%d %d}", sb.w(), sb.h(), wf.w(), wf.h());
+//        
+//        // If our frame changed, and our window was previously clipped (ie it went offscreen),
+//        // then we need to erase/redraw the whole window
+//        if (frameChanged && clipped) {
+//            eraseNeeded(true);
+//        }
         
         // Reset the cursor state when a new window is encountered
         // This way, the last window (the one on top) gets to decide the cursor state
         cursorState({});
+        
+//        os_log(OS_LOG_DEFAULT, "SIZE CHANGED %d", windowSize().y);
         
 //        os_log(OS_LOG_DEFAULT, "SIZE CHANGED %d", windowSize().y);
 //        
@@ -146,7 +177,7 @@ public:
 ////            _s.sizePrev = size();
 ////        }
 ////        
-//        // Update our size/origin based on ncurses' adjusted size
+        // Update our size/origin based on ncurses' adjusted size
 //        const Size sizeActual = windowSize();
 //        const Size originScreenActual = windowOrigin();
 //        const Size originScreenDelta = originScreenActual-gstate.originScreen;
@@ -200,6 +231,7 @@ public:
 private:
     struct {
         WINDOW* win = nullptr;
+        Rect framePrev;
     } _s;
 };
 
