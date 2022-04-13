@@ -77,7 +77,7 @@ public:
             }
             
             Point p = {0, offY};
-            switch (_align) {
+            switch (align) {
             case Align::Left:   break;
             case Align::Center: p.x += std::max(0, (s.x-lineWidth)/2); break;
             case Align::Right:  p.x += std::max(0, (s.x-lineWidth)); break;

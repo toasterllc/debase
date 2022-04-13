@@ -95,8 +95,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: make trial countdown overlay
     
-    #warning TODO: hide cursor when modal panel opens with textfield in the background window
-    
     #warning TODO: add feature requests field in register panel
     
     #warning TODO: phone home and notify user about debase updates?
@@ -131,6 +129,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: hide cursor when modal panel opens with textfield in the background window
+//
 //    #warning TODO: show animation while performing network IO
 //
 //    #warning TODO: add OK / Cancel buttons to RegisterPanel

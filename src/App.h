@@ -13,6 +13,7 @@
 #include "ui/ModalPanel.h"
 #include "ui/RegisterPanel.h"
 #include "ui/ButtonSpinner.h"
+#include "ui/TrialCountdownPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -83,6 +84,14 @@ public:
 //            }
 //            _drag.titlePanel->orderFront();
 //        }
+        
+        if (_trialCountdownPanel) {
+            constexpr int TrialCountdownWidth = 24;
+            auto panel = _trialCountdownPanel;
+            const UI::Rect b = bounds();
+            panel->size(panel->sizeIntrinsic({std::min(TrialCountdownWidth, b.size.x), ConstraintNone}));
+            panel->origin(b.br()-panel->size());
+        }
         
         if (_welcomePanel) {
             constexpr int WelcomePanelWidth = 40;
@@ -710,6 +719,7 @@ private:
         _columns.erase(_columns.begin()+colCount, _columns.end());
         
         // Update subviews
+        if (_trialCountdownPanel) sv.push_back(_trialCountdownPanel);
         if (_welcomePanel) sv.push_back(_welcomePanel);
         if (_registerPanel) sv.push_back(_registerPanel);
         if (_messagePanel) sv.push_back(_messagePanel);
@@ -1428,6 +1438,12 @@ private:
         }
     }
     
+    void _trialCountdownShow(const License::License& license) {
+        assert(license.expiration);
+        _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(license.expiration);
+        _trialCountdownPanel->color(View::Colors().menu);
+    }
+    
     void _infoMessageShow(std::string_view msg) {
         _messagePanel = subviewCreate<UI::ModalPanel>();
         _messagePanel->color            (_colors.menu);
@@ -1495,6 +1511,10 @@ private:
             _trialExpiredPanelShow();
         
         } else if (st == License::Status::Valid) {
+            if (license.expiration) {
+                _trialCountdownShow(license);
+            }
+            
             // Done; debase is registered
         
         } else {
@@ -1716,6 +1736,7 @@ private:
     _Selection _selection;
     std::optional<UI::Rect> _selectionRect;
     
+    UI::TrialCountdownPanelPtr _trialCountdownPanel;
     UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
     UI::ModalPanelPtr _messagePanel;

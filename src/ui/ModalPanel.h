@@ -29,30 +29,28 @@ public:
     
     Rect contentFrame() const {
         const Rect mf = messageFrame();
-        return {
-            {BorderSize().x, mf.b()+_MessageSpacingBottom},
-            {mf.w(), bounds().b()-(mf.b()+_MessageSpacingBottom)}
-        };
+        return {mf.bl()+Size{0,1}, {mf.w(), contentHeight()}};
     }
     
+    virtual int contentHeight() const { return 0; }
     virtual bool suppressEvents() const { return _suppressEvents; }
     virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
     
     // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
-        const Rect interiorFrame = InteriorFrame({{}, constraint});
-        const int messageHeight = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
+        const Rect f = InteriorFrame({{}, constraint});
+        const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
+        const int heightContent = contentHeight();
+        const int heightBottomSpacing = (heightContent ? 1 : 0);
         return {
             .x = constraint.x,
-            .y = 2*BorderSize().y + messageHeight,
+            .y = 2*BorderSize().y + heightMessage + heightContent + heightBottomSpacing,
         };
     }
     
     void layout() override {
         const Rect f = frame();
         const Point titlePos = {3,0};
-        _title->textAttr(_color|A_BOLD);
-        
         const int titleWidth = f.size.x-2*titlePos.x;
         _title->frame({titlePos, {titleWidth, 1}});
         _message->frame(messageFrame());
@@ -61,13 +59,20 @@ public:
 //        _message->layout(*this);
     }
     
+//    bool drawNeeded() const override {
+//        return true;
+//    }
+    
     void draw() override {
-        if (erased()) {
-            Attr style = attr(_color);
-//            drawRect(Inset(bounds(), {2,1}));
-            drawRect();
-        }
+        borderColor(_color);
+        _title->textAttr(_color|A_BOLD);
         
+//        if (erased()) {
+//            Attr style = attr(_color);
+////            drawRect(Inset(bounds(), {2,1}));
+//            drawRect();
+//        }
+//        
 //        _title->draw(*this);
 //        if (!_title->text().empty()) {
 //            // Add spaces around title

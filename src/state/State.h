@@ -112,7 +112,7 @@ struct Snapshot {
         return !(*this==x);
     }
     
-    uint64_t creationTime = 0;
+    int64_t creationTime = 0;
     Commit head;
 };
 

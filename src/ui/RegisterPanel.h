@@ -42,6 +42,11 @@ public:
         _cancelButton->enabled              (true);
     }
     
+    // MARK: - ModalPanel Overrides
+    int contentHeight() const override {
+        return _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
+    }
+    
 //    LabelTextFieldPtr focus() const {
 //        if (_email->textField()->focus()) return _email;
 //        else if (_code->textField()->focus()) return _code;
@@ -71,12 +76,6 @@ public:
 //    }
     
     // MARK: - View Overrides
-    
-    Size sizeIntrinsic(Size constraint) override {
-        Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
-        return s;
-    }
     
 //    void draw() override {
 //        ModalPanel::draw();

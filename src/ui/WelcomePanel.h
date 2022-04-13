@@ -26,14 +26,14 @@ public:
         _registerButton->drawBorder      (true);
     }
     
-    Size sizeIntrinsic(Size constraint) override {
-        Size s = ModalPanel::sizeIntrinsic(constraint);
-        s.y += 2*_ButtonHeight+_ContentSpacingBottom;
-        return s;
+    // MARK: - ModalPanel Overrides
+    int contentHeight() const override {
+        return 2*_ButtonHeight+_ContentSpacingBottom;
     }
     
 //    bool layoutNeeded() const override { return true; }
     
+    // MARK: - View Overrides
     void layout() override {
         ModalPanel::layout();
         

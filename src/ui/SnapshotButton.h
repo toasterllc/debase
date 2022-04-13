@@ -17,7 +17,7 @@ public:
         Git::Commit commit = State::Convert(repo, snapshot.head);
         Git::Signature sig = commit.author();
         
-        _time->text(Time::RelativeTimeDisplayString(snapshot.creationTime));
+        _time->text(Time::RelativeTimeDisplayString({.pastSuffix="ago", .abbreviate=true}, snapshot.creationTime));
         _time->align(Align::Right);
         _time->textAttr(Colors().dimmed);
         
@@ -43,10 +43,10 @@ public:
         const Size offTextY = Size{0, 0};
         const Size offText = offTextX+offTextY;
         
-        _time->frame            ({offTextY,             {width, 1}  });
-        _id->frame              ({offText,              {width, 1}  });
-        _author->frame          ({offText + Size{0,1},  {width, 1}  });
-        _message->frame         ({offText + Size{0,2},  {width, 1}  });
+        _time->frame            ({offText,              {width-offText.x, 1}  });
+        _id->frame              ({offText,              {width-offText.x, 1}  });
+        _author->frame          ({offText + Size{0,1},  {width-offText.x, 1}  });
+        _message->frame         ({offText + Size{0,2},  {width-offText.x, 1}  });
         _highlightSymbol->frame ({offTextY,             {1,1}       });
     }
     
