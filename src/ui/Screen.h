@@ -20,7 +20,7 @@ public:
     Size windowSize() const override { return Window::windowSize(); }
     bool windowSize(const Size& s) override { return false; } // Ignore attempts to set screen size
     
-    bool cursorState(CursorState x) override {
+    bool cursorState(const CursorState& x) override {
         _cursorState = x;
         return true;
     }
@@ -302,7 +302,7 @@ private:
         }
     }
     
-    _GraphicsStateSwapper _gpushed = View::GStatePush({.screen=this});
+    _GraphicsStateSwapper _gstate = View::GStatePush({.screen=this});
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
 //    

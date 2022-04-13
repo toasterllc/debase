@@ -4,10 +4,11 @@
 
 namespace UI {
 
-bool View::cursorState(CursorState x) {
+bool View::cursorState(const CursorState& x) {
     assert(_GState);
-    x.origin += _GState.originScreen;
-    return screen().cursorState(x);
+    CursorState xcopy = x;
+    xcopy.origin += _GState.originScreen;
+    return screen().cursorState(xcopy);
 }
 
 void View::track(const Event& ev, Deadline deadline) {

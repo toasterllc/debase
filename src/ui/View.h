@@ -290,7 +290,7 @@ public:
         return _GState.erased;
     }
     
-    virtual bool cursorState(CursorState x);
+    virtual bool cursorState(const CursorState& x);
     
     // MARK: - Layout
     virtual bool layoutNeeded() const { return _layoutNeeded; }
@@ -574,22 +574,31 @@ protected:
     class _GraphicsStateSwapper {
     public:
         _GraphicsStateSwapper() {}
-        _GraphicsStateSwapper(GraphicsState& dst, const GraphicsState& val) : _dst(&dst), _val(val) {
-            std::swap(*_dst, _val);
+        _GraphicsStateSwapper(GraphicsState& dst, const GraphicsState& val) : _s{.dst=&dst, .val=val} {
+            std::swap(*_s.dst, _s.val);
         }
         
         _GraphicsStateSwapper(const _GraphicsStateSwapper& x) = delete;
-        _GraphicsStateSwapper(_GraphicsStateSwapper&& x) = delete;
+        _GraphicsStateSwapper& operator =(_GraphicsStateSwapper&& x) = delete;
+        
+//        _GraphicsStateSwapper& operator =(_GraphicsStateSwapper&& x) {
+//            // Only allow move-assignment if we didn't have a value previously
+//            assert(!_s.dst);
+//            std::swap(_s, x._s);
+//            return *this;
+//        }
         
         ~_GraphicsStateSwapper() {
-            if (_dst) {
-                std::swap(*_dst, _val);
+            if (_s.dst) {
+                std::swap(*_s.dst, _s.val);
             }
         }
     
     private:
-        GraphicsState* _dst = nullptr;
-        GraphicsState _val;
+        struct {
+            GraphicsState* dst = nullptr;
+            GraphicsState val;
+        } _s;
     };
     
 private:

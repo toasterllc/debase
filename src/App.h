@@ -1207,8 +1207,8 @@ private:
         
 //        _cursorState = UI::CursorState(false, {});
         
-    //    // Hide cursor
-    //    ::curs_set(0);
+        // Hide cursor
+        ::curs_set(0);
         
         ::mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
         ::mouseinterval(0);

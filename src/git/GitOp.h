@@ -544,7 +544,7 @@ inline _Argv _CreateArgv(Repo repo, std::string_view filePath) {
         argv.push_back(a.c_str());
     }
     argv.push_back(nullptr);
-    return _Argv{args, argv};
+    return _Argv{std::move(args), std::move(argv)};
 }
 
 template <typename T_SpawnFn>
