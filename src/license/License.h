@@ -31,7 +31,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, licenseCode, machineId, vers
 struct Context {
     MachineId machineId;
     uint32_t version = 0;
-    int64_t time = 0;
+    std::chrono::system_clock::time_point time;
 };
 
 enum class Status {
@@ -91,13 +91,13 @@ inline Status Unseal(const uint8_t* publicKey, const SealedLicense& sealed, Lice
 
 // Validate: determines whether license is valid for a given `Context`
 inline Status Validate(const Context& ctx, const License& license) {
+    using namespace std::chrono;
     // Check if the licensed version is lower than the current version
     if (license.version < ctx.version) return Status::InvalidVersion;
     // Check that the licensed machine id is the current machine id
     if (license.machineId != ctx.machineId) return Status::InvalidMachineId;
     // Check if the license has expired
-    if (license.expiration && license.expiration<ctx.time) return Status::Expired;
-    
+    if (license.expiration && system_clock::from_time_t(license.expiration)<ctx.time) return Status::Expired;
     return Status::Valid;
 }
 

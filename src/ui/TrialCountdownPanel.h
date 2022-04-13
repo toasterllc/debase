@@ -5,11 +5,7 @@ namespace UI {
 
 class TrialCountdownPanel : public ModalPanel {
 public:
-    TrialCountdownPanel(int64_t expiration) : _expiration(expiration) {
-        using namespace std::chrono;
-//        using days = duration<int64_t, std::ratio<86400>>;
-        constexpr auto Day = std::chrono::seconds(86400);
-        
+    TrialCountdownPanel(std::chrono::seconds remaining) : _remaining(remaining) {
         _registerButton->label()->text  ("Register");
         _registerButton->drawBorder     (true);
         _registerButton->enabled        (true);
@@ -20,9 +16,9 @@ public:
         // If the time remaining is > 1 day, add .5 days, causing the RelativeTimeString()
         // result to effectively round to the nearest day (instead of flooring) when the
         // time remaining is in days.
-        auto rem = duration_cast<seconds>(std::chrono::system_clock::from_time_t(_expiration) - std::chrono::system_clock::now());
-        if (rem > Day) rem += Day/2;
-        message()->text(Time::RelativeTimeString({.futureSuffix="left"}, rem));
+        constexpr auto Day = std::chrono::seconds(86400);
+        if (remaining > Day) remaining += Day/2;
+        message()->text(Time::RelativeTimeString({.futureSuffix="left"}, remaining));
     }
     
     // MARK: - View Overrides
@@ -50,7 +46,7 @@ private:
     static constexpr int _ButtonHeight = 3;
     
     ButtonPtr _registerButton = subviewCreate<Button>();
-    int64_t _expiration = 0;
+    std::chrono::seconds _remaining = {};
 };
 
 using TrialCountdownPanelPtr = std::shared_ptr<TrialCountdownPanel>;

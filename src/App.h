@@ -1279,21 +1279,20 @@ private:
         
         // Find t = max(time(), <time of each file in repoDir>),
         // to help prevent time-rollback attacks.
-        seconds latestTime = duration_cast<seconds>(system_clock::now().time_since_epoch());
+        system_clock::time_point latestTime = system_clock::now();
         try {
             for (const path& p : directory_iterator(repoDir)) {
                 try {
-                    seconds writeTimeSinceEpoch = duration_cast<seconds>(last_write_time(p).time_since_epoch());
-                    latestTime = std::max(latestTime, writeTimeSinceEpoch);
+                    auto writeTime = system_clock::time_point(duration_cast<seconds>(last_write_time(p).time_since_epoch()));
+                    latestTime = std::max(latestTime, writeTime);
                 } catch (...) {} // Continue to next file if an error occurs
             }
         } catch (...) {} // Suppress failures while getting latest write time in repo dir
         
-        const int64_t time = latestTime.count();
         return License::Context{
             .machineId = machineId,
             .version = DebaseVersion,
-            .time = time,
+            .time = latestTime,
         };
     }
     
@@ -1441,8 +1440,30 @@ private:
     }
     
     void _trialCountdownShow(const License::License& license) {
+        using namespace std::chrono;
         assert(license.expiration);
-        _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(license.expiration);
+        
+//        using namespace std::chrono;
+////        using days = duration<int64_t, std::ratio<86400>>;
+//        constexpr auto Day = std::chrono::seconds(86400);
+//        
+//        _registerButton->label()->text  ("Register");
+//        _registerButton->drawBorder     (true);
+//        _registerButton->enabled        (true);
+//        
+//        title()->text("debase trial");
+//        title()->align(Align::Center);
+//        
+//        // If the time remaining is > 1 day, add .5 days, causing the RelativeTimeString()
+//        // result to effectively round to the nearest day (instead of flooring) when the
+//        // time remaining is in days.
+//        auto rem = duration_cast<seconds>(std::chrono::system_clock::from_time_t(_expiration) - std::chrono::system_clock::now());
+//        if (rem > Day) rem += Day/2;
+//        message()->text(Time::RelativeTimeString({.futureSuffix="left"}, rem));
+        
+        const License::Context& ctx = _licenseCtxGet();
+        const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
+        _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(rem);
         _trialCountdownPanel->color(View::Colors().menu);
         _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
             _registerPanelShow();
