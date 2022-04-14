@@ -16,8 +16,6 @@ struct Color {
     int idx = COLOR_BLACK;
     std::optional<RGB> rgb;
     
-//    Color() {}
-//    Color(int idx, int r, int g, int b) : idx(idx), rgb({r,g,b}) {}
     bool operator ==(const Color& x) const { return idx==x.idx && rgb==x.rgb; }
 };
 
@@ -28,17 +26,7 @@ struct ColorPair {
     
     // WhiteOnBlackIdx: color-pair 0 is ncurses' immutable white-on-black color pair
     static constexpr int WhiteOnBlackIdx = 0;
-//    ColorPair() {}
-//    ColorPair(int idx) : idx(idx) {}
-//    ColorPair(int idx, Color fg) : idx(idx), fg(fg) {}
-//    ColorPair(int idx, Color fg, Color bg) : idx(idx), fg(fg), bg(bg) {}
     operator int() const { return COLOR_PAIR(idx); }
-    
-//    ColorPair() {}
-//    ColorPair(int idx) : idx(idx) {}
-//    ColorPair(int idx, Color fg) : idx(idx), fg(fg) {}
-//    ColorPair(int idx, Color fg, Color bg) : idx(idx), fg(fg), bg(bg) {}
-//    operator int() const { return COLOR_PAIR(idx); }
 };
 
 
@@ -123,137 +111,6 @@ private:
     std::optional<ColorPair> _prev;
 };
 
-
-
-
-
-
-
-
-//struct ColorPairSwapper {
-//    int idx = WhiteOnBlackIdx;
-//    std::optional<int> fg;
-//    std::optional<int> bg;
-//    
-//    // WhiteOnBlackIdx: color-pair 0 is ncurses' immutable white-on-black color pair
-//    static constexpr int WhiteOnBlackIdx = 0;
-////    ColorPair() {}
-////    ColorPair(int idx) : idx(idx) {}
-////    ColorPair(int idx, Color fg) : idx(idx), fg(fg) {}
-////    ColorPair(int idx, Color fg, Color bg) : idx(idx), fg(fg), bg(bg) {}
-//    operator int() const { return COLOR_PAIR(idx); }
-//    
-////    ColorPair() {}
-////    ColorPair(int idx) : idx(idx) {}
-////    ColorPair(int idx, Color fg) : idx(idx), fg(fg) {}
-////    ColorPair(int idx, Color fg, Color bg) : idx(idx), fg(fg), bg(bg) {}
-////    operator int() const { return COLOR_PAIR(idx); }
-//};
-
-
-
-
-
-
-
-//
-//
-//class CustomColors {
-//public:
-//    // add(): create a new color pair with a given color index as the foreground color
-//    ColorPair add(int idx) {
-//        const ColorPair colorPair = {.idx=_colorPairIdx, .fg=idx};
-//        _colorPairSwappers.emplace_back(colorPair);
-//        _colorPairIdx++;
-//        return colorPair;
-//    }
-//    
-//    // add(): create a new color pair with a given RGB components as the foreground color
-//    ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
-//        const Color color = {.idx=_colorIdx, .rgb=RGB{((int)r*1000)/255, ((int)g*1000)/255, ((int)b*1000)/255}};
-//        const ColorPair colorPair = {.idx=_colorPairIdx, .fg=_colorIdx};
-//        
-//        _colorSwappers.emplace_back(color);
-//        _colorPairSwappers.emplace_back(colorPair);
-//        
-////        const Color colorPrev = _ColorSet(color);
-////        const ColorPair colorPairPrev = _ColorPairSet(colorPair);
-////        
-////        _colorsPrev.push_back(colorPrev);
-////        _colorPairsPrev.push_back(colorPairPrev);
-//        
-//        _colorIdx++;
-//        _colorPairIdx++;
-//        
-//        return colorPair;
-//    }
-//    
-////    ~CustomColors() {
-////        for (const Color& color : _colorsPrev) _ColorSet(color);
-////        for (const ColorPair& colorPair : _colorPairsPrev) _ColorPairSet(colorPair);
-////    }
-//    
-//private:
-////    static Color _ColorSet(const Color& c) {
-////        if (!c.rgb) return c;
-////        
-////        Color x = c;
-////        
-////        // Remember the previous RGB values for color index c.idx
-////        {
-////            NCURSES_COLOR_T r,g,b;
-////            color_content(c.idx, &r, &g, &b);
-////            x.rgb.emplace(RGB{r,g,b});
-////        }
-////        
-////        // Set the new RGB values for the color `c.idx`
-////        {
-////            ::init_color(c.idx, c.rgb->r, c.rgb->b, c.rgb->b);
-////        }
-////        return x;
-////    }
-////    
-////    static ColorPair _ColorPairSet(const ColorPair& c) {
-////        if (!c.fg && !c.bg) return c;
-////        
-////        ColorPair x = c;
-//////        if (c.fg) x.fg = _ColorInit(*c.fg);
-//////        if (c.bg) x.bg = _ColorInit(*c.bg);
-////        
-////        // Remember the previous fg/bg colors for the color pair c.idx
-////        {
-////            NCURSES_COLOR_T fg, bg;
-////            pair_content(c.idx, &fg, &bg);
-////            if (c.fg) x.fg = fg;
-////            if (c.bg) x.bg = bg;
-////        }
-////        
-////        // Set the new RGB values for the color `c.idx`
-////        {
-////            ::init_pair(c.idx, (c.fg ? *c.fg : -1), (c.bg ? *c.bg : -1));
-////        }
-////        
-////        return x;
-////    }
-//    
-//    // _ColorIdxInit: start outside the standard 0-7 range because we don't want
-//    // to clobber the standard terminal colors. This is because reading the current
-//    // terminal colors isn't reliable (via color_content), therefore when we
-//    // restore colors on exit, we won't necessarily be restoring the original
-//    // color. So if we're going to clobber colors, clobber the colors that are less
-//    // likely to be used.
-//    static constexpr int _ColorIdxInit = 16;
-//    
-//    int _colorIdx = _ColorIdxInit;
-//    int _colorPairIdx = 1;
-//    
-//    std::vector<ColorSwapper> _colorSwappers;
-//    std::vector<ColorPairSwapper> _colorPairSwappers;
-//};
-//
-
-
-
 class ColorPalette {
 public:
     ColorPair normal;
@@ -275,15 +132,9 @@ public:
     // add(): create a new color with the given RGB components, and assign it to a new color pair as the foreground color
     ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
         const Color color = {.idx=_colorIdx, .rgb=RGB{((int)r*1000)/255, ((int)g*1000)/255, ((int)b*1000)/255}};
-        const ColorPair colorPair = {.idx=_colorPairIdx, .fg=_colorIdx};
-        
         _colorSwappers.emplace_back(color);
-        _colorPairSwappers.emplace_back(colorPair);
-        
         _colorIdx++;
-        _colorPairIdx++;
-        
-        return colorPair;
+        return add(color.idx);
     }
     
 private:
