@@ -111,7 +111,7 @@ public:
     }
     
     void draw() override {
-        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
+        const UI::ColorPair selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
         
         if (_drag.titlePanel) {
             _drag.titlePanel->borderColor(selectionColor);
@@ -124,7 +124,7 @@ public:
         bool dragging = (bool)_drag.titlePanel;
         for (UI::RevColumnPtr col : _columns) {
             for (UI::CommitPanelPtr panel : col->panels()) {
-                UI::Color borderColor;
+                UI::ColorPair borderColor;
                 _SelectState selectState = _selectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
                     borderColor = (dragging ? _colors.selectionSimilar : _colors.selection);
@@ -438,10 +438,41 @@ private:
         abort();
     }
     
-    static UI::Color _ColorSet(const UI::Color& c) {
-        UI::Color prev(c.idx);
+    static UI::Color _ColorInit(const UI::Color& c) {
+        if (!c.rgb) return c;
+        
+        UI::Color x = c;
+        
+        // Remember the previous RGB values for color index c.idx
+        {
+            NCURSES_COLOR_T r,g,b;
+            color_content(c.idx, &r, &g, &b);
+            x.rgb.emplace(UI::RGB{r,g,b});
+        }
+        
+        // Set the new RGB values for the color `c.idx`
+        {
+            ::init_color(c.idx, c.rgb->r, c.rgb->b, c.rgb->b);
+        }
+        return x;
+    }
+    
+    static UI::ColorPair _ColorPairInit(const UI::ColorPair& c) {
+        if (!c.fg && !c.bg) return c;
+        
+        UI::ColorPair x = c;
+        if (c.fg) x.fg = _ColorInit(*c.fg);
+        if (c.bg) x.bg = _ColorInit(*c.bg);
+        
+        if () {
+            NCURSES_COLOR_T fg, bg;
+            pair_content(c.idx, &fg, &bg);
+        }
+        
+        ::init_pair(c.idx, (c.fg ? c.fg->idx : -1), (c.bg ? c.bg->idx : -1));
+        
         color_content(prev.idx, &prev.r, &prev.g, &prev.b);
-        ::init_color(c.idx, c.r, c.g, c.b);
+        ::init_color(c.idx, c.fg.r, c.fg.g, c.fg.b);
         return prev;
     }
     
@@ -449,11 +480,11 @@ private:
         UI::ColorPalette pcopy = p;
         
         // Set the values for the custom colors, and remember the old values
-        for (UI::Color& c : pcopy.custom()) {
+        for (UI::ColorPair& c : pcopy.custom()) {
             c = _ColorSet(c);
         }
         
-        for (const UI::Color& c : p.colors()) {
+        for (const UI::ColorPair& c : p.colorPairs()) {
             ::init_pair(c.idx, c.idx, -1);
         }
         
@@ -461,38 +492,42 @@ private:
     }
     
     static UI::ColorPalette _ColorsCreate(State::Theme theme) {
+        // ColorIdxInit: start outside the standard 0-7 range because we don't want
+        // to clobber the standard terminal colors. This is because reading the current
+        // terminal colors isn't reliable (via color_content), therefore when we
+        // restore colors on exit, we won't necessarily be restoring the original
+        // color. So if we're going to clobber colors, clobber the colors that are less
+        // likely to be used.
+        constexpr int ColorIdxInit = 16;
+        
         const std::string termProg = getenv("TERM_PROGRAM");
         const bool themeDark = (theme==State::Theme::None || theme == State::Theme::Dark);
         
         UI::ColorPalette colors;
-        UI::Color black;
-        UI::Color gray;
-        UI::Color purple;
-        UI::Color purpleLight;
-        UI::Color greenMint;
-        UI::Color red;
+        int pairIdx = 1;
+        int colorIdx = ColorIdxInit;
         
         if (termProg == "Apple_Terminal") {
             // Colorspace: unknown
-            // There's no simple relation between these numbers and the resulting colors because Apple's
+            // There's no simple relation between these numbers and the resulting colors because the macOS
             // Terminal.app applies some kind of filtering on top of these numbers. These values were
             // manually chosen based on their appearance.
             if (themeDark) {
-                colors.normal           = COLOR_BLACK;
-                colors.dimmed           = colors.add( 77,  77,  77);
-                colors.selection        = colors.add(  0,   2, 255);
-                colors.selectionSimilar = colors.add(140, 140, 255);
-                colors.selectionCopy    = colors.add(  0, 229, 130);
+                colors.normal           = UI::ColorPair();
+                colors.dimmed           = UI::ColorPair(pairIdx++, UI::Color(colorIdx++,  77,  77,  77));
+                colors.selection        = UI::ColorPair(pairIdx++, UI::Color(colorIdx++,   0,   2, 255));
+                colors.selectionSimilar = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, 140, 140, 255));
+                colors.selectionCopy    = UI::ColorPair(pairIdx++, UI::Color(colorIdx++,   0, 229, 130));
                 colors.menu             = colors.selectionCopy;
-                colors.error            = colors.add(194,   0,  71);
+                colors.error            = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, 194,   0,  71));
             
             } else {
-                colors.normal           = COLOR_BLACK;
-                colors.dimmed           = colors.add(128, 128, 128);
-                colors.selection        = colors.add(  0,   2, 255);
-                colors.selectionSimilar = colors.add(140, 140, 255);
-                colors.selectionCopy    = colors.add( 52, 167,   0);
-                colors.menu             = colors.add(194,   0,  71);
+                colors.normal           = UI::ColorPair();
+                colors.dimmed           = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, 128, 128, 128));
+                colors.selection        = UI::ColorPair(pairIdx++, UI::Color(colorIdx++,   0,   2, 255));
+                colors.selectionSimilar = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, 140, 140, 255));
+                colors.selectionCopy    = UI::ColorPair(pairIdx++, UI::Color(colorIdx++,  52, 167,   0));
+                colors.menu             = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, 194,   0,  71));
                 colors.error            = colors.menu;
             }
         
@@ -501,21 +536,21 @@ private:
             // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
             
             if (themeDark) {
-                colors.normal           = COLOR_BLACK;
-                colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
-                colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
-                colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
-                colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
+                colors.normal           = UI::ColorPair();
+                colors.dimmed           = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .486*255, .486*255, .486*255));
+                colors.selection        = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .463*255, .275*255, 1.00*255));
+                colors.selectionSimilar = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .663*255, .663*255, 1.00*255));
+                colors.selectionCopy    = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .204*255, .965*255, .569*255));
                 colors.menu             = colors.selectionCopy;
-                colors.error            = colors.add(.969*255, .298*255, .435*255);
+                colors.error            = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .969*255, .298*255, .435*255));
             
             } else {
-                colors.normal           = COLOR_BLACK;
-                colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
-                colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
-                colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
-                colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
-                colors.menu             = colors.add(.969*255, .298*255, .435*255);
+                colors.normal           = UI::ColorPair();
+                colors.dimmed           = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .592*255, .592*255, .592*255));
+                colors.selection        = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .369*255, .208*255, 1.00*255));
+                colors.selectionSimilar = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .627*255, .627*255, 1.00*255));
+                colors.selectionCopy    = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .306*255, .737*255, .153*255));
+                colors.menu             = UI::ColorPair(pairIdx++, UI::Color(colorIdx++, .969*255, .298*255, .435*255));
                 colors.error            = colors.menu;
             }
         }

@@ -52,7 +52,7 @@ public:
     
     void draw() override {
         const bool menuColor = (highlighted() || (_activeSnapshot && !mouseActive()));
-        const Color idColor = (menuColor ? Colors().menu : Colors().normal);
+        const ColorPair idColor = (menuColor ? Colors().menu : Colors().normal);
         _id->textAttr(idColor|A_BOLD);
         
         // Draw highlight

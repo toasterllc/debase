@@ -266,8 +266,8 @@ public:
     virtual const bool interaction() const { return _interaction; }
     virtual bool interaction(bool x) { return _set(_interaction, x); }
     
-    virtual const std::optional<Color> borderColor() const { return _borderColor; }
-    virtual bool borderColor(std::optional<Color> x) { return _set(_borderColor, x); }
+    virtual const std::optional<ColorPair> borderColor() const { return _borderColor; }
+    virtual bool borderColor(std::optional<ColorPair> x) { return _set(_borderColor, x); }
     
     virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
     virtual bool hitTestExpand(const HitTestExpand& x) { return _setForce(_hitTestExpand, x); }
@@ -620,7 +620,7 @@ private:
     bool _inhibitErase = false;
     Event _eventCurrent;
     HitTestExpand _hitTestExpand;
-    std::optional<Color> _borderColor;
+    std::optional<ColorPair> _borderColor;
 };
 
 using ViewPtr = std::shared_ptr<View>;

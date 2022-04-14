@@ -119,7 +119,7 @@ public:
 private:
     static constexpr int _MessageSpacingBottom = 1;
     
-    Color _color;
+    ColorPair _color;
     LabelPtr _title     = subviewCreate<Label>();
     LabelPtr _message   = subviewCreate<Label>();
     bool _suppressEvents    = false;
