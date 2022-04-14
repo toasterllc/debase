@@ -93,17 +93,11 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: re-evaluate our uses of optional in Color.h
-    
-    #warning TODO: hide cursor on start -- it flickers
-    
     #warning TODO: add hidden --machineId flag for end user debugging
     
     #warning TODO: implement URL-opening on linux
     
     #warning TODO: keep track of how many trials are activated for a given machine id
-    
-    #warning TODO: round trial countdown up
     
     #warning TODO: make trial countdown overlay
     
@@ -141,6 +135,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: round trial countdown up
+//
+//    #warning TODO: re-evaluate our uses of optional in Color.h
+//    
+//    #warning TODO: hide cursor on start -- it flickers
+//
 //    #warning TODO: hide cursor when modal panel opens with textfield in the background window
 //
 //    #warning TODO: show animation while performing network IO

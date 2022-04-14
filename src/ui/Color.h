@@ -94,7 +94,7 @@ private:
     };
     
     // _ColorPairSwapper: sets the foreground/background colors of a ncurses color pair,
-    // restoring the original fg/bg upon destruction
+    // restoring the pair's original fg/bg upon destruction
     class _ColorPairSwapper {
     public:
         _ColorPairSwapper() {}
