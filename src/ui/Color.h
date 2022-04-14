@@ -7,12 +7,10 @@ namespace UI {
 
 struct ColorIdx {
     NCURSES_COLOR_T idx = COLOR_BLACK;
-//    RGB rgb;
     
     ColorIdx() {}
     ColorIdx(NCURSES_COLOR_T idx) : idx(idx) {}
     operator NCURSES_COLOR_T() const { return idx; }
-//    bool operator ==(const Color& x) const { return idx==x.idx && rgb==x.rgb; }
 };
 
 struct ColorPair {
@@ -70,11 +68,11 @@ public:
     ColorPairSwapper() {}
     ColorPairSwapper(const ColorPair& pair, NCURSES_COLOR_T fg, NCURSES_COLOR_T bg) : _s{.pair=pair} {
         // Remember the previous fg/bg colors for the color pair c.idx
-        int ir = ::pair_content(*_s.pair, &_s.fg, &_s.bg);
+        int ir = ::pair_content(_s.pair->idx, &_s.fg, &_s.bg);
         if (ir != OK) throw std::runtime_error("pair_content() failed");
         
         // Set the new RGB values for the color `c.idx`
-        ir = ::init_pair(*_s.pair, fg, bg);
+        ir = ::init_pair(_s.pair->idx, fg, bg);
         if (ir != OK) throw std::runtime_error("init_pair() failed");
     }
     
@@ -91,7 +89,7 @@ public:
     
     ~ColorPairSwapper() {
         if (_s.pair) {
-            ::init_pair(*_s.pair, _s.fg, _s.bg);
+            ::init_pair(_s.pair->idx, _s.fg, _s.bg);
         }
     }
     
