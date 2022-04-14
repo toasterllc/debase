@@ -500,8 +500,6 @@ private:
         const bool themeDark = (theme==State::Theme::None || theme == State::Theme::Dark);
         
         UI::ColorPalette colors;
-        auto& c = colors.customColors;
-        
         if (termProg == "Apple_Terminal") {
             // Colorspace: unknown
             // There's no simple relation between these numbers and the resulting colors because the macOS
@@ -509,20 +507,20 @@ private:
             // manually chosen based on their appearance.
             if (themeDark) {
                 colors.normal           = UI::ColorPair();
-                colors.dimmed           = c.add( 77,  77,  77);
-                colors.selection        = c.add(  0,   2, 255);
-                colors.selectionSimilar = c.add(140, 140, 255);
-                colors.selectionCopy    = c.add(  0, 229, 130);
+                colors.dimmed           = colors.add( 77,  77,  77);
+                colors.selection        = colors.add(  0,   2, 255);
+                colors.selectionSimilar = colors.add(140, 140, 255);
+                colors.selectionCopy    = colors.add(  0, 229, 130);
                 colors.menu             = colors.selectionCopy;
-                colors.error            = c.add(194,   0,  71);
+                colors.error            = colors.add(194,   0,  71);
             
             } else {
                 colors.normal           = UI::ColorPair();
-                colors.dimmed           = c.add(128, 128, 128);
-                colors.selection        = c.add(  0,   2, 255);
-                colors.selectionSimilar = c.add(140, 140, 255);
-                colors.selectionCopy    = c.add( 52, 167,   0);
-                colors.menu             = c.add(194,   0,  71);
+                colors.dimmed           = colors.add(128, 128, 128);
+                colors.selection        = colors.add(  0,   2, 255);
+                colors.selectionSimilar = colors.add(140, 140, 255);
+                colors.selectionCopy    = colors.add( 52, 167,   0);
+                colors.menu             = colors.add(194,   0,  71);
                 colors.error            = colors.menu;
             }
         
@@ -532,20 +530,20 @@ private:
             
             if (themeDark) {
                 colors.normal           = UI::ColorPair();
-                colors.dimmed           = c.add(.486*255, .486*255, .486*255);
-                colors.selection        = c.add(.463*255, .275*255, 1.00*255);
-                colors.selectionSimilar = c.add(.663*255, .663*255, 1.00*255);
-                colors.selectionCopy    = c.add(.204*255, .965*255, .569*255);
+                colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
+                colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
+                colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
+                colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
                 colors.menu             = colors.selectionCopy;
-                colors.error            = c.add(.969*255, .298*255, .435*255);
+                colors.error            = colors.add(.969*255, .298*255, .435*255);
             
             } else {
                 colors.normal           = UI::ColorPair();
-                colors.dimmed           = c.add(.592*255, .592*255, .592*255);
-                colors.selection        = c.add(.369*255, .208*255, 1.00*255);
-                colors.selectionSimilar = c.add(.627*255, .627*255, 1.00*255);
-                colors.selectionCopy    = c.add(.306*255, .737*255, .153*255);
-                colors.menu             = c.add(.969*255, .298*255, .435*255);
+                colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
+                colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
+                colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
+                colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
+                colors.menu             = colors.add(.969*255, .298*255, .435*255);
                 colors.error            = colors.menu;
             }
         }
@@ -555,14 +553,13 @@ private:
     
     static UI::ColorPalette _ColorsCreateDefault() {
         UI::ColorPalette colors;
-        auto& c = colors.customColors;
         colors.normal           = UI::ColorPair();
         colors.dimmed           = UI::ColorPair();
-        colors.selection        = c.add(COLOR_BLUE);
+        colors.selection        = colors.add(COLOR_BLUE);
         colors.selectionSimilar = UI::ColorPair();
-        colors.selectionCopy    = c.add(COLOR_GREEN);
-        colors.menu             = c.add(COLOR_RED);
-        colors.error            = c.add(COLOR_RED);
+        colors.selectionCopy    = colors.add(COLOR_GREEN);
+        colors.menu             = colors.add(COLOR_RED);
+        colors.error            = colors.add(COLOR_RED);
         return colors;
     }
     
