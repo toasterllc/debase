@@ -93,11 +93,17 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: server: add a date that a MachineID was added to a license, so we can prune them periodically
+    
+    #warning TODO: on macOS, use IOPlatformSerial instead of current MachineId scheme
+    
     #warning TODO: add hidden --machineId flag for end user debugging
     
     #warning TODO: implement URL-opening on linux
     
     #warning TODO: keep track of how many trials are activated for a given machine id
+    
+    #warning TODO: keep track of user agent for trials/licenses
     
     #warning TODO: make trial countdown overlay
     
