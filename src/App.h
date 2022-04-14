@@ -1429,6 +1429,70 @@ private:
         return license;
     }
     
+    std::optional<License::License> _licenseRenew(const License::License& license) {
+        panel->suppressEvents(true);
+        Defer(panel->suppressEvents(false));
+        
+        const License::Request renewReq = {
+            .machineId = _licenseCtxGet().machineId,
+            .email = license.email,
+            .licenseCode = license.licenseCode,
+        };
+        
+        // Request license and wait until we get a response
+        License::RequestResponse resp;
+        Async async([&] () {
+//            for (;;) sleep(1);
+            Network::Request(DebaseLicenseAPIURL, renewReq, resp);
+        });
+        
+        const auto showPanelDeadline = std::chrono::steady_clock::now()+std::chrono::seconds(5);
+        while (!async.done() && std::chrono::steady_clock::now()<showPanelDeadline) {
+            track({}, Once);
+        }
+        
+        // Show modal dialog
+        if (!async.done()) {
+            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
+        }
+        
+        try {
+            async.get();
+        } catch (const std::exception& e) {
+            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
+            return std::nullopt;
+        }
+        
+        if (!resp.error.empty()) {
+            _errorMessageShow(resp.error, true);
+            return std::nullopt;
+        }
+        
+        // Validate response
+        License::SealedLicense sealed = resp.license;
+        License::License license;
+        License::Status st = _licenseUnseal(sealed, license);
+        if (st != License::Status::Valid) {
+            if (st == License::Status::InvalidVersion) {
+                std::stringstream ss;
+                ss << "This license is only valid for debase version " << license.version << " and older, but this is debase version " << DebaseVersion << ".";
+                _errorMessageShow(ss.str(), true);
+                return std::nullopt;
+            
+            } else {
+                _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
+                return std::nullopt;
+            }
+        }
+        
+        // License is valid; save it and dismiss
+        State::State state(StateDir());
+        state.license(sealed);
+        state.write();
+        
+        return license;
+    }
+    
     void _welcomePanelTrial() {
         assert(_welcomePanel);
         
@@ -1458,11 +1522,10 @@ private:
         
         const std::string email = _registerPanel->email()->value();
         const std::string licenseCode = _registerPanel->code()->value();
-        const License::UserId userId = License::UserIdForEmail(DebaseProductId, email);
         
         const License::Request registerReq = {
             .machineId = _licenseCtxGet().machineId,
-            .userId = userId,
+            .email = email,
             .licenseCode = licenseCode,
         };
         
@@ -1582,7 +1645,7 @@ private:
             }
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            #warning TODO: renew license for this machine
+            _licenseRenew(license);
         
         } else if (st == License::Status::Expired) {
             // Delete license, set expired=1, show trial-expired panel

@@ -3,11 +3,11 @@ package license
 // HTTP Structs
 
 type HTTPLicense struct {
-	UserId      UserId      `json:"userId"`
-	LicenseCode LicenseCode `json:"licenseCode"`
-	MachineId   MachineId   `json:"machineId"`
-	Version     uint32      `json:"version"`
-	Expiration  int64       `json:"expiration"`
+	Email       string `json:"email"`
+	LicenseCode string `json:"licenseCode"`
+	MachineId   string `json:"machineId"`
+	Version     uint32 `json:"version"`
+	Expiration  int64  `json:"expiration"`
 }
 
 type HTTPSealedLicense struct {
@@ -17,10 +17,10 @@ type HTTPSealedLicense struct {
 
 type HTTPRequest struct {
 	// Required
-	MachineId MachineId `json:"machineId"`
+	MachineId string `json:"machineId"`
 	// Optional (present=license request, absent=trial request)
-	UserId      UserId      `json:"userId"`
-	LicenseCode LicenseCode `json:"licenseCode"`
+	Email       string `json:"email"`
+	LicenseCode string `json:"licenseCode"`
 }
 
 type HTTPResponse struct {

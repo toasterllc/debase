@@ -1,5 +1,5 @@
 #pragma once
-#include "UserId.h"
+#include "Email.h"
 #include "MachineId.h"
 #include "LicenseCode.h"
 #include "License.h"
@@ -11,11 +11,11 @@ struct Request {
     // Required
     MachineId machineId;
     // Only used for registration (not trials)
-    UserId userId;
+    Email email;
     LicenseCode licenseCode;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, userId, licenseCode, machineId);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, email, licenseCode, machineId);
 
 // RequestResponse: the server's response to `Request` (above)
 struct RequestResponse {

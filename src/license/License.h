@@ -1,7 +1,7 @@
 #pragma once
 #include "lib/nlohmann/json.h"
 #include "lib/toastbox/IntForStr.h"
-#include "UserId.h"
+#include "Email.h"
 #include "MachineId.h"
 #include "LicenseCode.h"
 
@@ -19,14 +19,14 @@ struct SealedLicense {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 
 struct License {
-    UserId userId;              // Hashed from email
+    Email email;
     LicenseCode licenseCode;    // Code supplied to user upon purchase
     MachineId machineId;        // Stable, unique identifier for the licensed machine
     uint32_t version = 0;       // Software version
     int64_t expiration = 0;     // Expiration (non-zero only for trial licenses)
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, userId, licenseCode, machineId, version, expiration);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, email, licenseCode, machineId, version, expiration);
 
 struct Context {
     MachineId machineId;

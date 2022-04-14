@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -30,6 +28,8 @@ const TrialsCollection = "Trials"
 const TrialDuration = 7 * 24 * time.Hour
 const MachineCountMax = 3
 
+var DebaseProductId = C.GoString(C.DebaseProductId)
+
 var LicenseNotFoundErr = errors.New("No matching license was found.")
 var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
 var TrialExpiredErr = errors.New("The existing trial has already expired.")
@@ -40,71 +40,33 @@ func init() {
 	var err error
 	db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
 	if err != nil {
-		log.Fatalf("firestore.NewClient failed: %v", err)
+		log.Fatalf("firestore.NewClient() failed: %v", err)
 	}
 }
 
-func hashStringSanitize(hash string) (string, error) {
-	hash = strings.ToLower(hash)
-
-	validHash := regexp.MustCompile(`^[a-f0-9]+$`)
-	if !validHash.MatchString(hash) {
-		return "", fmt.Errorf("invalid characters")
-	}
-
-	return hash, nil
-}
-
-func machineIdSanitize(mid license.MachineId) (license.MachineId, error) {
-	if len(mid) != license.MachineIdLen {
-		return "", fmt.Errorf("invalid length")
-	}
-
-	r, err := hashStringSanitize(string(mid))
-	return license.MachineId(r), err
-}
-
-func userIdSanitize(uid license.UserId) (license.UserId, error) {
-	if len(uid) != license.UserIdLen {
-		return "", fmt.Errorf("invalid length")
-	}
-
-	r, err := hashStringSanitize(string(uid))
-	return license.UserId(r), err
-}
-
-func licenseCodeSanitize(code license.LicenseCode) (license.LicenseCode, error) {
-	str := strings.ToLower(string(code))
-	regex := regexp.MustCompile(`^[a-z0-9]+$`)
-	if !regex.MatchString(str) {
-		return "", fmt.Errorf("invalid characters")
-	}
-	return license.LicenseCode(str), nil
-}
-
-func reqSanitize(req license.HTTPRequest) (license.HTTPRequest, error) {
-	var err error
-	req.MachineId, err = machineIdSanitize(req.MachineId)
-	if err != nil {
-		return license.HTTPRequest{}, fmt.Errorf("invalid machine id (%v): %w", req.MachineId, err)
-	}
-
-	if req.UserId != "" {
-		req.UserId, err = userIdSanitize(req.UserId)
-		if err != nil {
-			return license.HTTPRequest{}, fmt.Errorf("invalid user id (%v): %w", req.UserId, err)
-		}
-	}
-
-	if req.LicenseCode != "" {
-		req.LicenseCode, err = licenseCodeSanitize(req.LicenseCode)
-		if err != nil {
-			return license.HTTPRequest{}, fmt.Errorf("invalid license code (%v): %w", req.UserId, err)
-		}
-	}
-
-	return req, nil
-}
+// func reqSanitize(req license.HTTPRequest) (license.HTTPRequest, error) {
+//     var err error
+//     req.MachineId, err = machineIdSanitize(req.MachineId)
+//     if err != nil {
+//         return license.HTTPRequest{}, fmt.Errorf("invalid machine id (%v): %w", req.MachineId, err)
+//     }
+//
+//     if req.UserId != "" {
+//         req.UserId, err = userIdSanitize(req.UserId)
+//         if err != nil {
+//             return license.HTTPRequest{}, fmt.Errorf("invalid user id (%v): %w", req.UserId, err)
+//         }
+//     }
+//
+//     if req.LicenseCode != "" {
+//         req.LicenseCode, err = licenseCodeSanitize(req.LicenseCode)
+//         if err != nil {
+//             return license.HTTPRequest{}, fmt.Errorf("invalid license code (%v): %w", req.UserId, err)
+//         }
+//     }
+//
+//     return req, nil
+// }
 
 func trialLicenseCreate(mid license.MachineId) license.DBTrialLicense {
 	expiration := time.Now().Add(TrialDuration)
@@ -118,7 +80,7 @@ func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	// Convert `lic` to json
 	payload, err := json.Marshal(lic)
 	if err != nil {
-		return license.HTTPSealedLicense{}, fmt.Errorf("json.Marshal failed: %w", err)
+		return license.HTTPSealedLicense{}, fmt.Errorf("json.Marshal() failed: %w", err)
 	}
 
 	seed := *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
@@ -130,34 +92,59 @@ func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	}, nil
 }
 
+func respErr(userErr error, logErr string, logArgs ...interface{}) (*license.HTTPResponse, error) {
+	var httpResp *license.HTTPResponse
+	if userErr != nil {
+		httpResp = &license.HTTPResponse{Error: userErr.Error()}
+	}
+	return httpResp, fmt.Errorf(logErr, logArgs)
+}
+
 func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
+	email, err := license.EmailForString(req.Email)
+	if err != nil {
+		return respErr(LicenseNotFoundErr, "license.EmailForString() failed: %w", err)
+	}
+
+	mid, err := license.MachineIdForString(req.MachineId)
+	if err != nil {
+		return respErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+	}
+
+	code, err := license.LicenseCodeForString(req.LicenseCode)
+	if err != nil {
+		return respErr(LicenseNotFoundErr, "license.LicenseCodeForString() failed: %w", err)
+	}
+
+	uid := license.DBUserIdForEmail(DebaseProductId, email)
+
 	var userLic *license.DBUserLicense
-	var respErr error
-	userLicsRef := db.Collection(LicensesCollection).Doc(string(req.UserId))
-	err := db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	var userErr error
+	userLicsRef := db.Collection(LicensesCollection).Doc(string(uid))
+	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins.
 		// So make sure that our output vars are cleared by default, so they don't
 		// contain values from a previous transaction
 		userLic = nil
-		respErr = nil
+		userErr = nil
 
 		userLicsDoc, err := tx.Get(userLicsRef)
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
-				respErr = LicenseNotFoundErr
+				userErr = LicenseNotFoundErr
 			}
-			return fmt.Errorf("tx.Get() failed for UserId=%v LicenseCode=%v: %w", req.UserId, req.LicenseCode, err)
+			return fmt.Errorf("tx.Get() failed for UserId=%v LicenseCode=%v: %w", uid, code, err)
 		}
 
 		var userLics license.DBUserLicenses
 		err = userLicsDoc.DataTo(&userLics)
 		if err != nil {
-			return fmt.Errorf("userLicsDoc.DataTo failed: %w", err)
+			return fmt.Errorf("userLicsDoc.DataTo() failed: %w", err)
 		}
 
 		// Find a license that matches the given license code
 		for i := range userLics.Licenses {
-			if userLics.Licenses[i].LicenseCode == req.LicenseCode {
+			if userLics.Licenses[i].LicenseCode == code {
 				userLic = &userLics.Licenses[i]
 				break
 			}
@@ -165,14 +152,14 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 
 		// If we didn't find a license for the given license code, return an error
 		if userLic == nil {
-			respErr = LicenseNotFoundErr
-			return fmt.Errorf("no matching license for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
+			userErr = LicenseNotFoundErr
+			return fmt.Errorf("no matching license for UserId=%v LicenseCode=%v", uid, code)
 		}
 
 		// We found a license for the given license code
 		// If the given machine id already exists in the license, then we're done
-		for _, mid := range userLic.MachineIds {
-			if mid == req.MachineId {
+		for _, x := range userLic.MachineIds {
+			if x == mid {
 				return nil
 			}
 		}
@@ -180,51 +167,51 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 		// Otherwise, the machine id doesn't exist in the license, so we need to add it
 		// Bail if we don't have any free machine id slots
 		if len(userLic.MachineIds) >= MachineCountMax {
-			respErr = MachineLimitErr
-			return fmt.Errorf("max machines already reached for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
+			userErr = MachineLimitErr
+			return fmt.Errorf("max machines already reached for UserId=%v LicenseCode=%v", uid, code)
 		}
 
-		userLic.MachineIds = append(userLic.MachineIds, req.MachineId)
+		userLic.MachineIds = append(userLic.MachineIds, mid)
 
 		// log.Printf("userLics: %v userLic: %v", userLics, *userLic)
 
 		err = tx.Set(userLicsRef, userLics)
 		if err != nil {
-			return fmt.Errorf("tx.Set() failed for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
+			return fmt.Errorf("tx.Set() failed for UserId=%v LicenseCode=%v", uid, code)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		err = fmt.Errorf("db.RunTransaction() failed: %w", err)
-		if respErr != nil {
-			return &license.HTTPResponse{Error: respErr.Error()}, err
-		} else {
-			return nil, err
-		}
+		return respErr(userErr, "db.RunTransaction() failed: %w", err)
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{
-		UserId:      req.UserId,
-		LicenseCode: userLic.LicenseCode,
-		MachineId:   req.MachineId,
+		Email:       string(email),
+		LicenseCode: string(code),
+		MachineId:   string(mid),
 		Version:     userLic.Version,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("sealedLicense failed: %w", err)
+		return respErr(nil, "sealedLicense() failed: %w", err)
 	}
 
 	return &license.HTTPResponse{License: sealed}, nil
 }
 
-func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (*license.HTTPResponse, error) {
+func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
+	mid, err := license.MachineIdForString(req.MachineId)
+	if err != nil {
+		return respErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+	}
+
 	// Create the trial license that we'll insert if one doesn't already exist
 	trialLicNew := trialLicenseCreate(mid)
 
 	var trialLic license.DBTrialLicense
 	trialLicRef := db.Collection(TrialsCollection).Doc(string(mid))
-	err := db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Get the license
 		trialLicDoc, err := tx.Get(trialLicRef)
 		// If we failed to get the license because it didn't exist, create it
@@ -253,7 +240,7 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("db.RunTransaction failed: %w", err)
+		return respErr(nil, "db.RunTransaction() failed: %w", err)
 	}
 
 	// Check if license is expired
@@ -264,16 +251,16 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	// hopefully unrecoverable.
 	expiration := time.Unix(trialLic.Expiration, 0)
 	if time.Now().After(expiration) {
-		return &license.HTTPResponse{Error: TrialExpiredErr.Error()}, nil
+		return respErr(TrialExpiredErr, "trial expired for MachineId=%v", mid)
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{
-		MachineId:  mid,
+		MachineId:  string(mid),
 		Version:    trialLic.Version,
 		Expiration: trialLic.Expiration,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("sealedLicense failed: %w", err)
+		return respErr(nil, "sealedLicense() failed: %w", err)
 	}
 
 	return &license.HTTPResponse{License: sealed}, nil
@@ -285,21 +272,21 @@ func handler(w http.ResponseWriter, r *http.Request) (*license.HTTPResponse, err
 	var req license.HTTPRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		return nil, fmt.Errorf("json.NewDecoder failed: %w", err)
+		return nil, fmt.Errorf("json.NewDecoder() failed: %w", err)
 	}
 
-	req, err = reqSanitize(req)
-	if err != nil {
-		return &license.HTTPResponse{Error: LicenseNotFoundErr.Error()}, fmt.Errorf("reqSanitize failed: %w", err)
-	}
+	// req, err = reqSanitize(req)
+	// if err != nil {
+	//     return &license.HTTPResponse{Error: LicenseNotFoundErr.Error()}, fmt.Errorf("reqSanitize failed: %w", err)
+	// }
 
-	if req.UserId != "" {
+	if req.Email != "" {
 		// License request
 		return handlerLicense(ctx, w, req)
 
 	} else {
 		// Trial request
-		return handlerTrial(ctx, w, req.MachineId)
+		return handlerTrial(ctx, w, req)
 	}
 }
 
@@ -318,7 +305,7 @@ func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
 	if resp != nil {
 		err = json.NewEncoder(w).Encode(resp)
 		if err != nil {
-			log.Printf("json.NewEncoder(w).Encode failed: %w", err)
+			log.Printf("json.NewEncoder().Encode() failed: %w", err)
 		}
 		return
 	}
