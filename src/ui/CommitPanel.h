@@ -105,7 +105,7 @@ public:
     
     void draw() override {
         assert(borderColor());
-        const ColorPair color = *borderColor();
+        const Color color = *borderColor();
 //        const bool header = !_header->text().empty();
         
         _header->textAttr(color);

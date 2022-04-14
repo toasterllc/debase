@@ -111,7 +111,7 @@ public:
     }
     
     void draw() override {
-        const UI::ColorPair selectionColor = (_drag.copy ? colors().selectionCopy : colors().selection);
+        const UI::Color selectionColor = (_drag.copy ? colors().selectionCopy : colors().selection);
         
         if (_drag.titlePanel) {
             _drag.titlePanel->borderColor(selectionColor);
@@ -124,7 +124,7 @@ public:
         bool dragging = (bool)_drag.titlePanel;
         for (UI::RevColumnPtr col : _columns) {
             for (UI::CommitPanelPtr panel : col->panels()) {
-                UI::ColorPair borderColor;
+                UI::Color borderColor;
                 _SelectState selectState = _selectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
                     borderColor = (dragging ? colors().selectionSimilar : colors().selection);
@@ -457,10 +457,10 @@ private:
 //        return x;
 //    }
 //    
-//    static UI::ColorPair _ColorPairInit(const UI::ColorPair& c) {
+//    static UI::Color _ColorInit(const UI::Color& c) {
 //        if (!c.fg && !c.bg) return c;
 //        
-//        UI::ColorPair x = c;
+//        UI::Color x = c;
 ////        if (c.fg) x.fg = _ColorInit(*c.fg);
 ////        if (c.bg) x.bg = _ColorInit(*c.bg);
 //        
@@ -484,11 +484,11 @@ private:
 //        UI::ColorPalette pcopy = p;
 //        
 //        // Set the values for the custom colors, and remember the old values
-//        for (UI::ColorPair& c : pcopy.custom()) {
+//        for (UI::Color& c : pcopy.custom()) {
 //            c = _ColorSet(c);
 //        }
 //        
-//        for (const UI::ColorPair& c : p.colorPairs()) {
+//        for (const UI::Color& c : p.colorPairs()) {
 //            ::init_pair(c.idx, c.idx, -1);
 //        }
 //        
@@ -506,7 +506,7 @@ private:
             // Terminal.app applies some kind of filtering on top of these numbers. These values were
             // manually chosen based on their appearance.
             if (themeDark) {
-                colors.normal           = UI::ColorPair();
+                colors.normal           = UI::Color();
                 colors.dimmed           = colors.add( 77,  77,  77);
                 colors.selection        = colors.add(  0,   2, 255);
                 colors.selectionSimilar = colors.add(140, 140, 255);
@@ -515,7 +515,7 @@ private:
                 colors.error            = colors.add(194,   0,  71);
             
             } else {
-                colors.normal           = UI::ColorPair();
+                colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(128, 128, 128);
                 colors.selection        = colors.add(  0,   2, 255);
                 colors.selectionSimilar = colors.add(140, 140, 255);
@@ -529,7 +529,7 @@ private:
             // These colors were derived by sampling the Apple_Terminal values when they're displayed on-screen
             
             if (themeDark) {
-                colors.normal           = UI::ColorPair();
+                colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
                 colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
                 colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
@@ -538,7 +538,7 @@ private:
                 colors.error            = colors.add(.969*255, .298*255, .435*255);
             
             } else {
-                colors.normal           = UI::ColorPair();
+                colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
                 colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
                 colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
@@ -553,10 +553,10 @@ private:
     
     static UI::ColorPalette _ColorsCreateDefault() {
         UI::ColorPalette colors;
-        colors.normal           = UI::ColorPair();
-        colors.dimmed           = UI::ColorPair();
+        colors.normal           = UI::Color();
+        colors.dimmed           = UI::Color();
         colors.selection        = colors.add(COLOR_BLUE);
-        colors.selectionSimilar = UI::ColorPair();
+        colors.selectionSimilar = UI::Color();
         colors.selectionCopy    = colors.add(COLOR_GREEN);
         colors.menu             = colors.add(COLOR_RED);
         colors.error            = colors.add(COLOR_RED);
