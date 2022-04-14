@@ -76,7 +76,7 @@ public:
 //            }
 //        }
         
-//        const UI::Color selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
+//        const UI::Color selectionColor = (_drag.copy ? colors().selectionCopy : colors().selection);
         
 //        // Order all the title panel and shadow panels
 //        if (dragging) {
@@ -111,7 +111,7 @@ public:
     }
     
     void draw() override {
-        const UI::ColorPair selectionColor = (_drag.copy ? _colors.selectionCopy : _colors.selection);
+        const UI::ColorPair selectionColor = (_drag.copy ? colors().selectionCopy : colors().selection);
         
         if (_drag.titlePanel) {
             _drag.titlePanel->borderColor(selectionColor);
@@ -127,10 +127,10 @@ public:
                 UI::ColorPair borderColor;
                 _SelectState selectState = _selectStateGet(col, panel);
                 if (selectState == _SelectState::True) {
-                    borderColor = (dragging ? _colors.selectionSimilar : _colors.selection);
+                    borderColor = (dragging ? colors().selectionSimilar : colors().selection);
                 
                 } else {
-                    borderColor = (!dragging && selectState==_SelectState::Similar ? _colors.selectionSimilar : _colors.normal);
+                    borderColor = (!dragging && selectState==_SelectState::Similar ? colors().selectionSimilar : colors().normal);
                 }
                 
                 panel->borderColor(borderColor);
@@ -154,7 +154,7 @@ public:
 //        }
         
         if (_selectionRect) {
-            Attr color = attr(_colors.selection);
+            Attr color = attr(colors().selection);
             drawRect(*_selectionRect);
         }
         
@@ -241,7 +241,7 @@ public:
             case UI::Event::Type::KeyC: {
 //                {
 //                    _registerPanel = std::make_shared<UI::RegisterPanel>(_colors);
-//                    _registerPanel->color           = _colors.menu;
+//                    _registerPanel->color           = colors().menu;
 //                    _registerPanel->messageInsetY   = 1;
 //                    _registerPanel->title           = "Register";
 //                    _registerPanel->message         = "Please register debase";
@@ -1520,7 +1520,7 @@ private:
     
     void _infoMessageShow(std::string_view msg) {
         _messagePanel = subviewCreate<UI::ModalPanel>();
-        _messagePanel->color            (_colors.menu);
+        _messagePanel->color            (colors().menu);
 //        _messagePanel->title()->text    ("Error");
         _messagePanel->message()->text  (msg);
         _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
@@ -1785,7 +1785,7 @@ private:
     Git::Repo _repo;
     std::vector<Git::Rev> _revs;
     
-    UI::ColorPalette _colors;
+//    UI::ColorPalette _colors;
 //    UI::ColorPalette _colorsPrev;
     std::optional<License::Context> _licenseCtx;
     State::RepoState _repoState;

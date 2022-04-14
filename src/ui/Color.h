@@ -164,8 +164,8 @@ public:
     }
     
     // add(): create a new color pair with a given RGB components as the foreground color
-    ColorPair add(int r, int g, int b) {
-        const Color color = {.idx=_colorIdx, .rgb=RGB{r,g,b}};
+    ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
+        const Color color = {.idx=_colorIdx, .rgb=RGB{((int)r*1000)/255, ((int)g*1000)/255, ((int)b*1000)/255}};
         const ColorPair colorPair = {.idx=_colorPairIdx, .fg=_colorIdx};
         
         _colorSwappers.emplace_back(color);
