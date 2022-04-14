@@ -58,7 +58,7 @@ void View::track(const Event& ev, Deadline deadline) {
         }
         
         handleEvent(gstate, _eventCurrent);
-    } while (!_trackStop);
+    } while (!_trackStop && deadline!=Once);
     
     
     

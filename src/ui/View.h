@@ -18,7 +18,10 @@ public:
     using ViewsIter = Views::iterator;
     
     using Deadline = std::chrono::steady_clock::time_point;
-    static constexpr Deadline Forever = std::chrono::steady_clock::time_point();
+    static constexpr Deadline Forever = std::chrono::steady_clock::time_point::max();
+    static constexpr Deadline Once = std::chrono::steady_clock::time_point::min();
+    static constexpr Deadline Poll = std::chrono::steady_clock::time_point();
+    static_assert(Once != Poll);
     
 //    class GraphicsState {
 //    public:

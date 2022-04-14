@@ -188,9 +188,11 @@ public:
         for (;;) {
             // Set the appropriate timeout according to the deadline
             {
-                int ms = -1;
-                if (deadline != Forever) {
-                    ms = std::max(0, (int)duration_cast<milliseconds>(deadline-steady_clock::now()).count());
+                int ms = 0;
+                if (deadline==Forever || deadline==Once) ms = -1;
+                else if (deadline == Poll) ms = 0;
+                else {
+                    ms = (int)std::max((intmax_t)0, (intmax_t)duration_cast<milliseconds>(deadline-steady_clock::now()).count());
                 }
                 wtimeout(*this, ms);
             }
@@ -200,7 +202,7 @@ public:
                 // We got an error:
                 //   if timeout isn't enabled, wait for an event again
                 //   if timeout is enabled and it's expired, return an empty event
-                if (deadline == Forever) continue;
+                if (deadline==Forever || deadline==Once) continue;
                 // >= and not > so that deadline=now() can be given and we're
                 // guaranteed to perform a single iteration
                 if (steady_clock::now() >= deadline) return {};
