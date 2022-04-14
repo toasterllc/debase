@@ -18,7 +18,7 @@ public:
         if (erased()) { // Performance optimization: only draw if the window was erased
             if (visibleButtonCount() > 1) {
                 ButtonPtr button0 = buttons()[0];
-                Attr color = attr(Colors().menu);
+                Attr color = attr(colors().menu);
                 Point p = {1, button0->frame().b()};
                 int len = width-2;
                 cchar_t c = { .chars = L"╍" };

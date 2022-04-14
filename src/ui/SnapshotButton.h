@@ -19,12 +19,12 @@ public:
         
         _time->text(Time::RelativeTimeString({.pastSuffix="ago", .abbreviate=true}, snapshot.creationTime));
         _time->align(Align::Right);
-        _time->textAttr(Colors().dimmed);
+        _time->textAttr(colors().dimmed);
         
         _id->text(Git::DisplayStringForId(commit.id(), _CommitIdWidth));
         
         _author->text(sig.name());
-        _author->textAttr(Colors().dimmed);
+        _author->textAttr(colors().dimmed);
         
         _message->text(commit.message());
         _message->wrap(true);
@@ -52,20 +52,20 @@ public:
     
     void draw() override {
         const bool menuColor = (highlighted() || (_activeSnapshot && !mouseActive()));
-        const ColorPair idColor = (menuColor ? Colors().menu : Colors().normal);
+        const ColorPair idColor = (menuColor ? colors().menu : colors().normal);
         _id->textAttr(idColor|A_BOLD);
         
         // Draw highlight
         if (highlighted() || (_activeSnapshot && !mouseActive())) {
-            _highlightSymbol->textAttr(Colors().menu|A_BOLD);
+            _highlightSymbol->textAttr(colors().menu|A_BOLD);
             _highlightSymbol->text("●");
         
         } else if (_activeSnapshot && mouseActive()) {
-            _highlightSymbol->textAttr(Colors().normal);
+            _highlightSymbol->textAttr(colors().normal);
             _highlightSymbol->text("○");
         
         } else {
-            _highlightSymbol->textAttr(Colors().normal);
+            _highlightSymbol->textAttr(colors().normal);
             _highlightSymbol->text(" ");
         }
     }

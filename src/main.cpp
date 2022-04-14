@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: re-evaluate our uses of optional in Color.h
+    
     #warning TODO: hide cursor on start -- it flickers
     
     #warning TODO: add hidden --machineId flag for end user debugging

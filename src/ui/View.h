@@ -90,9 +90,6 @@ public:
         int b = 0;
     };
     
-    static const ColorPalette& Colors() { return _Colors; }
-    static void Colors(const ColorPalette& x) { _Colors = x; }
-    
     static const GraphicsState& GState() {
         assert(_GState);
         return _GState;
@@ -290,6 +287,7 @@ public:
         return _GState.erased;
     }
     
+    virtual const ColorPalette& colors() const;
     virtual bool cursorState(const CursorState& x);
     
     // MARK: - Layout
@@ -604,7 +602,6 @@ protected:
 private:
     WINDOW* _window() const;
     
-    static inline ColorPalette _Colors;
     static inline GraphicsState _GState;
     
     Views _subviews;

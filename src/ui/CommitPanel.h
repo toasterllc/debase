@@ -16,7 +16,7 @@ namespace UI {
 class CommitPanel : public Panel {
 public:
     CommitPanel() {
-        borderColor(Colors().normal);
+        borderColor(colors().normal);
         
         _header->inhibitErase(true);
         _header->prefix(" ");
@@ -27,7 +27,7 @@ public:
         _time->align(Align::Right);
         _time->inhibitErase(true);
         
-        _author->textAttr(Colors().dimmed);
+        _author->textAttr(colors().dimmed);
         
 //        _message->visible(false);
         _message->wrap(true);

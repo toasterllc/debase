@@ -142,7 +142,7 @@ public:
             eraseNeeded(true);
         }
         
-        const bool frameChanged = windowFrame({gstate.originScreen, size()});
+//        const bool frameChanged = windowFrame({gstate.originScreen, size()});
         _s.framePrev = windowFrame();
         
 //        const Rect sb = _screenBounds();

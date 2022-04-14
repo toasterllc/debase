@@ -20,6 +20,15 @@ public:
     Size windowSize() const override { return Window::windowSize(); }
     bool windowSize(const Size& s) override { return false; } // Ignore attempts to set screen size
     
+    const ColorPalette& colors() const override {
+        return _colors;
+    }
+    
+    bool colors(ColorPalette&& colors) {
+        _colors = std::move(colors);
+        return true;
+    }
+    
     bool cursorState(const CursorState& x) override {
         _cursorState = x;
         return true;
@@ -303,6 +312,7 @@ private:
     }
     
     _GraphicsStateSwapper _gstate = View::GStatePush({.screen=this});
+    ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
 //    

@@ -22,7 +22,7 @@ public:
     void draw() override {
         Attr underline = attr(A_UNDERLINE);
         Attr color;
-        if (!_focus) color = attr(Colors().dimmed);
+        if (!_focus) color = attr(colors().dimmed);
         drawLineHoriz({}, size().x, ' ');
         
         // Print as many runes as will fit our width

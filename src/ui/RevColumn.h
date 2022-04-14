@@ -27,15 +27,15 @@ public:
         _snapshotsButton->drawBorder(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
-        _name->textAttr(Colors().menu | A_BOLD);
+        _name->textAttr(colors().menu | A_BOLD);
         _name->align(Align::Center);
 //        _name->visible(false);
         
         _readOnly->text("read-only");
         _readOnly->align(Align::Center);
-        _readOnly->textAttr(Colors().error);
+        _readOnly->textAttr(colors().error);
         
-//        borderColor(Colors().normal);
+//        borderColor(colors().normal);
     }
     
     void reload(Size size) {
@@ -131,14 +131,14 @@ public:
 //        const int width = size().x;
 //        // Draw branch name
 //        if (win.erased()) {
-//            Attr color = attr(Colors().menu);
+//            Attr color = attr(colors().menu);
 //            Attr bold = attr(A_BOLD);
 //            const Point p = pos + Size{(width-(int)UTF8::Len(_name))/2, _TitleInsetY};
 //            drawText(p, _name.c_str());
 //        }
 //        
 //        if (!_rev.isMutable()) {
-//            Attr color = attr(Colors().error);
+//            Attr color = attr(colors().error);
 //            const char immutableText[] = "read-only";
 //            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
 //            drawText(p, immutableText);

@@ -14,11 +14,11 @@ public:
     }
     
     Menu() {
-        borderColor(Colors().menu);
+        borderColor(colors().menu);
         
         _title->inhibitErase(true);
         _title->align(Align::Center);
-        _title->textAttr(Colors().menu|A_BOLD);
+        _title->textAttr(colors().menu|A_BOLD);
         _title->prefix(" ");
         _title->suffix(" ");
     }
@@ -87,7 +87,7 @@ public:
             // Draw separator
             if (erased()) { // Performance optimization: only draw if the window was erased
                 if (button->visible()) {
-                    Attr color = attr(Colors().menu);
+                    Attr color = attr(colors().menu);
                     drawLineHoriz({0, button->frame().b()}, width);
                 }
             }

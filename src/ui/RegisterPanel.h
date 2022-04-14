@@ -27,7 +27,7 @@ public:
         auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
         
         _email->label()->text               ("       Email: ");
-        _email->label()->textAttr           (Colors().menu|A_BOLD);
+        _email->label()->textAttr           (colors().menu|A_BOLD);
         _email->spacingX                    (3);
         _email->textField()->valueChanged   (valueChanged);
         _email->textField()->requestFocus   (requestFocus);
@@ -35,7 +35,7 @@ public:
         _email->textField()->focus          (true);
         
         _code->label()->text                ("License Code: ");
-        _code->label()->textAttr            (Colors().menu|A_BOLD);
+        _code->label()->textAttr            (colors().menu|A_BOLD);
         _code->spacingX                     (3);
         _code->textField()->valueChanged    (valueChanged);
         _code->textField()->requestFocus    (requestFocus);

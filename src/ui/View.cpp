@@ -4,6 +4,10 @@
 
 namespace UI {
 
+const ColorPalette& View::colors() const {
+    return screen().colors();
+}
+
 bool View::cursorState(const CursorState& x) {
     assert(_GState);
     CursorState xcopy = x;

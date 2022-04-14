@@ -19,7 +19,7 @@ public:
         _label->align(Align::Center);
         _label->textAttr(A_BOLD);
         
-        _key->textAttr(Colors().dimmed);
+        _key->textAttr(colors().dimmed);
     }
     
     void layout() override {
@@ -45,14 +45,14 @@ public:
     
     void draw() override {
         // Update our border color for View's drawBorder() pass
-        if (_drawBorder) borderColor(_enabled ? Colors().normal : Colors().dimmed);
+        if (_drawBorder) borderColor(_enabled ? colors().normal : colors().dimmed);
         
         if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
         
         // Update label styles
         int attr = *_labelDefaultAttr;
-        if (_highlighted && _enabled) attr |= A_BOLD|Colors().menu;
-        else if (!_enabled)           attr |= Colors().dimmed;
+        if (_highlighted && _enabled) attr |= A_BOLD|colors().menu;
+        else if (!_enabled)           attr |= colors().dimmed;
         _label->textAttr(attr);
         
 //        // Draw labels
@@ -94,7 +94,7 @@ public:
 //        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
 //        
 //        if (_drawBorder) {
-//            Attr color = attr(_enabled ? Colors().normal : Colors().dimmed);
+//            Attr color = attr(_enabled ? colors().normal : colors().dimmed);
 //            win.drawRect(f);
 //        }
 //        
@@ -117,14 +117,14 @@ public:
 //            Attr bold;
 //            Attr color;
 //            if (_enabled)                 bold = attr(A_BOLD);
-//            if (_highlighted && _enabled) color = attr(Colors().menu);
-//            else if (!_enabled)           color = attr(Colors().dimmed);
+//            if (_highlighted && _enabled) color = attr(colors().menu);
+//            else if (!_enabled)           color = attr(colors().dimmed);
 //            drawText(plabel, labelWidth, _label->c_str());
 //        }
 //        
 //        // Draw key
 //        {
-//            Attr color = attr(Colors().dimmed);
+//            Attr color = attr(colors().dimmed);
 //            drawText(pkey, keyWidth, _key->c_str());
 //        }
 //        

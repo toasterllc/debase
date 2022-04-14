@@ -13,9 +13,9 @@ class WelcomePanel : public ModalPanel {
 public:
     WelcomePanel() {
         message()->align(Align::Center);
-        message()->textAttr(Colors().menu|A_BOLD);
+        message()->textAttr(colors().menu|A_BOLD);
         
-        borderColor(Colors().menu);
+        borderColor(colors().menu);
         
         _trialButton->label()->text      ("Start Free Trial");
         _trialButton->enabled            (true);

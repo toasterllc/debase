@@ -6,7 +6,7 @@ namespace UI {
 class ErrorPanel : public ModalPanel {
 public:
     ErrorPanel() {
-        color            (Colors().error);
+        color            (colors().error);
         title()->text    ("Error");
         
         _supportMessage->text("For support, please contact:");
