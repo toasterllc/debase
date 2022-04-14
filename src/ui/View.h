@@ -579,7 +579,7 @@ protected:
         }
         
         _GraphicsStateSwapper(const _GraphicsStateSwapper& x) = delete;
-        _GraphicsStateSwapper& operator =(_GraphicsStateSwapper&& x) = delete;
+        _GraphicsStateSwapper(_GraphicsStateSwapper&& x) = delete;
         
 //        _GraphicsStateSwapper& operator =(_GraphicsStateSwapper&& x) {
 //            // Only allow move-assignment if we didn't have a value previously
