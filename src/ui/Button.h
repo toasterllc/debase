@@ -22,6 +22,13 @@ public:
         _key->textAttr(colors().dimmed);
     }
     
+    Size sizeIntrinsic(Size constraint) override {
+        const int keyWidth = _key->View::sizeIntrinsic().x;
+        const int w = (_drawBorder ? 4 : 0) + _label->View::sizeIntrinsic().x + (keyWidth ? KeySpacingX : 0) + keyWidth;
+        const int h = (_drawBorder ? 3 : 1);
+        return {w, h};
+    }
+    
     void layout() override {
         const Rect r = Inset(bounds(), {(_drawBorder?1:0), 0});
         _key->sizeToFit();
@@ -191,7 +198,7 @@ public:
     template <typename T> bool actionTrigger(const T& x) { return _set(_actionTrigger, x); }
     
 private:
-    static constexpr int KeySpacing = 2;
+    static constexpr int KeySpacingX = 2;
     
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();

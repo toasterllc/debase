@@ -44,11 +44,11 @@ public:
         _okButton->label()->text            ("OK");
         _okButton->drawBorder               (true);
         
-        _cancelButton->label()->text        ("Cancel");
-        _cancelButton->label()->textAttr    (A_NORMAL);
-        _cancelButton->drawBorder           (true);
-        _cancelButton->action               (std::bind(&RegisterPanel::_actionCancel, this));
-        _cancelButton->enabled              (true);
+        _dismissButton->label()->text        ("Cancel");
+        _dismissButton->label()->textAttr    (A_NORMAL);
+        _dismissButton->drawBorder           (true);
+        _dismissButton->action               (std::bind(&RegisterPanel::_actionDismiss, this));
+        _dismissButton->enabled              (true);
     }
     
     // MARK: - ModalPanel Overrides
@@ -59,7 +59,7 @@ public:
             _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY +
             _FieldHeight + _ElementSpacingY +
             _FieldHeight + _ElementSpacingY +
-            _ButtonHeight;
+            _okButton->View::sizeIntrinsic().y;
     }
     
 //    LabelTextFieldPtr focus() const {
@@ -115,16 +115,21 @@ public:
         _code->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
         offY += _FieldHeight+_ElementSpacingY;
         
-        _okButton->frame({{cf.r()-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
-        _cancelButton->frame({{_okButton->frame().l()-_ButtonSpacingX-_ButtonWidth,offY}, {_ButtonWidth, _ButtonHeight}});
         
-        _cancelButton->visible((bool)dismissAction());
+        
+        const int okButtonWidth = (int)UTF8::Len(_okButton->label()->text()) + _ButtonPaddingX;
+        _okButton->frame({{cf.r()-okButtonWidth, offY}, {okButtonWidth, _ButtonHeight}});
+        _okButtonUpdateEnabled();
+        
+        const int dismissButtonWidth = (int)UTF8::Len(_dismissButton->label()->text()) + _ButtonPaddingX;
+        _dismissButton->frame({{_okButton->frame().l()-_ButtonSpacingX-dismissButtonWidth, offY}, {dismissButtonWidth, _ButtonHeight}});
+        _dismissButton->visible((bool)dismissAction());
     }
     
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
         if (ev.type == Event::Type::KeyEscape) {
-            _actionCancel();
+            _actionDismiss();
         }
         return true;
     }
@@ -132,22 +137,18 @@ public:
     auto& email() { return _email->textField(); }
     auto& code() { return _code->textField(); }
     auto& okButton() { return _okButton; }
-    auto& cancelButton() { return _cancelButton; }
+    auto& dismissButton() { return _dismissButton; }
     
 private:
     static constexpr int _ElementSpacingY       = 1;
     static constexpr int _PurchaseLinkHeight    = 1;
     static constexpr int _FieldHeight           = 1;
-    static constexpr int _ButtonWidth           = 10;
+    static constexpr int _ButtonPaddingX        = 8;
     static constexpr int _ButtonHeight          = 3;
     static constexpr int _ButtonSpacingX        = 1;
     
     void _fieldValueChanged(TextField& field) {
-        const bool fieldsValue =
-            !_code->textField()->value().empty()    &&
-            !_email->textField()->value().empty()   ;
-        
-        _okButton->enabled(fieldsValue);
+        _okButtonUpdateEnabled();
     }
     
     void _fieldRequestFocus(TextField& field) {
@@ -191,13 +192,21 @@ private:
         }
     }
     
+    void _okButtonUpdateEnabled() {
+        const bool fieldsValue =
+            !_code->textField()->value().empty()    &&
+            !_email->textField()->value().empty()   ;
+        
+        _okButton->enabled(fieldsValue);
+    }
+    
     void _actionOK() {
         if (dismissAction()) {
             dismissAction()(*this);
         }
     }
     
-    void _actionCancel() {
+    void _actionDismiss() {
         if (dismissAction()) {
             dismissAction()(*this);
         }
@@ -209,7 +218,7 @@ private:
     LabelTextFieldPtr _email    = subviewCreate<LabelTextField>();
     LabelTextFieldPtr _code     = subviewCreate<LabelTextField>();
     ButtonPtr _okButton         = subviewCreate<Button>();
-    ButtonPtr _cancelButton     = subviewCreate<Button>();
+    ButtonPtr _dismissButton    = subviewCreate<Button>();
     
     LabelTextFieldPtr _focusPrev;
 };

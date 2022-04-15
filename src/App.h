@@ -369,9 +369,9 @@ public:
             // Create our window now that ncurses is initialized
             Window::operator =(Window(::stdscr));
             
-            _licenseCheck();
-            
             _reload();
+            
+            _licenseCheck();
             track({});
             
         } catch (const UI::ExitRequest&) {
@@ -1369,13 +1369,24 @@ private:
     }
     
     template <typename T_Async>
-    void _waitForAsync(UI::ModalPanelPtr panel, UI::ButtonPtr button, const T_Async& async) {
+    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
+        if (panel) panel->suppressEvents(true);
+        Defer( if (panel) panel->suppressEvents(false); );
+        
         // Animate until we get a response
-        UI::ButtonSpinner spinner(_registerPanel, _registerPanel->okButton());
+        UI::ButtonSpinner spinner;
+        if (button) spinner = UI::ButtonSpinner(button);
+        
         std::chrono::steady_clock::time_point nextFrameTime;
-        while (!async.done()) {
-            if (std::chrono::steady_clock::now() > nextFrameTime) {
-                spinner.animate();
+        
+        for (;;) {
+            if (async.done()) break;
+            
+            std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
+            if (deadline!=Forever && time>deadline) break;
+            
+            if (time > nextFrameTime) {
+                if (spinner) spinner.animate();
                 nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
             }
             
@@ -1390,7 +1401,7 @@ private:
 //            for (;;) sleep(1);
             Network::Request(DebaseLicenseAPIURL, req, resp);
         });
-        _waitForAsync(panel, animateButton, async);
+        _waitForAsync(async, Forever, panel, animateButton);
         
         try {
             async.get(); // Rethrows exception if one occurred on the async thread
@@ -1429,7 +1440,18 @@ private:
         return license;
     }
     
-    void _licenseRenew(const License::License& license) {
+    void _licenseRenewActionTrial() {
+        assert(_registerPanel);
+        
+        const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
+        std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), trialReq);
+        if (license) {
+            _trialCountdownShow(*license);
+            _registerPanel = nullptr;
+        }
+    }
+    
+    void _licenseRenew(State::State& state, const License::License& license) {
         constexpr const char* PanelTitle            = "Renew License";
         constexpr const char* PanelMessageUnderway  = "Renewing debase license for this machine...";
         constexpr const char* PanelMessageError     = "A problem was encountered with your debase license. Please try registering again.";
@@ -1439,6 +1461,10 @@ private:
         // Create the register panel, but keep it hidden for now
         _registerPanelShow(PanelTitle, PanelMessageUnderway, false);
         _registerPanel->visible(false);
+        _registerPanel->email()->value(license.email);
+        _registerPanel->code()->value(license.licenseCode);
+        _registerPanel->dismissButton()->label()->text("Free Trial");
+        _registerPanel->dismissAction(std::bind(&App::_licenseRenewActionTrial, this));
         
         const License::Request renewReq = {
             .machineId = _licenseCtxGet().machineId,
@@ -1456,15 +1482,13 @@ private:
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.
         constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
         const auto showPanelDeadline = std::chrono::steady_clock::now()+ShowPanelTimeout;
-        while (!async.done() && std::chrono::steady_clock::now()<showPanelDeadline) {
-            track({}, showPanelDeadline);
-        }
+        _waitForAsync(async, showPanelDeadline);
         
         // If the license request hasn't completed yet, show the register panel until it does,
         // so that we block the app from being used until the license is valid
         if (!async.done()) {
             _registerPanel->visible(true);
-            _waitForAsync(_registerPanel, _registerPanel->okButton(), async);
+            _waitForAsync(async, Forever, _registerPanel, _registerPanel->okButton());
         }
         
         bool ok = false;
@@ -1478,7 +1502,6 @@ private:
             License::Status st = _licenseUnseal(sealed, license);
             if (st == License::Status::Valid) {
                 // License is valid; save it and dismiss
-                State::State state(StateDir());
                 state.license(sealed);
                 state.write();
                 ok = true;
@@ -1488,14 +1511,14 @@ private:
         if (!ok) {
             _registerPanel->visible(true);
             _registerPanel->message()->text(PanelMessageError);
-            #warning TODO: call _registerPanel->layoutNeeded(true) ?
+            layoutNeeded(true);
         
         } else {
             _registerPanel = nullptr;
         }
     }
     
-    void _welcomePanelTrial() {
+    void _welcomePanelActionTrial() {
         assert(_welcomePanel);
         
         const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
@@ -1506,7 +1529,7 @@ private:
         }
     }
     
-    void _welcomePanelRegister() {
+    void _welcomePanelActionRegister() {
         _registerPanelShow();
     }
     
@@ -1515,8 +1538,8 @@ private:
         _welcomePanel->color                    (colors().menu);
         _welcomePanel->title()->text            ("");
         _welcomePanel->message()->text          ("Welcome to debase!");
-        _welcomePanel->trialButton()->action    (std::bind(&App::_welcomePanelTrial, this));
-        _welcomePanel->registerButton()->action (std::bind(&App::_welcomePanelRegister, this));
+        _welcomePanel->trialButton()->action    (std::bind(&App::_welcomePanelActionTrial, this));
+        _welcomePanel->registerButton()->action (std::bind(&App::_welcomePanelActionRegister, this));
     }
     
     void _registerPanelRegister() {
@@ -1647,7 +1670,7 @@ private:
             }
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            _licenseRenew(license);
+            _licenseRenew(state, license);
         
         } else if (st == License::Status::Expired) {
             // Delete license, set expired=1, show trial-expired panel

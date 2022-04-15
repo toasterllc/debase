@@ -93,6 +93,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: have a trial button on the renew-license dialog?
+    
     #warning TODO: server: add a date that a MachineID was added to a license, so we can prune them periodically
     
     #warning TODO: on macOS, use IOPlatformSerial instead of current MachineId scheme
