@@ -41,7 +41,7 @@ public:
         return true;
     }
     
-    void layout() {
+    void layout() override {
         frame(_s.tracked->frame());
     }
     

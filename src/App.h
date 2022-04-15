@@ -924,10 +924,11 @@ private:
                 Git::Rev rev = _selection.rev;
                 Git::Commit commit = *_selection.commits.begin();
                 const bool doubleClicked =
-                    doubleClickStatePrev.rev &&
-                    doubleClickStatePrev.rev==rev &&
-                    doubleClickStatePrev.commit==commit &&
-                    currentTime-doubleClickStatePrev.mouseUpTime < _DoubleClickThresh;
+                    doubleClickStatePrev.rev                                            &&
+                    doubleClickStatePrev.rev==rev                                       &&
+                    doubleClickStatePrev.commit==commit                                 &&
+                    doubleClickStatePrev.mouseUpOrigin-ev.mouse.origin == UI::Point{}   &&
+                    currentTime-doubleClickStatePrev.mouseUpTime < _DoubleClickThresh   ;
                 const bool validTarget = _selection.rev.isMutable();
                 
                 if (doubleClicked) {
@@ -948,6 +949,7 @@ private:
                 _doubleClickState = {
                     .rev = _selection.rev,
                     .commit = *_selection.commits.begin(),
+                    .mouseUpOrigin = ev.mouse.origin,
                     .mouseUpTime = currentTime,
                 };
             }
@@ -1368,10 +1370,6 @@ private:
     
     template <typename T_Async>
     void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
-        assert(interaction());
-        
-        interaction(false);
-        Defer( interaction(true); );
         
         if (panel) panel->enabled(false);
         Defer( if (panel) panel->enabled(true); );
@@ -1396,6 +1394,12 @@ private:
     }
     
     std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+        
+//        // Disable interaction while we wait for the license request
+//        assert(interaction());
+//        interaction(false);
+//        Defer( interaction(true); );
+        
         // Request license and wait until we get a response
         License::RequestResponse resp;
         Async async([&] () {
@@ -1482,11 +1486,16 @@ private:
         });
         
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.
-        #warning TODO: revert timeout
-        constexpr auto ShowPanelTimeout = std::chrono::seconds(1);
-//        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
+//        #warning TODO: revert timeout
+//        constexpr auto ShowPanelTimeout = std::chrono::seconds(1);
+        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
         const auto showPanelDeadline = std::chrono::steady_clock::now()+ShowPanelTimeout;
         _waitForAsync(async, showPanelDeadline);
+        
+//        // Disable interaction from this point forward
+//        assert(interaction());
+//        interaction(false);
+//        Defer( interaction(true); );
         
         // If the license request hasn't completed yet, show the register panel until it does,
         // so that we block the app from being used until the license is valid
@@ -1906,6 +1915,7 @@ private:
     struct {
         Git::Rev rev;
         Git::Commit commit;
+        UI::Point mouseUpOrigin;
         std::chrono::steady_clock::time_point mouseUpTime;
     } _doubleClickState;
     
