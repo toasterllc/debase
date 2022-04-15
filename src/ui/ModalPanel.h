@@ -33,8 +33,8 @@ public:
     }
     
     virtual int contentHeight(int width) const { return 0; }
-    virtual bool suppressEvents() const { return _suppressEvents; }
-    virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
+//    virtual bool suppressEvents() const { return _suppressEvents; }
+//    virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
     
     // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
@@ -85,11 +85,11 @@ public:
 //        _message->draw(*this);
     }
     
-    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-        // Intercept and drop events before subviews get a chance
-        if (_suppressEvents) return true;
-        return Panel::handleEvent(gstate, ev);
-    }
+//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
+//        // Intercept and drop events before subviews get a chance
+//        if (_suppressEvents) return true;
+//        return Panel::handleEvent(gstate, ev);
+//    }
     
     bool handleEvent(const Event& ev) override {
         // Dismiss upon mouse-up
@@ -122,7 +122,7 @@ private:
     Color _color;
     LabelPtr _title         = subviewCreate<Label>();
     LabelPtr _message       = subviewCreate<Label>();
-    bool _suppressEvents    = false;
+//    bool _suppressEvents    = false;
     std::function<void(ModalPanel&)> _dismissAction;
 };
 

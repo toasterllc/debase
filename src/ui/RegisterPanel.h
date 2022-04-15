@@ -61,13 +61,13 @@ public:
             _okButton->View::sizeIntrinsic().y;
     }
     
-    bool suppressEvents(bool x) override {
-        if (ModalPanel::suppressEvents(x)) {
-            focus(!ModalPanel::suppressEvents() ? _email : nullptr);
-            return true;
-        }
-        return false;
-    }
+//    bool suppressEvents(bool x) override {
+//        if (ModalPanel::suppressEvents(x)) {
+//            focus(!ModalPanel::suppressEvents() ? _email : nullptr);
+//            return true;
+//        }
+//        return false;
+//    }
     
     LabelTextFieldPtr focus() const {
         if (_email->textField()->focus()) return _email;
@@ -214,7 +214,7 @@ private:
     }
     
     bool _dismissButtonEnabled() const {
-        return !ModalPanel::suppressEvents();
+        return true;
     }
     
     void _actionOK() {

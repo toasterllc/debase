@@ -1370,8 +1370,8 @@ private:
     
     template <typename T_Async>
     void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
-        if (panel) panel->suppressEvents(true);
-        Defer( if (panel) panel->suppressEvents(false); );
+        suppressEvents(true);
+        Defer( suppressEvents(false); );
         
         // Animate until we get a response
         UI::ButtonSpinner spinner;
