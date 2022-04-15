@@ -268,6 +268,12 @@ public:
     virtual bool visible() const { return _visible; }
     virtual bool visible(bool x) { return _set(_visible, x); }
     
+    virtual bool enabled() const { return _enabled; }
+    virtual bool enabled(bool x) { return _set(_enabled, x); }
+    
+    // enabledWindow(): whether the view is enabled, and its containing window is also enabled
+    virtual bool enabledWindow() const;
+    
     virtual const bool interaction() const { return _interaction; }
     virtual bool interaction(bool x) { return _set(_interaction, x); }
     
@@ -618,6 +624,7 @@ private:
     Point _origin;
     Size _size;
     bool _visible = true;
+    bool _enabled = true;
     bool _interaction = true;
     bool _layoutNeeded = true;
     bool _eraseNeeded = false;

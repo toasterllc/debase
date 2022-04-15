@@ -653,7 +653,6 @@ private:
         UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot(activeSnapshot);
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
-        b->enabled(true);
         return b;
     }
     
@@ -748,7 +747,6 @@ private:
             col->rev(rev); // Ensure all columns' revs are up to date (since refs become stale if they're modified)
             col->undoButton()->enabled(h && !h->begin());
             col->redoButton()->enabled(h && !h->end());
-            col->snapshotsButton()->enabled(true);
             col->reload({_ColumnWidth, size().y});
             sv.push_back(col);
             
@@ -1372,6 +1370,9 @@ private:
     void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
         suppressEvents(true);
         Defer( suppressEvents(false); );
+        
+        if (panel) panel->enabled(false);
+        Defer( if (panel) panel->enabled(true); );
         
         // Animate until we get a response
         UI::ButtonSpinner spinner;

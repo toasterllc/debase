@@ -52,14 +52,14 @@ public:
     
     void draw() override {
         // Update our border color for View's drawBorder() pass
-        if (_drawBorder) borderColor(_enabled ? colors().normal : colors().dimmed);
+        if (_drawBorder) borderColor(enabledWindow() ? colors().normal : colors().dimmed);
         
         if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
         
         // Update label styles
         int attr = *_labelDefaultAttr;
-        if (_highlighted && _enabled) attr |= A_BOLD|colors().menu;
-        else if (!_enabled)           attr |= colors().dimmed;
+        if (_highlighted && enabledWindow()) attr |= A_BOLD|colors().menu;
+        else if (!enabledWindow())           attr |= colors().dimmed;
         _label->textAttr(attr);
         
 //        // Draw labels
@@ -153,7 +153,7 @@ public:
             // Cleanup ourself before calling out
             trackStop();
             
-            if (hit && _enabled && _action) {
+            if (hit && enabledWindow() && _action) {
                 _action(*this);
             }
             
@@ -175,9 +175,6 @@ public:
     
     auto& label() { return _label; }
     auto& key() { return _key; }
-    
-    const auto& enabled() const { return _enabled; }
-    template <typename T> bool enabled(const T& x) { return _set(_enabled, x); }
     
     const auto& highlighted() const { return _highlighted; }
     template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
@@ -203,7 +200,6 @@ private:
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
     
-    bool _enabled = false;
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _drawBorder = false;

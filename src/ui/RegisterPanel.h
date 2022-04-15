@@ -20,7 +20,6 @@ public:
         
         _purchaseLink->label()->text(ToasterDisplayURL);
         _purchaseLink->link(DebasePurchaseURL);
-        _purchaseLink->enabled(true);
         
         auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };

@@ -213,6 +213,12 @@ public:
         View::layout(gstate);
     }
     
+//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
+//        // Intercept and drop events before subviews get a chance
+//        if (!enabled()) return true;
+//        return Window::handleEvent(gstate, ev);
+//    }
+    
 //    virtual void draw(GraphicsState gstate) override {
 //        if (!visible()) return;
 //        if (eraseNeeded()) {

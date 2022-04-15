@@ -14,7 +14,6 @@ public:
         
         _supportLink->label()->text(ToasterSupportEmail);
         _supportLink->link("mailto:" _ToasterSupportEmail);
-        _supportLink->enabled(true);
         
         showSupportMessage(false);
     }

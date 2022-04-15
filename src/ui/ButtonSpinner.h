@@ -9,7 +9,6 @@ public:
     
     ButtonSpinner(ButtonPtr button) :
     _s{.button=button, .backupButton=*button, .backupLabel=*button->label()} {
-        _s.button->enabled(true);
         _s.button->interaction(false);
         _s.button->label()->prefix(std::string("  "));
     }

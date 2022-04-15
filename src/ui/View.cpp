@@ -15,6 +15,10 @@ bool View::cursorState(const CursorState& x) {
     return screen().cursorState(xcopy);
 }
 
+bool View::enabledWindow() const {
+    return _enabled && window().enabled();
+}
+
 void View::track(const Event& ev, Deadline deadline) {
     using namespace std::chrono;
     

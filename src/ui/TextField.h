@@ -13,7 +13,7 @@ public:
     void layout() override {
         _offUpdate();
         
-        if (_focus) {
+        if (_focusAndEnabled()) {
             const ssize_t cursorOff = UTF8::Len(_left(), _cursor());
             cursorState({.visible=true, .origin={(int)cursorOff, 0}});
         }
@@ -22,7 +22,7 @@ public:
     void draw() override {
         Attr underline = attr(A_UNDERLINE);
         Attr color;
-        if (!_focus) color = attr(colors().dimmed);
+        if (!_focusAndEnabled()) color = attr(colors().dimmed);
         drawLineHoriz({}, size().x, ' ');
         
         // Print as many runes as will fit our width
@@ -98,30 +98,32 @@ private:
     
     bool _handleEvent(const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
-            const bool hit = hitTest(ev.mouse.origin);
-            
-            if (ev.mouseDown() && hit && !_focus) {
-                if (_requestFocus) _requestFocus(*this);
-            }
-            
-            if ((ev.mouseDown() && hit) || tracking()) {
-                // Update the cursor position to the clicked point
-                int offX = ev.mouse.origin.x;
-                auto offIt = UTF8::NextN(_left(), _value.end(), offX);
-                _offCursor = std::distance(_value.begin(), offIt);
-            }
-            
-            if (ev.mouseDown() && hit && !tracking()) {
-                // Track mouse
-                track(ev);
-                return true;
-            
-            } else if (ev.mouseUp() && tracking()) {
-                trackStop();
-                return true;
+            if (enabledWindow()) {
+                const bool hit = hitTest(ev.mouse.origin);
+                
+                if (ev.mouseDown() && hit && !_focus) {
+                    if (_requestFocus) _requestFocus(*this);
+                }
+                
+                if ((ev.mouseDown() && hit) || tracking()) {
+                    // Update the cursor position to the clicked point
+                    int offX = ev.mouse.origin.x;
+                    auto offIt = UTF8::NextN(_left(), _value.end(), offX);
+                    _offCursor = std::distance(_value.begin(), offIt);
+                }
+                
+                if (ev.mouseDown() && hit && !tracking()) {
+                    // Track mouse
+                    track(ev);
+                    return true;
+                
+                } else if (ev.mouseUp() && tracking()) {
+                    trackStop();
+                    return true;
+                }
             }
         
-        } else if (_focus) {
+        } else if (_focusAndEnabled()) {
             if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor == _value.begin()) return true;
@@ -219,6 +221,10 @@ private:
         }
         
         return false;
+    }
+    
+    bool _focusAndEnabled() const {
+        return _focus && enabledWindow();
     }
     
     std::string _value;
