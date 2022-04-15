@@ -1461,6 +1461,7 @@ private:
         // Create the register panel, but keep it hidden for now
         _registerPanelShow(PanelTitle, PanelMessageUnderway, false);
         _registerPanel->visible(false);
+        _registerPanel->purchaseMessageVisible(false);
         _registerPanel->email()->value(license.email);
         _registerPanel->code()->value(license.licenseCode);
         _registerPanel->dismissButton()->label()->text("Free Trial");
@@ -1480,7 +1481,9 @@ private:
         });
         
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.
-        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
+        #warning TODO: revert timeout
+        constexpr auto ShowPanelTimeout = std::chrono::seconds(1);
+//        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
         const auto showPanelDeadline = std::chrono::steady_clock::now()+ShowPanelTimeout;
         _waitForAsync(async, showPanelDeadline);
         
@@ -1510,6 +1513,7 @@ private:
         
         if (!ok) {
             _registerPanel->visible(true);
+            _registerPanel->purchaseMessageVisible(true);
             _registerPanel->message()->text(PanelMessageError);
             layoutNeeded(true);
         

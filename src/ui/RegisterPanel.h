@@ -48,33 +48,40 @@ public:
         _dismissButton->label()->textAttr    (A_NORMAL);
         _dismissButton->drawBorder           (true);
         _dismissButton->action               (std::bind(&RegisterPanel::_actionDismiss, this));
-        _dismissButton->enabled              (true);
     }
     
     // MARK: - ModalPanel Overrides
     int contentHeight(int width) const override {
-        const int purchaseMessageHeight = _purchaseMessage->sizeIntrinsic({width, ConstraintNone}).y;
+        const int purchaseMessageHeight = (_purchaseMessage->visible() ? _purchaseMessage->sizeIntrinsic({width, ConstraintNone}).y : 0);
         return
-            purchaseMessageHeight + _ElementSpacingY +
-            _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY +
+            (purchaseMessageHeight ? purchaseMessageHeight + _ElementSpacingY : 0) +
+            (purchaseMessageHeight ? _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY : 0) +
             _FieldHeight + _ElementSpacingY +
             _FieldHeight + _ElementSpacingY +
             _okButton->View::sizeIntrinsic().y;
     }
     
-//    LabelTextFieldPtr focus() const {
-//        if (_email->textField()->focus()) return _email;
-//        else if (_code->textField()->focus()) return _code;
-//        return nullptr;
-//    }
-//    
-//    bool focus(LabelTextFieldPtr field) {
-//        _email->textField()->focus(false);
-//        _code->textField()->focus(false);
-//        if (field) field->textField()->focus(true);
-//        return true;
-//    }
-//    
+    bool suppressEvents(bool x) override {
+        if (ModalPanel::suppressEvents(x)) {
+            focus(!ModalPanel::suppressEvents() ? _email : nullptr);
+            return true;
+        }
+        return false;
+    }
+    
+    LabelTextFieldPtr focus() const {
+        if (_email->textField()->focus()) return _email;
+        else if (_code->textField()->focus()) return _code;
+        return nullptr;
+    }
+    
+    bool focus(LabelTextFieldPtr field) {
+        _email->textField()->focus(false);
+        _code->textField()->focus(false);
+        if (field) field->textField()->focus(true);
+        return true;
+    }
+    
     // MARK: - ModalPanel Overrides
 //    bool suppressEvents(bool x) override {
 //        if (!ModalPanel::suppressEvents(x)) return false;
@@ -103,27 +110,28 @@ public:
         const Rect cf = contentFrame();
         int offY = cf.t();
         
-        _purchaseMessage->sizeToFit({cf.w(), ConstraintNone});
-        _purchaseMessage->origin({cf.origin.x, offY});
-        offY += _purchaseMessage->frame().h() + _ElementSpacingY;
-        
-        _purchaseLink->frame({{cf.origin.x, offY}, {cf.w(), _PurchaseLinkHeight}});
-        offY += _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY;
+        if (purchaseMessageVisible()) {
+            _purchaseMessage->sizeToFit({cf.w(), ConstraintNone});
+            _purchaseMessage->origin({cf.origin.x, offY});
+            offY += _purchaseMessage->frame().h() + _ElementSpacingY;
+            
+            _purchaseLink->frame({{cf.origin.x, offY}, {cf.w(), _PurchaseLinkHeight}});
+            offY += _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY;
+        }
         
         _email->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
         offY += _FieldHeight+_ElementSpacingY;
         _code->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
         offY += _FieldHeight+_ElementSpacingY;
         
-        
-        
         const int okButtonWidth = (int)UTF8::Len(_okButton->label()->text()) + _ButtonPaddingX;
         _okButton->frame({{cf.r()-okButtonWidth, offY}, {okButtonWidth, _ButtonHeight}});
-        _okButtonUpdateEnabled();
+        _okButton->enabled(_okButtonEnabled());
         
         const int dismissButtonWidth = (int)UTF8::Len(_dismissButton->label()->text()) + _ButtonPaddingX;
         _dismissButton->frame({{_okButton->frame().l()-_ButtonSpacingX-dismissButtonWidth, offY}, {dismissButtonWidth, _ButtonHeight}});
         _dismissButton->visible((bool)dismissAction());
+        _dismissButton->enabled(_dismissButtonEnabled());
     }
     
     bool handleEvent(const Event& ev) override {
@@ -139,6 +147,13 @@ public:
     auto& okButton() { return _okButton; }
     auto& dismissButton() { return _dismissButton; }
     
+    bool purchaseMessageVisible() const { return _purchaseMessage->visible(); }
+    void purchaseMessageVisible(bool x) {
+        _purchaseMessage->visible(x);
+        _purchaseLink->visible(x);
+        layoutNeeded(true);
+    }
+    
 private:
     static constexpr int _ElementSpacingY       = 1;
     static constexpr int _PurchaseLinkHeight    = 1;
@@ -148,7 +163,7 @@ private:
     static constexpr int _ButtonSpacingX        = 1;
     
     void _fieldValueChanged(TextField& field) {
-        _okButtonUpdateEnabled();
+        _okButton->enabled(_okButtonEnabled());
     }
     
     void _fieldRequestFocus(TextField& field) {
@@ -192,12 +207,14 @@ private:
         }
     }
     
-    void _okButtonUpdateEnabled() {
-        const bool fieldsValue =
+    bool _okButtonEnabled() const {
+        return
             !_code->textField()->value().empty()    &&
             !_email->textField()->value().empty()   ;
-        
-        _okButton->enabled(fieldsValue);
+    }
+    
+    bool _dismissButtonEnabled() const {
+        return !ModalPanel::suppressEvents();
     }
     
     void _actionOK() {
