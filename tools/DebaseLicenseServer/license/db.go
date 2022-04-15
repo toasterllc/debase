@@ -25,14 +25,13 @@ type DBTrialLicense struct {
 }
 
 type DBUserLicense struct {
-	LicenseCode LicenseCode
-	Machines    []Machines
-	Version     uint32
+	Version  uint32
+	Machines map[MachineId]*DBMachine
 }
 
 type DBUserLicenses struct {
 	Email    string
-	Licenses []DBUserLicense
+	Licenses map[LicenseCode]*DBUserLicense
 }
 
 func DBUserIdForEmail(domain string, email Email) DBUserId {

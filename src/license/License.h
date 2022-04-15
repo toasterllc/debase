@@ -1,15 +1,16 @@
 #pragma once
 #include "lib/nlohmann/json.h"
 #include "lib/toastbox/IntForStr.h"
-#include "Email.h"
-#include "MachineId.h"
-#include "LicenseCode.h"
+#include "machine/Machine.h"
 
 extern "C" {
 #include "lib/c25519/src/edsign.h"
 }
 
 namespace License {
+
+using LicenseCode = std::string;
+using Email = std::string;
 
 struct SealedLicense {
     std::string payload;
@@ -21,7 +22,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 struct License {
     Email email;
     LicenseCode licenseCode;    // Code supplied to user upon purchase
-    MachineId machineId;        // Stable, unique identifier for the licensed machine
+    Machine::MachineId machineId;        // Stable, unique identifier for the licensed machine
     uint32_t version = 0;       // Software version
     int64_t expiration = 0;     // Expiration (non-zero only for trial licenses)
 };
@@ -29,7 +30,7 @@ struct License {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, email, licenseCode, machineId, version, expiration);
 
 struct Context {
-    MachineId machineId;
+    Machine::MachineId machineId;
     uint32_t version = 0;
     std::chrono::system_clock::time_point time;
 };

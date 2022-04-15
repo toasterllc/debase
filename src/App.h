@@ -1304,7 +1304,7 @@ private:
     static License::Context _LicenseContext(const _Path& repoDir) {
         using namespace std::chrono;
         using namespace std::filesystem;
-        License::MachineId machineId = License::MachineIdCalc(DebaseProductId);
+        Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
         
 //        // Find t = max(time(), <time of each file in repoDir>),
 //        // to help prevent time-rollback attacks.

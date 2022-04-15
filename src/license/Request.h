@@ -1,15 +1,13 @@
 #pragma once
-#include "Email.h"
-#include "MachineId.h"
-#include "LicenseCode.h"
 #include "License.h"
+#include "machine/Machine.h"
 
 namespace License {
 
 // Request: a license request-request, ie an HTTP request that's a request for a license
 struct Request {
     // Required
-    MachineId machineId;
+    Machine::MachineId machineId;
     // Only used for registration (not trials)
     Email email;
     LicenseCode licenseCode;

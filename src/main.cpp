@@ -2,7 +2,7 @@
 #include <spawn.h>
 #include "state/StateDir.h"
 #include "lib/toastbox/Stringify.h"
-#include "license/MachineId.h"
+#include "machine/Machine.h"
 #include "App.h"
 #include "Terminal.h"
 #include "Debase.h"
@@ -105,7 +105,7 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
     
-    #warning TODO: obfuscate paths in MachineId.h
+    #warning TODO: obfuscate paths in Machine.cpp
     
     #warning TODO: allow debase to be called from git repo subdirectories
     
