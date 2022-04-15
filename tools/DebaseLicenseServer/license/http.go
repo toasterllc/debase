@@ -17,7 +17,8 @@ type HTTPSealedLicense struct {
 
 type HTTPRequest struct {
 	// Required
-	MachineId string `json:"machineId"`
+	MachineId   string `json:"machineId"`
+	MachineInfo string `json:"machineInfo"`
 	// Optional (present=license request, absent=trial request)
 	Email       string `json:"email"`
 	LicenseCode string `json:"licenseCode"`
