@@ -1368,32 +1368,32 @@ private:
         panel->origin(p);
     }
     
+    template <typename T_Async>
+    void _waitForAsync(UI::ModalPanelPtr panel, UI::ButtonPtr button, const T_Async& async) {
+        // Animate until we get a response
+        UI::ButtonSpinner spinner(_registerPanel, _registerPanel->okButton());
+        std::chrono::steady_clock::time_point nextFrameTime;
+        while (!async.done()) {
+            if (std::chrono::steady_clock::now() > nextFrameTime) {
+                spinner.animate();
+                nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
+            }
+            
+            track({}, nextFrameTime);
+        }
+    }
+    
     std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
-        panel->suppressEvents(true);
-        Defer(panel->suppressEvents(false));
-        
         // Request license and wait until we get a response
         License::RequestResponse resp;
         Async async([&] () {
 //            for (;;) sleep(1);
             Network::Request(DebaseLicenseAPIURL, req, resp);
         });
-        {
-            // Animate until we get a response
-            UI::ButtonSpinner spinner(panel, animateButton);
-            std::chrono::steady_clock::time_point nextFrameTime;
-            while (!async.done()) {
-                if (std::chrono::steady_clock::now() > nextFrameTime) {
-                    spinner.animate();
-                    nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
-                }
-                
-                track({}, nextFrameTime);
-            }
-        }
+        _waitForAsync(panel, animateButton, async);
         
         try {
-            async.get();
+            async.get(); // Rethrows exception if one occurred on the async thread
         } catch (const std::exception& e) {
             _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
             return std::nullopt;
@@ -1429,69 +1429,70 @@ private:
         return license;
     }
     
-    std::optional<License::License> _licenseRenew(const License::License& license) {
-        return std::nullopt;
-//        panel->suppressEvents(true);
-//        Defer(panel->suppressEvents(false));
-//        
-//        const License::Request renewReq = {
-//            .machineId = _licenseCtxGet().machineId,
-//            .email = license.email,
-//            .licenseCode = license.licenseCode,
-//        };
-//        
-//        // Request license and wait until we get a response
-//        License::RequestResponse resp;
-//        Async async([&] () {
-////            for (;;) sleep(1);
-//            Network::Request(DebaseLicenseAPIURL, renewReq, resp);
-//        });
-//        
-//        const auto showPanelDeadline = std::chrono::steady_clock::now()+std::chrono::seconds(5);
-//        while (!async.done() && std::chrono::steady_clock::now()<showPanelDeadline) {
-//            track({}, Once);
-//        }
-//        
-//        // Show modal dialog
-//        if (!async.done()) {
-//            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
-//        }
-//        
-//        try {
-//            async.get();
-//        } catch (const std::exception& e) {
-//            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
-//            return std::nullopt;
-//        }
-//        
-//        if (!resp.error.empty()) {
-//            _errorMessageShow(resp.error, true);
-//            return std::nullopt;
-//        }
-//        
-//        // Validate response
-//        License::SealedLicense sealed = resp.license;
-//        License::License license;
-//        License::Status st = _licenseUnseal(sealed, license);
-//        if (st != License::Status::Valid) {
-//            if (st == License::Status::InvalidVersion) {
-//                std::stringstream ss;
-//                ss << "This license is only valid for debase version " << license.version << " and older, but this is debase version " << DebaseVersion << ".";
-//                _errorMessageShow(ss.str(), true);
-//                return std::nullopt;
-//            
-//            } else {
-//                _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
-//                return std::nullopt;
-//            }
-//        }
-//        
-//        // License is valid; save it and dismiss
-//        State::State state(StateDir());
-//        state.license(sealed);
-//        state.write();
-//        
-//        return license;
+    void _licenseRenew(const License::License& license) {
+        constexpr const char* PanelTitle            = "Renew License";
+        constexpr const char* PanelMessageUnderway  = "Renewing debase license for this machine...";
+        constexpr const char* PanelMessageError     = "A problem was encountered with your debase license. Please try registering again.";
+        
+        assert(!_registerPanel);
+        
+        // Create the register panel, but keep it hidden for now
+        _registerPanelShow(PanelTitle, PanelMessageUnderway, false);
+        _registerPanel->visible(false);
+        
+        const License::Request renewReq = {
+            .machineId = _licenseCtxGet().machineId,
+            .email = license.email,
+            .licenseCode = license.licenseCode,
+        };
+        
+        // Request license and wait until we get a response
+        License::RequestResponse resp;
+        Async async([&] () {
+//            for (;;) sleep(1);
+            Network::Request(DebaseLicenseAPIURL, renewReq, resp);
+        });
+        
+        // Wait until the async to complete, or for the timeout to occur, whichever comes first.
+        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
+        const auto showPanelDeadline = std::chrono::steady_clock::now()+ShowPanelTimeout;
+        while (!async.done() && std::chrono::steady_clock::now()<showPanelDeadline) {
+            track({}, showPanelDeadline);
+        }
+        
+        // If the license request hasn't completed yet, show the register panel until it does,
+        // so that we block the app from being used until the license is valid
+        if (!async.done()) {
+            _registerPanel->visible(true);
+            _waitForAsync(_registerPanel, _registerPanel->okButton(), async);
+        }
+        
+        bool ok = false;
+        try {
+            async.get(); // Rethrows exception if one occurred on the async thread
+            
+            // Check the license
+            // If it's not valid, show or update the register panel
+            License::SealedLicense sealed = resp.license;
+            License::License license;
+            License::Status st = _licenseUnseal(sealed, license);
+            if (st == License::Status::Valid) {
+                // License is valid; save it and dismiss
+                State::State state(StateDir());
+                state.license(sealed);
+                state.write();
+                ok = true;
+            }
+        } catch (...) {}
+        
+        if (!ok) {
+            _registerPanel->visible(true);
+            _registerPanel->message()->text(PanelMessageError);
+            #warning TODO: call _registerPanel->layoutNeeded(true) ?
+        
+        } else {
+            _registerPanel = nullptr;
+        }
     }
     
     void _welcomePanelTrial() {
@@ -1631,7 +1632,7 @@ private:
         _registerPanelShow(Title, Message, true);
     }
     
-    void _licenseCheck(bool networkAllowed=true) {
+    void _licenseCheck() {
         State::State state(StateDir());
         
         License::License license;
@@ -1664,6 +1665,7 @@ private:
             // Done; debase is registered
         
         } else {
+            // Unknown license error
             // Delete license, show welcome panel
             state.license({});
             state.write();

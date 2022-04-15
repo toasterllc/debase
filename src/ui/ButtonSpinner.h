@@ -1,5 +1,6 @@
 #pragma once
 #include "Button.h"
+#include "ModalPanel.h"
 
 namespace UI {
 
@@ -7,8 +8,10 @@ class ButtonSpinner {
 public:
     ButtonSpinner() {}
     
-    ButtonSpinner(PanelPtr panel, ButtonPtr button) :
+    ButtonSpinner(ModalPanelPtr panel, ButtonPtr button) :
     _panel(panel), _button(button), _backupButton(*_button), _backupLabel(*(_button->label())) {
+        _panel->suppressEvents(true);
+        
         _button->enabled(true);
         _button->interaction(false);
         _button->label()->prefix(std::string("  "));
@@ -16,6 +19,8 @@ public:
     
     ~ButtonSpinner() {
         if (_panel) {
+            _panel->suppressEvents(false);
+            
 //            _panel->eraseNeeded(true); // Hack to make sure label gets redraw properly
             *_button = _backupButton;
             *_button->label() = _backupLabel;
@@ -36,7 +41,7 @@ private:
     static constexpr const char* _Animation[] = { "⡇","⠏","⠛","⠹","⢸","⣰","⣤","⣆" };
 //    static constexpr const char* _Animation[] = { "⡏","⠟","⠻","⢹","⣸","⣴","⣦","⣇" };
     
-    PanelPtr _panel;
+    ModalPanelPtr _panel;
     ButtonPtr _button;
     Button _backupButton;
     Label _backupLabel;
