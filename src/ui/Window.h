@@ -48,6 +48,15 @@ public:
         return changed;
     }
     
+    virtual bool enabled() const { return View::enabled(); }
+    virtual bool enabled(bool x) {
+        if (View::enabled(x)) {
+            eraseNeeded(true);
+            return true;
+        }
+        return false;
+    }
+    
     GraphicsState convert(GraphicsState x) override {
         x.window = this;
 //        x.finalWindow = this;

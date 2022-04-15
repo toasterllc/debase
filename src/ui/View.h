@@ -446,6 +446,8 @@ public:
         if (!visible()) return false;
         if (!interaction()) return false;
         
+        auto gpushed = View::GStatePush(gstate);
+        
         auto it = subviewsEnd();
         for (;;) {
             Ptr subview = subviewsPrev(it);

@@ -153,12 +153,12 @@ public:
 //        return false;
 //    }
     
-    virtual bool suppressEvents() const { return _suppressEvents; }
-    virtual bool suppressEvents(bool x) {
-        if (x == _suppressEvents) return false;
-        _suppressEvents = x;
-        return true;
-    }
+//    virtual bool suppressEvents() const { return _suppressEvents; }
+//    virtual bool suppressEvents(bool x) {
+//        if (x == _suppressEvents) return false;
+//        _suppressEvents = x;
+//        return true;
+//    }
     
     virtual void refresh() {
         GraphicsState gstate = graphicsStateCalc(*this);
@@ -252,11 +252,11 @@ public:
         return nextEvent(std::chrono::steady_clock::now()+timeout);
     }
     
-    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-        // Intercept and drop events before subviews get a chance
-        if (_suppressEvents) return true;
-        return Window::handleEvent(gstate, ev);
-    }
+//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
+//        // Intercept and drop events before subviews get a chance
+//        if (_suppressEvents) return true;
+//        return Window::handleEvent(gstate, ev);
+//    }
     
 //    virtual bool dispatchEvent(const Event& ev) {
 //        const GraphicsState gstate = graphicsStateCalc(*this);
@@ -330,7 +330,7 @@ private:
     ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
-    bool _suppressEvents = false;
+//    bool _suppressEvents = false;
 //    
 //    bool _tracking = false;
 //    bool _trackStop = false;

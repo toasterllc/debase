@@ -1368,8 +1368,10 @@ private:
     
     template <typename T_Async>
     void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
-        suppressEvents(true);
-        Defer( suppressEvents(false); );
+        assert(interaction());
+        
+        interaction(false);
+        Defer( interaction(true); );
         
         if (panel) panel->enabled(false);
         Defer( if (panel) panel->enabled(true); );
