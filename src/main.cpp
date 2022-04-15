@@ -93,27 +93,17 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: server: add a date that a MachineID was added to a license, so we can prune them periodically
+    #warning TODO: server: license: record date + OS type that a MachineID was added to a license, so we can prune them periodically
     
-    #warning TODO: on macOS, use IOPlatformSerial instead of current MachineId scheme
+    #warning TODO: server: trials: keep track of how many trials are activated for a given machine id
+    
+    #warning TODO: mac: use IOPlatformSerial instead of current MachineId scheme
     
     #warning TODO: add hidden --machineId flag for end user debugging
     
-    #warning TODO: implement URL-opening on linux
-    
-    #warning TODO: keep track of how many trials are activated for a given machine id
-    
-    #warning TODO: keep track of user agent for trials/licenses
-    
-    #warning TODO: add feature requests field in register panel
-    
-    #warning TODO: phone home and notify user about debase updates?
+    #warning TODO: linux: implement URL opening
     
     #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
-    
-    #warning TODO: consider collecting telemetry from users: OS type, location
-    
-    #warning TODO: what happens when decoding json state with a negative integer, into an unsigned field?
     
     #warning TODO: obfuscate paths in MachineId.h
     
@@ -130,6 +120,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: if we can't speed up git operations, show a progress indicator
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
+    
+    #warning TODO: ? add feature requests field in register panel
+    
+    #warning TODO: ? notify user about debase updates
     
 //  DONE:
 //    #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
