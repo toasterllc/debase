@@ -48,7 +48,7 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     j = nlohmann::json::parse(respStream.str());
     j.get_to(resp);
     
-    sleep(10);
+    sleep(5);
     
 //    for (;;) sleep(10);
 }

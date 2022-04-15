@@ -48,8 +48,8 @@ public:
         return changed;
     }
     
-    virtual bool enabled() const { return View::enabled(); }
-    virtual bool enabled(bool x) {
+    virtual bool enabled() const override { return View::enabled(); }
+    virtual bool enabled(bool x) override {
         if (View::enabled(x)) {
             eraseNeeded(true);
             return true;

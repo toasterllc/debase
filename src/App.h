@@ -1377,9 +1377,7 @@ private:
         Defer( if (panel) panel->enabled(true); );
         
         // Animate until we get a response
-        UI::ButtonSpinner spinner;
-        if (button) spinner = UI::ButtonSpinner(button);
-        
+        UI::ButtonSpinnerPtr spinner = (button ? UI::ButtonSpinner::Create(button) : nullptr);
         std::chrono::steady_clock::time_point nextFrameTime;
         
         for (;;) {
@@ -1389,7 +1387,7 @@ private:
             if (deadline!=Forever && time>deadline) break;
             
             if (time > nextFrameTime) {
-                if (spinner) spinner.animate();
+                if (spinner) spinner->animate();
                 nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
             }
             
