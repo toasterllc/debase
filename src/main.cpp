@@ -93,8 +93,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: have a trial button on the renew-license dialog?
-    
     #warning TODO: server: add a date that a MachineID was added to a license, so we can prune them periodically
     
     #warning TODO: on macOS, use IOPlatformSerial instead of current MachineId scheme
@@ -107,14 +105,9 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: keep track of user agent for trials/licenses
     
-    #warning TODO: make trial countdown overlay
-    
     #warning TODO: add feature requests field in register panel
     
     #warning TODO: phone home and notify user about debase updates?
-    
-    #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
-        // https://news.ycombinator.com/item?id=30921231
     
     #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
     
@@ -125,10 +118,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: obfuscate paths in MachineId.h
     
     #warning TODO: allow debase to be called from git repo subdirectories
-    
-    #warning TODO: implement 7-day trial
-    
-    #warning TODO: implement registration
     
     #warning TODO: do lots of testing
     
@@ -143,6 +132,17 @@ int main(int argc, const char* argv[]) {
     #warning TODO: figure out why moving/copying commits is slow sometimes
     
 //  DONE:
+//    #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
+//        // https://news.ycombinator.com/item?id=30921231
+//
+//    #warning TODO: implement 7-day trial
+//    
+//    #warning TODO: implement registration
+//
+//    #warning TODO: make trial countdown overlay
+//
+//    #warning TODO: have a trial button on the renew-license dialog?
+//
 //    #warning TODO: round trial countdown up
 //
 //    #warning TODO: re-evaluate our uses of optional in Color.h

@@ -100,3 +100,7 @@ Corrupting the license on disk is detected because the signature is wrong
 
 * Server
 Stress test server by hitting it with lots of requests simultaneously
+
+* Privacy
+No network IO occurs on first launch, until a button is clicked
+Machine ID isn't calculated on first launch until a button is clicked
