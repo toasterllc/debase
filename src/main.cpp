@@ -109,8 +109,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: add hidden --machineId flag for end user debugging
-    
     #warning TODO: linux: implement URL opening
     
     #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
@@ -136,6 +134,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? notify user about debase updates
     
 //  DONE:
+//    #warning TODO: add hidden --machineId flag for end user debugging
+//
 //    #warning TODO: mac: use IOPlatformSerial instead of current MachineId scheme
 //
 //    #warning TODO: server: trials: keep track of how many trials are activated for a given machine id
