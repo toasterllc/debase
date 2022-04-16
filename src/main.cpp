@@ -109,6 +109,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: stress test DebaseLicenseServer with lots of connections
+    
+    #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
+    
     #warning TODO: linux: implement URL opening
     
     #warning TODO: add installation affordances: suggest moving debase to a permanent location, add git alias
@@ -477,7 +481,7 @@ int main(int argc, const char* argv[]) {
         }
         
         if (args.run.revs.empty()) {
-            constexpr size_t RevCountDefault = 3;
+            constexpr size_t RevCountDefault = 5;
             std::set<Git::Rev> unique;
             ssize_t i = 0;
             while (revs.size() < RevCountDefault) {
