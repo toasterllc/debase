@@ -2,6 +2,7 @@
 #include "lib/nlohmann/json.h"
 #include "lib/toastbox/IntForStr.h"
 #include "machine/Machine.h"
+#include "Version.h"
 
 extern "C" {
 #include "lib/c25519/src/edsign.h"
@@ -21,10 +22,10 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 
 struct License {
     Email email;
-    LicenseCode licenseCode;    // Code supplied to user upon purchase
-    Machine::MachineId machineId;        // Stable, unique identifier for the licensed machine
-    uint32_t version = 0;       // Software version
-    int64_t expiration = 0;     // Expiration (non-zero only for trial licenses)
+    LicenseCode licenseCode;        // Code supplied to user upon purchase
+    Machine::MachineId machineId;   // Stable, unique identifier for the licensed machine
+    Version version = 0;            // Debase version
+    int64_t expiration = 0;         // Expiration (non-zero only for trial licenses)
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, email, licenseCode, machineId, version, expiration);
@@ -32,7 +33,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, email, licenseCode, machineId, versi
 struct Context {
     Machine::MachineId machineId;
     Machine::MachineInfo machineInfo;
-    uint32_t version = 0;
+    Version version = 0;
     std::chrono::system_clock::time_point time;
 };
 

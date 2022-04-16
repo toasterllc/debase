@@ -2,6 +2,7 @@
 #include <spawn.h>
 #include "state/StateDir.h"
 #include "lib/toastbox/Stringify.h"
+#include "lib/toastbox/StringSplit.h"
 #include "machine/Machine.h"
 #include "App.h"
 #include "Terminal.h"
@@ -92,6 +93,12 @@ static void _PrintUsage() {
     std::cout << "      Open the specified git revisions in debase\n";
     std::cout << "\n";
 }
+
+//// _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
+//// is located in a directory listed in the PATH environment variable
+//static bool _CurrentExecutableIsInEnvironmentPath() {
+//    return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
+//}
 
 int main(int argc, const char* argv[]) {
 //    sleep(1);

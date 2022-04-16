@@ -24,6 +24,9 @@
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Async.h"
+#include "CurrentExecutablePath.h"
+#include "PathIsInEnvironmentPath.h"
+#include "ProcessPath.h"
 #include <os/log.h>
 
 extern "C" {
@@ -372,6 +375,8 @@ public:
             _reload();
             
             _licenseCheck();
+            _copyToEnvironmentPathCheck();
+            
             track({});
             
         } catch (const UI::ExitRequest&) {
@@ -496,7 +501,8 @@ private:
 //    }
     
     static UI::ColorPalette _ColorsCreate(State::Theme theme) {
-        const std::string termProg = getenv("TERM_PROGRAM");
+        const char* termProgEnv = getenv("TERM_PROGRAM");
+        const std::string termProg = termProgEnv ? termProgEnv : "";
         const bool themeDark = (theme==State::Theme::None || theme == State::Theme::Dark);
         
         UI::ColorPalette colors;
@@ -1719,7 +1725,47 @@ private:
         }
     }
     
+    // _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
+    // is located in a directory listed in the PATH environment variable
+    static bool _CurrentExecutableIsInEnvironmentPath() {
+        return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
+    }
     
+    void _copyToEnvironmentPathCheck() {
+        State::State state(StateDir());
+        // Short-circuit if we've already asked the user to move this version of debase
+        if (state.moveOfferVersion() >= DebaseVersion) return;
+        // Short-circuit if we're already in user's PATH
+        if (_CurrentExecutableIsInEnvironmentPath()) return;
+        
+        const char* homeEnv = getenv("HOME");
+        if (!homeEnv) return; // Bail if we don't know the user's home dir
+        const std::filesystem::path homePath = homeEnv;
+        
+        try {
+            const std::string parentName = ProcessPathGet(getppid()).filename();
+            std::filesystem::path shellProfilePath;
+            if (parentName == "bash") {
+                shellProfilePath = homePath / "???";
+            
+            } else if (parentName == "zsh") {
+                shellProfilePath = homePath / "???";
+            
+            } else {
+                // Unknown shell
+                return;
+            }
+            
+            
+        
+        } catch (...) {
+            return;
+        }
+        
+        // We offerred to move debase; update State so we remember that we did so
+        state.moveOfferVersion(DebaseVersion);
+        state.write();
+    }
     
     
 //    License::Status _licenseCheck(const License::SealedLicense& sealed, bool networkAllowed=true) {

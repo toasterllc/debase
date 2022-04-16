@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "SHA512Half.h"
+#include "Stat.h"
 
 namespace Machine {
 
@@ -49,12 +50,12 @@ inline MachineId MachineIdBasicCalc(std::string_view domain) noexcept {
     };
     
     for (const Fs::path& path : paths) {
-        struct stat info;
-        int ir = 0;
-        do ir = stat(path.c_str(), &info);
-        while (ir && errno==EINTR);
+        ino_t inode = 0;
+        try {
+            const struct stat info = Stat(path);
+            inode = info.st_ino;
+        } catch (...) {}
         
-        const ino_t inode = (ir==0 ? info.st_ino : 0);
         stream << path.c_str() << "=" << std::to_string(inode) << Separator;
     }
     

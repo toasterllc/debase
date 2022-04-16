@@ -10,6 +10,7 @@
 #include "git/Git.h"
 #include "git/GitOp.h"
 #include "license/License.h"
+#include "Version.h"
 #include "History.h"
 
 namespace State {
@@ -160,9 +161,10 @@ private:
         License::SealedLicense license;
         bool trialExpired = false;
         Theme theme = Theme::None;
+        Version moveOfferVersion = 0; // The last debase version that was offerred to be moved
     };
     
-    static constexpr uint32_t _Version = 0;
+    static constexpr uint32_t _Version = 0; // State format version (not Debase version)
     static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
     }
@@ -180,6 +182,7 @@ private:
             j.at("license").get_to(state.license);
             j.at("trialExpired").get_to(state.trialExpired);
             j.at("theme").get_to(state.theme);
+            j.at("moveOfferVersion").get_to(state.moveOfferVersion);
         }
     }
     
@@ -190,6 +193,7 @@ private:
             {"license", state.license},
             {"trialExpired", state.trialExpired},
             {"theme", state.theme},
+            {"moveOfferVersion", state.moveOfferVersion},
         };
         f << std::setw(4) << j;
     }
@@ -295,6 +299,9 @@ public:
     
     bool trialExpired() const { return _state.trialExpired; }
     void trialExpired(bool x) { _state.trialExpired = x; }
+    
+    Version moveOfferVersion() const { return _state.moveOfferVersion; }
+    void moveOfferVersion(Version x) { _state.moveOfferVersion = x; }
     
     Theme theme() const { return _state.theme; }
     void theme(Theme x) { _state.theme = x; }

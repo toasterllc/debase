@@ -216,12 +216,6 @@ private:
         return true;
     }
     
-    void _actionOK() {
-        if (dismissAction()) {
-            dismissAction()(*this);
-        }
-    }
-    
     void _actionDismiss() {
         if (dismissAction()) {
             dismissAction()(*this);
