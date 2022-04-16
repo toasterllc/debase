@@ -24,6 +24,10 @@ struct _Args {
     
     struct {
         bool en = false;
+    } machineId;
+    
+    struct {
+        bool en = false;
         std::vector<std::string> revs;
     } run;
 };
@@ -39,17 +43,29 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
         return _Args{ .run = {.en = true}, };
     }
     
-    if (strs[0]=="-h" || strs[0]=="--help") {
+    std::string arg0 = strs[0];
+    std::transform(arg0.begin(), arg0.end(), arg0.begin(),
+        [](unsigned char c){ return std::tolower(c); });
+    
+    if (arg0=="-h" || arg0=="--help") {
         return _Args{ .help = {.en = true}, };
     }
     
-    if (strs[0] == "--theme") {
+    if (arg0 == "--theme") {
         if (strs.size() < 2) throw std::runtime_error("no theme specified");
         if (strs.size() > 2) throw std::runtime_error("too many arguments supplied");
         return _Args{
             .setTheme = {
                 .en = true,
                 .theme = strs[1],
+            },
+        };
+    }
+    
+    if (arg0 == "--machineid") {
+        return _Args{
+            .machineId = {
+                .en = true,
             },
         };
     }
@@ -427,6 +443,11 @@ int main(int argc, const char* argv[]) {
                 throw Toastbox::RuntimeError("invalid theme: %s", args.setTheme.theme.c_str());
             }
             State::ThemeWrite(theme);
+            return 0;
+        
+        } else if (args.machineId.en) {
+            const Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
+            printf("%s\n", machineId.c_str());
             return 0;
         
         } else if (!args.run.en) {
