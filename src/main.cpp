@@ -93,12 +93,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: server: license: record date + OS type that a MachineID was added to a license, so we can prune them periodically
-    
-    #warning TODO: server: trials: keep track of how many trials are activated for a given machine id
-    
-    #warning TODO: mac: use IOPlatformSerial instead of current MachineId scheme
-    
     #warning TODO: add hidden --machineId flag for end user debugging
     
     #warning TODO: linux: implement URL opening
@@ -126,6 +120,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? notify user about debase updates
     
 //  DONE:
+//    #warning TODO: mac: use IOPlatformSerial instead of current MachineId scheme
+//
+//    #warning TODO: server: trials: keep track of how many trials are activated for a given machine id
+//
+//    #warning TODO: server: license: record date + OS type that a MachineID was added to a license, so we can prune them periodically
+//
 //    #warning TODO: reconsider doing network IO on first launch without the user first clicking "start free 7-day trial"
 //        // https://news.ycombinator.com/item?id=30921231
 //
