@@ -116,8 +116,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: allow debase to be called from git repo subdirectories
-    
     #warning TODO: stress test DebaseLicenseServer with lots of connections
     
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
@@ -141,6 +139,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? notify user about debase updates
     
 //  DONE:
+//    #warning TODO: allow debase to be called from git repo subdirectories
+//
 //    #warning TODO: add installation affordances: suggest moving debase to a permanent location
 //
 //    #warning TODO: linux: implement URL opening
