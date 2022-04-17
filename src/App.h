@@ -98,18 +98,23 @@ public:
         }
         
         if (_welcomePanel) {
-            constexpr int WelcomePanelWidth = 40;
-            _layoutModalPanel(_welcomePanel, WelcomePanelWidth);
+            constexpr int PanelWidth = 40;
+            _layoutModalPanel(_welcomePanel, PanelWidth);
         }
         
         if (_registerPanel) {
-            constexpr int RegisterPanelWidth = 50;
-            _layoutModalPanel(_registerPanel, RegisterPanelWidth);
+            constexpr int PanelWidth = 50;
+            _layoutModalPanel(_registerPanel, PanelWidth);
+        }
+        
+        if (_moveDebasePanel) {
+            constexpr int PanelWidth = 50;
+            _layoutModalPanel(_moveDebasePanel, PanelWidth);
         }
         
         if (_messagePanel) {
-            constexpr int MessagePanelWidth = 40;
-            _layoutModalPanel(_messagePanel, MessagePanelWidth);
+            constexpr int PanelWidth = 40;
+            _layoutModalPanel(_messagePanel, PanelWidth);
         }
     }
     
@@ -391,7 +396,7 @@ public:
     void track(const UI::Event& ev, Deadline deadline=Forever) override {
         for (;;) {
             try {
-                Screen::track({}, deadline);
+                Screen::track(ev, deadline);
                 break;
             } catch (const UI::WindowResize&) {
                 _reload();
@@ -767,6 +772,7 @@ private:
         if (_trialCountdownPanel) sv.push_back(_trialCountdownPanel);
         if (_welcomePanel) sv.push_back(_welcomePanel);
         if (_registerPanel) sv.push_back(_registerPanel);
+        if (_moveDebasePanel) sv.push_back(_moveDebasePanel);
         if (_messagePanel) sv.push_back(_messagePanel);
         subviews(sv);
         
@@ -1494,7 +1500,7 @@ private:
         _registerPanel->email()->value(license.email);
         _registerPanel->code()->value(license.licenseCode);
         _registerPanel->dismissButton()->label()->text("Free Trial");
-        _registerPanel->dismissAction(std::bind(&App::_licenseRenewActionTrial, this));
+        _registerPanel->dismissButton()->action(std::bind(&App::_licenseRenewActionTrial, this));
         
         const License::Request req = _licenseRequestCreate(license.email, license.licenseCode);
         
@@ -1606,7 +1612,7 @@ private:
         _registerPanel->message()->text     (message);
         _registerPanel->okButton()->action  (std::bind(&App::_registerPanelRegister, this));
         if (dismissAllowed) {
-            _registerPanel->dismissAction   (std::bind(&App::_registerPanelDismiss, this));
+            _registerPanel->dismissButton()->action(std::bind(&App::_registerPanelDismiss, this));
         }
     }
     
@@ -1643,11 +1649,11 @@ private:
     
     void _infoMessageShow(std::string_view msg) {
         _messagePanel = subviewCreate<UI::ModalPanel>();
-        _messagePanel->color            (colors().menu);
-        _messagePanel->title()->text    ("Thank You!");
-        _messagePanel->message()->text  (msg);
-        _messagePanel->message()->align (UI::Align::Center);
-        _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
+        _messagePanel->color                (colors().menu);
+        _messagePanel->title()->text        ("Thank You!");
+        _messagePanel->message()->text      (msg);
+        _messagePanel->message()->align     (UI::Align::Center);
+        _messagePanel->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
@@ -1659,9 +1665,9 @@ private:
     void _errorMessageShow(std::string_view msg, bool showSupportMessage) {
         auto p = subviewCreate<UI::ErrorPanel>();
         p = subviewCreate<UI::ErrorPanel>();
-        p->message()->text    (msg);
-        p->dismissAction      ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
-        p->showSupportMessage (showSupportMessage);
+        p->message()->text      (msg);
+        p->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
+        p->showSupportMessage   (showSupportMessage);
         _messagePanel = p;
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
@@ -1725,46 +1731,113 @@ private:
         }
     }
     
-    // _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
-    // is located in a directory listed in the PATH environment variable
-    static bool _CurrentExecutableIsInEnvironmentPath() {
-        return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
-    }
-    
     void _copyToEnvironmentPathCheck() {
+//        using namespace std::filesystem;
+        namespace fs = std::filesystem;
+        
         State::State state(StateDir());
         // Short-circuit if we've already asked the user to move this version of debase
         if (state.moveOfferVersion() >= DebaseVersion) return;
+        
+        fs::path currentExecutablePath;
+        try {
+            currentExecutablePath = CurrentExecutablePath();
+        } catch (...) {
+            return;
+        }
+        
+        // If our executable doesn't contain the string 'debase', then don't offer to move it.
+        // This is a safety mechanism since we're going to copy+remove ourself to the ~/bin
+        // directory below, and we want to make sure we never remove anything unless it's
+        // called "debase", to prevent any kind of situation where we accidentally delete
+        // the wrong file.
+        if (currentExecutablePath.filename().string().find(DebaseFilename) == std::string::npos) return;
+        
         // Short-circuit if we're already in user's PATH
-        if (_CurrentExecutableIsInEnvironmentPath()) return;
+        if (PathIsInEnvironmentPath(currentExecutablePath.parent_path())) return;
         
         const char* homeEnv = getenv("HOME");
         if (!homeEnv) return; // Bail if we don't know the user's home dir
-        const std::filesystem::path homePath = homeEnv;
+        const fs::path homePath = homeEnv;
+        const fs::path binDirPath = homePath / "bin";
         
+        bool createBinDir = false;
         try {
-            const std::string parentName = ProcessPathGet(getppid()).filename();
-            std::filesystem::path shellProfilePath;
-            if (parentName == "bash") {
+            // exists() can throw if binDirPath isn't accessible (eg because of parent directory permissions)
+            createBinDir = !fs::exists(binDirPath);
+        } catch (...) {
+            return;
+        }
+        
+        const bool updateShellPath = !PathIsInEnvironmentPath(binDirPath);
+        fs::path shellProfilePath;
+        if (updateShellPath) {
+            std::string parentProcName;
+            try {
+                parentProcName = ProcessPathGet(getppid()).filename();
+            } catch (...) {
+                return;
+            }
+            
+            if (parentProcName == "bash") {
                 shellProfilePath = homePath / "???";
             
-            } else if (parentName == "zsh") {
+            } else if (parentProcName == "zsh") {
                 shellProfilePath = homePath / "???";
             
             } else {
                 // Unknown shell
                 return;
             }
-            
-            
-        
-        } catch (...) {
-            return;
         }
+        
+        constexpr const char* Title = "Move debase";
+        std::string message = "Would you like to move debase to ~/bin so that it can be executed by typing `debase` in your shell?";
+        
+        if (createBinDir && updateShellPath) {
+            message +=
+                "\n\n"
+                "A ~/bin directory will be created, and PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
+        
+        } else if (createBinDir) {
+            message +=
+                "\n\n"
+                "A ~/bin directory will be created.";
+        
+        } else if (updateShellPath) {
+            message +=
+                "\n\n"
+                "PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
+        }
+        
+        std::optional<bool> moveChoice;
+        _moveDebasePanel = subviewCreate<UI::ModalPanel>();
+        _moveDebasePanel->title()->text                    (Title);
+        _moveDebasePanel->message()->text                  (message);
+        _moveDebasePanel->color                            (colors().menu);
+        _moveDebasePanel->okButton()->label()->text        ("Move");
+        _moveDebasePanel->dismissButton()->label()->text   ("Don't Move");
+        _moveDebasePanel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
+        _moveDebasePanel->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
+        
+        // Wait until the user clicks a button
+        while (!moveChoice) track({}, Once);
+        
+        _moveDebasePanel = nullptr;
         
         // We offerred to move debase; update State so we remember that we did so
         state.moveOfferVersion(DebaseVersion);
         state.write();
+        
+        if (!*moveChoice) return;
+        
+        // Create the ~/bin directory
+        fs::create_directories(binDirPath);
+        
+        // Copy+remove
+        // Not using fs::rename in case the source is on a different volume than ~/bin
+        fs::copy(currentExecutablePath, binDirPath/DebaseFilename);
+        fs::remove(currentExecutablePath);
     }
     
     
@@ -1979,5 +2052,6 @@ private:
     UI::TrialCountdownPanelPtr _trialCountdownPanel;
     UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
+    UI::ModalPanelPtr _moveDebasePanel;
     UI::ModalPanelPtr _messagePanel;
 };

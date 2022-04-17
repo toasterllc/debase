@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-inline bool PathIsInEnvironmentPath(const std::filesystem::path& dir) {
+inline bool PathIsInEnvironmentPath(const std::filesystem::path& dir) noexcept {
     using namespace std::filesystem;
     
     struct stat dirInfo;
@@ -15,12 +15,11 @@ inline bool PathIsInEnvironmentPath(const std::filesystem::path& dir) {
     if (!pathEnv) return false;
     
     const std::vector<std::string> pathStrs = Toastbox::StringSplit(pathEnv, ":");
-    for (const std::string& str : pathStrs) {
-        const path envDir = str;
-        
+    for (const std::string& pathStr : pathStrs) {
+        if (pathStr.empty()) continue;
         struct stat envDirInfo;
         try {
-            envDirInfo = Stat(envDir);
+            envDirInfo = Stat(pathStr);
         } catch (...) {
             continue;
         }
