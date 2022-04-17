@@ -27,6 +27,8 @@
 #include "CurrentExecutablePath.h"
 #include "PathIsInEnvironmentPath.h"
 #include "ProcessPath.h"
+#include "UserBinDir.h"
+#include "XDGDetected.h"
 #include <os/log.h>
 
 extern "C" {
@@ -1756,11 +1758,13 @@ private:
         // Short-circuit if we're already in user's PATH
         if (PathIsInEnvironmentPath(currentExecutablePath.parent_path())) return;
         
+        // Bail if we couldn't get the user's home dir
         const char* homeEnv = getenv("HOME");
-        if (!homeEnv) return; // Bail if we don't know the user's home dir
-        const fs::path homePath = homeEnv;
-        const fs::path binDirPath = homePath / "bin";
+        if (!homeEnv) return;
         
+        const fs::path homePath = homeEnv;
+        const fs::path binDirRelativePath = UserBinRelativePath();
+        const fs::path binDirPath = homePath / binDirRelativePath;
         bool createBinDir = false;
         try {
             // exists() can throw if binDirPath isn't accessible (eg because of parent directory permissions)
@@ -1769,40 +1773,69 @@ private:
             return;
         }
         
-        const bool updateShellPath = !PathIsInEnvironmentPath(binDirPath);
+        // We don't want to update the shell path is XDG is detected
+        bool updateShellPath = !PathIsInEnvironmentPath(binDirPath);
+#if __linux__
+        // On Linux, if it looks like the system is XDG compliant, don't update
+        // the shell PATH because XDG should already include the bin directory:
+        // 
+        //     User-specific executable files may be stored in $HOME/.local/bin.
+        //     Distributions should ensure this directory shows up in the UNIX
+        //     $PATH environment variable, at an appropriate place.
+        //
+        if (XDGDetected()) updateShellPath = false;
+#endif
+        constexpr const char* ShellBash = "bash";
+        constexpr const char* ShellZsh  = "zsh";
+        
+        std::string shellName;
         fs::path shellProfilePath;
         if (updateShellPath) {
-            std::string parentProcName;
             try {
-                parentProcName = ProcessPathGet(getppid()).filename();
+                shellName = ProcessPathGet(getppid()).filename();
             } catch (...) {
-                return;
-            }
-            
-            if (parentProcName == "bash") {
-                shellProfilePath = homePath / "???";
-            
-            } else if (parentProcName == "zsh") {
-                shellProfilePath = homePath / "???";
-            
-            } else {
-                // Unknown shell
                 return;
             }
         }
         
+        if (shellName == ShellBash) {
+            // Default to .bash_profile
+            shellProfilePath = homePath / ".bash_profile";
+            
+            try {
+                // If .profile exists, use it instead of .bash_profile because .bash_profile prevents
+                // .profile from being used. So if we created .bash_profile when it didn't previously
+                // exist, it would change the shell's behavior because .profile would no longer be
+                // used.
+                const fs::path bashProfileAlt = homePath / ".profile";
+                if (fs::exists(bashProfileAlt)) {
+                    shellProfilePath = bashProfileAlt;
+                }
+            
+            // fs::exists() can throw if eg an intermediate directory denies access
+            // In that case, just use shellProfilePath = .bash_profile
+            } catch (...) {}
+        
+        } else if (shellName == ShellZsh) {
+            shellProfilePath = homePath / ".zshrc";
+        
+        } else {
+            // Unknown shell
+            return;
+        }
+        
         constexpr const char* Title = "Move debase";
-        std::string message = "Would you like to move debase to ~/bin so that it can be executed by typing `debase` in your shell?";
+        std::string message = "Would you like to move debase to ~/" + binDirRelativePath.string() + " so that it can be invoked by typing `debase` in your shell?";
         
         if (createBinDir && updateShellPath) {
             message +=
                 "\n\n"
-                "A ~/bin directory will be created, and PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
+                "The ~/" + binDirRelativePath.string() + " directory will be created, and PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
         
         } else if (createBinDir) {
             message +=
                 "\n\n"
-                "A ~/bin directory will be created.";
+                "The ~/" + binDirRelativePath.string() + " directory will be created.";
         
         } else if (updateShellPath) {
             message +=
@@ -1829,15 +1862,35 @@ private:
         state.moveOfferVersion(DebaseVersion);
         state.write();
         
+        // Bail if the user doesn't want to move
         if (!*moveChoice) return;
         
         // Create the ~/bin directory
         fs::create_directories(binDirPath);
         
         // Copy+remove
-        // Not using fs::rename in case the source is on a different volume than ~/bin
-        fs::copy(currentExecutablePath, binDirPath/DebaseFilename);
+        // Not using fs::rename because it'll fail if `currentExecutablePath` is on a different volume than ~/bin
+        const auto copyOptions = fs::copy_options::overwrite_existing;
+        fs::copy(currentExecutablePath, binDirPath/DebaseFilename, copyOptions);
         fs::remove(currentExecutablePath);
+        
+        // Update shell path
+        // Do this after the move, so that we don't do it if the move fails for some reason
+        if (updateShellPath) {
+            std::ofstream shellProfile(shellProfilePath, std::ios_base::app|std::ios_base::out);
+            shellProfile << "# Update PATH to include ~/bin; added by debase" << "\n";
+            
+            if (shellName == ShellBash) {
+                shellProfile << "path+=$HOME/" << binDirRelativePath.string() << "\n";
+            
+            } else if (shellName == ShellZsh) {
+                shellProfile << "path+=$HOME/" << binDirRelativePath.string() << "\n";
+            
+            } else {
+                // Programmer error; we shouldn't get here if we don't recognize the shell name
+                abort();
+            }
+        }
     }
     
     
