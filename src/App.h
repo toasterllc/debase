@@ -92,10 +92,9 @@ public:
 //        }
         
         if (_trialCountdownPanel) {
-            constexpr int TrialCountdownWidth = 24;
             auto panel = _trialCountdownPanel;
             const UI::Rect b = bounds();
-            panel->size(panel->sizeIntrinsic({std::min(TrialCountdownWidth, b.size.x), ConstraintNone}));
+            panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
             panel->origin(b.br()-panel->size());
         }
         
@@ -1573,6 +1572,7 @@ private:
         const License::Context& ctx = _licenseCtxGet();
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
         _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(rem);
+        _trialCountdownPanel->width(24);
         _trialCountdownPanel->color(colors().menu);
         _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
             _registerPanelShow();
