@@ -15,6 +15,7 @@
 #include "ui/ButtonSpinner.h"
 #include "ui/TrialCountdownPanel.h"
 #include "ui/ErrorPanel.h"
+#include "ui/UpdateAvailablePanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -102,6 +103,13 @@ public:
         if (_registerPanel) _layoutModalPanel(_registerPanel);
         if (_moveDebasePanel) _layoutModalPanel(_moveDebasePanel);
         if (_messagePanel) _layoutModalPanel(_messagePanel);
+        
+        if (_updateAvailablePanel) {
+            auto panel = _updateAvailablePanel;
+            const UI::Rect b = bounds();
+            panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
+            panel->origin(b.m());
+        }
     }
     
     void draw() override {
@@ -366,7 +374,9 @@ public:
             _reload();
             
             _licenseCheck();
-            _copyToEnvironmentPathCheck();
+            _moveOffer();
+            
+            _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(2);
             
             track({});
             
@@ -703,6 +713,7 @@ private:
         if (_registerPanel) sv.push_back(_registerPanel);
         if (_moveDebasePanel) sv.push_back(_moveDebasePanel);
         if (_messagePanel) sv.push_back(_messagePanel);
+        if (_updateAvailablePanel) sv.push_back(_updateAvailablePanel);
         subviews(sv);
         
         layoutNeeded(true);
@@ -1665,7 +1676,7 @@ private:
         }
     }
     
-    void _copyToEnvironmentPathCheck() {
+    void _moveOffer() {
 //        using namespace std::filesystem;
         namespace fs = std::filesystem;
         
@@ -1863,4 +1874,5 @@ private:
     UI::RegisterPanelPtr _registerPanel;
     UI::ModalPanelPtr _moveDebasePanel;
     UI::ModalPanelPtr _messagePanel;
+    UI::UpdateAvailablePanelPtr _updateAvailablePanel;
 };
