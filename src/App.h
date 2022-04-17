@@ -1788,36 +1788,66 @@ private:
         constexpr const char* ShellBash = "bash";
         constexpr const char* ShellZsh  = "zsh";
         
+        struct ShellInfo {
+            fs::path profilePath;
+            std::string updatePathCommand;
+            std::string restartShellCommand;
+        };
+        
+        ShellInfo shell;
         std::string shellName;
-        fs::path shellProfilePath;
-        if (updateShellPath) {
-            try {
-                shellName = ProcessPathGet(getppid()).filename();
-            } catch (...) {
-                return;
-            }
+        try {
+            shellName = ProcessPathGet(getppid()).filename();
+        } catch (...) {
+            return;
         }
         
         if (shellName == ShellBash) {
-            // Default to .bash_profile
-            shellProfilePath = homePath / ".bash_profile";
+            shell = {
+                .profilePath     = homePath / ".bashrc",
+                .updatePathCommand   = "PATH=\"$HOME/" + binDirRelativePath.string() + ":$PATH",
+                .restartShellCommand = "exec bash",
+            };
             
-            try {
-                // If .profile exists, use it instead of .bash_profile because .bash_profile prevents
-                // .profile from being used. So if we created .bash_profile when it didn't previously
-                // exist, it would change the shell's behavior because .profile would no longer be
-                // used.
-                const fs::path bashProfileAlt = homePath / ".profile";
-                if (fs::exists(bashProfileAlt)) {
-                    shellProfilePath = bashProfileAlt;
-                }
-            
-            // fs::exists() can throw if eg an intermediate directory denies access
-            // In that case, just use shellProfilePath = .bash_profile
-            } catch (...) {}
+//                shellProfileFilename = ".bashrc";
+//                
+//            const fs::path bashrc = homePath / ".bashrc";
+//            const fs::path bash_profile = homePath / ".bash_profile";
+//            const fs::path profile = homePath / ".bash_profile";
+//            
+//            // Default to .bash_profile
+//            shellProfilePath = bash_profile;
+//            
+//            if (fs::exists(bashrc)) {
+//                
+//            } else if (fs::exists(bash_profile)) {
+//                
+//            } else if (fs::exists(profile)) {
+//                
+//            } else {
+//                
+//            }
+//            
+//            try {
+//                // If .profile exists, use it instead of .bash_profile because .bash_profile prevents
+//                // .profile from being used. So if we created .bash_profile when it didn't previously
+//                // exist, it would change the shell's behavior because .profile would no longer be
+//                // used.
+//                const fs::path bashProfileAlt = homePath / ".profile";
+//                if (fs::exists(bashProfileAlt)) {
+//                    shellProfilePath = bashProfileAlt;
+//                }
+//            
+//            // fs::exists() can throw if eg an intermediate directory denies access
+//            // In that case, just use shellProfilePath = .bash_profile
+//            } catch (...) {}
         
         } else if (shellName == ShellZsh) {
-            shellProfilePath = homePath / ".zshrc";
+            shell = {
+                .profilePath         = homePath / ".zshrc",
+                .updatePathCommand   = "path+=$HOME/" + binDirRelativePath.string(),
+                .restartShellCommand = "exec zsh",
+            };
         
         } else {
             // Unknown shell
@@ -1830,7 +1860,7 @@ private:
         if (createBinDir && updateShellPath) {
             message +=
                 "\n\n"
-                "The ~/" + binDirRelativePath.string() + " directory will be created, and PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
+                "The ~/" + binDirRelativePath.string() + " directory will be created, and PATH will be updated in ~/" + shell.profilePath.filename().string() + ".";
         
         } else if (createBinDir) {
             message +=
@@ -1840,7 +1870,7 @@ private:
         } else if (updateShellPath) {
             message +=
                 "\n\n"
-                "PATH will be updated in ~/" + shellProfilePath.filename().string() + ".";
+                "PATH will be updated in ~/" + shell.profilePath.filename().string() + ".";
         }
         
         std::optional<bool> moveChoice;
@@ -1877,20 +1907,25 @@ private:
         // Update shell path
         // Do this after the move, so that we don't do it if the move fails for some reason
         if (updateShellPath) {
-            std::ofstream shellProfile(shellProfilePath, std::ios_base::app|std::ios_base::out);
+            std::ofstream shellProfile(shell.profilePath, std::ios_base::app|std::ios_base::out);
+            shellProfile << "\n";
             shellProfile << "# Update PATH to include ~/bin; added by debase" << "\n";
-            
-            if (shellName == ShellBash) {
-                shellProfile << "path+=$HOME/" << binDirRelativePath.string() << "\n";
-            
-            } else if (shellName == ShellZsh) {
-                shellProfile << "path+=$HOME/" << binDirRelativePath.string() << "\n";
-            
-            } else {
-                // Programmer error; we shouldn't get here if we don't recognize the shell name
-                abort();
-            }
+            shellProfile << shell.updatePathCommand << "\n";
         }
+        
+        static ShellInfo shellCapture = shell;
+        static fs::path binDirRelativePathCapture = binDirRelativePath;
+        atexit(+[]() {
+            std::cout << "\n";
+            std::cout << "*** debase was moved to ~/" << (binDirRelativePathCapture/DebaseFilename).string() << "\n";
+            std::cout << "*** \n";
+            std::cout << "*** To invoke debase again, you may need to restart your shell with:" << "\n";
+            std::cout << "*** \n";
+            std::cout << "***   " << shellCapture.restartShellCommand << "\n";
+            std::cout << "*** \n";
+            std::cout << "*** to ensure that your shell can find debase." << "\n";
+            std::cout << "\n";
+        });
     }
     
     
