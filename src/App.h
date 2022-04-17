@@ -1587,6 +1587,7 @@ private:
         _messagePanel->message()->text      ("Thank you for supporting debase!");
         _messagePanel->message()->align     (UI::Align::Center);
         _messagePanel->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
+        _messagePanel->escapeTriggersOK     (true);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels

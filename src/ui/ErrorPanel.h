@@ -16,6 +16,7 @@ public:
         _supportLink->link("mailto:" _ToasterSupportEmail);
         
         showSupportMessage(false);
+        escapeTriggersOK(true);
     }
     
     // MARK: - ModalPanel Overrides

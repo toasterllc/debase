@@ -131,8 +131,13 @@ public:
 //    }
     
     bool handleEvent(const Event& ev) override {
-        if (ev.type == Event::Type::KeyEscape)      dismiss();
-        else if (ev.type == Event::Type::KeyReturn) ok();
+        if (ev.type == Event::Type::KeyEscape){
+            if (_escapeTriggersOK) ok();
+            else                   dismiss();
+        
+        } else if (ev.type == Event::Type::KeyReturn) {
+            ok();
+        }
         return true;
     }
     
@@ -149,6 +154,9 @@ public:
     auto& message() { return _message; }
     auto& okButton() { return _okButton; }
     auto& dismissButton() { return _dismissButton; }
+    
+    const auto& escapeTriggersOK() const { return _escapeTriggersOK; }
+    template <typename T> bool escapeTriggersOK(const T& x) { return _set(_escapeTriggersOK, x); }
     
     // MARK: - Methods
     virtual void ok() {
@@ -185,6 +193,7 @@ private:
     LabelPtr _message           = subviewCreate<Label>();
     ButtonPtr _okButton         = subviewCreate<Button>();
     ButtonPtr _dismissButton    = subviewCreate<Button>();
+    bool _escapeTriggersOK      = false;
 };
 
 using ModalPanelPtr = std::shared_ptr<ModalPanel>;
