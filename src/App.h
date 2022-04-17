@@ -450,63 +450,6 @@ private:
         abort();
     }
     
-//    static UI::Color _ColorInit(const UI::Color& c) {
-//        if (!c.rgb) return c;
-//        
-//        UI::Color x = c;
-//        
-//        // Remember the previous RGB values for color index c.idx
-//        {
-//            NCURSES_COLOR_T r,g,b;
-//            color_content(c.idx, &r, &g, &b);
-//            x.rgb.emplace(UI::RGB{r,g,b});
-//        }
-//        
-//        // Set the new RGB values for the color `c.idx`
-//        {
-//            ::init_color(c.idx, c.rgb->r, c.rgb->b, c.rgb->b);
-//        }
-//        return x;
-//    }
-//    
-//    static UI::Color _ColorInit(const UI::Color& c) {
-//        if (!c.fg && !c.bg) return c;
-//        
-//        UI::Color x = c;
-////        if (c.fg) x.fg = _ColorInit(*c.fg);
-////        if (c.bg) x.bg = _ColorInit(*c.bg);
-//        
-//        // Remember the previous fg/bg colors for the color pair c.idx
-//        {
-//            NCURSES_COLOR_T fg, bg;
-//            pair_content(c.idx, &fg, &bg);
-//            if (c.fg) x.fg = fg;
-//            if (c.bg) x.bg = bg;
-//        }
-//        
-//        // Set the new RGB values for the color `c.idx`
-//        {
-//            ::init_pair(c.idx, (c.fg ? *c.fg : -1), (c.bg ? *c.bg : -1));
-//        }
-//        
-//        return x;
-//    }
-    
-//    static UI::ColorPalette _ColorsSet(const UI::ColorPalette& p) {
-//        UI::ColorPalette pcopy = p;
-//        
-//        // Set the values for the custom colors, and remember the old values
-//        for (UI::Color& c : pcopy.custom()) {
-//            c = _ColorSet(c);
-//        }
-//        
-//        for (const UI::Color& c : p.colorPairs()) {
-//            ::init_pair(c.idx, c.idx, -1);
-//        }
-//        
-//        return pcopy;
-//    }
-    
     static UI::ColorPalette _ColorsCreate(State::Theme theme) {
         const char* termProgEnv = getenv("TERM_PROGRAM");
         const std::string termProg = termProgEnv ? termProgEnv : "";

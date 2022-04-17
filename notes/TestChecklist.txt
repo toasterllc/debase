@@ -105,3 +105,15 @@ Stress test server by hitting it with lots of requests simultaneously
 * Privacy
 No network IO occurs on first launch, until a button is clicked
 Machine ID isn't calculated on first launch until a button is clicked
+
+* Move Offer
+debase offsers to move itself with zsh
+debase offsers to move itself with bash
+Moving debase works with zsh
+Moving debase works with bash
+After first launch, debase can be launched a second time after running the suggested command (printed at exit of the first launch)
+
+* Clickable Links
+Clicking URL works
+Clicking email address works
+
