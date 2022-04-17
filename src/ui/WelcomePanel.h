@@ -19,11 +19,11 @@ public:
         
         _trialButton->label()->text      ("Start Free Trial");
         _trialButton->enabled            (true);
-        _trialButton->drawBorder         (true);
+        _trialButton->bordered           (true);
         
         _registerButton->label()->text   ("Register");
         _registerButton->enabled         (true);
-        _registerButton->drawBorder      (true);
+        _registerButton->bordered        (true);
     }
     
     // MARK: - ModalPanel Overrides

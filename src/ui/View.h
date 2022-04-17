@@ -165,13 +165,14 @@ public:
     }
     
     static constexpr int ConstraintNone = INT_MAX;
+    static constexpr Size ConstraintNoneSize = {ConstraintNone, ConstraintNone};
     
     virtual Size sizeIntrinsic(Size constraint) { return size(); }
     virtual void sizeToFit(Size constraint) { size(sizeIntrinsic(constraint)); }
     
-    // sizeIntrinsic() / sizeToFit(): intentionally non-virtual; override the constraint versions above
-    Size sizeIntrinsic() { return sizeIntrinsic({ConstraintNone, ConstraintNone}); }
-    void sizeToFit() { size(sizeIntrinsic()); }
+//    // sizeIntrinsic() / sizeToFit(): intentionally non-virtual; override the constraint versions above
+//    Size sizeIntrinsic() { return sizeIntrinsic({ConstraintNone, ConstraintNone}); }
+//    void sizeToFit() { size(sizeIntrinsic()); }
     
     virtual Point origin() const { return _origin; }
     virtual bool origin(const Point& x) {

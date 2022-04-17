@@ -32,7 +32,7 @@ public:
             (purchaseMessageHeight ? _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY : 0) +
             _FieldHeight + _ElementSpacingY +
             _FieldHeight + _ElementSpacingY +
-            _okButton->View::sizeIntrinsic().y;
+            _okButton->sizeIntrinsic(ConstraintNoneSize).y;
     }
     
     // MARK: - View Overrides

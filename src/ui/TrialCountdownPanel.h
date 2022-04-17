@@ -7,7 +7,7 @@ class TrialCountdownPanel : public ModalPanel {
 public:
     TrialCountdownPanel(std::chrono::seconds remaining) : _remaining(remaining) {
         _registerButton->label()->text  ("Register");
-        _registerButton->drawBorder     (true);
+        _registerButton->bordered       (true);
         _registerButton->enabled        (true);
         
         title()->text("debase trial");

@@ -29,7 +29,7 @@ public:
         _message->text(commit.message());
         _message->wrap(true);
         
-        sizeToFit();
+        sizeToFit(ConstraintNoneSize);
     }
     
     Size sizeIntrinsic(Size constraint) override { return {_width, 3}; }

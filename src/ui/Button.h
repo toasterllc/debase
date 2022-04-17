@@ -23,15 +23,15 @@ public:
     }
     
     Size sizeIntrinsic(Size constraint) override {
-        const int keyWidth = _key->View::sizeIntrinsic().x;
-        const int w = (_drawBorder ? 4 : 0) + _label->View::sizeIntrinsic().x + (keyWidth ? KeySpacingX : 0) + keyWidth;
-        const int h = (_drawBorder ? 3 : 1);
+        const int keyWidth = _key->sizeIntrinsic(ConstraintNoneSize).x;
+        const int w = (_bordered ? 4 : 0) + _label->sizeIntrinsic(ConstraintNoneSize).x + (keyWidth ? KeySpacingX : 0) + keyWidth;
+        const int h = (_bordered ? 3 : 1);
         return {w, h};
     }
     
     void layout() override {
-        const Rect r = Inset(bounds(), {(_drawBorder?1:0), 0});
-        _key->sizeToFit();
+        const Rect r = Inset(bounds(), {(_bordered?1:0), 0});
+        _key->sizeToFit(ConstraintNoneSize);
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
         _key->origin({r.r()-_key->size().x, r.my()});
@@ -51,8 +51,8 @@ public:
     }
     
     void draw() override {
-        // Update our border color for View's drawBorder() pass
-        if (_drawBorder) borderColor(enabledWindow() ? colors().normal : colors().dimmed);
+        // Update our border color for View's bordered() pass
+        if (_bordered) borderColor(enabledWindow() ? colors().normal : colors().dimmed);
         
         if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
         
@@ -93,14 +93,14 @@ public:
 //        const Rect f = frame();
 //        const size_t labelLen = UTF8::Len(_label);
 //        const size_t keyLen = UTF8::Len(_key);
-//        const int borderSize = (_drawBorder ? 1 : 0);
+//        const int borderSize = (_bordered ? 1 : 0);
 //        const int insetX = _insetX+borderSize;
 //        const int availWidth = f.size.x-2*insetX;
 //        const int labelWidth = std::min((int)labelLen, availWidth);
 //        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
 //        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
 //        
-//        if (_drawBorder) {
+//        if (_bordered) {
 //            Attr color = attr(_enabled ? colors().normal : colors().dimmed);
 //            win.drawRect(f);
 //        }
@@ -182,8 +182,8 @@ public:
     const auto& mouseActive() const { return _mouseActive; }
     template <typename T> bool mouseActive(const T& x) { return _set(_mouseActive, x); }
     
-    const auto& drawBorder() const { return _drawBorder; }
-    template <typename T> bool drawBorder(const T& x) { return _set(_drawBorder, x); }
+    const auto& bordered() const { return _bordered; }
+    template <typename T> bool bordered(const T& x) { return _set(_bordered, x); }
     
     const auto& action() const { return _action; }
     template <typename T> bool action(const T& x) { return _setForce(_action, x); }
@@ -202,7 +202,7 @@ private:
     
     bool _highlighted = false;
     bool _mouseActive = false;
-    bool _drawBorder = false;
+    bool _bordered = false;
     std::optional<int> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;

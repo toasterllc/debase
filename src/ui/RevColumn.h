@@ -18,13 +18,13 @@ public:
     RevColumn() {
         
         _undoButton->label()->text("Undo");
-        _undoButton->drawBorder(true);
+        _undoButton->bordered(true);
         
         _redoButton->label()->text("Redo");
-        _redoButton->drawBorder(true);
+        _redoButton->bordered(true);
         
         _snapshotsButton->label()->text("Snapshots…");
-        _snapshotsButton->drawBorder(true);
+        _snapshotsButton->bordered(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
         _name->textAttr(colors().menu | A_BOLD);

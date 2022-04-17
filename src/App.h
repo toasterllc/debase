@@ -16,6 +16,7 @@
 #include "ui/TrialCountdownPanel.h"
 #include "ui/ErrorPanel.h"
 #include "ui/UpdateAvailablePanel.h"
+//#include "ui/TabPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -105,10 +106,10 @@ public:
         if (_messagePanel) _layoutModalPanel(_messagePanel);
         
         if (_updateAvailablePanel) {
-            auto panel = _updateAvailablePanel;
+            auto p = _updateAvailablePanel;
             const UI::Rect b = bounds();
-            panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
-            panel->origin({(b.w()-panel->frame().w())/2, b.h()-panel->frame().h()});
+            p->size(p->sizeIntrinsic({b.size.x, ConstraintNone}));
+            p->origin({(b.w()-p->frame().w())/2, b.h()-p->frame().h()});
         }
     }
     
@@ -376,7 +377,17 @@ public:
             _licenseCheck();
             _moveOffer();
             
-            _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(2);
+//            {
+//                const std::string title = "debase v" + std::to_string(2) + " update";
+//                _updateAvailablePanel = subviewCreate<UI::ModalPanel>();
+//                _updateAvailablePanel->width(24);
+//                _updateAvailablePanel->title()->text(title);
+//                _updateAvailablePanel->title()->align(UI::Align::Center);
+//                _updateAvailablePanel->color(colors().menu);
+//                _updateAvailablePanel->condensed(true);
+//                _updateAvailablePanel->okButton()->action([] (UI::Button&) {});
+//                _updateAvailablePanel->dismissButton()->action([] (UI::Button&) {});
+//            }
             
             track({});
             
@@ -1008,7 +1019,7 @@ private:
         
         UI::MenuPtr menu = subviewCreate<UI::Menu>();
         menu->buttons({ combineButton, editButton, deleteButton });
-        menu->sizeToFit();
+        menu->sizeToFit(ConstraintNoneSize);
         menu->origin(mouseDownEvent.mouse.origin);
         menu->track(mouseDownEvent);
         
@@ -1874,5 +1885,5 @@ private:
     UI::RegisterPanelPtr _registerPanel;
     UI::ModalPanelPtr _moveDebasePanel;
     UI::ModalPanelPtr _messagePanel;
-    UI::UpdateAvailablePanelPtr _updateAvailablePanel;
+    UI::ModalPanelPtr _updateAvailablePanel;
 };

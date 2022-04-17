@@ -18,11 +18,11 @@ public:
         _title->suffix(" ");
         
         _okButton->label()->text            ("OK");
-        _okButton->drawBorder               (true);
+        _okButton->bordered                 (true);
         
         _dismissButton->label()->text       ("Cancel");
         _dismissButton->label()->textAttr   (A_NORMAL);
-        _dismissButton->drawBorder          (true);
+        _dismissButton->bordered            (true);
 //        _dismissButton->action              (std::bind(&ModalPanel::dismiss, this));
     }
     
@@ -39,7 +39,16 @@ public:
         const Rect mf = messageFrame();
         const int h = contentHeight(mf.w());
         if (!h) return {mf.bl(), {mf.w(), 0}};
-        return {mf.bl()+Size{0,_SectionSpacingY}, {mf.w(), h}};
+        const Point orig = mf.bl() + Size{0, (mf.h() ? _SectionSpacingY : 0)};
+        return {orig, {mf.w(), h}};
+    }
+    
+    Rect buttonFrame() const {
+        const Rect cf = contentFrame();
+        const int h = contentHeight(cf.w());
+        if (!h) return {cf.bl(), {cf.w(), 0}};
+        const Point orig = cf.bl() + Size{0, (cf.h() ? _SectionSpacingY : 0)};
+        return {orig, {cf.w(), h}};
     }
     
     virtual int contentHeight(int width) const { return 0; }
@@ -51,18 +60,20 @@ public:
         constraint.x = std::min(_width, constraint.x);
         
         const Rect f = InteriorFrame({{}, constraint});
-        int offY = BorderSize().y;
+        int offY = 0;
         
         const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
-        offY += heightMessage;
+        offY += (offY && heightMessage ? _SectionSpacingY : 0) + heightMessage;
         
         const int heightContent = contentHeight(f.w());
-        if (heightContent) offY += _SectionSpacingY + heightContent;
+        offY += (offY && heightContent ? _SectionSpacingY : 0) + heightContent;
         
-        const int heightButton = (okButtonVisible() || dismissButtonVisible() ? _ButtonHeight : 0);
-        if (heightButton) offY += _SectionSpacingY + heightButton;
+        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const int heightButton = std::max(okButtonSize.y, dismissButtonSize.y);
+        offY += (offY && heightButton ? _SectionSpacingY : 0) + heightButton;
         
-        offY += BorderSize().y;
+        offY += 2*BorderSize().y;
         
         const Size s = {
             .x = constraint.x,
@@ -77,22 +88,26 @@ public:
         const int titleWidth = f.size.x-2*titlePos.x;
         _title->frame({titlePos, {titleWidth, 1}});
         
-        _message->frame(messageFrame());
+        const Rect mf = messageFrame();
+        _message->frame(mf);
         
-        const Rect cf = contentFrame();
-        Point off = {cf.r(), cf.b() + _SectionSpacingY};
+//        const Rect cf = contentFrame();
+//        Point off = {cf.r(), cf.b() + _SectionSpacingY};
         
-        const int okButtonWidth = (int)UTF8::Len(_okButton->label()->text()) + _ButtonPaddingX;
-        _okButton->frame({off+Size{-okButtonWidth,0}, {okButtonWidth, _ButtonHeight}});
+        const Rect bf = buttonFrame();
+        Point boff = bf.tr();
+        
+        const Size okButtonSize = _okButton->sizeIntrinsic(ConstraintNoneSize) + Size{(!_condensed ? _ButtonPaddingX : 0), 0};
+        _okButton->frame({boff+Size{-okButtonSize.x,0}, okButtonSize});
         _okButton->visible(okButtonVisible());
         _okButton->enabled(okButtonEnabled());
-        if (okButtonVisible()) off += {-okButtonWidth-_ButtonSpacingX, 0};
+        if (okButtonVisible()) boff += {-okButtonSize.x-_ButtonSpacingX, 0};
         
-        const int dismissButtonWidth = (int)UTF8::Len(_dismissButton->label()->text()) + _ButtonPaddingX;
-        _dismissButton->frame({off+Size{-dismissButtonWidth,0}, {dismissButtonWidth, _ButtonHeight}});
+        const Size dismissButtonSize = _dismissButton->sizeIntrinsic(ConstraintNoneSize) + Size{(!_condensed ? _ButtonPaddingX : 0), 0};
+        _dismissButton->frame({boff+Size{-dismissButtonSize.x,0}, dismissButtonSize});
         _dismissButton->visible(dismissButtonVisible());
         _dismissButton->enabled(dismissButtonEnabled());
-        if (dismissButtonVisible()) off += {-dismissButtonWidth-_ButtonSpacingX, 0};
+        if (dismissButtonVisible()) boff += {-dismissButtonSize.x-_ButtonSpacingX, 0};
         
 //        _title->layout(*this);
 //        _message->layout(*this);
@@ -155,6 +170,16 @@ public:
     auto& okButton() { return _okButton; }
     auto& dismissButton() { return _dismissButton; }
     
+    const auto& condensed() const { return _condensed; }
+    template <typename T> bool condensed(const T& x) {
+        const bool changed = _set(_condensed, x);
+        // Updating buttons here so that our sizeIntrinsic() can get an accurate size immediately,
+        // without needing a layout pass
+        _okButton->bordered(!_condensed);
+        _dismissButton->bordered(!_condensed);
+        return changed;
+    }
+    
     const auto& escapeTriggersOK() const { return _escapeTriggersOK; }
     template <typename T> bool escapeTriggersOK(const T& x) { return _set(_escapeTriggersOK, x); }
     
@@ -183,8 +208,7 @@ public:
     
 private:
     static constexpr int _SectionSpacingY       = 1;
-    static constexpr int _ButtonHeight          = 3;
-    static constexpr int _ButtonPaddingX        = 8;
+    static constexpr int _ButtonPaddingX        = 4;
     static constexpr int _ButtonSpacingX        = 1;
     
     int _width = 0;
@@ -193,6 +217,8 @@ private:
     LabelPtr _message           = subviewCreate<Label>();
     ButtonPtr _okButton         = subviewCreate<Button>();
     ButtonPtr _dismissButton    = subviewCreate<Button>();
+    
+    bool _condensed             = false;
     bool _escapeTriggersOK      = false;
 };
 

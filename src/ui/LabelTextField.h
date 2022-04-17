@@ -12,7 +12,7 @@ public:
     
     void layout() override {
         const Size s = size();
-        _label->sizeToFit();
+        _label->sizeToFit(ConstraintNoneSize);
         
         const Size labelSize = _label->size();
         const Size textFieldSize = {s.x-labelSize.x-_spacingX, 1};
