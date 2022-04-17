@@ -99,25 +99,10 @@ public:
             panel->origin(b.br()-panel->size());
         }
         
-        if (_welcomePanel) {
-            constexpr int PanelWidth = 40;
-            _layoutModalPanel(_welcomePanel, PanelWidth);
-        }
-        
-        if (_registerPanel) {
-            constexpr int PanelWidth = 50;
-            _layoutModalPanel(_registerPanel, PanelWidth);
-        }
-        
-        if (_moveDebasePanel) {
-            constexpr int PanelWidth = 50;
-            _layoutModalPanel(_moveDebasePanel, PanelWidth);
-        }
-        
-        if (_messagePanel) {
-            constexpr int PanelWidth = 40;
-            _layoutModalPanel(_messagePanel, PanelWidth);
-        }
+        if (_welcomePanel) _layoutModalPanel(_welcomePanel);
+        if (_registerPanel) _layoutModalPanel(_registerPanel);
+        if (_moveDebasePanel) _layoutModalPanel(_moveDebasePanel);
+        if (_messagePanel) _layoutModalPanel(_messagePanel);
     }
     
     void draw() override {
@@ -1315,8 +1300,8 @@ private:
         return License::Validate(_licenseCtxGet(), license);
     }
     
-    void _layoutModalPanel(UI::ModalPanelPtr panel, int width) {
-        panel->size(panel->sizeIntrinsic({std::min(width, bounds().w()), ConstraintNone}));
+    void _layoutModalPanel(UI::ModalPanelPtr panel) {
+        panel->size(panel->sizeIntrinsic({bounds().w(), ConstraintNone}));
         
         UI::Size ps = panel->size();
         UI::Size rs = size();
@@ -1520,6 +1505,7 @@ private:
     
     void _welcomePanelShow() {
         _welcomePanel = subviewCreate<UI::WelcomePanel>();
+        _welcomePanel->width                    (40);
         _welcomePanel->color                    (colors().menu);
         _welcomePanel->title()->text            ("");
         _welcomePanel->message()->text          ("Welcome to debase!");
@@ -1538,7 +1524,7 @@ private:
             _trialCountdownPanel = nullptr;
             _welcomePanel = nullptr;
             _registerPanel = nullptr;
-            _infoMessageShow("Thank you for supporting debase!");
+            _thankYouMessageShow();
         }
     }
     
@@ -1552,6 +1538,7 @@ private:
 //        msg += " To purchase a license, please visit:\n";
         
         _registerPanel = subviewCreate<UI::RegisterPanel>();
+        _registerPanel->width               (50);
         _registerPanel->color               (colors().menu);
         _registerPanel->title()->text       (title);
         _registerPanel->message()->text     (message);
@@ -1592,11 +1579,12 @@ private:
         });
     }
     
-    void _infoMessageShow(std::string_view msg) {
+    void _thankYouMessageShow() {
         _messagePanel = subviewCreate<UI::ModalPanel>();
+        _messagePanel->width                (42);
         _messagePanel->color                (colors().menu);
         _messagePanel->title()->text        ("Thank You!");
-        _messagePanel->message()->text      (msg);
+        _messagePanel->message()->text      ("Thank you for supporting debase!");
         _messagePanel->message()->align     (UI::Align::Center);
         _messagePanel->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
         
@@ -1609,7 +1597,7 @@ private:
     
     void _errorMessageShow(std::string_view msg, bool showSupportMessage) {
         auto p = subviewCreate<UI::ErrorPanel>();
-        p = subviewCreate<UI::ErrorPanel>();
+        p->width                (40);
         p->message()->text      (msg);
         p->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
         p->showSupportMessage   (showSupportMessage);
@@ -1786,9 +1774,10 @@ private:
         
         std::optional<bool> moveChoice;
         _moveDebasePanel = subviewCreate<UI::ModalPanel>();
+        _moveDebasePanel->width                            (50);
+        _moveDebasePanel->color                            (colors().menu);
         _moveDebasePanel->title()->text                    (Title);
         _moveDebasePanel->message()->text                  (message);
-        _moveDebasePanel->color                            (colors().menu);
         _moveDebasePanel->okButton()->label()->text        ("Move");
         _moveDebasePanel->dismissButton()->label()->text   ("Don't Move");
         _moveDebasePanel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );

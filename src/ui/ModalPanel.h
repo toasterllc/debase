@@ -48,6 +48,8 @@ public:
     
     // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
+        constraint.x = std::min(_width, constraint.x);
+        
         const Rect f = InteriorFrame({{}, constraint});
         int offY = BorderSize().y;
         
@@ -137,6 +139,9 @@ public:
 //    Rect contentRect() { return ContentRect(size()); }
     
     // MARK: - Accessors
+    const auto& width() const { return _width; }
+    template <typename T> bool width(const T& x) { return _set(_width, x); }
+    
     const auto& color() const { return _color; }
     template <typename T> bool color(const T& x) { return _set(_color, x); }
     
@@ -174,6 +179,7 @@ private:
     static constexpr int _ButtonPaddingX        = 8;
     static constexpr int _ButtonSpacingX        = 1;
     
+    int _width = 0;
     Color _color;
     LabelPtr _title             = subviewCreate<Label>();
     LabelPtr _message           = subviewCreate<Label>();
