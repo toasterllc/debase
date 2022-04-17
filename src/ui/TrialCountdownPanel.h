@@ -24,7 +24,7 @@ public:
     // MARK: - View Overrides
     void layout() override {
         ModalPanel::layout();
-        _registerButton->frame(contentFrame());
+        _registerButton->frame(contentFrame(messageFrame(interiorFrame(bounds()))));
     }
     
     bool handleEvent(const Event& ev) override {

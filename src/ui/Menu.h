@@ -63,7 +63,7 @@ public:
             y += button->size().y;
             
             // Set the expanded hit test size so that the menu doesn't have any dead zones
-            const View::HitTestExpand hitTestExpand = {
+            const Edges hitTestExpand = {
                 .t = (first ? 1 : 0),
                 .l = _BorderSize+_InsetX,
                 .r = _BorderSize+_InsetX,

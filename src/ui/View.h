@@ -86,13 +86,6 @@ public:
         } _s;
     };
     
-    struct HitTestExpand {
-        int l = 0;
-        int r = 0;
-        int t = 0;
-        int b = 0;
-    };
-    
     static const GraphicsState& GState() {
         assert(_GState);
         return _GState;
@@ -281,8 +274,8 @@ public:
     virtual const std::optional<Color> borderColor() const { return _borderColor; }
     virtual bool borderColor(std::optional<Color> x) { return _set(_borderColor, x); }
     
-    virtual const HitTestExpand& hitTestExpand() const { return _hitTestExpand; }
-    virtual bool hitTestExpand(const HitTestExpand& x) { return _setForce(_hitTestExpand, x); }
+    virtual const Edges& hitTestExpand() const { return _hitTestExpand; }
+    virtual bool hitTestExpand(const Edges& x) { return _setForce(_hitTestExpand, x); }
     
     virtual const bool inhibitErase() const { return _inhibitErase; }
     virtual bool inhibitErase(bool x) { return _set(_inhibitErase, x); }
@@ -636,7 +629,7 @@ private:
     bool _trackStop = false;
     bool _inhibitErase = false;
     Event _eventCurrent;
-    HitTestExpand _hitTestExpand;
+    Edges _hitTestExpand;
     std::optional<Color> _borderColor;
 };
 

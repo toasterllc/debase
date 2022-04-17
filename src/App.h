@@ -377,17 +377,21 @@ public:
             _licenseCheck();
             _moveOffer();
             
-//            {
-//                const std::string title = "debase v" + std::to_string(2) + " update";
-//                _updateAvailablePanel = subviewCreate<UI::ModalPanel>();
-//                _updateAvailablePanel->width(24);
-//                _updateAvailablePanel->title()->text(title);
-//                _updateAvailablePanel->title()->align(UI::Align::Center);
-//                _updateAvailablePanel->color(colors().menu);
-//                _updateAvailablePanel->condensed(true);
-//                _updateAvailablePanel->okButton()->action([] (UI::Button&) {});
-//                _updateAvailablePanel->dismissButton()->action([] (UI::Button&) {});
-//            }
+            {
+                const std::string title = "debase v" + std::to_string(2) + " update";
+                _updateAvailablePanel = subviewCreate<UI::ModalPanel>();
+                _updateAvailablePanel->width                            (24);
+                _updateAvailablePanel->title()->text                    (title);
+                _updateAvailablePanel->title()->align                   (UI::Align::Center);
+                _updateAvailablePanel->color                            (colors().menu);
+                _updateAvailablePanel->condensed                        (true);
+                _updateAvailablePanel->okButton()->label()->text        ("Download");
+                _updateAvailablePanel->dismissButton()->label()->text   ("Ignore");
+                _updateAvailablePanel->okButton()->action               ([] (UI::Button&) {});
+                _updateAvailablePanel->dismissButton()->action          ([] (UI::Button&) {});
+                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=0, .r=0, .t=0, .b=1});
+//                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=1, .t=1});
+            }
             
             track({});
             

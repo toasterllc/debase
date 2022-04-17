@@ -26,29 +26,45 @@ public:
 //        _dismissButton->action              (std::bind(&ModalPanel::dismiss, this));
     }
     
-    static constexpr Size BorderSize() { return {5,2}; }
-    static constexpr Rect InteriorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
-    
-    Rect messageFrame() const {
-        Rect interiorFrame = InteriorFrame(bounds());
-        interiorFrame.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
-        return interiorFrame;
+    Size borderSize() const {
+        return (!_condensed ? Size{5,2} : Size{3,2});
     }
     
-    Rect contentFrame() const {
-        const Rect mf = messageFrame();
-        const int h = contentHeight(mf.w());
-        if (!h) return {mf.bl(), {mf.w(), 0}};
-        const Point orig = mf.bl() + Size{0, (mf.h() ? _SectionSpacingY : 0)};
-        return {orig, {mf.w(), h}};
+//    Rect interiorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
+    
+//    Rect truncatedBounds(Rect bounds) const {
+//        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
+//        Rect r = Inset(bounds, borderSize());
+//        r.origin -= Size{_truncateEdges.l, _truncateEdges.t};
+//        return r;
+//    }
+    
+    Rect interiorFrame(Rect bounds) const {
+        return Inset(bounds, borderSize());
+//        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
+//        Rect r = Inset(bounds, borderSize());
+//        r.origin -= Size{_truncateEdges.l, _truncateEdges.t};
+//        return r;
     }
     
-    Rect buttonFrame() const {
-        const Rect cf = contentFrame();
-        const int h = contentHeight(cf.w());
-        if (!h) return {cf.bl(), {cf.w(), 0}};
-        const Point orig = cf.bl() + Size{0, (cf.h() ? _SectionSpacingY : 0)};
-        return {orig, {cf.w(), h}};
+    Rect messageFrame(Rect interiorFrame) const {
+        Rect r = interiorFrame;
+        r.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
+        return r;
+    }
+    
+    Rect contentFrame(Rect messageFrame) const {
+        const int h = contentHeight(messageFrame.w());
+        const Point p = messageFrame.bl() + Size{0, (messageFrame.h() && h ? _SectionSpacingY : 0)};
+        return {p, {messageFrame.w(), h}};
+    }
+    
+    Rect buttonFrame(Rect contentFrame) const {
+        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const int h = std::max(okButtonSize.y, dismissButtonSize.y);
+        const Point p = contentFrame.bl() + Size{0, (contentFrame.h() && h ? _SectionSpacingY : 0)};
+        return {p, {contentFrame.w(), h}};
     }
     
     virtual int contentHeight(int width) const { return 0; }
@@ -59,55 +75,80 @@ public:
     Size sizeIntrinsic(Size constraint) override {
         constraint.x = std::min(_width, constraint.x);
         
-        const Rect f = InteriorFrame({{}, constraint});
-        int offY = 0;
-        
-        const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
-        offY += (offY && heightMessage ? _SectionSpacingY : 0) + heightMessage;
-        
-        const int heightContent = contentHeight(f.w());
-        offY += (offY && heightContent ? _SectionSpacingY : 0) + heightContent;
-        
-        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
-        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
-        const int heightButton = std::max(okButtonSize.y, dismissButtonSize.y);
-        offY += (offY && heightButton ? _SectionSpacingY : 0) + heightButton;
-        
-        offY += 2*BorderSize().y;
-        
-        const Size s = {
-            .x = constraint.x,
-            .y = offY,
-        };
+        const Rect mf = messageFrame(interiorFrame({{}, constraint}));
+        const Rect cf = contentFrame(mf);
+        const Rect bf = buttonFrame(cf);
+        Size s = Inset(bf, -borderSize()).br();
+//        s.x -= _truncateEdges.r;
+//        s.y -= _truncateEdges.b;
+//        
+//        s.x -= (_truncateEdges.l + _truncateEdges.r);
+//        s.y -= (_truncateEdges.t + _truncateEdges.b);
         return s;
+        
+//        const Rect f = InteriorFrame({{}, constraint});
+//        int offY = 0;
+//        
+//        const int heightMessage = _message->sizeIntrinsic({f.w(), ConstraintNone}).y;
+//        offY += (offY && heightMessage ? _SectionSpacingY : 0) + heightMessage;
+//        
+//        const int heightContent = contentHeight(f.w());
+//        offY += (offY && heightContent ? _SectionSpacingY : 0) + heightContent;
+//        
+//        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+//        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+//        const int heightButton = std::max(okButtonSize.y, dismissButtonSize.y);
+//        offY += (offY && heightButton ? _SectionSpacingY : 0) + heightButton;
+//        
+//        offY += 2*BorderSize().y;
+//        
+//        const Size s = {
+//            .x = constraint.x,
+//            .y = offY,
+//        };
+//        return s;
     }
     
     void layout() override {
-        const Rect f = frame();
-        const Point titlePos = {3,0};
-        const int titleWidth = f.size.x-2*titlePos.x;
-        _title->frame({titlePos, {titleWidth, 1}});
+        const Rect inf = interiorFrame(bounds());
+        _title->frame({inf.origin+Size{0,-2}, {inf.w(), 1}});
         
-        const Rect mf = messageFrame();
+        const Rect mf = messageFrame(inf);
         _message->frame(mf);
+        
+//        if (!_condensed) _message->textAttr();
+//        else             _message->textAttr();
         
 //        const Rect cf = contentFrame();
 //        Point off = {cf.r(), cf.b() + _SectionSpacingY};
         
-        const Rect bf = buttonFrame();
+        const Rect bf = buttonFrame(contentFrame(mf));
         Point boff = bf.tr();
         
-        const Size okButtonSize = _okButton->sizeIntrinsic(ConstraintNoneSize) + Size{(!_condensed ? _ButtonPaddingX : 0), 0};
-        _okButton->frame({boff+Size{-okButtonSize.x,0}, okButtonSize});
-        _okButton->visible(okButtonVisible());
-        _okButton->enabled(okButtonEnabled());
-        if (okButtonVisible()) boff += {-okButtonSize.x-_ButtonSpacingX, 0};
+        if (!_condensed) {
+            const Size okButtonSize = _okButton->sizeIntrinsic(ConstraintNoneSize) + Size{_ButtonPaddingX, 0};
+            _okButton->frame({boff+Size{-okButtonSize.x,0}, okButtonSize});
+            _okButton->visible(okButtonVisible());
+            _okButton->enabled(okButtonEnabled());
+            if (okButtonVisible()) boff += {-okButtonSize.x-_ButtonSpacingX, 0};
+            
+            const Size dismissButtonSize = _dismissButton->sizeIntrinsic(ConstraintNoneSize) + Size{_ButtonPaddingX, 0};
+            _dismissButton->frame({boff+Size{-dismissButtonSize.x,0}, dismissButtonSize});
+            _dismissButton->visible(dismissButtonVisible());
+            _dismissButton->enabled(dismissButtonEnabled());
+            if (dismissButtonVisible()) boff += {-dismissButtonSize.x-_ButtonSpacingX, 0};
         
-        const Size dismissButtonSize = _dismissButton->sizeIntrinsic(ConstraintNoneSize) + Size{(!_condensed ? _ButtonPaddingX : 0), 0};
-        _dismissButton->frame({boff+Size{-dismissButtonSize.x,0}, dismissButtonSize});
-        _dismissButton->visible(dismissButtonVisible());
-        _dismissButton->enabled(dismissButtonEnabled());
-        if (dismissButtonVisible()) boff += {-dismissButtonSize.x-_ButtonSpacingX, 0};
+        } else {
+            _okButton->sizeToFit(ConstraintNoneSize);
+            _okButton->origin(bf.tl());
+            _okButton->visible(okButtonVisible());
+            _okButton->enabled(okButtonEnabled());
+            
+            _dismissButton->sizeToFit(ConstraintNoneSize);
+            _dismissButton->origin(bf.tr()-Size{_dismissButton->frame().w(), 0});
+            _dismissButton->visible(dismissButtonVisible());
+            _dismissButton->enabled(dismissButtonEnabled());
+        }
         
 //        _title->layout(*this);
 //        _message->layout(*this);
@@ -118,6 +159,8 @@ public:
 //    }
     
     void draw() override {
+//        Rect r = Inset(interiorFrame(bounds()), -borderSize());
+//        drawRect(r);
         borderColor(_color);
         _title->textAttr(_color|A_BOLD);
         // Always redraw _title because our border may have clobbered it
@@ -170,6 +213,9 @@ public:
     auto& okButton() { return _okButton; }
     auto& dismissButton() { return _dismissButton; }
     
+    const auto& truncateEdges() const { return _truncateEdges; }
+    template <typename T> bool truncateEdges(const T& x) { return _setForce(_truncateEdges, x); }
+    
     const auto& condensed() const { return _condensed; }
     template <typename T> bool condensed(const T& x) {
         const bool changed = _set(_condensed, x);
@@ -218,6 +264,7 @@ private:
     ButtonPtr _okButton         = subviewCreate<Button>();
     ButtonPtr _dismissButton    = subviewCreate<Button>();
     
+    Edges _truncateEdges;
     bool _condensed             = false;
     bool _escapeTriggersOK      = false;
 };

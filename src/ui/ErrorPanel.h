@@ -33,7 +33,7 @@ public:
     void layout() override {
         ModalPanel::layout();
         
-        const Rect cf = contentFrame();
+        const Rect cf = contentFrame(messageFrame(interiorFrame(bounds())));
         int offY = cf.t();
         
         _supportMessage->sizeToFit({cf.w(), ConstraintNone});

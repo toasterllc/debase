@@ -24,6 +24,8 @@ struct Vector {
     Vector& operator -=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
     template <typename T> Vector& operator -=(const T& t) { x-=t; y-=t; return *this; }
     
+    Vector operator -() const { return {-x, -y}; }
+    
     template <typename T> Vector operator *(const T& t) const { return {x*t, y*t}; }
     
     template <typename T> Vector& operator *=(const T& t) { x*=t; y*=t; return *this; }
@@ -59,6 +61,13 @@ struct Rect {
     Point bl() const { return {l(), b()}; }
     Point br() const { return {r(), b()}; }
     Point m() const { return {mx(), my()}; }
+};
+
+struct Edges {
+    int l = 0;
+    int r = 0;
+    int t = 0;
+    int b = 0;
 };
 
 struct Event {
