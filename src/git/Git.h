@@ -4,6 +4,7 @@
 #include <vector>
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
+#include "lib/toastbox/Defer.h"
 #include "lib/libgit2/include/git2.h"
 
 namespace Git {
@@ -514,36 +515,38 @@ public:
     using RefCounted::RefCounted;
     
     static Repo Open(const std::filesystem::path& path) {
+        bool shutdown = true;
         git_libgit2_init();
+        Defer( if (shutdown) git_libgit2_shutdown() );
         
-        git_repository* x = nullptr;
-        int ir = git_repository_open(&x, path.native().data());
-        if (ir) {
-            // Create the error before calling git_libgit2_shutdown(), otherwise we'd call
-            // git_error_last() after git_libgit2_shutdown(), which isn't allowed, and we
-            // get the wrong error message
-            Error e(ir, "git_repository_open failed");
-            git_libgit2_shutdown();
-            throw e;
+        Buf buf;
+        {
+            git_buf x = GIT_BUF_INIT;
+            int ir = git_repository_discover(&x, path.c_str(), false, nullptr);
+            if (ir) throw Error(ir, "git_repository_discover failed");
+            buf = x;
         }
         
+        git_repository* x = nullptr;
+        int ir = git_repository_open(&x, buf->ptr);
+        if (ir) throw Error(ir, "git_repository_open failed");
+        
+        // We succeeded -- don't call shutdown!
+        shutdown = false;
         return x;
     }
     
     static Repo Open(Submodule sm) {
+        bool shutdown = true;
         git_libgit2_init();
+        Defer( if (shutdown) git_libgit2_shutdown() );
         
         git_repository* x = nullptr;
         int ir = git_submodule_open(&x, *sm);
-        if (ir) {
-            // Create the error before calling git_libgit2_shutdown(), otherwise we'd call
-            // git_error_last() after git_libgit2_shutdown(), which isn't allowed, and we
-            // get the wrong error message
-            Error e(ir, "git_repository_open failed");
-            git_libgit2_shutdown();
-            throw e;
-        }
+        if (ir) throw Error(ir, "git_submodule_open failed");
         
+        // We succeeded -- don't call shutdown!
+        shutdown = false;
         return x;
     }
     

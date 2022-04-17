@@ -116,13 +116,13 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: allow debase to be called from git repo subdirectories
+    
     #warning TODO: stress test DebaseLicenseServer with lots of connections
     
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
-    
-    #warning TODO: allow debase to be called from git repo subdirectories
     
     #warning TODO: do lots of testing
     
@@ -480,7 +480,6 @@ int main(int argc, const char* argv[]) {
         
         Git::Repo repo;
         std::vector<Git::Rev> revs;
-        
         try {
             repo = Git::Repo::Open(".");
         } catch (...) {
