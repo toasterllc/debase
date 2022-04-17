@@ -923,9 +923,10 @@ public:
     
     std::vector<Submodule> submodules() const {
         struct Ctx {
+            std::filesystem::path repoPath;
             std::vector<Submodule> submodules;
         };
-        Ctx ctx;
+        Ctx ctx = { .repoPath = path() };
         
         auto callback = [] (
             git_submodule* sm,
@@ -949,7 +950,7 @@ public:
             // have a null indexId.
             if (!submodule.indexId()) return 0;
             
-            std::filesystem::path path = std::filesystem::canonical(submodule.path());
+            std::filesystem::path path = std::filesystem::canonical(ctx.repoPath / submodule.path());
             ctx.submodules.push_back(submodule);
             return 0;
         };
