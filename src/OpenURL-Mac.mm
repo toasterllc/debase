@@ -3,13 +3,13 @@
 #import <string>
 #import "OpenURL.h"
 
-void OpenURL(std::string_view url) {
+void OpenURL(std::string_view url) noexcept {
     @autoreleasepool {
         LSOpenCFURLRef((__bridge CFURLRef)[NSURL URLWithString:@(url.data())], nil);
     }
 }
 
-void OpenMailto(std::string_view email) {
+void OpenMailto(std::string_view email) noexcept {
     std::string mailto = "mailto:"+std::string(email);
     OpenURL(mailto);
 }
