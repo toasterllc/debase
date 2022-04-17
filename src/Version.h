@@ -1,4 +1,4 @@
 #pragma once
 #include <stdint.h>
 
-using Version = uint32_t;
+typedef uint32_t Version;

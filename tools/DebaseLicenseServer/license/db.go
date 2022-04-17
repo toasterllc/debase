@@ -19,13 +19,13 @@ type DBMachine struct {
 }
 
 type DBTrial struct {
-	Version    uint32
+	Version    Version
 	Expiration int64
 	Machine    DBMachine
 }
 
 type DBLicense struct {
-	Version  uint32
+	Version  Version
 	Machines map[MachineId]*DBMachine
 }
 

@@ -22,6 +22,8 @@ type MachineInfo string
 type LicenseCode = string
 type MachineId = string
 
+type Version = uint32
+
 const MachineIdLen = 2 * sha512.Size256 // 2* because 1 byte == 2 hex characters
 const MachineInfoMaxLen = 256
 
