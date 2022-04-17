@@ -108,7 +108,7 @@ public:
             auto panel = _updateAvailablePanel;
             const UI::Rect b = bounds();
             panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
-            panel->origin(b.m());
+            panel->origin({(b.w()-panel->frame().w())/2, b.h()-panel->frame().h()});
         }
     }
     

@@ -6,13 +6,14 @@ namespace UI {
 class UpdateAvailablePanel : public Panel {
 public:
     UpdateAvailablePanel(Version version) {
-        borderColor(colors().menu);
+//        borderColor(colors().menu);
         
-        const std::string msg = "debase version " + std::to_string(version) + " available";
+        const std::string msg = "debase v" + std::to_string(version) + " update";
         _message->text(msg);
+        _message->prefix(" ");
+        _message->suffix(" ");
         _message->align(Align::Center);
-        _message->textAttr(colors().dimmed);
-        _message->wrap(true);
+        _message->textAttr(colors().menu);
         
         _downloadButton->label()->text  ("Download");
         _downloadButton->label()->align (Align::Left);
@@ -27,15 +28,26 @@ public:
     
     // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
-        return {22, 6};
+        return {25, 2};
     }
     
     void layout() override {
         const Rect b = bounds();
+        
         constexpr int ButtonWidth = 8;
-        _message->frame({{1,1}, {b.w()-2, 2}});
-        _downloadButton->frame({{2,4}, {ButtonWidth, 1}});
-        _ignoreButton->frame({{b.w()-2-ButtonWidth,4}, {ButtonWidth, 1}});
+        _message->frame({{2,0}, {b.w()-2, 1}});
+        _downloadButton->frame({{3,1}, {ButtonWidth, 1}});
+        _ignoreButton->frame({{b.w()-3-ButtonWidth,1}, {ButtonWidth, 1}});
+    }
+    
+    void draw() override {
+        Attr color = attr(colors().menu);
+        const Rect b = bounds();
+        drawRect();
+        
+        drawLineHoriz({0,1}, b.w(), ' ');
+        drawLineVert({0,1}, 1);
+        drawLineVert({b.w()-1,1}, 1);
     }
     
 //    bool handleEvent(const Event& ev) override {
