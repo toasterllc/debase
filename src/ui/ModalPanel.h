@@ -45,6 +45,14 @@ public:
 //        return r;
 //    }
     
+    Rect boundsUntruncated(const Rect& bounds) const {
+        Rect b = bounds;
+        b.origin -= Size{_truncateEdges.l, _truncateEdges.t};
+        b.size += Size{_truncateEdges.l, _truncateEdges.t};
+        b.size += Size{_truncateEdges.r, _truncateEdges.b};
+        return b;
+    }
+    
     Rect interiorFrame(Rect bounds) const {
         return Inset(bounds, inset());
 //        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
@@ -88,8 +96,7 @@ public:
         
         Size s = Inset(bf, -inset()).br();
         
-        // If the last frame calculation function returns a 0 height, subtract off the spacing that it adds
-//        s.y -= _SectionSpacingY;
+        // If the last element's frame has a 0 height, subtract off the unused spacing that it added
         if (!last.h()) s.y -= _SectionSpacingY;
         
 //        s.x -= _truncateEdges.r;
@@ -123,22 +130,13 @@ public:
 //        return s;
     }
     
-    Rect boundsUntruncated() {
-        Rect b = bounds();
-        b.origin -= Size{_truncateEdges.l, _truncateEdges.t};
-        b.size += Size{_truncateEdges.l, _truncateEdges.t};
-        b.size += Size{_truncateEdges.r, _truncateEdges.b};
-        return b;
-    }
-    
     void layout() override {
-        const Rect b = boundsUntruncated();
+        const Rect b = boundsUntruncated(bounds());
         const Point titleOrigin = b.origin+Size{2,0};
         _title->frame({titleOrigin, {b.w()-4, 1}});
         _title->visible(titleOrigin.y >= 0);
         
-        const Rect inf = interiorFrame(b);
-        const Rect mf = messageFrame(inf);
+        const Rect mf = messageFrame(interiorFrame(b));
         _message->frame(mf);
         
 //        if (!_condensed) _message->textAttr();
@@ -191,12 +189,37 @@ public:
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
         
+        // Draw the border
         {
             Attr color = attr(_color);
-            drawRect();
-            drawLineVert({0,3}, 1);
-            drawLineVert({bounds().w()-1,3}, 1);
-            drawLineHoriz({1,3}, bounds().w()-2, ' ');
+            
+            const Rect b = bounds();
+            const Rect bu = boundsUntruncated(b);
+            
+            const bool left   = bu.l() >= 0;
+            const bool right  = bu.r() <= b.r();
+            const bool top    = bu.t() >= 0;
+            const bool bottom = bu.b() <= b.b();
+            
+            // Draw the lines that aren't clipped
+            if (left)   drawLineVert ({ bu.l(),   0        }, b.h());
+            if (right)  drawLineVert ({ bu.r()-1, 0        }, b.h());
+            if (top)    drawLineHoriz({ 0,        bu.t()   }, b.w());
+            if (bottom) drawLineHoriz({ 0,        bu.b()-1 }, b.w());
+            
+            // Draw the corners that aren't clipped
+            if (left && top)     mvwaddch(window(), 0,        0,        ACS_ULCORNER);
+            if (right && top)    mvwaddch(window(), 0,        bu.r()-1, ACS_URCORNER);
+            if (left && bottom)  mvwaddch(window(), bu.b()-1, 0,        ACS_LLCORNER);
+            if (right && bottom) mvwaddch(window(), bu.b()-1, bu.r()-1, ACS_LRCORNER);
+            
+//            {
+//                Attr color = attr(_color);
+//                drawRect();
+//                drawLineVert({0,3}, 1);
+//                drawLineVert({bounds().w()-1,3}, 1);
+//                drawLineHoriz({1,3}, bounds().w()-2, ' ');
+//            }
         }
         
 //        if (erased()) {
@@ -222,6 +245,31 @@ public:
 //    }
     
     bool handleEvent(const Event& ev) override {
+        Edges edges = _truncateEdges;
+        if (ev.type == Event::Type::KeyLeft) {
+            edges.r++;
+        } else if (ev.type == Event::Type::KeyRight) {
+            edges.l++;
+        } else if (ev.type == Event::Type::KeyUp) {
+            edges.b++;
+        } else if (ev.type == Event::Type::KeyDown) {
+            edges.t++;
+        }
+        truncateEdges(edges);
+        screen().eraseNeeded(true);
+        screen().layoutNeeded(true);
+        
+//        const Point mid = {bounds().mx(), bounds().my()};
+//        const Point delta = ev.mouse.origin - mid.x;
+//        const Edges edges = {
+//            .l = std::abs(std::max(0, delta.x)),
+//            .r = std::abs(std::min(0, delta.x)),
+//            .t = std::abs(std::max(0, delta.y)),
+//            .b = std::abs(std::min(0, delta.y)),
+//        };
+//        truncateEdges(edges);
+//        eraseNeeded(true);
+        
         if (ev.type == Event::Type::KeyEscape){
             if (_escapeTriggersOK) ok();
             else                   dismiss();

@@ -374,8 +374,8 @@ public:
             
             _reload();
             
-            _licenseCheck();
             _moveOffer();
+            _licenseCheck();
             
             {
                 const std::string title = "debase v" + std::to_string(2) + " update";
@@ -392,7 +392,7 @@ public:
                 _updateAvailablePanel->dismissButton()->label()->text   ("Ignore");
                 _updateAvailablePanel->okButton()->action               ([] (UI::Button&) {});
                 _updateAvailablePanel->dismissButton()->action          ([] (UI::Button&) {});
-                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=0, .r=0, .t=0, .b=1});
+                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=0, .r=0, .t=0, .b=0});
 //                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=1, .t=1});
             }
             
