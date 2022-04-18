@@ -1537,21 +1537,25 @@ private:
         _welcomePanel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
         _welcomePanel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
         
-        // Wait until the user clicks a button
-        while (!choice) track({}, Once);
-        
-        // Trial
-        if (*choice) {
-            const License::Request req = _trialRequestCreate();
-            std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
-            if (license) {
-                _trialCountdownShow(*license);
-                _welcomePanel = nullptr;
+        for (;;) {
+            // Wait until the user clicks a button
+            while (!choice) track({}, Once);
+            
+            // Trial
+            if (*choice) {
+                const License::Request req = _trialRequestCreate();
+                std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
+                if (license) {
+                    _trialCountdownShow(*license);
+                    _welcomePanel = nullptr;
+                }
+            
+            // Register
+            } else {
+                _registerPanelRun();
             }
-        
-        // Register
-        } else {
-            _registerPanelRun();
+            
+            choice = std::nullopt;
         }
     }
     
@@ -1984,7 +1988,7 @@ private:
         _waitForAsync(async);
         try {
             #warning TODO: remove
-            latestVersion = 5;
+            latestVersion = 6;
 //            async.get();
         } catch (...) {
             // Version check failed

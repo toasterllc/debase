@@ -19,6 +19,10 @@ public:
     }
     
     bool handleEvent(const Event& ev) override {
+        const bool hit = hitTest(ev.mouse.origin);
+        const bool mouseDown = ev.mouseDown(Event::MouseButtons::Left|Event::MouseButtons::Right);
+        const bool mouseUp = ev.mouseUp(Event::MouseButtons::Left|Event::MouseButtons::Right);
+        if (hit && (mouseDown || mouseUp)) return true;
         return false;
     }
 };
