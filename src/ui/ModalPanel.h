@@ -78,9 +78,13 @@ public:
         const Rect mf = messageFrame(interiorFrame({{}, constraint}));
         const Rect cf = contentFrame(mf);
         const Rect bf = buttonFrame(cf);
+        const Rect& last = bf;
         
         Size s = Inset(bf, -borderSize()).br();
-        if (!bf.h()) s.y -= _SectionSpacingY;
+        
+        // If the last frame calculation function returns a 0 height, subtract off the spacing that it adds
+        s.y -= _SectionSpacingY;
+//        if (!last.h()) s.y -= _SectionSpacingY;
         
 //        s.x -= _truncateEdges.r;
 //        s.y -= _truncateEdges.b;
