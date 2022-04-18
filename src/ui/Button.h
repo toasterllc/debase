@@ -30,7 +30,7 @@ public:
     }
     
     void layout() override {
-        const Rect r = Inset(bounds(), {(_bordered?1:0), 0});
+        const Rect r = Inset(bounds(), Size{(_bordered?1:0), 0});
         _key->sizeToFit(ConstraintNoneSize);
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});

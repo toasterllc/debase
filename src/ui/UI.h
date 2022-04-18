@@ -68,6 +68,8 @@ struct Edges {
     int r = 0;
     int t = 0;
     int b = 0;
+    
+    Edges operator -() const { return {-l, -r, -t, -b}; }
 };
 
 struct Event {
@@ -180,8 +182,22 @@ inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
     };
 }
 
+inline constexpr Rect Inset(const Rect& x, const Edges& s) {
+    Rect r = x;
+    r.origin.x += s.l;
+    r.size.x   -= s.l;
+    
+    r.size.x   -= s.r;
+    
+    r.origin.y += s.t;
+    r.size.y   -= s.t;
+    
+    r.size.y   -= s.b;
+    return r;
+}
+
 inline constexpr Rect Inset(const Rect& x, const Size& s) {
-    return {x.origin+s, x.size-s-s};
+    return Inset(x, {.l=s.x, .r=s.x, .t=s.y, .b=s.y});
 }
 
 inline constexpr bool Empty(const Rect& x) {
@@ -189,7 +205,7 @@ inline constexpr bool Empty(const Rect& x) {
 }
 
 inline constexpr bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
-    return !Empty(Intersection(Inset(r, {-expand.x,-expand.y}), {p, {1,1}}));
+    return !Empty(Intersection(Inset(r, -expand), {p, {1,1}}));
 }
 
 } // namespace UI

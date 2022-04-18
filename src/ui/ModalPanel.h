@@ -26,9 +26,15 @@ public:
 //        _dismissButton->action              (std::bind(&ModalPanel::dismiss, this));
     }
     
-    Size borderSize() const {
-        return (!_condensed ? Size{5,2} : Size{3,2});
+    Edges inset() const {
+        if (!_condensed) return {.l=5, .r=5, .t=2, .b=1};
+        else             return {.l=4, .r=4, .t=2, .b=2};
     }
+    
+    
+//    Size borderSize() const {
+//        return (!_condensed ? Size{5,1} : Size{3,2});
+//    }
     
 //    Rect interiorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
     
@@ -40,7 +46,7 @@ public:
 //    }
     
     Rect interiorFrame(Rect bounds) const {
-        return Inset(bounds, borderSize());
+        return Inset(bounds, inset());
 //        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
 //        Rect r = Inset(bounds, borderSize());
 //        r.origin -= Size{_truncateEdges.l, _truncateEdges.t};
@@ -80,11 +86,11 @@ public:
         const Rect bf = buttonFrame(cf);
         const Rect& last = bf;
         
-        Size s = Inset(bf, -borderSize()).br();
+        Size s = Inset(bf, -inset()).br();
         
         // If the last frame calculation function returns a 0 height, subtract off the spacing that it adds
-        s.y -= _SectionSpacingY;
-//        if (!last.h()) s.y -= _SectionSpacingY;
+//        s.y -= _SectionSpacingY;
+        if (!last.h()) s.y -= _SectionSpacingY;
         
 //        s.x -= _truncateEdges.r;
 //        s.y -= _truncateEdges.b;

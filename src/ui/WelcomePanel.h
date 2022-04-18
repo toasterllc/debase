@@ -28,7 +28,7 @@ public:
     
     // MARK: - ModalPanel Overrides
     int contentHeight(int width) const override {
-        return 2*_ButtonHeight;
+        return 2*_ButtonHeight+1; // Add 1 line for the bottom spacing, because it looks more balanced
     }
     
 //    bool layoutNeeded() const override { return true; }
