@@ -144,17 +144,7 @@ public:
     virtual ~View() = default;
     
     virtual bool hitTest(const Point& p) const {
-        Rect b = bounds();
-        b.origin.x -= _hitTestExpand.l;
-        b.size.x   += _hitTestExpand.l;
-        
-        b.size.x   += _hitTestExpand.r;
-        
-        b.origin.y -= _hitTestExpand.t;
-        b.size.y   += _hitTestExpand.t;
-        
-        b.size.y   += _hitTestExpand.b;
-        return HitTest(b, p);
+        return HitTest(bounds(), p, _hitTestInset);
     }
     
     static constexpr int ConstraintNone = INT_MAX;
@@ -274,8 +264,8 @@ public:
     virtual const std::optional<Color> borderColor() const { return _borderColor; }
     virtual bool borderColor(std::optional<Color> x) { return _set(_borderColor, x); }
     
-    virtual const Edges& hitTestExpand() const { return _hitTestExpand; }
-    virtual bool hitTestExpand(const Edges& x) { return _setForce(_hitTestExpand, x); }
+    virtual const Edges& hitTestInset() const { return _hitTestInset; }
+    virtual bool hitTestInset(const Edges& x) { return _setForce(_hitTestInset, x); }
     
     virtual const bool inhibitErase() const { return _inhibitErase; }
     virtual bool inhibitErase(bool x) { return _set(_inhibitErase, x); }
@@ -629,7 +619,7 @@ private:
     bool _trackStop = false;
     bool _inhibitErase = false;
     Event _eventCurrent;
-    Edges _hitTestExpand;
+    Edges _hitTestInset;
     std::optional<Color> _borderColor;
 };
 

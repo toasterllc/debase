@@ -6,8 +6,14 @@ namespace UI {
 class TrialCountdownPanel : public ModalPanel {
 public:
     TrialCountdownPanel(std::chrono::seconds remaining) : _remaining(remaining) {
+        width           (19);
+        condensed       (true);
+        color           (colors().menu);
+        truncateEdges   (UI::Edges{.r=1, .b=1});
+        
         _registerButton->label()->text  ("Register");
-        _registerButton->bordered       (true);
+//        _registerButton->label()->align(Align::Center);
+//        _registerButton->bordered(true);
         _registerButton->enabled        (true);
         
         title()->text("debase trial");
@@ -19,12 +25,13 @@ public:
         constexpr auto Day = std::chrono::seconds(86400);
         if (remaining > Day) remaining += Day/2;
         message()->text(Time::RelativeTimeString({.futureSuffix="left"}, remaining));
+        message()->textAttr(colors().dimmed);
     }
     
     // MARK: - View Overrides
     void layout() override {
         ModalPanel::layout();
-        _registerButton->frame(contentFrame(messageFrame(interiorFrame(bounds()))));
+        _registerButton->frame(contentFrame());
     }
     
     bool handleEvent(const Event& ev) override {
@@ -43,7 +50,7 @@ public:
     auto& registerButton() { return _registerButton; }
     
 private:
-    static constexpr int _ButtonHeight = 3;
+    static constexpr int _ButtonHeight = 1;
     
     ButtonPtr _registerButton = subviewCreate<Button>();
     std::chrono::seconds _remaining = {};

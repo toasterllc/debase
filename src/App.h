@@ -377,24 +377,7 @@ public:
             _moveOffer();
             _licenseCheck();
             
-            {
-                const std::string title = "debase v" + std::to_string(2) + " update";
-                _updateAvailablePanel = subviewCreate<UI::ModalPanel>();
-                _updateAvailablePanel->width                            (26);
-//                _updateAvailablePanel->message()->text                  (title);
-//                _updateAvailablePanel->message()->textAttr              (colors().dimmed);
-//                _updateAvailablePanel->message()->align                 (UI::Align::Center);
-                _updateAvailablePanel->title()->text                    (title);
-                _updateAvailablePanel->title()->align                   (UI::Align::Center);
-                _updateAvailablePanel->color                            (colors().menu);
-                _updateAvailablePanel->condensed                        (true);
-                _updateAvailablePanel->okButton()->label()->text        ("Download");
-                _updateAvailablePanel->dismissButton()->label()->text   ("Ignore");
-                _updateAvailablePanel->okButton()->action               ([] (UI::Button&) {});
-                _updateAvailablePanel->dismissButton()->action          ([] (UI::Button&) {});
-                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=0, .r=0, .t=0, .b=0});
-//                _updateAvailablePanel->truncateEdges                    (UI::Edges{.l=1, .t=1});
-            }
+//            _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(2);
             
             track({});
             
@@ -779,7 +762,7 @@ private:
             const int w = std::abs(delta.x);
             const int h = std::abs(delta.y);
             // allow: cancel drag when mouse is moved to the edge (as an affordance to the user)
-            const bool allow = HitTest(rootWinBounds, p, {-3,-3});
+            const bool allow = HitTest(rootWinBounds, p, UI::Size{3,3});
             mouseDragged |= w>1 || h>1;
             
             // Find insertion position
@@ -1601,8 +1584,6 @@ private:
         const License::Context& ctx = _licenseCtxGet();
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
         _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(rem);
-        _trialCountdownPanel->width(24);
-        _trialCountdownPanel->color(colors().menu);
         _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
             _registerPanelShow();
         });

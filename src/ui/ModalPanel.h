@@ -26,75 +26,24 @@ public:
 //        _dismissButton->action              (std::bind(&ModalPanel::dismiss, this));
     }
     
-    Edges inset() const {
-        if (!_condensed) return {.l=5, .r=5, .t=2, .b=1};
-        else             return {.l=4, .r=4, .t=2, .b=2};
-    }
-    
-    
-//    Size borderSize() const {
-//        return (!_condensed ? Size{5,1} : Size{3,2});
-//    }
-    
-//    Rect interiorFrame(Rect bounds) { return Inset(bounds, BorderSize()); }
-    
-//    Rect truncatedBounds(Rect bounds) const {
-//        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
-//        Rect r = Inset(bounds, borderSize());
-//        r.origin -= Size{_truncateEdges.l, _truncateEdges.t};
-//        return r;
-//    }
-    
-    Rect boundsUntruncated(const Rect& bounds) const {
-        Rect b = bounds;
-        b.origin -= Size{_truncateEdges.l, _truncateEdges.t};
-        b.size += Size{_truncateEdges.l, _truncateEdges.t};
-        b.size += Size{_truncateEdges.r, _truncateEdges.b};
-        return b;
-    }
-    
-    Rect interiorFrame(Rect bounds) const {
-        return Inset(bounds, inset());
-//        bounds.size -= Size{_truncateEdges.r, _truncateEdges.b};
-//        Rect r = Inset(bounds, borderSize());
-//        r.origin -= Size{_truncateEdges.l, _truncateEdges.t};
-//        return r;
-    }
-    
-    Rect messageFrame(Rect interiorFrame) const {
-        Rect r = interiorFrame;
-        r.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
-        return r;
-    }
-    
-    Rect contentFrame(Rect messageFrame) const {
-        const int h = contentHeight(messageFrame.w());
-        const Point p = messageFrame.bl() + Size{0, (messageFrame.h() ? _SectionSpacingY : 0)};
-        return {p, {messageFrame.w(), h}};
-    }
-    
-    Rect buttonFrame(Rect contentFrame) const {
-        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
-        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
-        const int h = std::max(okButtonSize.y, dismissButtonSize.y);
-        const Point p = contentFrame.bl() + Size{0, (contentFrame.h() ? _SectionSpacingY : 0)};
-        return {p, {contentFrame.w(), h}};
-    }
-    
     virtual int contentHeight(int width) const { return 0; }
-//    virtual bool suppressEvents() const { return _suppressEvents; }
-//    virtual bool suppressEvents(bool x) { return _set(_suppressEvents, x); }
+    
+    Rect contentFrame() const {
+        return _contentFrameCached;
+    }
     
     // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
         constraint.x = std::min(_width, constraint.x);
         
-        const Rect mf = messageFrame(interiorFrame({{}, constraint}));
-        const Rect cf = contentFrame(mf);
-        const Rect bf = buttonFrame(cf);
+        const Rect b = {{}, constraint};
+        const Rect inf = _interiorFrame(b);
+        const Rect mf = _messageFrame(inf);
+        const Rect cf = _contentFrame(mf);
+        const Rect bf = _buttonFrame(cf);
         const Rect& last = bf;
         
-        Size s = Inset(bf, -inset()).br();
+        Size s = Inset(bf, -_inset()).br();
         
         // If the last element's frame has a 0 height, subtract off the unused spacing that it added
         if (!last.h()) s.y -= _SectionSpacingY;
@@ -131,23 +80,19 @@ public:
     }
     
     void layout() override {
-        const Rect b = boundsUntruncated(bounds());
-        const Point titleOrigin = b.origin+Size{2,0};
-        _title->frame({titleOrigin, {b.w()-4, 1}});
+        const Rect b   = _boundsLayout(bounds());
+        const Rect inf = _interiorFrame(b);
+        const Rect mf  = _messageFrame(inf);
+        const Rect cf  = _contentFrame(mf);
+        const Rect bf  = _buttonFrame(cf);
+        
+        const Point titleOrigin = b.origin+Size{_TitleInset,0};
+        _title->frame({titleOrigin, {b.w()-2*_TitleInset, 1}});
         _title->visible(titleOrigin.y >= 0);
         
-        const Rect mf = messageFrame(interiorFrame(b));
         _message->frame(mf);
         
-//        if (!_condensed) _message->textAttr();
-//        else             _message->textAttr();
-        
-//        const Rect cf = contentFrame();
-//        Point off = {cf.r(), cf.b() + _SectionSpacingY};
-        
-        const Rect bf = buttonFrame(contentFrame(mf));
         Point boff = bf.tr();
-        
         if (!_condensed) {
             const Size okButtonSize = _okButton->sizeIntrinsic(ConstraintNoneSize) + Size{_ButtonPaddingX, 0};
             _okButton->frame({boff+Size{-okButtonSize.x,0}, okButtonSize});
@@ -173,6 +118,8 @@ public:
             _dismissButton->enabled(dismissButtonEnabled());
         }
         
+        _contentFrameCached = cf;
+        
 //        _title->layout(*this);
 //        _message->layout(*this);
     }
@@ -193,25 +140,26 @@ public:
         {
             Attr color = attr(_color);
             
-            const Rect b = bounds();
-            const Rect bu = boundsUntruncated(b);
+            const int w = bounds().w();
+            const int h = bounds().h();
+            const Rect b = _boundsLayout(bounds());
             
-            const bool left   = bu.l() >= 0;
-            const bool right  = bu.r() <= b.r();
-            const bool top    = bu.t() >= 0;
-            const bool bottom = bu.b() <= b.b();
+            const bool left   = b.l() >= 0;
+            const bool right  = b.r() <= w;
+            const bool top    = b.t() >= 0;
+            const bool bottom = b.b() <= h;
             
             // Draw the lines that aren't clipped
-            if (left)   drawLineVert ({ bu.l(),   0        }, b.h());
-            if (right)  drawLineVert ({ bu.r()-1, 0        }, b.h());
-            if (top)    drawLineHoriz({ 0,        bu.t()   }, b.w());
-            if (bottom) drawLineHoriz({ 0,        bu.b()-1 }, b.w());
+            if (left)   drawLineVert ({ 0,        0       }, h);
+            if (right)  drawLineVert ({ b.r()-1,  0       }, h);
+            if (top)    drawLineHoriz({ 0,        0       }, w);
+            if (bottom) drawLineHoriz({ 0,        b.b()-1 }, w);
             
             // Draw the corners that aren't clipped
-            if (left && top)     mvwaddch(window(), 0,        0,        ACS_ULCORNER);
-            if (right && top)    mvwaddch(window(), 0,        bu.r()-1, ACS_URCORNER);
-            if (left && bottom)  mvwaddch(window(), bu.b()-1, 0,        ACS_LLCORNER);
-            if (right && bottom) mvwaddch(window(), bu.b()-1, bu.r()-1, ACS_LRCORNER);
+            if (left && top)     mvwaddch(window(), 0,       0,       ACS_ULCORNER);
+            if (right && top)    mvwaddch(window(), 0,       b.r()-1, ACS_URCORNER);
+            if (left && bottom)  mvwaddch(window(), b.b()-1, 0,       ACS_LLCORNER);
+            if (right && bottom) mvwaddch(window(), b.b()-1, b.r()-1, ACS_LRCORNER);
             
 //            {
 //                Attr color = attr(_color);
@@ -245,19 +193,19 @@ public:
 //    }
     
     bool handleEvent(const Event& ev) override {
-        Edges edges = _truncateEdges;
-        if (ev.type == Event::Type::KeyLeft) {
-            edges.r++;
-        } else if (ev.type == Event::Type::KeyRight) {
-            edges.l++;
-        } else if (ev.type == Event::Type::KeyUp) {
-            edges.b++;
-        } else if (ev.type == Event::Type::KeyDown) {
-            edges.t++;
-        }
-        truncateEdges(edges);
-        screen().eraseNeeded(true);
-        screen().layoutNeeded(true);
+//        Edges edges = _truncateEdges;
+//        if (ev.type == Event::Type::KeyLeft) {
+//            edges.r++;
+//        } else if (ev.type == Event::Type::KeyRight) {
+//            edges.l++;
+//        } else if (ev.type == Event::Type::KeyUp) {
+//            edges.b++;
+//        } else if (ev.type == Event::Type::KeyDown) {
+//            edges.t++;
+//        }
+//        truncateEdges(edges);
+//        screen().eraseNeeded(true);
+//        screen().layoutNeeded(true);
         
 //        const Point mid = {bounds().mx(), bounds().my()};
 //        const Point delta = ev.mouse.origin - mid.x;
@@ -334,9 +282,44 @@ public:
     virtual bool dismissButtonEnabled() const { return true; }
     
 private:
+    static constexpr int _TitleInset            = 2;
     static constexpr int _SectionSpacingY       = 1;
     static constexpr int _ButtonPaddingX        = 4;
     static constexpr int _ButtonSpacingX        = 1;
+    
+    Edges _inset() const {
+        if (!_condensed) return {.l=5, .r=5, .t=2, .b=1};
+        else             return {.l=4, .r=4, .t=2, .b=2};
+    }
+    
+    // boundsLayout(): returns that bounds that should be used for layout purposes
+    Rect _boundsLayout(const Rect& bounds) const {
+        return Inset(bounds, -_truncateEdges);
+    }
+    
+    Rect _interiorFrame(Rect bounds) const {
+        return Inset(bounds, _inset());
+    }
+    
+    Rect _messageFrame(Rect interiorFrame) const {
+        Rect r = interiorFrame;
+        r.size.y = _message->sizeIntrinsic({interiorFrame.w(), ConstraintNone}).y;
+        return r;
+    }
+    
+    Rect _contentFrame(Rect messageFrame) const {
+        const int h = contentHeight(messageFrame.w());
+        const Point p = messageFrame.bl() + Size{0, (messageFrame.h() ? _SectionSpacingY : 0)};
+        return {p, {messageFrame.w(), h}};
+    }
+    
+    Rect _buttonFrame(Rect contentFrame) const {
+        const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
+        const int h = std::max(okButtonSize.y, dismissButtonSize.y);
+        const Point p = contentFrame.bl() + Size{0, (contentFrame.h() ? _SectionSpacingY : 0)};
+        return {p, {contentFrame.w(), h}};
+    }
     
     int _width = 0;
     Color _color;
@@ -348,6 +331,8 @@ private:
     Edges _truncateEdges;
     bool _condensed             = false;
     bool _escapeTriggersOK      = false;
+    
+    Rect _contentFrameCached;
 };
 
 using ModalPanelPtr = std::shared_ptr<ModalPanel>;

@@ -88,16 +88,10 @@ public:
 //    }
     
     // MARK: - View Overrides
-    
-//    void draw() override {
-//        ModalPanel::draw();
-//        drawRect(contentFrame());
-//    }
-    
     void layout() override {
         ModalPanel::layout();
+        const Rect cf = contentFrame();
         
-        const Rect cf = contentFrame(messageFrame(interiorFrame(bounds())));
         int offY = cf.t();
         
         if (purchaseMessageVisible()) {

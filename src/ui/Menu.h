@@ -63,13 +63,13 @@ public:
             y += button->size().y;
             
             // Set the expanded hit test size so that the menu doesn't have any dead zones
-            const Edges hitTestExpand = {
-                .t = (first ? 1 : 0),
-                .l = _BorderSize+_InsetX,
-                .r = _BorderSize+_InsetX,
-                .b = 1,
+            const Edges hitTestInset = {
+                .t = (first ? -1 : 0),
+                .l = -(_BorderSize+_InsetX),
+                .r = -(_BorderSize+_InsetX),
+                .b = -1,
             };
-            button->hitTestExpand(hitTestExpand);
+            button->hitTestInset(hitTestInset);
             button->actionButtons(Event::MouseButtons::Left|Event::MouseButtons::Right);
             
             // Start hiding buttons once the bottom of the bottom extends beyond our max y

@@ -36,8 +36,7 @@ public:
     // MARK: - View Overrides
     void layout() override {
         ModalPanel::layout();
-        
-        const Rect cf = contentFrame(messageFrame(interiorFrame(bounds())));
+        const Rect cf = contentFrame();
         
         int offY = cf.t();
         _trialButton->frame({{cf.origin.x, offY}, {cf.size.x, _ButtonHeight}});

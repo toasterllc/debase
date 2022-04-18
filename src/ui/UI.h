@@ -182,17 +182,11 @@ inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
     };
 }
 
-inline constexpr Rect Inset(const Rect& x, const Edges& s) {
+inline constexpr Rect Inset(const Rect& x, const Edges& e) {
     Rect r = x;
-    r.origin.x += s.l;
-    r.size.x   -= s.l;
-    
-    r.size.x   -= s.r;
-    
-    r.origin.y += s.t;
-    r.size.y   -= s.t;
-    
-    r.size.y   -= s.b;
+    r.origin += Size{e.l, e.t};
+    r.size   -= Size{e.l, e.t};
+    r.size   -= Size{e.r, e.b};
     return r;
 }
 
@@ -204,8 +198,12 @@ inline constexpr bool Empty(const Rect& x) {
     return x.size.x==0 || x.size.y==0;
 }
 
-inline constexpr bool HitTest(const Rect& r, const Point& p, Size expand={0,0}) {
-    return !Empty(Intersection(Inset(r, -expand), {p, {1,1}}));
+inline constexpr bool HitTest(const Rect& r, const Point& p, Edges inset={}) {
+    return !Empty(Intersection(Inset(r, inset), {p, {1,1}}));
+}
+
+inline constexpr bool HitTest(const Rect& r, const Point& p, Size inset) {
+    return !Empty(Intersection(Inset(r, inset), {p, {1,1}}));
 }
 
 } // namespace UI
