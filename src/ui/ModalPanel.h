@@ -55,7 +55,7 @@ public:
     
     Rect contentFrame(Rect messageFrame) const {
         const int h = contentHeight(messageFrame.w());
-        const Point p = messageFrame.bl() + Size{0, (messageFrame.h() && h ? _SectionSpacingY : 0)};
+        const Point p = messageFrame.bl() + Size{0, (messageFrame.h() ? _SectionSpacingY : 0)};
         return {p, {messageFrame.w(), h}};
     }
     
@@ -63,7 +63,7 @@ public:
         const Size okButtonSize = (okButtonVisible() ? _okButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
         const Size dismissButtonSize = (dismissButtonVisible() ? _dismissButton->sizeIntrinsic(ConstraintNoneSize) : Size{});
         const int h = std::max(okButtonSize.y, dismissButtonSize.y);
-        const Point p = contentFrame.bl() + Size{0, (contentFrame.h() && h ? _SectionSpacingY : 0)};
+        const Point p = contentFrame.bl() + Size{0, (contentFrame.h() ? _SectionSpacingY : 0)};
         return {p, {contentFrame.w(), h}};
     }
     
@@ -78,12 +78,16 @@ public:
         const Rect mf = messageFrame(interiorFrame({{}, constraint}));
         const Rect cf = contentFrame(mf);
         const Rect bf = buttonFrame(cf);
+        
         Size s = Inset(bf, -borderSize()).br();
+        if (!bf.h()) s.y -= _SectionSpacingY;
+        
 //        s.x -= _truncateEdges.r;
 //        s.y -= _truncateEdges.b;
 //        
         s.x -= (_truncateEdges.l + _truncateEdges.r);
         s.y -= (_truncateEdges.t + _truncateEdges.b);
+        
         return s;
         
 //        const Rect f = InteriorFrame({{}, constraint});
