@@ -1428,7 +1428,7 @@ private:
         }
     }
     
-    void _licenseRenew(State::State& state, const License::License& license) {
+    void _licenseRenewRun(const License::License& license) {
         constexpr const char* PanelTitle            = "Renew License";
         constexpr const char* PanelMessageUnderway  = "Renewing debase license for this machine...";
         constexpr const char* PanelMessageError     = "A problem was encountered with your debase license. Please try registering again.";
@@ -1436,7 +1436,7 @@ private:
         assert(!_registerPanel);
         
         // Create the register panel, but keep it hidden for now
-        _registerPanelShow(PanelTitle, PanelMessageUnderway, false);
+        _registerPanelShow(PanelTitle, PanelMessageUnderway);
         _registerPanel->visible(false);
         _registerPanel->purchaseMessageVisible(false);
         _registerPanel->email()->value(license.email);
@@ -1483,6 +1483,7 @@ private:
             License::Status st = _licenseUnseal(sealed, license);
             if (st == License::Status::Valid) {
                 // License is valid; save it and dismiss
+                State::State state(StateDir());
                 state.license(sealed);
                 state.write();
                 ok = true;
@@ -1494,70 +1495,122 @@ private:
             _registerPanel->purchaseMessageVisible(true);
             _registerPanel->message()->text(PanelMessageError);
             layoutNeeded(true);
+            _registerPanelRun(false);
         
         } else {
             _registerPanel = nullptr;
         }
     }
     
-    void _welcomePanelActionTrial() {
-        assert(_welcomePanel);
+//    void _welcomePanelActionTrial() {
+//        assert(_welcomePanel);
+//        
+//        const License::Request req = _trialRequestCreate();
+//        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
+//        if (license) {
+//            _trialCountdownShow(*license);
+//            _welcomePanel = nullptr;
+//        }
+//    }
+//    
+//    void _welcomePanelActionRegister() {
+//        _registerPanelShow();
+//    }
+    
+    void _welcomePanelRun() {
+        std::optional<bool> choice;
         
-        const License::Request req = _trialRequestCreate();
-        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
-        if (license) {
-            _trialCountdownShow(*license);
-            _welcomePanel = nullptr;
-        }
-    }
-    
-    void _welcomePanelActionRegister() {
-        _registerPanelShow();
-    }
-    
-    void _welcomePanelShow() {
         _welcomePanel = subviewCreate<UI::WelcomePanel>();
         _welcomePanel->width                    (40);
         _welcomePanel->color                    (colors().menu);
         _welcomePanel->title()->text            ("");
         _welcomePanel->message()->text          ("Welcome to debase!");
-        _welcomePanel->trialButton()->action    (std::bind(&App::_welcomePanelActionTrial, this));
-        _welcomePanel->registerButton()->action (std::bind(&App::_welcomePanelActionRegister, this));
-    }
-    
-    void _registerPanelRegister() {
-        assert(_registerPanel);
+        _welcomePanel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
+        _welcomePanel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
         
-        const std::string email = _registerPanel->email()->value();
-        const std::string licenseCode = _registerPanel->code()->value();
-        const License::Request req = _licenseRequestCreate(email, licenseCode);
-        bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), req);
-        if (ok) {
-            _trialCountdownPanel = nullptr;
-            _welcomePanel = nullptr;
-            _registerPanel = nullptr;
-            _thankYouMessageShow();
+        // Wait until the user clicks a button
+        while (!choice) track({}, Once);
+        
+        // Trial
+        if (*choice) {
+            const License::Request req = _trialRequestCreate();
+            std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
+            if (license) {
+                _trialCountdownShow(*license);
+                _welcomePanel = nullptr;
+            }
+        
+        // Register
+        } else {
+            _registerPanelRun();
         }
     }
     
-    void _registerPanelDismiss() {
-        assert(_registerPanel);
-        _registerPanel = nullptr;
+    void _registerPanelShow(std::string_view title, std::string_view message) {
+        assert(!_registerPanel);
+        
+        _registerPanel = subviewCreate<UI::RegisterPanel>();
+        _registerPanel->width            (50);
+        _registerPanel->color            (colors().menu);
+        _registerPanel->title()->text    (title);
+        _registerPanel->message()->text  (message);
     }
     
-    void _registerPanelShow(std::string_view title, std::string_view message, bool dismissAllowed) {
+    void _registerPanelRun(bool dismissAllowed) {
 //        std::string msg = std::string(message);
 //        msg += " To purchase a license, please visit:\n";
         
-        _registerPanel = subviewCreate<UI::RegisterPanel>();
-        _registerPanel->width               (50);
-        _registerPanel->color               (colors().menu);
-        _registerPanel->title()->text       (title);
-        _registerPanel->message()->text     (message);
-        _registerPanel->okButton()->action  (std::bind(&App::_registerPanelRegister, this));
-        if (dismissAllowed) {
-            _registerPanel->dismissButton()->action(std::bind(&App::_registerPanelDismiss, this));
+        assert(_registerPanel);
+        
+        std::optional<bool> choice;
+        
+        _registerPanel->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
+        if (dismissAllowed) _registerPanel->dismissButton()->action ( [&] (UI::Button& b) { choice = false; } );
+        
+        for (;;) {
+            // Wait until the user clicks a button
+            while (!choice) track({}, Once);
+            
+            // Register
+            if (*choice) {
+                const std::string email = _registerPanel->email()->value();
+                const std::string licenseCode = _registerPanel->code()->value();
+                const License::Request req = _licenseRequestCreate(email, licenseCode);
+                bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), req);
+                if (ok) {
+                    _trialCountdownPanel = nullptr;
+                    _welcomePanel = nullptr;
+                    _registerPanel = nullptr;
+                    _thankYouMessageRun();
+                    return;
+                }
+            
+            // Dismiss
+            } else {
+                _registerPanel = nullptr;
+                return;
+            }
+            
+            choice = std::nullopt;
         }
+    }
+    
+    void _registerPanelRun(std::string_view title, std::string_view message, bool dismissAllowed) {
+        assert(!_registerPanel);
+        _registerPanelShow(title, message);
+        _registerPanelRun(dismissAllowed);
+    }
+    
+    void _registerPanelRun() {
+        constexpr const char* Title     = "Register debase";
+        constexpr const char* Message   = "Please enter your license information.";
+        _registerPanelRun(Title, Message, true);
+    }
+    
+    void _trialExpiredPanelRun() {
+        constexpr const char* Title     = "Trial Expired";
+        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
+        _registerPanelRun(Title, Message, false);
     }
     
     void _trialCountdownShow(const License::License& license) {
@@ -1586,18 +1639,20 @@ private:
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
         _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(rem);
         _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
-            _registerPanelShow();
+            _registerPanelRun();
         });
     }
     
-    void _thankYouMessageShow() {
+    void _thankYouMessageRun() {
+        bool done = false;
+        
         _messagePanel = subviewCreate<UI::ModalPanel>();
         _messagePanel->width                (42);
         _messagePanel->color                (colors().menu);
         _messagePanel->title()->text        ("Thank You!");
         _messagePanel->message()->text      ("Thank you for supporting debase!");
         _messagePanel->message()->align     (UI::Align::Center);
-        _messagePanel->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
+        _messagePanel->okButton()->action   ( [&] (UI::Button&) { done = true; } );
         _messagePanel->escapeTriggersOK     (true);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
@@ -1605,6 +1660,11 @@ private:
         // due to a mouse event doesn't trigger the flicker, only keyboard events.
         // For some reason sleeping a short time fixes it.
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        
+        // Wait until the user clicks a button
+        while (!done) track({}, Once);
+        
+        _messagePanel = nullptr;
     }
     
     void _errorMessageShow(std::string_view msg, bool showSupportMessage) {
@@ -1622,30 +1682,34 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
-    void _trialExpiredPanelShow() {
-        constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
-        _registerPanelShow(Title, Message, false);
-    }
-    
-    void _registerPanelShow() {
-        constexpr const char* Title     = "Register debase";
-        constexpr const char* Message   = "Please enter your license information.";
-        _registerPanelShow(Title, Message, true);
-    }
-    
     void _updateAvailablePanelShow(Version version) {
         _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(version);
-        _updateAvailablePanel->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
-        _updateAvailablePanel->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
+        
+        _updateAvailablePanel->okButton()->action([=] (UI::Button&) {
+            OpenURL(DebaseDownloadURL);
+            _updateAvailablePanel = nullptr;
+        });
+        
+//        _updateAvailablePanel->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
+//        _updateAvailablePanel->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
+        
+        _updateAvailablePanel->dismissButton()->action([=] (UI::Button&) {
+            // Ignore this version in the future
+            State::State state(StateDir());
+            state.updateIgnoreVersion(version);
+            state.write();
+            _updateAvailablePanel = nullptr;
+        });
     }
     
     void _moveOffer() {
         namespace fs = std::filesystem;
         
-        State::State state(StateDir());
         // Short-circuit if we've already asked the user to move this version (or a newer version) of debase
-        if (state.lastMoveOfferVersion() >= DebaseVersion) return;
+        {
+            State::State state(StateDir());
+            if (state.lastMoveOfferVersion() >= DebaseVersion) return;
+        }
         
         fs::path currentExecutablePath;
         try {
@@ -1764,8 +1828,11 @@ private:
         _moveDebasePanel = nullptr;
         
         // We offerred to move debase; update State so we remember that we did so
-        state.lastMoveOfferVersion(DebaseVersion);
-        state.write();
+        {
+            State::State state(StateDir());
+            state.lastMoveOfferVersion(DebaseVersion);
+            state.write();
+        }
         
         // Bail if the user doesn't want to move
         if (!*moveChoice) return;
@@ -1804,29 +1871,40 @@ private:
     }
     
     void _licenseCheck() {
-        State::State state(StateDir());
+        // Limit lifetime of `state` since our various Run() functions are synchronous
+        // and don't return until the user responds, and while we hold `state`, other
+        // debase instances are blocked from accessing it
+        License::SealedLicense sealedLicense;
+        bool trialExpired = false;
+        {
+            State::State state(StateDir());
+            sealedLicense = state.license();
+            trialExpired = state.trialExpired();
+        }
         
         License::License license;
-        License::Status st = _licenseUnseal(state.license(), license);
+        License::Status st = _licenseUnseal(sealedLicense, license);
         if (st == License::Status::Empty) {
-            if (!state.trialExpired()) {
-                _welcomePanelShow();
-            
-            } else {
-                // Show trial-expired panel
-                _trialExpiredPanelShow();
-            }
+            // Show welcome panel
+            if (!trialExpired) _welcomePanelRun();
+            // Show trial-expired panel
+            else _trialExpiredPanelRun();
         
         } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            _licenseRenew(state, license);
+            _licenseRenewRun(license);
         
         } else if (st == License::Status::Expired) {
             // Delete license, set expired=1, show trial-expired panel
-            state.license(License::SealedLicense{});
-            state.trialExpired(true);
-            state.write();
+            // Don't hold `state` while we call _trialExpiredPanelRun(), since it blocks
+            // until the user responds
+            {
+                State::State state(StateDir());
+                state.license(License::SealedLicense{});
+                state.trialExpired(true);
+                state.write();
+            }
             
-            _trialExpiredPanelShow();
+            _trialExpiredPanelRun();
         
         } else if (st == License::Status::Valid) {
             if (license.expiration) {
@@ -1838,49 +1916,56 @@ private:
         } else {
             // Unknown license error
             // Delete license, show welcome panel
-            state.license(License::SealedLicense{});
-            state.write();
+            // Don't hold `state` while we call _welcomePanelRun(), since it blocks
+            // until the user responds
+            {
+                State::State state(StateDir());
+                state.license(License::SealedLicense{});
+                state.write();
+            }
             
-            _welcomePanelShow();
+            _welcomePanelRun();
         }
     }
     
-    void _updateCheckActionDownload() {
-        OpenURL(DebaseDownloadURL);
-    }
-    
-    void _updateCheckActionIgnore() {
-        State::State state(StateDir());
-        state.updateIgnoreVersion();
-    }
+//    void _updateCheckActionDownload() {
+//        OpenURL(DebaseDownloadURL);
+//    }
+//    
+//    void _updateCheckActionIgnore() {
+//        State::State state(StateDir());
+//        state.updateIgnoreVersion();
+//    }
     
     void _updateCheck() {
         using namespace std::chrono;
-        
-        State::State state(StateDir());
-        
-        // Show the update-available dialog if we're already aware that an update is available
-        // and the user hasn't ignored that version.
-        if (state.updateVersion()>DebaseVersion && state.updateVersion()>state.updateIgnoreVersion()) {
-            _updateAvailablePanelShow(state.updateVersion());
-            return;
-        }
-        
         const std::time_t currentTime = system_clock::to_time_t(system_clock::now());
         
-        // If updateCheckTime is uninitialized, set it to the current time and return.
-        // We don't check for updates in this case, because we don't want to do network IO
-        // when debase is initially launched.
-        const system_clock::time_point updateCheckTime = system_clock::from_time_t(state.updateCheckTime());
-        if (updateCheckTime.time_since_epoch() == system_clock::duration::zero()) {
-            state.updateCheckTime(currentTime);
-            state.write();
-            return;
+        // Limit lifetime of `state` since it blocks other debase instances
+        {
+            State::State state(StateDir());
+            
+            // Show the update-available dialog if we're already aware that an update is available
+            // and the user hasn't ignored that version.
+            if (state.updateVersion()>DebaseVersion && state.updateVersion()>state.updateIgnoreVersion()) {
+                _updateAvailablePanelShow(state.updateVersion());
+                return;
+            }
+            
+            // If updateCheckTime is uninitialized, set it to the current time and return.
+            // We don't check for updates in this case, because we don't want to do network IO
+            // when debase is initially launched.
+            const system_clock::time_point updateCheckTime = system_clock::from_time_t(state.updateCheckTime());
+            if (updateCheckTime.time_since_epoch() == system_clock::duration::zero()) {
+                state.updateCheckTime(currentTime);
+                state.write();
+                return;
+            }
+            
+            // Rate-limit update checks to once per week
+            constexpr auto Week = seconds(60*60*24*7);
+            if (system_clock::now()-updateCheckTime < Week) return;
         }
-        
-        // Rate-limit update checks to once per week
-        constexpr auto Week = seconds(60*60*24*7);
-        if (system_clock::now()-updateCheckTime < Week) return;
         
         Version latestVersion = 0;
         auto async = Async([&]() {
@@ -1889,21 +1974,26 @@ private:
         
         _waitForAsync(async);
         try {
-            latestVersion = 2;
+            #warning TODO: remove
+            latestVersion = 5;
 //            async.get();
         } catch (...) {
             // Version check failed
             return;
         }
         
-        state.updateVersion(latestVersion);
-        state.updateCheckTime(currentTime);
-        state.write();
-        
-        // Show the update-available dialog if the latest version is greater than our current version,
-        // and the user hasn't ignored that version.
-        if (latestVersion>DebaseVersion && latestVersion>state.updateIgnoreVersion()) {
-            _updateAvailablePanelShow(latestVersion);
+        // Update state
+        {
+            State::State state(StateDir());
+            state.updateVersion(latestVersion);
+            state.updateCheckTime(currentTime);
+            state.write();
+            
+            // Show the update-available dialog if the latest version is greater than our current version,
+            // and the user hasn't ignored that version.
+            if (latestVersion>DebaseVersion && latestVersion>state.updateIgnoreVersion()) {
+                _updateAvailablePanelShow(latestVersion);
+            }
         }
         
 //        // If the latest version is <= our version, there's nothing to do
