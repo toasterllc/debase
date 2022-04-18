@@ -82,8 +82,8 @@ public:
 //        s.x -= _truncateEdges.r;
 //        s.y -= _truncateEdges.b;
 //        
-//        s.x -= (_truncateEdges.l + _truncateEdges.r);
-//        s.y -= (_truncateEdges.t + _truncateEdges.b);
+        s.x -= (_truncateEdges.l + _truncateEdges.r);
+        s.y -= (_truncateEdges.t + _truncateEdges.b);
         return s;
         
 //        const Rect f = InteriorFrame({{}, constraint});
@@ -109,10 +109,21 @@ public:
 //        return s;
     }
     
+    Rect boundsUntruncated() {
+        Rect b = bounds();
+        b.origin -= Size{_truncateEdges.l, _truncateEdges.t};
+        b.size += Size{_truncateEdges.l, _truncateEdges.t};
+        b.size += Size{_truncateEdges.r, _truncateEdges.b};
+        return b;
+    }
+    
     void layout() override {
-        const Rect inf = interiorFrame(bounds());
-        _title->frame({inf.origin+Size{0,-2}, {inf.w(), 1}});
+        const Rect b = boundsUntruncated();
+        const Point titleOrigin = b.origin+Size{2,0};
+        _title->frame({titleOrigin, {b.w()-4, 1}});
+        _title->visible(titleOrigin.y >= 0);
         
+        const Rect inf = interiorFrame(b);
         const Rect mf = messageFrame(inf);
         _message->frame(mf);
         
@@ -161,10 +172,18 @@ public:
     void draw() override {
 //        Rect r = Inset(interiorFrame(bounds()), -borderSize());
 //        drawRect(r);
-        borderColor(_color);
+//        borderColor(_color);
         _title->textAttr(_color|A_BOLD);
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
+        
+        {
+            Attr color = attr(_color);
+            drawRect();
+            drawLineVert({0,3}, 1);
+            drawLineVert({bounds().w()-1,3}, 1);
+            drawLineHoriz({1,3}, bounds().w()-2, ' ');
+        }
         
 //        if (erased()) {
 //            Attr style = attr(_color);

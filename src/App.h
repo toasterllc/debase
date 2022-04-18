@@ -1574,6 +1574,8 @@ private:
     }
     
     void _trialCountdownShow(const License::License& license) {
+        return;
+        
         using namespace std::chrono;
         assert(license.expiration);
         
