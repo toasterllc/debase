@@ -116,13 +116,16 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: cleanup synchronous modal panel code (ie XXXRun() functions)
+    
     #warning TODO: stress test DebaseLicenseServer with lots of connections
     
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
     
-    #warning TODO: do lots of testing
+    #warning TODO: linux: do lots of testing
+    #warning TODO: arm64-macos: do lots of testing
     
 //  Future:
     
@@ -136,9 +139,9 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: ? add feature requests field in register panel
     
-    #warning TODO: ? notify user about debase updates
-    
 //  DONE:
+//    #warning TODO: notify user about debase updates
+//
 //    #warning TODO: allow debase to be called from git repo subdirectories
 //
 //    #warning TODO: add installation affordances: suggest moving debase to a permanent location
