@@ -10,7 +10,7 @@
 #include "ui/Menu.h"
 #include "ui/SnapshotMenu.h"
 #include "ui/WelcomePanel.h"
-#include "ui/ModalPanel.h"
+#include "ui/Alert.h"
 #include "ui/RegisterPanel.h"
 #include "ui/ButtonSpinner.h"
 #include "ui/TrialCountdownPanel.h"
@@ -100,10 +100,10 @@ public:
             panel->origin(b.br()-panel->size());
         }
         
-        if (_welcomePanel) _layoutModalPanel(_welcomePanel);
-        if (_registerPanel) _layoutModalPanel(_registerPanel);
-        if (_moveDebasePanel) _layoutModalPanel(_moveDebasePanel);
-        if (_messagePanel) _layoutModalPanel(_messagePanel);
+        if (_welcomePanel) _layoutAlert(_welcomePanel);
+        if (_registerPanel) _layoutAlert(_registerPanel);
+        if (_moveDebasePanel) _layoutAlert(_moveDebasePanel);
+        if (_messagePanel) _layoutAlert(_messagePanel);
         
         if (_updateAvailablePanel) {
             auto p = _updateAvailablePanel;
@@ -1312,7 +1312,7 @@ private:
         return License::Validate(_licenseCtxGet(), license);
     }
     
-    void _layoutModalPanel(UI::ModalPanelPtr panel) {
+    void _layoutAlert(UI::AlertPtr panel) {
         panel->size(panel->sizeIntrinsic({bounds().w(), ConstraintNone}));
         
         UI::Size ps = panel->size();
@@ -1325,7 +1325,7 @@ private:
     }
     
     template <typename T_Async>
-    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::ModalPanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
+    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::AlertPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
         
         if (panel) panel->enabled(false);
         Defer( if (panel) panel->enabled(true); );
@@ -1349,7 +1349,7 @@ private:
         }
     }
     
-    std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+    std::optional<License::License> _licenseRequest(UI::AlertPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
         
 //        // Disable interaction while we wait for the license request
 //        assert(interaction());
@@ -1660,7 +1660,7 @@ private:
     void _thankYouMessageRun() {
         bool done = false;
         
-        _messagePanel = subviewCreate<UI::ModalPanel>();
+        _messagePanel = subviewCreate<UI::Alert>();
         _messagePanel->width                (42);
         _messagePanel->color                (colors().menu);
         _messagePanel->title()->text        ("Thank You!");
@@ -1826,7 +1826,7 @@ private:
         }
         
         std::optional<bool> moveChoice;
-        _moveDebasePanel = subviewCreate<UI::ModalPanel>();
+        _moveDebasePanel = subviewCreate<UI::Alert>();
         _moveDebasePanel->width                            (50);
         _moveDebasePanel->color                            (colors().menu);
         _moveDebasePanel->title()->text                    (Title);
@@ -2074,7 +2074,7 @@ private:
     UI::TrialCountdownPanelPtr _trialCountdownPanel;
     UI::WelcomePanelPtr _welcomePanel;
     UI::RegisterPanelPtr _registerPanel;
-    UI::ModalPanelPtr _moveDebasePanel;
-    UI::ModalPanelPtr _messagePanel;
-    UI::ModalPanelPtr _updateAvailablePanel;
+    UI::AlertPtr _moveDebasePanel;
+    UI::AlertPtr _messagePanel;
+    UI::AlertPtr _updateAvailablePanel;
 };

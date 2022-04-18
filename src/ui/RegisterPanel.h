@@ -3,14 +3,14 @@
 #include <ctype.h>
 #include "Panel.h"
 #include "Color.h"
-#include "ModalPanel.h"
+#include "Alert.h"
 #include "TextField.h"
 #include "LabelTextField.h"
 #include "LinkButton.h"
 
 namespace UI {
 
-class RegisterPanel : public ModalPanel {
+class RegisterPanel : public Alert {
 public:
     RegisterPanel() {
         message()->centerSingleLine(false);
@@ -41,7 +41,7 @@ public:
         _code->textField()->releaseFocus    (releaseFocus);
     }
     
-    // MARK: - ModalPanel Overrides
+    // MARK: - Alert Overrides
     int contentHeight(int width) const override {
         const int purchaseMessageHeight = (_purchaseMessage->visible() ? _purchaseMessage->sizeIntrinsic({width, ConstraintNone}).y : 0);
         return
@@ -52,8 +52,8 @@ public:
     }
     
 //    bool suppressEvents(bool x) override {
-//        if (ModalPanel::suppressEvents(x)) {
-//            focus(!ModalPanel::suppressEvents() ? _email : nullptr);
+//        if (Alert::suppressEvents(x)) {
+//            focus(!Alert::suppressEvents() ? _email : nullptr);
 //            return true;
 //        }
 //        return false;
@@ -72,10 +72,10 @@ public:
         return true;
     }
     
-    // MARK: - ModalPanel Overrides
+    // MARK: - Alert Overrides
 //    bool suppressEvents(bool x) override {
-//        if (!ModalPanel::suppressEvents(x)) return false;
-//        if (ModalPanel::suppressEvents()) {
+//        if (!Alert::suppressEvents(x)) return false;
+//        if (Alert::suppressEvents()) {
 //            // Save focused field
 //            _focusPrev = focus();
 //            focus(nullptr);
@@ -89,7 +89,7 @@ public:
     
     // MARK: - View Overrides
     void layout() override {
-        ModalPanel::layout();
+        Alert::layout();
         const Rect cf = contentFrame();
         
         int offY = cf.t();

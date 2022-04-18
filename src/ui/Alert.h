@@ -6,9 +6,9 @@
 
 namespace UI {
 
-class ModalPanel : public Panel {
+class Alert : public Panel {
 public:
-    ModalPanel() {
+    Alert() {
         _message->centerSingleLine(true);
         _message->wrap(true);
         _message->allowEmptyLines(true);
@@ -23,7 +23,7 @@ public:
         _dismissButton->label()->text       ("Cancel");
         _dismissButton->label()->textAttr   (A_NORMAL);
         _dismissButton->bordered            (true);
-//        _dismissButton->action              (std::bind(&ModalPanel::dismiss, this));
+//        _dismissButton->action              (std::bind(&Alert::dismiss, this));
     }
     
     virtual int contentHeight(int width) const { return 0; }
@@ -339,6 +339,6 @@ private:
     Rect _contentFrameCached;
 };
 
-using ModalPanelPtr = std::shared_ptr<ModalPanel>;
+using AlertPtr = std::shared_ptr<Alert>;
 
 } // namespace UI

@@ -1,9 +1,9 @@
 #pragma once
-#include "ModalPanel.h"
+#include "Alert.h"
 
 namespace UI {
 
-class ErrorPanel : public ModalPanel {
+class ErrorPanel : public Alert {
 public:
     ErrorPanel() {
         color            (colors().error);
@@ -19,7 +19,7 @@ public:
         escapeTriggersOK(true);
     }
     
-    // MARK: - ModalPanel Overrides
+    // MARK: - Alert Overrides
     int contentHeight(int width) const override {
         if (!_showSupportMessage) return 0;
         
@@ -31,7 +31,7 @@ public:
     
     // MARK: - View Overrides
     void layout() override {
-        ModalPanel::layout();
+        Alert::layout();
         const Rect cf = contentFrame();
         
         int offY = cf.t();

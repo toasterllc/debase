@@ -1,9 +1,9 @@
 #pragma once
-#include "ModalPanel.h"
+#include "Alert.h"
 
 namespace UI {
 
-class UpdateAvailablePanel : public ModalPanel {
+class UpdateAvailablePanel : public Alert {
 public:
     UpdateAvailablePanel(Version version) {
         width                           (26);

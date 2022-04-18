@@ -179,7 +179,7 @@ int main(int argc, const char* argv[]) {
 //
 //    #warning TODO: add OK / Cancel buttons to RegisterPanel
 //    
-//    #warning TODO: fix: events should be handled from back of subviews() to front, so that ModalPanel's can eat all the events
+//    #warning TODO: fix: events should be handled from back of subviews() to front, so that Alert's can eat all the events
 //
 //    #warning TODO: fix: modal error panel isn't resizing/redrawing with window resize
 //
@@ -193,7 +193,7 @@ int main(int argc, const char* argv[]) {
 //
 //    #warning TODO: encapsulate View's hitTestExpand
 //
-//    #warning TODO: remove colors requirement from View/ModalPanel/etc constructor
+//    #warning TODO: remove colors requirement from View/Alert/etc constructor
 //
 //    #warning TODO: switch to a subviewCreate() model so our subclasses don't have to maintain the list of subviews
 //

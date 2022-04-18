@@ -1,9 +1,9 @@
 #pragma once
-#include "ModalPanel.h"
+#include "Alert.h"
 
 namespace UI {
 
-class TrialCountdownPanel : public ModalPanel {
+class TrialCountdownPanel : public Alert {
 public:
     TrialCountdownPanel(std::chrono::seconds remaining) : _remaining(remaining) {
         width           (19);
@@ -30,7 +30,7 @@ public:
     
     // MARK: - View Overrides
     void layout() override {
-        ModalPanel::layout();
+        Alert::layout();
         _registerButton->frame(contentFrame());
     }
     
@@ -42,7 +42,7 @@ public:
         return false;
     }
     
-    // MARK: - ModalPanel Overrides
+    // MARK: - Alert Overrides
     int contentHeight(int width) const override {
         return _ButtonHeight;
     }

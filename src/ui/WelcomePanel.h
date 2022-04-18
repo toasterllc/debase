@@ -3,13 +3,13 @@
 #include <ctype.h>
 #include "Panel.h"
 #include "Color.h"
-#include "ModalPanel.h"
+#include "Alert.h"
 #include "TextField.h"
 #include <os/log.h>
 
 namespace UI {
 
-class WelcomePanel : public ModalPanel {
+class WelcomePanel : public Alert {
 public:
     WelcomePanel() {
         message()->align(Align::Center);
@@ -26,7 +26,7 @@ public:
         _registerButton->bordered        (true);
     }
     
-    // MARK: - ModalPanel Overrides
+    // MARK: - Alert Overrides
     int contentHeight(int width) const override {
         return 2*_ButtonHeight+1; // Add 1 line for the bottom spacing, because it looks more balanced
     }
@@ -35,7 +35,7 @@ public:
     
     // MARK: - View Overrides
     void layout() override {
-        ModalPanel::layout();
+        Alert::layout();
         const Rect cf = contentFrame();
         
         int offY = cf.t();
