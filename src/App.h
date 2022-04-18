@@ -1548,6 +1548,7 @@ private:
                 if (license) {
                     _trialCountdownShow(*license);
                     _welcomePanel = nullptr;
+                    return;
                 }
             
             // Register
@@ -1987,9 +1988,9 @@ private:
         
         _waitForAsync(async);
         try {
-            #warning TODO: remove
-            latestVersion = 6;
-//            async.get();
+//            #warning TODO: remove
+//            latestVersion = 7;
+            async.get();
         } catch (...) {
             // Version check failed
             return;

@@ -16,9 +16,11 @@ type MachineInfo string
 // LicenseCode / MachineId must be type aliases instead of real types, because they're used as keys
 // in our Firestore database. Firestore (and the reflect package) doesn't implicitly convert
 // them to/from strings, so we have to use a type alias instead.
-// The story changes in Go >=1.18, where the reflect package does implicitly convert map keys to
-// non-primitive types, but right now gcloud only supports Go 1.16, so we're stuck with type
-// aliases.
+// There was a bug in Go 1.18, where the reflect package does implicitly convert map keys to
+// non-primitive types so we got the behavior we wanted, temporarily:
+//
+//     https://groups.google.com/g/golang-nuts/c/GhfT2tr4Zso
+//
 type LicenseCode = string
 type MachineId = string
 
