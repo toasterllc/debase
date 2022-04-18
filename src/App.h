@@ -1417,16 +1417,16 @@ private:
         };
     }
     
-    void _licenseRenewActionTrial() {
-        assert(_registerPanel);
-        
-        const License::Request req = _trialRequestCreate();
-        std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), req);
-        if (license) {
-            _trialCountdownShow(*license);
-            _registerPanel = nullptr;
-        }
-    }
+//    void _licenseRenewActionTrial() {
+//        assert(_registerPanel);
+//        
+//        const License::Request req = _trialRequestCreate();
+//        std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), req);
+//        if (license) {
+//            _trialCountdownShow(*license);
+//            _registerPanel = nullptr;
+//        }
+//    }
     
     void _licenseRenewRun(const License::License& license) {
         constexpr const char* PanelTitle            = "Renew License";
@@ -1442,7 +1442,16 @@ private:
         _registerPanel->email()->value(license.email);
         _registerPanel->code()->value(license.licenseCode);
         _registerPanel->dismissButton()->label()->text("Free Trial");
-        _registerPanel->dismissButton()->action(std::bind(&App::_licenseRenewActionTrial, this));
+        _registerPanel->okButton()->action([] (UI::Button&) {});
+        _registerPanel->dismissButton()->action([=] (UI::Button&) {
+            const License::Request req = _trialRequestCreate();
+            std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), req);
+            if (license) {
+                _trialCountdownShow(*license);
+                _registerPanel = nullptr;
+            }
+        });
+//        _registerPanel->layoutNeeded(true);
         
         const License::Request req = _licenseRequestCreate(license.email, license.licenseCode);
         

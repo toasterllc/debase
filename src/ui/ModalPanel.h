@@ -261,16 +261,20 @@ public:
     // MARK: - Methods
     virtual void ok() {
         if (okButtonVisible()) {
-            if (okButtonEnabled() && _okButton->action()) {
-                _okButton->action()(*_okButton);
+            if (enabled()) { // Whether window is enabled
+                if (okButtonEnabled() && _okButton->action()) {
+                    _okButton->action()(*_okButton);
+                }
             }
         }
     }
     
     virtual void dismiss() {
         if (dismissButtonVisible()) {
-            if (dismissButtonEnabled() && _dismissButton->action()) {
-                _dismissButton->action()(*_dismissButton);
+            if (enabled()) { // Whether window is enabled
+                if (dismissButtonEnabled() && _dismissButton->action()) {
+                    _dismissButton->action()(*_dismissButton);
+                }
             }
         }
     }

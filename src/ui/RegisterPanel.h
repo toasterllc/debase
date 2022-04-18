@@ -109,13 +109,13 @@ public:
         offY += _FieldHeight+_ElementSpacingY;
     }
     
-    bool handleEvent(const Event& ev) override {
-        // Dismiss upon mouse-up
-        if (ev.type == Event::Type::KeyEscape) {
-            dismiss();
-        }
-        return true;
-    }
+//    bool handleEvent(const Event& ev) override {
+//        // Dismiss upon mouse-up
+//        if (ev.type == Event::Type::KeyEscape) {
+//            dismiss();
+//        }
+//        return true;
+//    }
     
     auto& email() { return _email->textField(); }
     auto& code() { return _code->textField(); }
