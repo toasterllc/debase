@@ -58,7 +58,7 @@ public:
     class Attr {
     public:
         Attr() {}
-        Attr(WINDOW* window, int attr) : _s({.window=window, .attr=attr}) {
+        Attr(WINDOW* window, attr_t attr) : _s({.window=window, .attr=attr}) {
             assert(window);
 //            if (rand() % 2) {
 //                wattron(_s.window, A_REVERSE);
@@ -66,7 +66,7 @@ public:
 //                wattroff(_s.window, A_REVERSE);
 //            }
             // MARK: - Drawing
-            wattron(_s.window, _s.attr);
+            wattr_on(_s.window, _s.attr, nullptr);
         }
         
         Attr(const Attr& x) = delete;
@@ -75,14 +75,14 @@ public:
         
         ~Attr() {
             if (_s.window) {
-                wattroff(_s.window, _s.attr);
+                wattr_off(_s.window, _s.attr, nullptr);
             }
         }
     
     private:
         struct {
             WINDOW* window = nullptr;
-            int attr = 0;
+            attr_t attr = 0;
         } _s;
     };
     
@@ -194,7 +194,7 @@ public:
 //    }
     
     // MARK: - Attributes
-    virtual Attr attr(int attr) const { return Attr(_window(), attr); }
+    virtual Attr attr(attr_t attr) const { return Attr(_window(), attr); }
     
     // MARK: - Drawing
     virtual void drawRect() const {

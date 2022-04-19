@@ -5,16 +5,19 @@
 
 namespace UI {
 
+using ColorIdx       = NCURSES_COLOR_T;
+using ColorPairIdx   = NCURSES_PAIRS_T;
+
 // ColorPair: represents an ncurses color pair
 struct ColorPair {
-    NCURSES_PAIRS_T idx = WhiteOnBlackIdx;
+    ColorPairIdx idx = WhiteOnBlackIdx;
     
     ColorPair() {}
-    ColorPair(NCURSES_PAIRS_T idx) : idx(idx) {}
+    ColorPair(ColorPairIdx idx) : idx(idx) {}
     
     // WhiteOnBlackIdx: color-pair 0 is ncurses' immutable white-on-black color pair
-    static constexpr NCURSES_PAIRS_T WhiteOnBlackIdx = 0;
-    operator NCURSES_PAIRS_T() const { return COLOR_PAIR(idx); }
+    static constexpr ColorPairIdx WhiteOnBlackIdx = 0;
+    operator attr_t() const { return COLOR_PAIR(idx); }
 };
 
 class ColorPalette {
@@ -28,37 +31,46 @@ public:
     ColorPair error;
     
     // add(): create a new color pair with a given color index as the foreground color
-    ColorPair add(NCURSES_COLOR_T colorIdx) {
+    ColorPair add(ColorIdx colorIdx) {
         _colorPairSwappers.emplace_back(_colorPairIdx, colorIdx, -1);
         return _colorPairIdx++;
     }
     
-    // add(): create a new color with the given RGB components, and assign it to a new color pair as the foreground color
+    // add(): create a new color (specified in the range [0,255])
+    // with the given RGB components, and assign it to a new color
+    // pair as the foreground color
     ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
         _colorIdxSwappers.emplace_back(_colorIdx,
-            ((NCURSES_COLOR_T)r*1000)/255,
-            ((NCURSES_COLOR_T)g*1000)/255,
-            ((NCURSES_COLOR_T)b*1000)/255
+            ((_ColorComponent)r*1000)/255,
+            ((_ColorComponent)g*1000)/255,
+            ((_ColorComponent)b*1000)/255
         );
         return add(_colorIdx++);
     }
     
 private:
-    // _ColorIdx: represents an ncurses color
-    struct _ColorIdx {
-        NCURSES_COLOR_T idx = COLOR_BLACK;
-        
-        _ColorIdx() {}
-        _ColorIdx(NCURSES_COLOR_T idx) : idx(idx) {}
-        operator NCURSES_COLOR_T() const { return idx; }
-    };
+    // _ColorComponent: represents a single r/g/b component of a color.
+    // For some reason, ncurses uses NCURSES_COLOR_T to mean a color index,
+    // but also the value of a color component. See color_content() for
+    // proof -- the first argument is a color index, and the remaining
+    // arguments are the color components, but they all have the same type.
+    using _ColorComponent = NCURSES_COLOR_T;
+    
+//    // _ColorIdx: represents an ncurses color
+//    struct _ColorIdx {
+//        ColorIdx idx = COLOR_BLACK;
+//        
+//        _ColorIdx() {}
+//        _ColorIdx(ColorIdx idx) : idx(idx) {}
+//        operator ColorIdx() const { return idx; }
+//    };
     
     // _ColorIdxSwapper: sets the RGB components of an ncurses color, restoring the original
     // RGB components upon destruction
     class _ColorIdxSwapper {
     public:
         _ColorIdxSwapper() {}
-        _ColorIdxSwapper(const _ColorIdx& idx, NCURSES_COLOR_T r, NCURSES_COLOR_T g, NCURSES_COLOR_T b) : _s{.idx=idx} {
+        _ColorIdxSwapper(ColorIdx idx, _ColorComponent r, _ColorComponent g, _ColorComponent b) : _s{.idx=idx} {
             // Remember the previous RGB values for color index `idx`
             int ir = ::color_content(*_s.idx, &_s.r, &_s.g, &_s.b);
             if (ir != OK) throw std::runtime_error("color_content() failed");
@@ -86,10 +98,10 @@ private:
         
     private:
         struct {
-            std::optional<_ColorIdx> idx;
-            NCURSES_COLOR_T r = -1;
-            NCURSES_COLOR_T g = -1;
-            NCURSES_COLOR_T b = -1;
+            std::optional<ColorIdx> idx;
+            _ColorComponent r = -1;
+            _ColorComponent g = -1;
+            _ColorComponent b = -1;
         } _s;
     };
     
@@ -98,7 +110,7 @@ private:
     class _ColorPairSwapper {
     public:
         _ColorPairSwapper() {}
-        _ColorPairSwapper(const ColorPair& pair, NCURSES_COLOR_T fg, NCURSES_COLOR_T bg) : _s{.pair=pair} {
+        _ColorPairSwapper(const ColorPair& pair, ColorIdx fg, ColorIdx bg) : _s{.pair=pair} {
             // Remember the previous fg/bg colors for the color pair c.idx
             int ir = ::pair_content(_s.pair->idx, &_s.fg, &_s.bg);
             if (ir != OK) throw std::runtime_error("pair_content() failed");
@@ -128,8 +140,8 @@ private:
     private:
         struct {
             std::optional<ColorPair> pair;
-            NCURSES_COLOR_T fg = -1;
-            NCURSES_COLOR_T bg = -1;
+            ColorIdx fg = -1;
+            ColorIdx bg = -1;
         } _s;
     };
     
@@ -139,10 +151,10 @@ private:
     // restore colors on exit, we won't necessarily be restoring the original
     // color. So if we're going to clobber colors, clobber the colors that are less
     // likely to be used.
-    static constexpr NCURSES_COLOR_T _ColorIdxInit = 16;
+    static constexpr ColorIdx _ColorIdxInit = 16;
 
-    NCURSES_COLOR_T _colorIdx = _ColorIdxInit;
-    NCURSES_PAIRS_T _colorPairIdx = 1;
+    ColorIdx _colorIdx = _ColorIdxInit;
+    ColorPairIdx _colorPairIdx = 1;
     
     std::vector<_ColorIdxSwapper> _colorIdxSwappers;
     std::vector<_ColorPairSwapper> _colorPairSwappers;

@@ -56,7 +56,7 @@ public:
         if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
         
         // Update label styles
-        int attr = *_labelDefaultAttr;
+        attr_t attr = *_labelDefaultAttr;
         if (_highlighted && enabledWindow()) attr |= A_BOLD|colors().menu;
         else if (!enabledWindow())           attr |= colors().dimmed;
         _label->textAttr(attr);
@@ -202,7 +202,7 @@ private:
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _bordered = false;
-    std::optional<int> _labelDefaultAttr;
+    std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
     ActionTrigger _actionTrigger = ActionTrigger::MouseUp;

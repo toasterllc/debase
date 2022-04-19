@@ -126,7 +126,7 @@ private:
     std::string _text;
     std::string _prefix;
     std::string _suffix;
-    int _textAttr = 0;
+    attr_t _textAttr = 0;
     Align _align = Align::Left;
     bool _centerSingleLine = false;
     bool _wrap = false;
