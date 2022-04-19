@@ -10,9 +10,9 @@
 
 namespace UI {
 
-class RegisterPanel : public Alert {
+class RegisterAlert : public Alert {
 public:
-    RegisterPanel() {
+    RegisterAlert() {
         message()->centerSingleLine(false);
         
         _purchaseMessage->text("To purchase a license, please visit:");
@@ -193,6 +193,6 @@ private:
     LabelTextFieldPtr _focusPrev;
 };
 
-using RegisterPanelPtr = std::shared_ptr<RegisterPanel>;
+using RegisterAlertPtr = std::shared_ptr<RegisterAlert>;
 
 } // namespace UI

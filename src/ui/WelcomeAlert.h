@@ -1,16 +1,15 @@
 #pragma once
 #include <optional>
 #include <ctype.h>
-#include "Panel.h"
 #include "Color.h"
 #include "Alert.h"
 #include "TextField.h"
 
 namespace UI {
 
-class WelcomePanel : public Alert {
+class WelcomeAlert : public Alert {
 public:
-    WelcomePanel() {
+    WelcomeAlert() {
         message()->align(Align::Center);
         message()->textAttr(colors().menu|WA_BOLD);
         
@@ -57,6 +56,6 @@ private:
     ButtonPtr _registerButton  = subviewCreate<Button>();
 };
 
-using WelcomePanelPtr = std::shared_ptr<WelcomePanel>;
+using WelcomeAlertPtr = std::shared_ptr<WelcomeAlert>;
 
 } // namespace UI

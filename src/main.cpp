@@ -184,7 +184,7 @@ int main(int argc, const char* argv[]) {
 //
 //    #warning TODO: show animation while performing network IO
 //
-//    #warning TODO: add OK / Cancel buttons to RegisterPanel
+//    #warning TODO: add OK / Cancel buttons to RegisterAlert
 //    
 //    #warning TODO: fix: events should be handled from back of subviews() to front, so that Alert's can eat all the events
 //

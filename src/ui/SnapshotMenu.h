@@ -1,6 +1,6 @@
 #pragma once
 #include <algorithm>
-#include "Panel.h"
+#include "Menu.h"
 #include "Button.h"
 #include "UTF8.h"
 

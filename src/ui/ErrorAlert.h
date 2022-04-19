@@ -3,9 +3,9 @@
 
 namespace UI {
 
-class ErrorPanel : public Alert {
+class ErrorAlert : public Alert {
 public:
-    ErrorPanel() {
+    ErrorAlert() {
         color            (colors().error);
         title()->text    ("Error");
         
@@ -61,6 +61,6 @@ private:
     bool _showSupportMessage = false;
 };
 
-using ErrorPanelPtr = std::shared_ptr<ErrorPanel>;
+using ErrorAlertPtr = std::shared_ptr<ErrorAlert>;
 
 } // namespace UI

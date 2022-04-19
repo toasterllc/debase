@@ -3,9 +3,9 @@
 
 namespace UI {
 
-class UpdateAvailablePanel : public Alert {
+class UpdateAvailableAlert : public Alert {
 public:
-    UpdateAvailablePanel(Version version) {
+    UpdateAvailableAlert(Version version) {
         width                           (26);
         title()->text                   ("debase v" + std::to_string(version) + " update");
         title()->align                  (UI::Align::Center);
@@ -27,6 +27,6 @@ public:
     }
 };
 
-using UpdateAvailablePanelPtr = std::shared_ptr<UpdateAvailablePanel>;
+using UpdateAvailableAlertPtr = std::shared_ptr<UpdateAvailableAlert>;
 
 } // namespace UI

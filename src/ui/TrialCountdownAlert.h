@@ -3,9 +3,9 @@
 
 namespace UI {
 
-class TrialCountdownPanel : public Alert {
+class TrialCountdownAlert : public Alert {
 public:
-    TrialCountdownPanel(std::chrono::seconds remaining) : _remaining(remaining) {
+    TrialCountdownAlert(std::chrono::seconds remaining) : _remaining(remaining) {
         width           (19);
         condensed       (true);
         color           (colors().menu);
@@ -56,6 +56,6 @@ private:
     std::chrono::seconds _remaining = {};
 };
 
-using TrialCountdownPanelPtr = std::shared_ptr<TrialCountdownPanel>;
+using TrialCountdownAlertPtr = std::shared_ptr<TrialCountdownAlert>;
 
 } // namespace UI
