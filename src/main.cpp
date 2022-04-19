@@ -118,6 +118,10 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: rename XXXPanel -> XXXAlert, if it's derived from Alert
     
+    #warning TODO: Alert: make button borders match the window border
+    
+    #warning TODO: Alert: make button highlight color match window highlight color
+    
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
