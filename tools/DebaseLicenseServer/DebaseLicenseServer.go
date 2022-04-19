@@ -26,6 +26,7 @@ import "C"
 const LicensesCollection = "Licenses"
 const TrialsCollection = "Trials"
 const TrialDuration = 7 * 24 * time.Hour
+const TrialIssueCountMax = 25
 const MachineCountMax = 3
 
 var DebaseProductId = C.GoString(C.DebaseProductId)
@@ -234,17 +235,26 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRe
 			}
 		}
 
-		// The license exists; write it to `trial`
+		// The license exists; read it into `trial`
 		if err = trialDoc.DataTo(&trial); err != nil {
 			return fmt.Errorf("trialDoc.DataTo() failed: %w", err)
 		}
 
-		// Update the trial's machine's IssueCount
-		trial.Machine.IssueCount++
-
-		err = tx.Set(trialRef, trial)
-		if err != nil {
-			return fmt.Errorf("tx.Set() failed for MachineId=%v", mid)
+		// Update the trial's machine's IssueCount, but limit it to `TrialIssueCountMax`
+		// This limiting is necessary to reduce contention in the case where many machines are
+		// using the same machineId. This should ideally never happen, but our machine-id
+		// fingerprinting logic isn't perfect.
+		// With many machines potentially using the same machine-id, they'll all reference the
+		// same Firestore document, and lots of machines modifying the same document introduces
+		// contention, resulting in db.RunTransaction() failing. Capping the IssueCount fixes
+		// this contention since we'll stop trying to modify the document once the IssueCount
+		// reaches its max value.
+		if trial.Machine.IssueCount < TrialIssueCountMax {
+			trial.Machine.IssueCount++
+			err = tx.Set(trialRef, trial)
+			if err != nil {
+				return fmt.Errorf("tx.Set() failed for MachineId=%v", mid)
+			}
 		}
 
 		return nil
