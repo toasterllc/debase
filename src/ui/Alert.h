@@ -136,6 +136,19 @@ public:
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
         
+        // Set the highlight color of all button subviews
+        // This is generic (instead of accessing _okButton/_dismissButton directly) so
+        // that subclasses (eg ErrorAlert's clickable links) also inherit this behavior
+        // for their own buttons
+        auto it = subviewsBegin();
+        for (;;) {
+            ViewPtr subview = subviewsNext(it);
+            if (!subview) break;
+            if (ButtonPtr button = std::dynamic_pointer_cast<Button>(subview)) {
+                button->highlightColor(_color);
+            }
+        }
+        
         // Draw the border
         {
             Attr color = attr(_color);

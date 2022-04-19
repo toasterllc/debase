@@ -92,12 +92,20 @@ Trial license is deleted upon expiration
 Too many machine ids prevents registration
 Starting a trial after it's expired doesn't work
 Server doesn't send trial license if it's expired
-A mismatched machine id triggers a license renewal
+A mismatched machine id triggers a license renewal, renewal succeeds silently if there is a machine slot available
+A mismatched machine id triggers a license renewal, renewal fails and shows dialog fails if no machine slots available
+A mismatched machine id + no internet shows renewal dialog after 5s
+A mismatched machine id + stalled internet (ie Network::Request() takes a long time) shows renewal dialog after 5s
 Valid license still works after 2 weeks (ensures that trial logic isn't interfering)
 Incorrect email prevents registration
 Incorrect license code prevents registration
 Corrupting the license on disk is detected because the signature is wrong
 Make sure MachineInfo is properly sent to the server
+
+* License escape
+Welcome alert: can't be escaped
+Renewal alert (ie mismatched machine id): can't be escaped
+Trial expired alert: can't be escaped
 
 * Server
 Stress test server by hitting it with lots of requests simultaneously

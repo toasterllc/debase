@@ -116,8 +116,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: rename XXXPanel -> XXXAlert, if it's derived from Alert
-    
     #warning TODO: Alert: make button borders match the window border
     
     #warning TODO: Alert: make button highlight color match window highlight color
@@ -143,6 +141,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: rename XXXPanel -> XXXAlert, if it's derived from Alert
+//
 //    #warning TODO: stress test DebaseLicenseServer with lots of connections
 //
 //    #warning TODO: cleanup synchronous modal panel code (ie XXXRun() functions)

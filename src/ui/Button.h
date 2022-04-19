@@ -14,22 +14,51 @@ public:
         MouseDown,
     };
     
+    // MARK: - Creation
     Button() {
         _label->align(Align::Center);
         _label->textAttr(WA_BOLD);
         
         _key->textAttr(colors().dimmed);
+        
+        _highlightColor = colors().menu;
     }
     
+    // MARK: - Accessors
+    auto& label() { return _label; }
+    auto& key() { return _key; }
+    
+    const auto& highlighted() const { return _highlighted; }
+    template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
+    
+    const auto& mouseActive() const { return _mouseActive; }
+    template <typename T> bool mouseActive(const T& x) { return _set(_mouseActive, x); }
+    
+    const auto& bordered() const { return _bordered; }
+    template <typename T> bool bordered(const T& x) { return _set(_bordered, x); }
+    
+    const auto& highlightColor() const { return _highlightColor; }
+    template <typename T> bool highlightColor(const T& x) { return _set(_highlightColor, x); }
+    
+    const auto& action() const { return _action; }
+    template <typename T> bool action(const T& x) { return _setForce(_action, x); }
+    
+    const auto& actionButtons() const { return _actionButtons; }
+    template <typename T> bool actionButtons(const T& x) { return _set(_actionButtons, x); }
+    
+    const auto& actionTrigger() const { return _actionTrigger; }
+    template <typename T> bool actionTrigger(const T& x) { return _set(_actionTrigger, x); }
+    
+    // MARK: - View Overrides
     Size sizeIntrinsic(Size constraint) override {
         const int keyWidth = _key->sizeIntrinsic(ConstraintNoneSize).x;
-        const int w = (_bordered ? 4 : 0) + _label->sizeIntrinsic(ConstraintNoneSize).x + (keyWidth ? KeySpacingX : 0) + keyWidth;
-        const int h = (_bordered ? 3 : 1);
+        const int w = (bordered() ? 4 : 0) + _label->sizeIntrinsic(ConstraintNoneSize).x + (keyWidth ? KeySpacingX : 0) + keyWidth;
+        const int h = (bordered() ? 3 : 1);
         return {w, h};
     }
     
     void layout() override {
-        const Rect r = Inset(bounds(), Size{(_bordered?1:0), 0});
+        const Rect r = Inset(bounds(), Size{(bordered() ? 1 : 0), 0});
         _key->sizeToFit(ConstraintNoneSize);
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
@@ -51,20 +80,34 @@ public:
     
     void draw() override {
         // Update our border color for View's bordered() pass
-        if (_bordered) borderColor(enabledWindow() ? colors().normal : colors().dimmed);
+        if (bordered()) borderColor(enabledWindow() ? _highlightColor : colors().dimmed);
         
         if (!_labelDefaultAttr) _labelDefaultAttr = _label->textAttr();
         
         // Update label styles
         attr_t attr = *_labelDefaultAttr;
-        if (_highlighted && enabledWindow()) attr |= WA_BOLD|colors().menu;
-        else if (!enabledWindow())           attr |= colors().dimmed;
+        if (_highlighted && enabledWindow()) {
+            if (bordered()) borderColor(_highlightColor);
+            attr |= WA_BOLD|_highlightColor;
+        } else if (!enabledWindow()) {
+            if (bordered()) borderColor(colors().dimmed);
+            attr |= colors().dimmed;
+        } else {
+            if (bordered()) borderColor(colors().normal);
+        }
         _label->textAttr(attr);
         
 //        // Draw labels
 //        _key->draw(win);
 //        _label->draw(win);
     }
+    
+//    void drawBorder() override {
+//        if (bordered()) {
+//            Attr style = attr(enabledWindow() ? _highlightColor() : colors().dimmed);
+//            drawRect();
+//        }
+//    }
     
     
     
@@ -172,29 +215,14 @@ public:
         return false;
     }
     
-    auto& label() { return _label; }
-    auto& key() { return _key; }
-    
-    const auto& highlighted() const { return _highlighted; }
-    template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
-    
-    const auto& mouseActive() const { return _mouseActive; }
-    template <typename T> bool mouseActive(const T& x) { return _set(_mouseActive, x); }
-    
-    const auto& bordered() const { return _bordered; }
-    template <typename T> bool bordered(const T& x) { return _set(_bordered, x); }
-    
-    const auto& action() const { return _action; }
-    template <typename T> bool action(const T& x) { return _setForce(_action, x); }
-    
-    const auto& actionButtons() const { return _actionButtons; }
-    template <typename T> bool actionButtons(const T& x) { return _set(_actionButtons, x); }
-    
-    const auto& actionTrigger() const { return _actionTrigger; }
-    template <typename T> bool actionTrigger(const T& x) { return _set(_actionTrigger, x); }
-    
 private:
     static constexpr int KeySpacingX = 2;
+    
+//    Color _highlightColor() const {
+//        return borderColor() ? *borderColor() : colors().normal;
+//    }
+    
+//    bool _bordered() const { return (bool)borderColor(); }
     
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
@@ -202,6 +230,7 @@ private:
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _bordered = false;
+    Color _highlightColor;
     std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
