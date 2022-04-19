@@ -18,7 +18,7 @@ public:
         
         _title->inhibitErase(true);
         _title->align(Align::Center);
-        _title->textAttr(colors().menu|A_BOLD);
+        _title->textAttr(colors().menu|WA_BOLD);
         _title->prefix(" ");
         _title->suffix(" ");
     }

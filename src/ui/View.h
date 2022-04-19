@@ -61,9 +61,9 @@ public:
         Attr(WINDOW* window, attr_t attr) : _s({.window=window, .attr=attr}) {
             assert(window);
 //            if (rand() % 2) {
-//                wattron(_s.window, A_REVERSE);
+//                wattron(_s.window, WA_REVERSE);
 //            } else {
-//                wattroff(_s.window, A_REVERSE);
+//                wattroff(_s.window, WA_REVERSE);
 //            }
             // MARK: - Drawing
             wattr_on(_s.window, _s.attr, nullptr);

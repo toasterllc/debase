@@ -12,7 +12,7 @@ class WelcomePanel : public Alert {
 public:
     WelcomePanel() {
         message()->align(Align::Center);
-        message()->textAttr(colors().menu|A_BOLD);
+        message()->textAttr(colors().menu|WA_BOLD);
         
         borderColor(colors().menu);
         

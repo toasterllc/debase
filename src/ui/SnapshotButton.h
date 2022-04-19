@@ -53,11 +53,11 @@ public:
     void draw() override {
         const bool menuColor = (highlighted() || (_activeSnapshot && !mouseActive()));
         const Color idColor = (menuColor ? colors().menu : colors().normal);
-        _id->textAttr(idColor|A_BOLD);
+        _id->textAttr(idColor|WA_BOLD);
         
         // Draw highlight
         if (highlighted() || (_activeSnapshot && !mouseActive())) {
-            _highlightSymbol->textAttr(colors().menu|A_BOLD);
+            _highlightSymbol->textAttr(colors().menu|WA_BOLD);
             _highlightSymbol->text("●");
         
         } else if (_activeSnapshot && mouseActive()) {

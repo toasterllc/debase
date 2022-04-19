@@ -109,7 +109,7 @@ public:
         
         _header->textAttr(color);
         
-        _id->textAttr(color|A_BOLD);
+        _id->textAttr(color|WA_BOLD);
         
         _mergeSymbol->textAttr(color);
         

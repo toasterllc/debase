@@ -21,7 +21,7 @@ public:
         _okButton->bordered                 (true);
         
         _dismissButton->label()->text       ("Cancel");
-        _dismissButton->label()->textAttr   (A_NORMAL);
+        _dismissButton->label()->textAttr   (WA_NORMAL);
         _dismissButton->bordered            (true);
 //        _dismissButton->action              (std::bind(&Alert::dismiss, this));
     }
@@ -132,7 +132,7 @@ public:
 //        Rect r = Inset(interiorFrame(bounds()), -borderSize());
 //        drawRect(r);
 //        borderColor(_color);
-        _title->textAttr(_color|A_BOLD);
+        _title->textAttr(_color|WA_BOLD);
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
         

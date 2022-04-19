@@ -7,7 +7,7 @@ namespace UI {
 class LinkButton : public Button {
 public:
     LinkButton() {
-        label()->textAttr(A_UNDERLINE);
+        label()->textAttr(WA_UNDERLINE);
         action(std::bind(&LinkButton::_action, this));
     }
     

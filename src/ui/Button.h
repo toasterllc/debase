@@ -16,7 +16,7 @@ public:
     
     Button() {
         _label->align(Align::Center);
-        _label->textAttr(A_BOLD);
+        _label->textAttr(WA_BOLD);
         
         _key->textAttr(colors().dimmed);
     }
@@ -57,7 +57,7 @@ public:
         
         // Update label styles
         attr_t attr = *_labelDefaultAttr;
-        if (_highlighted && enabledWindow()) attr |= A_BOLD|colors().menu;
+        if (_highlighted && enabledWindow()) attr |= WA_BOLD|colors().menu;
         else if (!enabledWindow())           attr |= colors().dimmed;
         _label->textAttr(attr);
         
@@ -122,7 +122,7 @@ public:
 //        {
 //            Attr bold;
 //            Attr color;
-//            if (_enabled)                 bold = attr(A_BOLD);
+//            if (_enabled)                 bold = attr(WA_BOLD);
 //            if (_highlighted && _enabled) color = attr(colors().menu);
 //            else if (!_enabled)           color = attr(colors().dimmed);
 //            drawText(plabel, labelWidth, _label->c_str());

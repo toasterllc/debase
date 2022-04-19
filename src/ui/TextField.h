@@ -20,7 +20,7 @@ public:
     }
     
     void draw() override {
-        Attr underline = attr(A_UNDERLINE);
+        Attr underline = attr(WA_UNDERLINE);
         Attr color;
         if (!_focusAndEnabled()) color = attr(colors().dimmed);
         drawLineHoriz({}, size().x, ' ');

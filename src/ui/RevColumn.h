@@ -25,7 +25,7 @@ public:
         _snapshotsButton->bordered(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
-        _name->textAttr(colors().menu | A_BOLD);
+        _name->textAttr(colors().menu | WA_BOLD);
         _name->align(Align::Center);
 //        _name->visible(false);
         
@@ -130,7 +130,7 @@ public:
 //        // Draw branch name
 //        if (win.erased()) {
 //            Attr color = attr(colors().menu);
-//            Attr bold = attr(A_BOLD);
+//            Attr bold = attr(WA_BOLD);
 //            const Point p = pos + Size{(width-(int)UTF8::Len(_name))/2, _TitleInsetY};
 //            drawText(p, _name.c_str());
 //        }
