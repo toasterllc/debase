@@ -98,7 +98,7 @@ func respErr(userErr error, logErr string, logArgs ...interface{}) (*license.HTT
 	if userErr != nil {
 		httpResp = &license.HTTPResponse{Error: userErr.Error()}
 	}
-	return httpResp, fmt.Errorf(logErr, logArgs)
+	return httpResp, fmt.Errorf(logErr, logArgs...)
 }
 
 func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
