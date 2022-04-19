@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <deque>
 #include "Panel.h"
 #include "Color.h"
 #include "UTF8.h"

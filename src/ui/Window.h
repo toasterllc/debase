@@ -7,14 +7,13 @@
 #include "UI.h"
 #include "UTF8.h"
 #include "View.h"
-#include <os/log.h>
 
 namespace UI {
 
 class Window : public View {
 public:
     struct UninitType {};
-    static constexpr UninitType Uninit;
+    static constexpr UninitType Uninit = {};
     Window(UninitType) {}
     
     Window(WINDOW* win=nullptr) : _s{.win = win} {

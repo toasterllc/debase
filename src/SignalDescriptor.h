@@ -1,6 +1,11 @@
 #pragma once
 #include "lib/toastbox/FileDescriptor.h"
+
+#if __APPLE__
 #include <sys/event.h>
+#elif __linux__
+#include <sys/eventfd.h>
+#endif
 
 // SignalDescriptor: a FileDescriptor that can act as a signal between threads,
 // and can participate in select() multiplexing

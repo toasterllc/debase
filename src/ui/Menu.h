@@ -64,9 +64,9 @@ public:
             
             // Set the expanded hit test size so that the menu doesn't have any dead zones
             const Edges hitTestInset = {
-                .t = (first ? -1 : 0),
                 .l = -(_BorderSize+_InsetX),
                 .r = -(_BorderSize+_InsetX),
+                .t = (first ? -1 : 0),
                 .b = -1,
             };
             button->hitTestInset(hitTestInset);

@@ -7,8 +7,6 @@
 #include "Button.h"
 #include "View.h"
 
-#include <os/log.h>
-
 namespace UI {
 
 // RevColumn: a column in the UI containing commits (of type CommitPanel)

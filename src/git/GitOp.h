@@ -617,6 +617,7 @@ inline std::optional<OpResult> Exec(Repo repo, const Op& op, T_SpawnFn spawnFn) 
     case Op::Type::Combine: return _Exec_CombineCommits(repo, op);
     case Op::Type::Edit:    return _Exec_EditCommit(repo, op, spawnFn);
     }
+    abort();
 }
 
 } // namespace Op

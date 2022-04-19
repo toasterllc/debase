@@ -5,7 +5,6 @@
 #include "Color.h"
 #include "Alert.h"
 #include "TextField.h"
-#include <os/log.h>
 
 namespace UI {
 

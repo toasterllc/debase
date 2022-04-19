@@ -1,5 +1,7 @@
 #pragma once
 #include <thread>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "Debase.h"
 #include "git/Git.h"
 #include "ui/Window.h"
@@ -31,7 +33,6 @@
 #include "ProcessPath.h"
 #include "UserBinDir.h"
 #include "XDGDetected.h"
-#include <os/log.h>
 
 extern "C" {
     extern char** environ;

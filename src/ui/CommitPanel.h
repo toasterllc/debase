@@ -6,7 +6,6 @@
 #include "LineWrap.h"
 #include "UTF8.h"
 #include "Label.h"
-#include <os/log.h>
 
 namespace UI {
 

@@ -4,7 +4,6 @@
 #include "UTF8.h"
 #include "View.h"
 #include "Label.h"
-#include <os/log.h>
 
 namespace UI {
 

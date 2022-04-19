@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <optional>
 #include <vector>
+#include <cassert>
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/Defer.h"
@@ -134,7 +135,7 @@ inline Time TimeFromString(std::string_view str) {
 class Error : public std::runtime_error {
 public:
     Error(int error, const char* msg=nullptr) :
-    error((git_error_code)error), std::runtime_error(_ErrorMsg(msg)) {}
+    std::runtime_error(_ErrorMsg(msg)), error((git_error_code)error) {}
     
     git_error_code error = GIT_OK;
     

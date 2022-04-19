@@ -67,7 +67,7 @@ private:
     static constexpr int KeySpacing = 2;
     
     std::string::iterator _left() {
-        assert(_offLeft <= _value.size());
+        assert(_offLeft <= (ssize_t)_value.size());
         return _value.begin()+_offLeft;
     }
     
@@ -77,7 +77,7 @@ private:
     }
     
     std::string::iterator _cursor() {
-        assert(_offCursor <= _value.size());
+        assert(_offCursor <= (ssize_t)_value.size());
         return _value.begin()+_offCursor;
     }
     

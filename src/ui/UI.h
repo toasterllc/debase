@@ -9,26 +9,26 @@ struct Vector {
     int x = 0;
     int y = 0;
     
-    bool operator ==(const Vector& v) const { return x==v.x && y==v.y; }
-    bool operator !=(const Vector& v) const { return !(*this == v); }
+    constexpr bool operator ==(const Vector& v) const { return x==v.x && y==v.y; }
+    constexpr bool operator !=(const Vector& v) const { return !(*this == v); }
     
-    Vector operator +(const Vector& v) const { return {x+v.x, y+v.y}; }
-    template <typename T> Vector operator +(const T& t) const { return {x+t, y+t}; }
+    constexpr Vector operator +(const Vector& v) const { return {x+v.x, y+v.y}; }
+    template <typename T> constexpr Vector operator +(const T& t) const { return {x+t, y+t}; }
     
-    Vector& operator +=(const Vector& v) { x+=v.x; y+=v.y; return *this; }
-    template <typename T> Vector& operator +=(const T& t) { x+=t; y+=t; return *this; }
+    constexpr Vector& operator +=(const Vector& v) { x+=v.x; y+=v.y; return *this; }
+    template <typename T> constexpr Vector& operator +=(const T& t) { x+=t; y+=t; return *this; }
     
-    Vector operator -(const Vector& v) const { return {x-v.x, y-v.y}; }
-    template <typename T> Vector operator -(const T& t) const { return {x-t, y-t}; }
+    constexpr Vector operator -(const Vector& v) const { return {x-v.x, y-v.y}; }
+    template <typename T> constexpr Vector operator -(const T& t) const { return {x-t, y-t}; }
     
-    Vector& operator -=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
-    template <typename T> Vector& operator -=(const T& t) { x-=t; y-=t; return *this; }
+    constexpr Vector& operator -=(const Vector& v) { x-=v.x; y-=v.y; return *this; }
+    template <typename T> constexpr Vector& operator -=(const T& t) { x-=t; y-=t; return *this; }
     
-    Vector operator -() const { return {-x, -y}; }
+    constexpr Vector operator -() const { return {-x, -y}; }
     
-    template <typename T> Vector operator *(const T& t) const { return {x*t, y*t}; }
+    template <typename T> constexpr Vector operator *(const T& t) const { return {x*t, y*t}; }
     
-    template <typename T> Vector& operator *=(const T& t) { x*=t; y*=t; return *this; }
+    template <typename T> constexpr Vector& operator *=(const T& t) { x*=t; y*=t; return *this; }
 };
 
 using Point = Vector;
@@ -38,29 +38,29 @@ struct Rect {
     Point origin;
     Size size;
     
-    bool operator ==(const Rect& x) const { return origin==x.origin && size==x.size; }
-    bool operator !=(const Rect& x) const { return !(*this == x); }
+    constexpr bool operator ==(const Rect& x) const { return origin==x.origin && size==x.size; }
+    constexpr bool operator !=(const Rect& x) const { return !(*this == x); }
     
     // Width/height
-    int w() const { return size.x; }
-    int h() const { return size.y; }
+    constexpr int w() const { return size.x; }
+    constexpr int h() const { return size.y; }
     
     // Left/right/top/bottom
-    int l() const { return origin.x; }
-    int r() const { return origin.x+size.x; }
-    int t() const { return origin.y; }
-    int b() const { return origin.y+size.y; }
+    constexpr int l() const { return origin.x; }
+    constexpr int r() const { return origin.x+size.x; }
+    constexpr int t() const { return origin.y; }
+    constexpr int b() const { return origin.y+size.y; }
     
     // Mid-x/mid-y
-    int mx() const { return (l()+r())/2; }
-    int my() const { return (t()+b())/2; }
+    constexpr int mx() const { return (l()+r())/2; }
+    constexpr int my() const { return (t()+b())/2; }
     
     // Top-left, top-right, bottom-left, bottom-right, mid
-    Point tl() const { return {l(), t()}; }
-    Point tr() const { return {r(), t()}; }
-    Point bl() const { return {l(), b()}; }
-    Point br() const { return {r(), b()}; }
-    Point m() const { return {mx(), my()}; }
+    constexpr Point tl() const { return {l(), t()}; }
+    constexpr Point tr() const { return {r(), t()}; }
+    constexpr Point bl() const { return {l(), b()}; }
+    constexpr Point br() const { return {r(), b()}; }
+    constexpr Point m() const { return {mx(), my()}; }
 };
 
 struct Edges {

@@ -116,6 +116,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: rename XXXPanel -> XXXAlert, if it's derived from Alert
+    
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp

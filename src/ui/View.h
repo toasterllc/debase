@@ -1,8 +1,8 @@
 #pragma once
 #include <optional>
+#include <climits>
 #include "Color.h"
 #include "lib/toastbox/Defer.h"
-#include <os/log.h>
 
 namespace UI {
 
