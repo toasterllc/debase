@@ -1,7 +1,7 @@
-#import "State.h"
-#import "Debase.h"
-#import "StateDir.h"
-#import <filesystem>
+#include "State.h"
+#include "Debase.h"
+#include "StateDir.h"
+#include <filesystem>
 
 std::filesystem::path StateDir() {
     std::filesystem::path configDir = getenv("XDG_CONFIG_HOME");
