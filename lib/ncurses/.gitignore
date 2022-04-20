@@ -28,6 +28,7 @@ include/unctrl.h
 lib/
 man/Makefile
 man/ncurses6-config.1
+man/ncursesw6-config.1
 man/terminfo.5
 menu/Makefile
 misc/Makefile

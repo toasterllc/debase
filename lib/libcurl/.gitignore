@@ -9,6 +9,8 @@ curl-config
 docs/curl.1
 lib/curl_config.h
 lib/libcurl.la
+lib/libcurlu.la
+src/libcurltool.la
 lib/libcurl.vers
 lib/stamp-h1
 libcurl.pc
