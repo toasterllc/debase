@@ -116,8 +116,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: State: switch to flock() since Linux doesn't support O_EXLOCK flag to open()
-    
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
@@ -139,6 +137,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: State: switch to flock() since Linux doesn't support O_EXLOCK flag to open()
+//
 //    #warning TODO: Alert: make button highlight color match window highlight color
 //
 //    #warning TODO: rename XXXPanel -> XXXAlert, if it's derived from Alert
