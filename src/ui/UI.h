@@ -1,6 +1,11 @@
 #pragma once
 #include <list>
 #include <chrono>
+
+#define NCURSES_WIDECHAR 1
+#include "lib/ncurses/include/curses.h"
+#include "lib/ncurses/include/panel.h"
+
 #include "Bitfield.h"
 
 namespace UI {

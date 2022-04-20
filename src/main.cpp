@@ -126,11 +126,13 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: Add --legal subcommand
+    
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
     #warning TODO: add column scrolling
     
-    #warning TODO: if we can't speed up git operations, show a progress indicator
+    #warning TODO: if we cant speed up git operations, show a progress indicator
     
     #warning TODO: figure out why moving/copying commits is slow sometimes
     

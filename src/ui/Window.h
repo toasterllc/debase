@@ -1,8 +1,5 @@
 #pragma once
-#define NCURSES_WIDECHAR 1
 #include <vector>
-#include "lib/ncurses/include/curses.h"
-#include "lib/ncurses/include/panel.h"
 #include "Bitfield.h"
 #include "UI.h"
 #include "UTF8.h"

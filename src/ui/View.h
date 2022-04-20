@@ -2,6 +2,7 @@
 #include <optional>
 #include <climits>
 #include <cassert>
+#include "UI.h"
 #include "Color.h"
 #include "lib/toastbox/Defer.h"
 
