@@ -17,26 +17,28 @@ OBJECTS=                            \
 	src/ui/View.o                   \
 	src/main.o                      \
 
-LIBS =                              \
-	-lgit2                          \
-	-lcurl                          \
-	-lpthread                       \
-	-lz                             \
-	-lformw                         \
-	-lmenuw                         \
-	-lpanelw                        \
-	-lncursesw                      \
+INCDIRS =                           \
+	-isystem ./lib/ncurses/include  \
+	-iquote ./lib/libgit2/include   \
+	-iquote ./src                   \
+	-iquote .                       \
 
 LIBDIRS =                           \
 	-L./lib/libgit2/build-linux     \
 	-L./lib/libcurl/build/lib       \
 	-L./lib/ncurses/lib             \
 
-INCDIRS =                           \
-	-isystem ./lib/ncurses/include  \
-    -iquote ./lib/libgit2/include   \
-	-iquote ./src                   \
-	-iquote .                       \
+LIBS =                              \
+	-lgit2                          \
+	-lz                             \
+	-lcurl                          \
+	-lssl                           \
+	-lcrypto                        \
+	-lpthread                       \
+	-lformw                         \
+	-lmenuw                         \
+	-lpanelw                        \
+	-lncursesw                      \
 
 all: ${OBJECTS}
 	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS)

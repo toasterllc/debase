@@ -18,13 +18,13 @@
 #### Release build
 
     cd lib/libcurl
-    ./configure --prefix=$PWD/build --disable-shared --with-secure-transport --disable-debug --disable-curldebug --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --without-brotli --without-zstd --without-libpsl --without-libgsasl --without-librtmp --without-winidn
+    ./configure --prefix=$PWD/build --with-secure-transport --disable-shared --disable-debug --disable-curldebug --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --without-brotli --without-zstd --without-libpsl --without-libgsasl --without-librtmp --without-winidn
     make -j8 install-strip
 
 #### Debug build
 
     cd lib/libcurl
-    ./configure --prefix=$PWD/build --disable-shared --with-secure-transport --enable-debug --disable-optimize --enable-curldebug --disable-symbol-hiding --disable-ldap
+    ./configure --prefix=$PWD/build --with-secure-transport --disable-shared --enable-debug --disable-optimize --enable-curldebug --disable-symbol-hiding --disable-ldap
     make -j8 install
 
 ### Build debase
@@ -54,13 +54,13 @@
 #### Release build
 
     cd lib/libcurl
-    ./configure --prefix=$PWD/build --disable-shared --with-secure-transport --disable-debug --disable-curldebug --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --without-brotli --without-zstd --without-libpsl --without-libgsasl --without-librtmp --without-winidn
+    ./configure --prefix=$PWD/build --with-openssl --disable-shared --disable-debug --disable-curldebug --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --without-brotli --without-zstd --without-libpsl --without-libgsasl --without-librtmp --without-winidn
     make -j8 install-strip
 
 #### Debug build
 
     cd lib/libcurl
-    ./configure --prefix=$PWD/build --disable-shared --with-secure-transport --enable-debug --disable-optimize --enable-curldebug --disable-symbol-hiding --disable-ldap
+    ./configure --prefix=$PWD/build --with-openssl --disable-shared --enable-debug --disable-optimize --enable-curldebug --disable-symbol-hiding --disable-ldap
     make -j8 install
 
 ### Build debase
