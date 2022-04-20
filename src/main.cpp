@@ -126,8 +126,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: Add --legal subcommand
-    
     #warning TODO: linux: OpenURL(): use /dev/null for stdin/stdout, so that errors don't get printed
     
     #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
@@ -157,6 +155,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: Add --libs subcommand to print legalese
+//
 //    #warning TODO: linux: try binary on fresh linux installs
 //
 //    #warning TODO: State: switch to flock() since Linux doesn't support O_EXLOCK flag to open()
