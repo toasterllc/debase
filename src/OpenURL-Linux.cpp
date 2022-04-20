@@ -34,7 +34,7 @@ static void _Spawn(std::string_view prog, std::string_view arg) {
     
     // Spawn the text editor and wait for it to exit
     pid_t pid = -1;
-    ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
+    ir = posix_spawnp(&pid, argv[0], &fileActions, nullptr, (char *const*)argv, environ);
     if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
     
     int status = 0;

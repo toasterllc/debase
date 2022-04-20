@@ -126,6 +126,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: first run: if the user didn't cd into a git repo, it'll give an error.
+    
     #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
     
     #warning TODO: linux: step through machine-id generation in debugger and make sure it looks sane
