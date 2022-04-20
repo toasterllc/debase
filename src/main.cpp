@@ -116,6 +116,14 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: Add --legal subcommand
+    
+    #warning TODO: linux: OpenURL(): use /dev/null for stdin/stdout, so that errors don't get printed
+    
+    #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
+    
+    #warning TODO: linux: step through machine-id generation in debugger and make sure it looks sane
+    
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
@@ -126,7 +134,7 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
-    #warning TODO: Add --legal subcommand
+    #warning TODO: linux: starting/exiting is slow (apparently due to detaching/attaching head). detach head lazily when the branch relevant branch is modified?
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
@@ -139,6 +147,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: linux: try binary on fresh linux installs
+//
 //    #warning TODO: State: switch to flock() since Linux doesn't support O_EXLOCK flag to open()
 //
 //    #warning TODO: Alert: make button highlight color match window highlight color

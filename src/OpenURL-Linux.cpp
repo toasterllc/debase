@@ -15,7 +15,7 @@ static void _Spawn(std::string_view prog, std::string_view arg) {
     pid_t pid = -1;
     int ir = posix_spawnp(&pid, argv[0], nullptr, nullptr, (char *const*)argv, environ);
     if (ir) throw Toastbox::RuntimeError("posix_spawnp failed: %s", strerror(ir));
-
+    
     int status = 0;
     ir = 0;
     do ir = waitpid(pid, &status, 0);
