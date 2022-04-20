@@ -66,6 +66,8 @@ public:
     void draw() override {
         borderColor(_color);
         _title->textAttr(_color|A_BOLD);
+        // Always redraw _title because our border may have clobbered it
+        _title->drawNeeded(true);
         
 //        if (erased()) {
 //            Attr style = attr(_color);

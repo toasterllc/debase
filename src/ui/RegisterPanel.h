@@ -44,7 +44,7 @@ public:
     
     // MARK: - ModalPanel Overrides
     int contentHeight() const override {
-        return _ContentSpacingTop + _FieldHeight + _FieldSpacingY + _FieldHeight + _FieldSpacingY + _ButtonHeight + _ContentSpacingBottom;
+        return 2*(_FieldHeight + _FieldSpacingY) + _ButtonHeight;
     }
     
 //    LabelTextFieldPtr focus() const {
@@ -88,8 +88,6 @@ public:
         const Rect cf = contentFrame();
         int offY = cf.t();
         
-        offY += _ContentSpacingTop;
-        
         _email->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
         offY += _FieldHeight+_FieldSpacingY;
         _code->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
@@ -120,8 +118,6 @@ private:
     static constexpr int _ButtonWidth           = 10;
     static constexpr int _ButtonHeight          = 3;
     static constexpr int _ButtonSpacingX        = 1;
-    static constexpr int _ContentSpacingTop     = 0;
-    static constexpr int _ContentSpacingBottom  = 0;
     
     static constexpr int _FieldsExtraHeight = 5;
     static constexpr int _FieldLabelInsetX  = 0;

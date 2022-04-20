@@ -28,7 +28,7 @@ public:
     
     // MARK: - ModalPanel Overrides
     int contentHeight() const override {
-        return 2*_ButtonHeight+_ContentSpacingBottom;
+        return 2*_ButtonHeight;
     }
     
 //    bool layoutNeeded() const override { return true; }
@@ -53,8 +53,7 @@ public:
     auto& registerButton() { return _registerButton; }
     
 private:
-    static constexpr int _ContentSpacingBottom  = 1;
-    static constexpr int _ButtonHeight          = 3;
+    static constexpr int _ButtonHeight = 3;
     
     ButtonPtr _trialButton     = subviewCreate<Button>();
     ButtonPtr _registerButton  = subviewCreate<Button>();

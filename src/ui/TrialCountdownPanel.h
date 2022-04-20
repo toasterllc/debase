@@ -6,12 +6,22 @@ namespace UI {
 class TrialCountdownPanel : public ModalPanel {
 public:
     TrialCountdownPanel(int64_t expiration) : _expiration(expiration) {
-        _registerButton->label()->text      ("Register");
-        _registerButton->drawBorder         (true);
+        using namespace std::chrono;
+//        using days = duration<int64_t, std::ratio<86400>>;
+        constexpr auto Day = std::chrono::seconds(86400);
+        
+        _registerButton->label()->text  ("Register");
+        _registerButton->drawBorder     (true);
         
         title()->text("debase trial");
         title()->align(Align::Center);
-        message()->text(Time::RelativeTimeDisplayString({.futureSuffix="left"}, _expiration));
+        
+        // If the time remaining is > 1 day, add .5 days, causing the RelativeTimeString()
+        // result to effectively round to the nearest day (instead of flooring) when the
+        // time remaining is in days.
+        auto rem = duration_cast<seconds>(std::chrono::system_clock::from_time_t(_expiration) - std::chrono::system_clock::now());
+        if (rem > Day) rem += Day/2;
+        message()->text(Time::RelativeTimeString({.futureSuffix="left"}, rem));
     }
     
     // MARK: - View Overrides

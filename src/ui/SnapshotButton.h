@@ -17,7 +17,7 @@ public:
         Git::Commit commit = State::Convert(repo, snapshot.head);
         Git::Signature sig = commit.author();
         
-        _time->text(Time::RelativeTimeDisplayString({.pastSuffix="ago", .abbreviate=true}, snapshot.creationTime));
+        _time->text(Time::RelativeTimeString({.pastSuffix="ago", .abbreviate=true}, snapshot.creationTime));
         _time->align(Align::Right);
         _time->textAttr(Colors().dimmed);
         

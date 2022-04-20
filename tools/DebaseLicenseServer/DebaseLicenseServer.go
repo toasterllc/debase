@@ -216,6 +216,8 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 }
 
 func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (license.HTTPResponse, error) {
+	var trialExpiredErr = errors.New("The existing trial has already expired.")
+
 	// Create the trial license that we'll insert if one doesn't already exist
 	trialLicNew := trialLicenseCreate(mid)
 
@@ -255,13 +257,13 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 
 	// Check if license is expired
 	// If so, we return an error rather than return a signed license, otherwise the client
-	// could more easily get the license and rollback the time of their machine.
+	// could more easily get the signed license and rollback the time of their machine.
 	// The way we implemented debase, it deletes the license on disk after it expires, and
 	// since we (the server) no longer supply the license after it expires, the license is
 	// hopefully unrecoverable.
 	expiration := time.Unix(trialLic.Expiration, 0)
 	if time.Now().After(expiration) {
-		return license.HTTPResponse{Error: "trial expired"}, nil
+		return license.HTTPResponse{Error: trialExpiredErr.Error()}, nil
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{

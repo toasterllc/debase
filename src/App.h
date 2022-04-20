@@ -1323,9 +1323,9 @@ private:
         panel->origin(p);
     }
     
-    bool _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+    std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
         constexpr const char* SupportMessage =
-            "If you believe this is an error, please contact " _DebaseSupportEmail ".";
+            "For support, please contact " _DebaseSupportEmail ".";
         
         panel->suppressEvents(true);
         Defer(panel->suppressEvents(false));
@@ -1354,12 +1354,12 @@ private:
             async.get();
         } catch (const std::exception& e) {
             _errorMessageShow(std::string("A network error occurred: ") + e.what());
-            return false;
+            return std::nullopt;
         }
         
         if (!resp.error.empty()) {
             _errorMessageShow(resp.error + "\n\n" + SupportMessage);
-            return false;
+            return std::nullopt;
         }
         
         // Validate response
@@ -1368,7 +1368,7 @@ private:
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
             _errorMessageShow(std::string("The license supplied by the server is invalid.\n\n") + SupportMessage);
-            return false;
+            return std::nullopt;
         }
         
         // License is valid; save it and dismiss
@@ -1376,15 +1376,16 @@ private:
         state.license(sealed);
         state.write();
         
-        return true;
+        return license;
     }
     
     void _welcomePanelTrial() {
         assert(_welcomePanel);
         
         const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
-        bool ok = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), trialReq);
-        if (ok) {
+        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), trialReq);
+        if (license) {
+            _trialCountdownShow(*license);
             _welcomePanel = nullptr;
         }
     }
@@ -1415,7 +1416,7 @@ private:
             .licenseCode = licenseCode,
         };
         
-        bool ok = _licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);
+        bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);
         if (ok) {
             _registerPanel = nullptr;
             _infoMessageShow("Thank you for supporting debase!");
@@ -1475,13 +1476,13 @@ private:
     
     void _trialExpiredPanelShow() {
         constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please register to continue.";
+        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.\n\nTo purchase a license, please visit:heytoaster.com";
         _registerPanelShow(Title, Message, false);
     }
     
     void _registerPanelShow() {
         constexpr const char* Title     = "Register debase";
-        constexpr const char* Message   = "Please enter your registration information.";
+        constexpr const char* Message   = "Please enter your license information.";
         _registerPanelShow(Title, Message, true);
     }
     
