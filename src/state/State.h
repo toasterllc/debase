@@ -168,7 +168,10 @@ private:
         Version updateIgnoreVersion = 0; // The most recent version that the user ignored
     };
     
-    static constexpr uint32_t _Version = 0; // State format version (not Debase version)
+    // _StateVersion: version of our state data structure; different than Version,
+    // which is the debase version!
+    using _StateVersion = uint32_t;
+    static constexpr _StateVersion _Version = 0; // State format version (not Debase version)
     static _Path _VersionLockFilePath(_Path dir) {
         return dir / "Version";
     }
@@ -212,35 +215,51 @@ private:
         f << std::setw(4) << j;
     }
     
-    static uint32_t _VersionRead(std::istream& stream) {
+    static _StateVersion _StateVersionRead(std::istream& stream) {
         nlohmann::json j;
         stream >> j;
-        return j;
+        
+        _StateVersion vers;
+        j.get_to(vers);
+        return vers;
     }
     
-    static void _VersionWrite(std::ostream& stream, uint32_t version) {
+    static void _StateVersionWrite(std::ostream& stream, _StateVersion version) {
         nlohmann::json j = version;
         stream << j;
     }
     
-    static Toastbox::FDStreamInOut _VersionLockFileOpen(_Path path, bool create) {
+    static Toastbox::FDStreamInOut _VersionLockFileOpen(_Path path) {
         constexpr mode_t Mode = (S_IRUSR|S_IWUSR) | S_IRGRP | S_IROTH;
-        const int opts = (O_RDWR|O_EXLOCK|O_CLOEXEC) | (create ? (O_CREAT|O_EXCL) : 0);
+        const int opts = (O_CREAT|O_RDWR|O_CLOEXEC);
+        
         int ir = -1;
         do ir = open(path.c_str(), opts, Mode);
-        while (errno==EINTR);
+        while (ir<0 && errno==EINTR);
         if (ir < 0) throw std::system_error(errno, std::generic_category());
-        Toastbox::FDStreamInOut f(ir);
+        const int fd = ir;
+        
+        // Lock the file
+        // Ideally we'd give O_EXLOCK to open() to atomically open+lock the file,
+        // which would allow us to guarantee that the file can never be observed
+        // with empty content. But Linux doesn't support O_EXLOCK, so instead we
+        // have to open+lock nonatomically, and after locking, read the file to
+        // determine whether we need to write the version (because the file's
+        // empty/corrupt) or whether someone else already wrote the version.
+        do ir = flock(fd, LOCK_EX);
+        while (ir && errno==EINTR);
+        if (ir < 0) throw std::system_error(errno, std::generic_category());
+        
+        Toastbox::FDStreamInOut f(fd);
         f.exceptions(std::ios::failbit | std::ios::badbit);
         return f;
     }
     
-    static void _Migrate(_Path rootDir, uint32_t versionPrev) {
+    static void _Migrate(_Path rootDir, _StateVersion versionPrev) {
         // Stub until we have a new version
     }
     
-    static void _CheckVersionAndMigrate(_Path rootDir, std::istream& stream, bool migrate) {
-        uint32_t version = _VersionRead(stream);
+    static void _CheckVersionAndMigrate(_Path rootDir, _StateVersion version, bool migrate) {
         if (version > _Version) {
             throw Toastbox::RuntimeError(
                 "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
@@ -270,31 +289,22 @@ public:
         
         // Try to create the version lock file
         _Path versionLockFilePath = _VersionLockFilePath(rootDir);
-        bool created = false;
-        Toastbox::FDStreamInOut versionLockFile;
+        Toastbox::FDStreamInOut versionLockFile = _VersionLockFileOpen(versionLockFilePath);
+        _StateVersion version = _Version;
         try {
-            // Try to create the version lock file first
-            versionLockFile = _VersionLockFileOpen(versionLockFilePath, true);
-            created = true;
+            // Try to read the state version
+            version = _StateVersionRead(versionLockFile);
         
         } catch (...) {
-            // We weren't able to create the version lock file, presumably because it
-            // already exists. Try just opening it instead.
-            // Note that this isn't racy because we create the file with the O_EXLOCK
-            // flag, so we won't be able to read it until the writer writes the file
-            // and closes it.
-            versionLockFile = _VersionLockFileOpen(versionLockFilePath, false);
+            // We failed to read the version number; assume that we need to write it
+            versionLockFile.clear(); // Clear errors that occurred when attempting to the read the version (eg EOF)
+            versionLockFile.seekp(0); // Reset output position to 0
+            _StateVersionWrite(versionLockFile, _Version);
         }
         
-        if (created) {
-            // We created the version lock file
-            // Write our version number
-            _VersionWrite(versionLockFile, _Version);
-        } else {
-            // The version lock file already existed.
-            // Read the version and migrate the old state to the current version, if needed.
-            _CheckVersionAndMigrate(rootDir, versionLockFile, migrate);
-        }
+        // Check the version and migrate data if allowed
+        _CheckVersionAndMigrate(rootDir, version, migrate);
+        
         return versionLockFile;
     }
     

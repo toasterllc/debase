@@ -116,6 +116,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: State: switch to flock() since Linux doesn't support O_EXLOCK flag to open()
+    
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
     #warning TODO: obfuscate paths in Machine.cpp
