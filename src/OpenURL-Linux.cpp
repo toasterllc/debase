@@ -1,5 +1,9 @@
 #include "OpenURL.h"
 
-void OpenURL(const char* url) {
+void OpenURL(std::string_view url) {
+    
+}
+
+void OpenMailto(std::string_view email) {
     
 }

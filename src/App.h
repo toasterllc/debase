@@ -14,6 +14,7 @@
 #include "ui/RegisterPanel.h"
 #include "ui/ButtonSpinner.h"
 #include "ui/TrialCountdownPanel.h"
+#include "ui/ErrorPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -303,7 +304,7 @@ public:
         
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
-            _errorMessageShow(errorMsg);
+            _errorMessageShow(errorMsg, false);
         }
         
         return true;
@@ -1324,9 +1325,6 @@ private:
     }
     
     std::optional<License::License> _licenseRequest(UI::ModalPanelPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
-        constexpr const char* SupportMessage =
-            "For support, please contact " _ToasterSupportEmail ".";
-        
         panel->suppressEvents(true);
         Defer(panel->suppressEvents(false));
         
@@ -1353,12 +1351,12 @@ private:
         try {
             async.get();
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("A network error occurred: ") + e.what());
+            _errorMessageShow(std::string("A network error occurred: ") + e.what(), true);
             return std::nullopt;
         }
         
         if (!resp.error.empty()) {
-            _errorMessageShow(resp.error + "\n\n" + SupportMessage);
+            _errorMessageShow(resp.error, true);
             return std::nullopt;
         }
         
@@ -1367,7 +1365,7 @@ private:
         License::License license;
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
-            _errorMessageShow(std::string("The license supplied by the server is invalid.\n\n") + SupportMessage);
+            _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
             return std::nullopt;
         }
         
@@ -1429,6 +1427,9 @@ private:
     }
     
     void _registerPanelShow(std::string_view title, std::string_view message, bool dismissAllowed) {
+//        std::string msg = std::string(message);
+//        msg += " To purchase a license, please visit:\n";
+        
         _registerPanel = subviewCreate<UI::RegisterPanel>();
         _registerPanel->color               (View::Colors().menu);
         _registerPanel->title()->text       (title);
@@ -1462,13 +1463,13 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
-    void _errorMessageShow(std::string_view msg) {
-        _messagePanel = subviewCreate<UI::ModalPanel>();
-        _messagePanel->color            (_colors.error);
-        _messagePanel->title()->text    ("Error");
-        _messagePanel->message()->text  (msg);
-        _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
-//        _messagePanel->orderFront();
+    void _errorMessageShow(std::string_view msg, bool showSupportMessage) {
+        auto p = subviewCreate<UI::ErrorPanel>();
+        p = subviewCreate<UI::ErrorPanel>();
+        p->message()->text    (msg);
+        p->dismissAction      ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
+        p->showSupportMessage (showSupportMessage);
+        _messagePanel = p;
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
