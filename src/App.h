@@ -1395,7 +1395,7 @@ private:
         try {
             async.get();
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("A network error occurred: ") + e.what(), true);
+            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
             return std::nullopt;
         }
         
@@ -1409,8 +1409,16 @@ private:
         License::License license;
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
-            _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
-            return std::nullopt;
+            if (st == License::Status::InvalidVersion) {
+                std::stringstream ss;
+                ss << "This license is only valid for debase version " << license.version << " and older, but this is debase version " << DebaseVersion << ".";
+                _errorMessageShow(ss.str(), true);
+                return std::nullopt;
+            
+            } else {
+                _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
+                return std::nullopt;
+            }
         }
         
         // License is valid; save it and dismiss
@@ -1460,6 +1468,8 @@ private:
         
         bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);
         if (ok) {
+            _trialCountdownPanel = nullptr;
+            _welcomePanel = nullptr;
             _registerPanel = nullptr;
             _infoMessageShow("Thank you for supporting debase!");
         }
@@ -1518,8 +1528,9 @@ private:
     void _infoMessageShow(std::string_view msg) {
         _messagePanel = subviewCreate<UI::ModalPanel>();
         _messagePanel->color            (colors().menu);
-//        _messagePanel->title()->text    ("Error");
+        _messagePanel->title()->text    ("Thank You!");
         _messagePanel->message()->text  (msg);
+        _messagePanel->message()->align (UI::Align::Center);
         _messagePanel->dismissAction    ([=] (UI::ModalPanel&) { _messagePanel = nullptr; });
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel

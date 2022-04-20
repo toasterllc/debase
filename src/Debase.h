@@ -5,14 +5,15 @@
 #define inline // Go can't handle 'inline' below
 #endif
 
-#define _ToasterShortURL         "heytoaster.com"
-#define _ToasterURL              "https://" _ToasterShortURL
-#define _ToasterSupportEmail     "support@heytoaster.com"
+#define _ToasterShortURL        "heytoaster.com"
+#define _ToasterURL             "https://" _ToasterShortURL
+#define _ToasterSupportEmail    "support@heytoaster.com"
+#define _DebaseVersion          0
 
 inline const char* ToasterDisplayURL    = _ToasterShortURL;
 inline const char* ToasterSupportEmail  = _ToasterSupportEmail;
 
-inline const uint32_t DebaseVersion     = 1;
+inline const uint32_t DebaseVersion     = _DebaseVersion;
 inline const char* DebaseProductId      = "com.heytoaster.debase";
 inline const char* DebasePurchaseURL    = _ToasterURL "/debase";
 inline const char* DebaseLicenseAPIURL  = "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer";

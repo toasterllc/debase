@@ -63,7 +63,7 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
 }
 
 static void _PrintUsage() {
-    std::cout << "debase version " Stringify(DebaseVersion) "\n";
+    std::cout << "debase version " Stringify(_DebaseVersion) "\n";
     std::cout << "\n";
     std::cout << "Usage:\n";
     std::cout << "  -h, --help\n";

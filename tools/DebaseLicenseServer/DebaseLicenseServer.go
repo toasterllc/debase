@@ -30,6 +30,10 @@ const TrialsCollection = "Trials"
 const TrialDuration = 7 * 24 * time.Hour
 const MachineCountMax = 3
 
+var LicenseNotFoundErr = errors.New("No matching license was found.")
+var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
+var TrialExpiredErr = errors.New("The existing trial has already expired.")
+
 var db *firestore.Client
 
 func init() {
@@ -105,7 +109,6 @@ func reqSanitize(req license.HTTPRequest) (license.HTTPRequest, error) {
 func trialLicenseCreate(mid license.MachineId) license.DBTrialLicense {
 	expiration := time.Now().Add(TrialDuration)
 	return license.DBTrialLicense{
-		MachineId:  mid,
 		Version:    uint32(C.DebaseVersion),
 		Expiration: expiration.Unix(),
 	}
@@ -127,23 +130,21 @@ func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	}, nil
 }
 
-func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (license.HTTPResponse, error) {
-	var licenseNotFoundErr = errors.New("No matching license was found.")
-	var machineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
-
+func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
+	var userLic *license.DBUserLicense
 	var respErr error
-	var userLic license.DBUserLicense
 	userLicsRef := db.Collection(LicensesCollection).Doc(string(req.UserId))
 	err := db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
-		// Transactions can run multiple times, where the last one wins
-		// So make sure that respErr is cleared by default, so it doesn't
-		// contain a value from a previous transaction
+		// Transactions can run multiple times, where the last one wins.
+		// So make sure that our output vars are cleared by default, so they don't
+		// contain values from a previous transaction
+		userLic = nil
 		respErr = nil
 
 		userLicsDoc, err := tx.Get(userLicsRef)
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
-				respErr = licenseNotFoundErr
+				respErr = LicenseNotFoundErr
 			}
 			return fmt.Errorf("tx.Get() failed for UserId=%v LicenseCode=%v: %w", req.UserId, req.LicenseCode, err)
 		}
@@ -155,39 +156,39 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 		}
 
 		// Find a license that matches the given license code
-		var match *license.DBUserLicense
-		for _, userLic := range userLics.Licenses {
-			if userLic.LicenseCode == req.LicenseCode {
-				match = &userLic
+		for i := range userLics.Licenses {
+			if userLics.Licenses[i].LicenseCode == req.LicenseCode {
+				userLic = &userLics.Licenses[i]
 				break
 			}
 		}
 
 		// If we didn't find a license for the given license code, return an error
-		if match == nil {
-			respErr = licenseNotFoundErr
+		if userLic == nil {
+			respErr = LicenseNotFoundErr
 			return fmt.Errorf("no matching license for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
 		}
 
 		// We found a license for the given license code
 		// If the given machine id already exists in the license, then we're done
-		for _, mid := range match.MachineIds {
+		for _, mid := range userLic.MachineIds {
 			if mid == req.MachineId {
-				userLic = *match
 				return nil
 			}
 		}
 
 		// Otherwise, the machine id doesn't exist in the license, so we need to add it
 		// Bail if we don't have any free machine id slots
-		if len(match.MachineIds) >= MachineCountMax {
-			respErr = machineLimitErr
+		if len(userLic.MachineIds) >= MachineCountMax {
+			respErr = MachineLimitErr
 			return fmt.Errorf("max machines already reached for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
 		}
 
 		userLic.MachineIds = append(userLic.MachineIds, req.MachineId)
 
-		err = tx.Set(userLicsRef, userLic)
+		// log.Printf("userLics: %v userLic: %v", userLics, *userLic)
+
+		err = tx.Set(userLicsRef, userLics)
 		if err != nil {
 			return fmt.Errorf("tx.Set() failed for UserId=%v LicenseCode=%v", req.UserId, req.LicenseCode)
 		}
@@ -196,10 +197,11 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 	})
 
 	if err != nil {
+		err = fmt.Errorf("db.RunTransaction() failed: %w", err)
 		if respErr != nil {
-			return license.HTTPResponse{Error: respErr.Error()}, nil
+			return &license.HTTPResponse{Error: respErr.Error()}, err
 		} else {
-			return license.HTTPResponse{}, fmt.Errorf("db.RunTransaction() failed: %w", err)
+			return nil, err
 		}
 	}
 
@@ -210,14 +212,13 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 		Version:     userLic.Version,
 	})
 	if err != nil {
-		return license.HTTPResponse{}, fmt.Errorf("sealedLicense failed: %w", err)
+		return nil, fmt.Errorf("sealedLicense failed: %w", err)
 	}
-	return license.HTTPResponse{License: sealed}, nil
+
+	return &license.HTTPResponse{License: sealed}, nil
 }
 
-func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (license.HTTPResponse, error) {
-	var trialExpiredErr = errors.New("The existing trial has already expired.")
-
+func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.MachineId) (*license.HTTPResponse, error) {
 	// Create the trial license that we'll insert if one doesn't already exist
 	trialLicNew := trialLicenseCreate(mid)
 
@@ -252,7 +253,7 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	})
 
 	if err != nil {
-		return license.HTTPResponse{}, fmt.Errorf("db.RunTransaction failed: %w", err)
+		return nil, fmt.Errorf("db.RunTransaction failed: %w", err)
 	}
 
 	// Check if license is expired
@@ -263,65 +264,66 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, mid license.Machin
 	// hopefully unrecoverable.
 	expiration := time.Unix(trialLic.Expiration, 0)
 	if time.Now().After(expiration) {
-		return license.HTTPResponse{Error: trialExpiredErr.Error()}, nil
+		return &license.HTTPResponse{Error: TrialExpiredErr.Error()}, nil
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{
-		MachineId:  trialLic.MachineId,
+		MachineId:  mid,
 		Version:    trialLic.Version,
 		Expiration: trialLic.Expiration,
 	})
 	if err != nil {
-		return license.HTTPResponse{}, fmt.Errorf("sealedLicense failed: %w", err)
+		return nil, fmt.Errorf("sealedLicense failed: %w", err)
 	}
-	return license.HTTPResponse{License: sealed}, nil
+
+	return &license.HTTPResponse{License: sealed}, nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) error {
+func handler(w http.ResponseWriter, r *http.Request) (*license.HTTPResponse, error) {
 	ctx := r.Context()
 
 	var req license.HTTPRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		return fmt.Errorf("json.NewDecoder failed: %w", err)
+		return nil, fmt.Errorf("json.NewDecoder failed: %w", err)
 	}
 
 	req, err = reqSanitize(req)
 	if err != nil {
-		return fmt.Errorf("reqSanitize failed: %w", err)
+		return &license.HTTPResponse{Error: LicenseNotFoundErr.Error()}, fmt.Errorf("reqSanitize failed: %w", err)
 	}
 
-	var resp license.HTTPResponse
 	if req.UserId != "" {
 		// License request
-		resp, err = handlerLicense(ctx, w, req)
-		if err != nil {
-			return fmt.Errorf("handlerLicense failed: %w", err)
-		}
+		return handlerLicense(ctx, w, req)
 
 	} else {
 		// Trial request
-		resp, err = handlerTrial(ctx, w, req.MachineId)
-		if err != nil {
-			return fmt.Errorf("handlerTrial failed: %w", err)
-		}
+		return handlerTrial(ctx, w, req.MachineId)
 	}
-
-	err = json.NewEncoder(w).Encode(&resp)
-	if err != nil {
-		return fmt.Errorf("json.NewEncoder(w).Encode failed: %w", err)
-	}
-
-	return nil
 }
 
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
-	err := handler(w, r)
+	resp, err := handler(w, r)
+
+	// Log the error before doing anything else
 	if err != nil {
 		log.Printf("Error: %v", err)
-		// TODO: don't return the actual error to the client, for security and to protect our licensing scheme
-		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusBadRequest) // Intentionally not divulging the error in the response
+	}
+
+	// If there was a response, write it and return (which implicitly triggers an HTTP 200).
+	// A 200 doesn't mean we succeeded, it just means that we returned a valid json response
+	// to the client.
+	if resp != nil {
+		err = json.NewEncoder(w).Encode(resp)
+		if err != nil {
+			log.Printf("json.NewEncoder(w).Encode failed: %w", err)
+		}
 		return
 	}
+
+	// Deliberately not divulging the error in the response, for security and to protect our licensing scheme
+	// The actual errors are logged via log.Printf()
+	http.Error(w, "Error", http.StatusBadRequest)
 }

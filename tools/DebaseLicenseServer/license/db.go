@@ -3,7 +3,6 @@ package license
 // Database structs
 
 type DBTrialLicense struct {
-	MachineId  MachineId
 	Version    uint32
 	Expiration int64
 }
