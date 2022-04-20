@@ -126,15 +126,15 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: linux: OpenURL(): use /dev/null for stdin/stdout, so that errors don't get printed
-    
     #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
     
     #warning TODO: linux: step through machine-id generation in debugger and make sure it looks sane
     
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
     
-    #warning TODO: obfuscate paths in Machine.cpp
+    #warning TODO: obfuscate Machine.h. Call MachineIdCalc -> FindGit; RAMCapacity -> ???
+    
+    #warning TODO: MachineIdCalc: if user creates a new directory, it'll change the machineid
     
     #warning TODO: linux: do lots of testing
     #warning TODO: macos-x86: do lots of testing
@@ -155,6 +155,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: linux: OpenURL(): use /dev/null for stdin/stdout, so that errors don't get printed
+//
 //    #warning TODO: Add --libs subcommand to print legalese
 //
 //    #warning TODO: linux: try binary on fresh linux installs
