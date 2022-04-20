@@ -1,5 +1,7 @@
 #include "OpenURL.h"
 #include <spawn.h>
+#include <string.h>
+#include <sys/wait.h>
 #include "lib/toastbox/RuntimeError.h"
 
 extern "C" {

@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 #include <climits>
+#include <cassert>
 #include "Color.h"
 #include "lib/toastbox/Defer.h"
 

@@ -2,6 +2,7 @@
 #include <set>
 #include <fstream>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <fcntl.h>
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/FileDescriptor.h"

@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <deque>
 #include "Git.h"
 #include "lib/toastbox/Defer.h"
 

@@ -5,7 +5,7 @@
 
 std::filesystem::path StateDir() {
     std::filesystem::path configDir = getenv("XDG_CONFIG_HOME");
-    if (path.empty()) {
+    if (configDir.empty()) {
         std::filesystem::path home = getenv("HOME");
         if (home.empty()) throw Toastbox::RuntimeError("HOME environment variable isn't set");
         configDir = home / ".config";

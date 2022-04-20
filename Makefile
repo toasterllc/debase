@@ -1,5 +1,15 @@
 NAME=debase
-OBJECTS=src/main.o
+OBJECTS=                            \
+    lib/c25519/src/sha512.o         \
+    lib/c25519/src/edsign.o         \
+    lib/c25519/src/ed25519.o        \
+    lib/c25519/src/fprime.o         \
+    src/OpenURL-Linux.o             \
+    src/ProcessPath-Linux.o         \
+    src/machine/Machine-Linux.o     \
+    src/state/StateDir-Linux.o      \
+    src/ui/View.o                   \
+    src/main.o
 
 CXX      = g++
 CXXFLAGS = -std=c++17 -O0 -g3 -Wall $(IDIRS)
