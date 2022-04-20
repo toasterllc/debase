@@ -8,8 +8,3 @@ void OpenURL(std::string_view url) noexcept {
         LSOpenCFURLRef((__bridge CFURLRef)[NSURL URLWithString:@(url.data())], nil);
     }
 }
-
-void OpenMailto(std::string_view email) noexcept {
-    std::string mailto = "mailto:"+std::string(email);
-    OpenURL(mailto);
-}

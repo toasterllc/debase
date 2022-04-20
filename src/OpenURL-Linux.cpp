@@ -29,9 +29,3 @@ void OpenURL(std::string_view url) noexcept {
         _Spawn("xdg-open", url);
     } catch (...) {}
 }
-
-void OpenMailto(std::string_view email) noexcept {
-    try {
-        _Spawn("xdg-email", email);
-    } catch (...) {}
-}
