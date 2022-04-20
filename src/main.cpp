@@ -7,6 +7,8 @@
 #include "App.h"
 #include "Terminal.h"
 #include "Debase.h"
+#include "UsageText.h"
+#include "LibsText.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -14,6 +16,11 @@
 //}
 
 struct _Args {
+    struct {
+        bool en = false;
+        std::vector<std::string> revs;
+    } run;
+    
     struct {
         bool en = false;
     } help;
@@ -25,12 +32,12 @@ struct _Args {
     
     struct {
         bool en = false;
-    } machineId;
+    } libs;
     
+    // Hidden options
     struct {
         bool en = false;
-        std::vector<std::string> revs;
-    } run;
+    } machineId;
 };
 
 static _Args _ParseArgs(int argc, const char* argv[]) {
@@ -63,6 +70,15 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
         };
     }
     
+    if (arg0 == "--libs") {
+        return _Args{
+            .libs = {
+                .en = true,
+            },
+        };
+    }
+    
+    // Hidden options
     if (arg0 == "--machineid") {
         return _Args{
             .machineId = {
@@ -81,17 +97,11 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
 
 static void _PrintUsage() {
     std::cout << "debase version " Stringify(_DebaseVersion) "\n";
-    std::cout << "\n";
-    std::cout << "Usage:\n";
-    std::cout << "  -h, --help\n";
-    std::cout << "      Print this help message\n";
-    std::cout << "\n";
-    std::cout << "  --theme <auto|dark|light>\n";
-    std::cout << "      Set theme\n";
-    std::cout << "\n";
-    std::cout << "  [<rev>...]\n";
-    std::cout << "      Open the specified git revisions in debase\n";
-    std::cout << "\n";
+    std::cout << UsageText;
+}
+
+static void _PrintLibs() {
+    std::cout << LibsText;
 }
 
 //// _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
@@ -460,7 +470,10 @@ int main(int argc, const char* argv[]) {
     try {
         _Args args = _ParseArgs(argc-1, argv+1);
         
-        if (args.help.en) {
+        if (args.run.en) {
+            // Nothing to do
+        
+        } else if (args.help.en) {
             _PrintUsage();
             return 0;
         
@@ -478,12 +491,16 @@ int main(int argc, const char* argv[]) {
             State::ThemeWrite(theme);
             return 0;
         
+        } else if (args.libs.en) {
+            _PrintLibs();
+            return 0;
+        
         } else if (args.machineId.en) {
             const Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
             printf("%s\n", machineId.c_str());
             return 0;
         
-        } else if (!args.run.en) {
+        } else {
             throw Toastbox::RuntimeError("invalid arguments");
         }
         
