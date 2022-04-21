@@ -132,8 +132,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
-    
     #warning TODO: linux: step through machine-id generation in debugger and make sure it looks sane
     
     #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
@@ -161,6 +159,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: fix: sometimes we get the mouse-moved escape codes upon exit
+//
 //    #warning TODO: linux: OpenURL(): use /dev/null for stdin/stdout, so that errors don't get printed
 //
 //    #warning TODO: Add --libs subcommand to print legalese
