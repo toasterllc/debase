@@ -1809,17 +1809,30 @@ private:
         
         // We don't want to update the shell path is XDG is detected
         bool updateShellPath = !PathIsInEnvironmentPath(binDirPath);
-#if __linux__
-        // On Linux, if it looks like the system is XDG compliant, don't update
-        // the shell PATH because XDG should already include the bin directory.
-        // From the XDG spec:
-        // 
-        //     User-specific executable files may be stored in $HOME/.local/bin.
-        //     Distributions should ensure this directory shows up in the UNIX
-        //     $PATH environment variable, at an appropriate place.
-        //
-        if (XDGDetected()) updateShellPath = false;
-#endif
+        
+        // We removed the code below that sets updateShellPath=false if XDG is detected,
+        // because on Ubuntu at least, ~/.local/bin is added to PATH in .profile and only
+        // if the directory already exists. So if the directory doesn't exist (and
+        // therefore we created it), the user would have to logout+login in order to reload
+        // .profile and have it update PATH now that ~/.local/bin exists.
+        // That's crappy UX so, so we add ~/.local/bin to PATH in .bashrc, which is reloaded
+        // upon every new shell. That'll cause ~/.local/bin to be harmlessly repeated once
+        // in PATH (once from ~/.profile, and once from ~/.bashrc), but that seems better
+        // than the crappy UX of having to logout. (We could add a check to only add
+        // ~/.local/bin if it's not already in PATH though, but we didn't do that for
+        // simplicity.)
+        
+//#if __linux__
+//        // On Linux, if it looks like the system is XDG compliant, don't update
+//        // the shell PATH because XDG should already include the bin directory.
+//        // From the XDG spec:
+//        // 
+//        //     User-specific executable files may be stored in $HOME/.local/bin.
+//        //     Distributions should ensure this directory shows up in the UNIX
+//        //     $PATH environment variable, at an appropriate place.
+//        //
+//        if (XDGDetected()) updateShellPath = false;
+//#endif
         constexpr const char* ShellBash = "bash";
         constexpr const char* ShellZsh  = "zsh";
         
@@ -1840,14 +1853,14 @@ private:
         if (shellName == ShellBash) {
             shell = {
                 .profilePath         = homePath / ".bashrc",
-                .updatePathCommand   = "PATH=~/'" + binDirRelativePath.string() + "':$PATH",
+                .updatePathCommand   = "PATH=\"$HOME/" + binDirRelativePath.string() + ":$PATH\"",
                 .restartShellCommand = "exec bash",
             };
         
         } else if (shellName == ShellZsh) {
             shell = {
                 .profilePath         = homePath / ".zshrc",
-                .updatePathCommand   = "path+=~/'" + binDirRelativePath.string() + "'",
+                .updatePathCommand   = "path+=\"$HOME/" + binDirRelativePath.string() + "\"",
                 .restartShellCommand = "exec zsh",
             };
         
@@ -1917,17 +1930,38 @@ private:
             shellProfile << shell.updatePathCommand << "\n";
         }
         
-        static ShellInfo shellCapture = shell;
-        static fs::path binDirRelativePathCapture = binDirRelativePath;
+        static struct {
+            ShellInfo shell;
+            fs::path binDirRelativePath;
+            bool updateShellPath = false;
+        } ctx = {
+            shell,
+            binDirRelativePath,
+            updateShellPath,
+        };
+        
+//        static {
+//            .shell              = shell,
+//            .binDirRelativePath = binDirRelativePath,
+//            .updateShellPath    = updateShellPath,
+//        } ctx;
+        
         atexit(+[]() {
-            std::cout << "\n";
-            std::cout << "*** debase was moved to ~/" << (binDirRelativePathCapture/DebaseFilename).string() << "\n";
-            std::cout << "*** \n";
-            std::cout << "*** To invoke debase again, you may need to restart your shell with:" << "\n";
-            std::cout << "*** \n";
-            std::cout << "***   " << shellCapture.restartShellCommand << "\n";
-            std::cout << "*** \n";
-            std::cout << "*** to ensure that your shell can find debase." << "\n";
+            std::cout     << "\n";
+            std::cout     << "*** debase was moved to ~/" << (ctx.binDirRelativePath/DebaseFilename).string() << "\n";
+            std::cout     << "*** \n";
+            
+            if (ctx.updateShellPath) {
+                std::cout << "*** To invoke again by typing `debase`, you may need to restart your shell with:" << "\n";
+                std::cout << "*** \n";
+                std::cout << "***   " << ctx.shell.restartShellCommand << "\n";
+                std::cout << "*** \n";
+                std::cout << "*** to ensure that your shell can find the new location." << "\n";
+            
+            } else {
+                std::cout << "*** You can now invoke debase by simply typing `debase`.\n";
+            }
+            
             std::cout << "\n";
         });
     }
