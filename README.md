@@ -66,4 +66,4 @@
 ### Build debase
 
     cd debase
-    make
+    make -j8
