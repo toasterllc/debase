@@ -120,8 +120,8 @@ Machine ID isn't calculated on first launch until a button is clicked
 debase offsers to move itself with zsh
 debase offsers to move itself with bash
 
-Moving debase works with zsh
-Moving debase works with bash
+Moving debase works with zsh, when PATH does include the destination dir
+Moving debase works with bash, when PATH does include the destination dir
 
 Moving debase works with zsh, when PATH didn't originally include the destination dir
 Moving debase works with bash, when PATH didn't originally include the destination dir
