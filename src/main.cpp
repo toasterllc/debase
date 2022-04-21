@@ -104,6 +104,12 @@ static void _PrintLibs() {
     std::cout << LibsText;
 }
 
+static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
+    auto deadline = std::chrono::steady_clock::now()+timeout;
+    uint8_t buf[128];
+    Toastbox::Read(STDIN_FILENO, buf, sizeof(buf), deadline);
+}
+
 //// _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
 //// is located in a directory listed in the PATH environment variable
 //static bool _CurrentExecutableIsInEnvironmentPath() {
@@ -125,8 +131,6 @@ int main(int argc, const char* argv[]) {
     
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
-    
-    #warning TODO: first run: if the user didn't cd into a git repo, it'll give an error.
     
     #warning TODO: linux: sometimes we get the mouse-moved escape codes upon exit
     
@@ -508,16 +512,25 @@ int main(int argc, const char* argv[]) {
             throw Toastbox::RuntimeError("invalid arguments");
         }
         
-        // Disable echo before activating ncurses
-        // This is necessary to prevent an edge case where the mouse-moved escape
-        // sequences can get printed to the console when debase exits.
-        // So far we haven't been able to reproduce the issue after adding this
-        // code. But if we do see it again in the future, try giving tcsetattr()
-        // the TCSAFLUSH or TCSADRAIN flag in Terminal::Settings (instead of
-        // TCSANOW) to see if that solves it.
+        // Prevent mouse-moved escape sequences from being printed to the console
+        // when debase exits, using a 2-step strategy:
+        // 
+        //   1. disable echo before activating ncurses;
+        //   2. perform a best-effort flush of stdin right before we re-enable
+        //      echo and exit.
+        // 
+        // Both steps are needed to ensure that mouse-moved events are queued only
+        // while echo is disabled, otherwise they'll end up being printed.
+        // 
+        // We previously tried omitting #2, and instead re-enabling echo using
+        // the TCSAFLUSH/TCSADRAIN flags to tcsetattr(), but that still allowed
+        // escape sequences to slip through, so presumably those flags don't
+        // flush/drain queued mouse escape sequences for some reason.
+        constexpr std::chrono::milliseconds FlushTimeout(10);
         Terminal::Settings term(STDIN_FILENO);
         term.c_lflag &= ~(ICANON|ECHO);
         term.set();
+        Defer(_StdinFlush(FlushTimeout));
         
         setlocale(LC_ALL, "");
         
