@@ -263,9 +263,19 @@ private:
     static void _CheckVersionAndMigrate(_Path rootDir, _StateVersion version, bool migrate) {
         if (version > _Version) {
             throw Toastbox::RuntimeError(
-                "version of debase state on disk (v%ju) is newer than this version of debase (v%ju);\n"
-                "please use a newer version of debase, or delete:\n"
-                "  %s", (uintmax_t)version, (uintmax_t)_Version, rootDir.c_str());
+R"#(version of debase state on disk (v%ju) is newer than this version of debase (v%ju);
+please use a newer version of debase, or delete:
+
+   %s
+
+*** Warning: deleting the above directory will delete all debase state, such as:
+***   - debase license
+***   - debase undo/redo history for all repositories
+***   - debase snapshots for all repositories
+)#",
+                
+                (uintmax_t)version, (uintmax_t)_Version, rootDir.c_str()
+            );
         
         } else if (version < _Version) {
             if (migrate) {
