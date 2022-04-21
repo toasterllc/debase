@@ -2,9 +2,11 @@ NAME=debase
 
 CXX = g++
 
-CXXFLAGS = -std=c++17 -O0 -g3 -Wall -include src/Obfuscation.h $(INCDIRS)
+CXXFLAGS = -std=c++17 -Wall -include src/Obfuscation.h $(INCDIRS)
 
-OBJECTS=                            \
+LDFLAGS =                           \
+
+OBJECTS =                           \
 	lib/c25519/src/sha512.o         \
 	lib/c25519/src/edsign.o         \
 	lib/c25519/src/ed25519.o        \
@@ -40,8 +42,15 @@ LIBS =                              \
 	-lpanelw                        \
 	-lncursesw                      \
 
-all: ${OBJECTS}
-	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS)
+release: CXXFLAGS += -Os
+release: LDFLAGS += -s
+release: bin
+
+debug: CXXFLAGS += -Og -g3
+debug: bin
+
+bin: ${OBJECTS}
+	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o $(OBJECTS) $(NAME)
