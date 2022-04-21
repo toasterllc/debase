@@ -2,7 +2,7 @@ NAME=debase
 
 CXX = g++
 
-CXXFLAGS = -std=c++17 -O0 -g3 -Wall $(INCDIRS)
+CXXFLAGS = -std=c++17 -O0 -g3 -Wall -include src/Obfuscation.h $(INCDIRS)
 
 OBJECTS=                            \
 	lib/c25519/src/sha512.o         \
