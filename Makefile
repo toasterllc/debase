@@ -2,7 +2,7 @@ NAME=debase
 
 CXX = g++
 
-CXXFLAGS = -std=c++17 -Wall -include src/Obfuscation.h $(INCDIRS)
+CXXFLAGS = -std=c++17 -Wall $(INCDIRS)
 
 LDFLAGS =                           \
 
