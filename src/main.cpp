@@ -137,8 +137,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: obfuscate Machine.h. Call MachineIdCalc -> FindGit; RAMCapacity -> ???
-    
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
@@ -158,6 +156,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: configure binary to be stripped
+//
 //    #warning TODO: review MachineId-generation scheme. are the chosen directories stable enough?
 //
 //    #warning TODO: linux: test binaries on 4 different linux VMs and make sure they all have different machineids
