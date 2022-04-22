@@ -102,8 +102,8 @@ debug: link
 link: ${OBJECTS}
 	$(CXX) $(CPPFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
 
-strip: $(NAME)
-	$(STRIP) $<
+strip: link
+	$(STRIP) $(NAME)
 
 clean:
 	rm -f *.o $(OBJECTS) $(NAME)
