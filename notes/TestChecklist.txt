@@ -108,7 +108,7 @@ Incorrect email prevents registration
 Incorrect license code prevents registration
 Corrupting the license on disk is detected because the signature is wrong
 Make sure MachineInfo is properly sent to the server
-A changing machine id during trial mode shows the welcome dialog
+A mismatched machine id during trial mode shows the welcome dialog
 
 * License escape
 Welcome alert: can't be escaped

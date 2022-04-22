@@ -32,8 +32,9 @@ MachineId MachineIdCalc(std::string_view domain) noexcept {
 MachineInfo MachineInfoCalc() noexcept {
     struct utsname un;
     int ir = uname(&un);
-    if (ir) return "";
-    return un.version;
+    const char* unameStr = (!ir ? un.version : nullptr);
+    const char* osVersionStr = [[[NSProcessInfo processInfo] operatingSystemVersionString] UTF8String];
+    return std::string("Mac OS: ") + (osVersionStr ? osVersionStr : "<unknown>") + "; uname: " + (unameStr ? unameStr : "<unknown>");
 }
 
 } // namespace Machine
