@@ -1,8 +1,11 @@
 NAME=debase
 
-CXX = g++ -v
+CC = gcc
+CXX = g++
 
-CXXFLAGS = -std=c++17 -Wall $(INCDIRS) -v
+CFLAGS = $(INCDIRS) -Wall -std=c11
+CXXFLAGS = $(CFLAGS) -std=c++17
+COPT = -Os
 
 ifeq ($(shell uname -s), Darwin)
 	PLATFORM := Mac
@@ -10,7 +13,13 @@ else
 	PLATFORM := Linux
 endif
 
-LDFLAGS =
+LDFLAGS = $(LDSTRIP)
+
+ifeq ($(PLATFORM), Mac)
+	LDSTRIP = -Wl,-x
+else ifeq ($(PLATFORM), Linux)
+	LDSTRIP = -s
+endif
 
 OBJECTS =                               \
 	lib/c25519/src/sha512.o             \
@@ -63,22 +72,23 @@ LIBS +=                                 \
 	-lpanelw                            \
 	-lncursesw
 
-release:
-	CXXFLAGS += -Os
-	LDFLAGS += -s
-release: bin
+release: link
 
-debug:
-	CXXFLAGS += -Og -g3
-debug: bin
+debug: COPT = -Og -g3	# Set optimization flags for debugging
+debug: LDSTRIP = 		# Don't strip binary
+debug: link
 
-bin: ${OBJECTS}
-	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS) -v
+link: ${OBJECTS}
+	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+%.o: %.mm
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f *.o $(OBJECTS) $(NAME)
-
-
-.SUFFIXES: .mm
-.mm.o:
-	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS) -v
