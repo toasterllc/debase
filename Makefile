@@ -4,10 +4,21 @@ else
 	PLATFORM := Linux
 endif
 
+
+
+
+
+
+
+BUILD := debug
+BUILDIR := $(CURDIR)/$(BUILD)
+
+
+
 NAME = debase
 
-CC = gcc
-CXX = g++
+# CC = gcc
+# CXX = g++
 STRIP = strip
 
 CFLAGS =                                    \
@@ -27,18 +38,18 @@ MMFLAGS = $(CPPFLAGS)
 
 COPT = -Os
 
-OBJECTS =                               \
-	lib/c25519/src/sha512.o             \
-	lib/c25519/src/edsign.o             \
-	lib/c25519/src/ed25519.o            \
-	lib/c25519/src/fprime.o             \
-	lib/c25519/src/f25519.o             \
-	src/OpenURL-$(PLATFORM).o           \
-	src/ProcessPath-$(PLATFORM).o       \
-	src/machine/Machine-$(PLATFORM).o   \
-	src/state/StateDir-$(PLATFORM).o    \
-	src/ui/View.o                       \
-	src/main.o
+SOURCE =                                \
+	lib/c25519/src/sha512.c             \
+	lib/c25519/src/edsign.c             \
+	lib/c25519/src/ed25519.c            \
+	lib/c25519/src/fprime.c             \
+	lib/c25519/src/f25519.c             \
+	src/OpenURL-$(PLATFORM).mm          \
+	src/ProcessPath-$(PLATFORM).mm      \
+	src/machine/Machine-$(PLATFORM).mm  \
+	src/state/StateDir-$(PLATFORM).mm   \
+	src/ui/View.cpp                     \
+	src/main.cpp
 
 INCDIRS =                               \
 	-isystem ./lib/ncurses/include      \
@@ -87,19 +98,22 @@ endif
 release: link
 release: strip
 
-debug: COPT = -Og -g3   # Set optimization flags for debugging
+debug: COPT = -Og -g3	# Set optimization flags for debugging
 debug: link
 
-%.o: %.c
+$(BUILDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.cpp
+$(BUILDIR)/%.o: %.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
-%.o: %.mm
+$(BUILDIR)/%.o: %.mm
 	$(CXX) $(MMFLAGS) -c $< -o $@
 
-link: ${OBJECTS}
+$(BUILDIR):
+	mkdir $@
+
+link: $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
 
 strip: link
