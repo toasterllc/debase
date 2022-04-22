@@ -67,15 +67,16 @@ Right mouse down+up -> select -- works?
 Menu is positioned away from terminal edge, when right-clicking near edge
 When menu is moved away from edge, clicking buttons still works (ie hitzone is correctly calculated)
 Resize terminal while menu is open -> menu disappears
+Esc dismissed menu
 
 * Snapshots menu
 Set active snapshot
 Undo set snapshot
 Redo set snapshot
-Right mouse down -> drag -> select
-Right mouse down+up -> select
+Left mouse down -> drag -> select
+Left mouse down+up -> select
 Menu properly clipped if window is too small to contain it
-Resize terminal while menu is open
+Resize terminal while menu is open -> menu dismissed
 Clicking button after opening snapshots menu requires delay + moving mouse 1 character
 
 * Theme
