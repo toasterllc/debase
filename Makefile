@@ -1,25 +1,31 @@
-NAME=debase
-
-CC = gcc
-CXX = g++
-
-CFLAGS = $(INCDIRS) -Wall -std=c11
-CXXFLAGS = $(CFLAGS) -std=c++17
-COPT = -Os
-
 ifeq ($(shell uname -s), Darwin)
 	PLATFORM := Mac
 else
 	PLATFORM := Linux
 endif
 
-LDFLAGS = $(LDSTRIP)
+NAME = debase
 
-ifeq ($(PLATFORM), Mac)
-	LDSTRIP = -Wl,-x
-else ifeq ($(PLATFORM), Linux)
-	LDSTRIP = -s
-endif
+CC = gcc
+CXX = g++
+STRIP = strip
+
+CFLAGS =                                    \
+	$(INCDIRS)                              \
+	$(COPT)                                 \
+	-Wall                                   \
+	-fvisibility=hidden                     \
+	-fvisibility-inlines-hidden             \
+	-fstrict-aliasing                       \
+	-fdiagnostics-show-note-include-stack   \
+	-fno-common                             \
+	-arch x86_64                            \
+	-std=c11                                \
+
+CPPFLAGS = $(CFLAGS) -std=c++17
+MMFLAGS = $(CPPFLAGS)
+
+COPT = -Os
 
 OBJECTS =                               \
 	lib/c25519/src/sha512.o             \
@@ -45,9 +51,25 @@ LIBDIRS =                               \
 	-L./lib/libcurl/build/lib           \
 	-L./lib/ncurses/lib
 
-LIBS =
+LIBS =                                  \
+	-lgit2                              \
+	-lz                                 \
+	-lcurl                              \
+	-lpthread                           \
+	-lformw                             \
+	-lmenuw                             \
+	-lpanelw                            \
+	-lncursesw
 
 ifeq ($(PLATFORM), Mac)
+	CFLAGS +=                           \
+		-mmacosx-version-min=10.15      \
+		-arch arm64
+	
+	MMFLAGS +=                          \
+		-fobjc-arc                      \
+		-fobjc-weak
+	
 	LIBS +=                             \
 		-framework Foundation           \
 		-framework IOKit                \
@@ -62,33 +84,26 @@ else ifeq ($(PLATFORM), Linux)
 		-lcrypto
 endif
 
-LIBS +=                                 \
-	-lgit2                              \
-	-lz                                 \
-	-lcurl                              \
-	-lpthread                           \
-	-lformw                             \
-	-lmenuw                             \
-	-lpanelw                            \
-	-lncursesw
-
 release: link
+release: strip
 
-debug: COPT = -Og -g3	# Set optimization flags for debugging
-debug: LDSTRIP = 		# Don't strip binary
+debug: COPT = -Og -g3   # Set optimization flags for debugging
 debug: link
-
-link: ${OBJECTS}
-	$(CXX) $(CXXFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 %.o: %.mm
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(MMFLAGS) -c $< -o $@
+
+link: ${OBJECTS}
+	$(CXX) $(CPPFLAGS) $? -o $(NAME) $(LIBDIRS) $(LIBS) $(LDFLAGS)
+
+strip: $(NAME)
+	$(STRIP) $<
 
 clean:
 	rm -f *.o $(OBJECTS) $(NAME)
