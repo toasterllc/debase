@@ -22,6 +22,8 @@ Moving mouse and exiting debase doesn't result in mouse-moved escape sequences b
 
 Running debase with a newer version of com.heytoaster.debase/Version: exits without allowing debase to be used
 
+Ctrl-C exits while dragging selection rect
+
 * Edit commit
 Edit commit with double-click
 Edit commit with return key
@@ -45,13 +47,13 @@ Click text fields
 Ctrl-C exits
 Ctrl-D exits
 Cmd-. exits
-Esc doesn't close
-Clicking outside doesn't close
+Esc doesn't close (unless dismiss is allowed)
+Clicking outside is ignored
+OK button works
 
 * Error panel
 Resize terminal
-Dismiss by clicking inside
-Dismiss by clicking outside
+Dismiss with OK key
 Dismiss with escape key
 
 * Bad commit id in state file
@@ -63,7 +65,8 @@ Corrupt redo commit id in repo state file -- shows error? recovers?
 Right mouse down -> drag -> select -- works?
 Right mouse down+up -> select -- works?
 Menu is positioned away from terminal edge, when right-clicking near edge
-Resize terminal while menu is open
+When menu is moved away from edge, clicking buttons still works (ie hitzone is correctly calculated)
+Resize terminal while menu is open -> menu disappears
 
 * Snapshots menu
 Set active snapshot
