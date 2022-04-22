@@ -182,8 +182,8 @@ public:
     virtual Rect frame() const { return { .origin=origin(), .size=size() }; }
     virtual bool frame(const Rect& x) {
         bool changed = false;
-        changed |= origin(x.origin);
         changed |= size(x.size);
+        changed |= origin(x.origin);
         return changed;
     }
     

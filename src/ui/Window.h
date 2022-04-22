@@ -158,10 +158,46 @@ public:
         
 //        windowFrame({gstate.originScreen, size()});
 //        _s.framePrev = windowFrame();
+//        
+//        if (fgot != _s.framePrev && frameCur!=*_s.framePrev) {
+//            eraseNeeded(true);
+//            
+//            size(frameCur.size);
+//            
+//            const Size originDelta = frameCur.origin-gstate.originScreen;
+//            
+//            gstate.originScreen += originDelta;
+//            origin(origin()+originDelta);
+//        }
         
-//        const Rect windowFrameWant = {gstate.originScreen, size()};
-//        windowFrame(windowFrameWant);
-//        const Rect windowFrameGot = windowFrame();
+        // If our window size that we previously set doesn't match our current window size, then
+        // ncurses changed it out from beneath us. In that case, we need to do a full redraw.
+        // This handles the case where the window is clipped due to going offscreen (specifically,
+        // the bottom region of the window when resizing the terminal vertically), in which case
+        // the offscreen parts are lost (hence the need to redraw).
+        if (windowSize() != _s.sizePrev) eraseNeeded(true);
+        
+        // Set our window size to our desired window size
+        const Rect fwant = {gstate.originScreen, size()};
+        windowFrame(fwant);
+        const Rect fgot = windowFrame();
+        _s.sizePrev = fgot.size;
+        
+        // Backport any window frame adjustments to our view's frame.
+        // This is necessary when ncurses 'denies' some portion of our requested
+        // frame because it would go offscreen.
+        const Size originDelta = fgot.origin-fwant.origin;
+        frame({origin()+originDelta, fgot.size});
+        
+//        gstate.originScreen = fgot.origin;
+        
+//        const Size s = windowSize();
+//        if (s != _s.sizePrev) {
+//            eraseNeeded(true);
+//            _s.sizePrev = s;
+//        }
+        
+//        _s.sizePrev = fgot.size;
 //        
 //        // If the window frame that we got isn't equal to the window frame that we wanted,
 //        // then ncurses 'denied' some aspect of our requested frame. We therefore need to
@@ -177,12 +213,12 @@ public:
 //            gstate.originWindow = viewOrigin;
 //            gstate.originScreen = windowFrameGot.origin;
 //        }
-        
-        
-        
-        
-        
-        windowFrame({gstate.originScreen, size()});
+//        
+//        
+//        
+//        
+//        
+//        windowFrame({gstate.originScreen, size()});
         
 //        const Rect wf = windowFrame();
 //        if (gstate.originScreen != wf.origin) {
@@ -309,7 +345,7 @@ public:
 private:
     struct {
         WINDOW* win = nullptr;
-        std::optional<Rect> framePrev;
+        Size sizePrev;
     } _s;
 };
 
