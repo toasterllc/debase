@@ -2,16 +2,19 @@
 Copy commits
 Move commits
 Delete commits
+Combine commits
 Edit commit
 
 Undo Copy commits
 Undo Move commits
 Undo Delete commits
+Undo Combine commits
 Undo Edit commit
 
 Redo Copy commits
 Redo Move commits
 Redo Delete commits
+Redo Combine commits
 Redo Edit commit
 
 Delete commits using delete key
@@ -23,6 +26,7 @@ Moving mouse and exiting debase doesn't result in mouse-moved escape sequences b
 Running debase with a newer version of com.heytoaster.debase/Version: exits without allowing debase to be used
 
 Ctrl-C exits while dragging selection rect
+Ctrl-C exits while dragging context menu
 
 * Edit commit
 Edit commit with double-click
@@ -49,7 +53,7 @@ Ctrl-D exits
 Cmd-. exits
 Esc doesn't close (unless dismiss is allowed)
 Clicking outside is ignored
-OK button works
+Return key triggers OK button
 
 * Error panel
 Resize terminal
@@ -57,15 +61,15 @@ Dismiss with OK key
 Dismiss with escape key
 
 * Bad commit id in state file
-Corrupt snapshot commit id in repo state file -- snapshot hidden?
-Corrupt undo commit id in repo state file -- shows error? recovers?
-Corrupt redo commit id in repo state file -- shows error? recovers?
+Corrupt snapshot commit id in repo state file -- snapshot hidden
+Corrupt undo commit id in repo state file -- shows error
+Corrupt redo commit id in repo state file -- shows error
 
 * Context menu
 Right mouse down -> drag -> select -- works?
 Right mouse down+up -> select -- works?
-Menu is positioned away from terminal edge, when right-clicking near edge
-When menu is moved away from edge, clicking buttons still works (ie hitzone is correctly calculated)
+Menu is re-positioned to prevent clipping when right-clicking near terminal edge
+When menu is re-positioned away from terminal edge, clicking buttons still works (ie hitzone is correctly calculated)
 Resize terminal while menu is open -> menu disappears
 Esc dismissed menu
 
@@ -88,9 +92,6 @@ Setting theme=light works
 Setting theme=dark works
 Setting theme=auto works
 
-* Linux
-set_escdelay doesn't cause issues
-
 * License
 Entering valid license works
 Trial: A file in the git repo from the future should cause debase to assume the future date of the file
@@ -100,13 +101,14 @@ Starting a trial after it's expired doesn't work
 Server doesn't send trial license if it's expired
 A mismatched machine id triggers a license renewal, renewal succeeds silently if there is a machine slot available
 A mismatched machine id triggers a license renewal, renewal fails and shows dialog fails if no machine slots available
-A mismatched machine id + no internet shows renewal dialog after 5s
+A mismatched machine id + no internet shows renewal dialog immediately
 A mismatched machine id + stalled internet (ie Network::Request() takes a long time) shows renewal dialog after 5s
 Valid license still works after 2 weeks (ensures that trial logic isn't interfering)
 Incorrect email prevents registration
 Incorrect license code prevents registration
 Corrupting the license on disk is detected because the signature is wrong
 Make sure MachineInfo is properly sent to the server
+A changing machine id during trial mode shows the welcome dialog
 
 * License escape
 Welcome alert: can't be escaped
@@ -136,3 +138,8 @@ After first launch, debase can be launched a second time after running the sugge
 Clicking URL works
 Clicking email address works
 
+* Update check
+Update dialog appears when there's an update available
+Update dialog isn't shown after clicking ignore
+Update dialog is shown for versions > the version that was ignored
+Update check doesn't occur on first launch
