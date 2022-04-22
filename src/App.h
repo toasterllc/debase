@@ -175,8 +175,6 @@ public:
     }
     
     bool handleEvent(const UI::Event& ev) override {
-        std::string errorMsg;
-        try {
 //            if (_messagePanel) {
 //                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
 //            }
@@ -188,60 +186,60 @@ public:
 //            if (_registerAlert) {
 //                return _registerAlert->handleEvent(win, _registerAlert->convert(ev));
 //            }
-            
+        
 //            // Let every column handle the event
 //            for (UI::RevColumnPtr col : _columns) {
 //                bool handled = col->handleEvent(ev);
 //                if (handled) return true;
 //            }
-            
-            switch (ev.type) {
-            case UI::Event::Type::Mouse: {
-                const _HitTestResult hitTest = _hitTest(ev.mouse.origin);
-                if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
-                    const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
-                    if (hitTest && !shift) {
-                        if (hitTest.panel) {
-                            // Mouse down inside of a CommitPanel, without shift key
-                            std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
-                            if (gitOp) _gitOpExec(*gitOp);
-                        }
-                    
-                    } else {
-                        // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
-                        _trackSelectionRect(ev);
+        
+        switch (ev.type) {
+        case UI::Event::Type::Mouse: {
+            const _HitTestResult hitTest = _hitTest(ev.mouse.origin);
+            if (ev.mouseDown(UI::Event::MouseButtons::Left)) {
+                const bool shift = (ev.mouse.bstate & _SelectionShiftKeys);
+                if (hitTest && !shift) {
+                    if (hitTest.panel) {
+                        // Mouse down inside of a CommitPanel, without shift key
+                        std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                        if (gitOp) _gitOpExec(*gitOp);
                     }
                 
-                } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
-                    if (hitTest) {
-                        if (hitTest.panel) {
-                            std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
-                            if (gitOp) _gitOpExec(*gitOp);
-                        }
+                } else {
+                    // Mouse down outside of a CommitPanel, or mouse down anywhere with shift key
+                    _trackSelectionRect(ev);
+                }
+            
+            } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
+                if (hitTest) {
+                    if (hitTest.panel) {
+                        std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
+                        if (gitOp) _gitOpExec(*gitOp);
                     }
                 }
+            }
+            break;
+        }
+        
+        case UI::Event::Type::KeyDelete:
+        case UI::Event::Type::KeyFnDelete: {
+            if (!_selectionCanDelete()) {
+                beep();
                 break;
             }
             
-            case UI::Event::Type::KeyDelete:
-            case UI::Event::Type::KeyFnDelete: {
-                if (!_selectionCanDelete()) {
-                    beep();
-                    break;
-                }
-                
-                Git::Op gitOp = {
-                    .type = Git::Op::Type::Delete,
-                    .src = {
-                        .rev = _selection.rev,
-                        .commits = _selection.commits,
-                    },
-                };
-                _gitOpExec(gitOp);
-                break;
-            }
-            
-            case UI::Event::Type::KeyC: {
+            Git::Op gitOp = {
+                .type = Git::Op::Type::Delete,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+            _gitOpExec(gitOp);
+            break;
+        }
+        
+        case UI::Event::Type::KeyC: {
 //                {
 //                    _registerAlert = std::make_shared<UI::RegisterAlert>(_colors);
 //                    _registerAlert->color           = colors().menu;
@@ -251,71 +249,41 @@ public:
 //                }
 //                std::this_thread::sleep_for(std::chrono::milliseconds(10));
 //                break;
-                
-                if (!_selectionCanCombine()) {
-                    beep();
-                    break;
-                }
-                
-                Git::Op gitOp = {
-                    .type = Git::Op::Type::Combine,
-                    .src = {
-                        .rev = _selection.rev,
-                        .commits = _selection.commits,
-                    },
-                };
-                _gitOpExec(gitOp);
+            
+            if (!_selectionCanCombine()) {
+                beep();
                 break;
             }
             
-            case UI::Event::Type::KeyReturn: {
-                if (!_selectionCanEdit()) {
-                    beep();
-                    break;
-                }
-                
-                Git::Op gitOp = {
-                    .type = Git::Op::Type::Edit,
-                    .src = {
-                        .rev = _selection.rev,
-                        .commits = _selection.commits,
-                    },
-                };
-                _gitOpExec(gitOp);
-                break;
-            }
-            
-            default: {
-                break;
-            }}
-        
-        } catch (const Git::Error& e) {
-            switch (e.error) {
-            case GIT_EUNMERGED:
-            case GIT_EMERGECONFLICT:
-                errorMsg = "a merge conflict occurred";
-                break;
-            
-            default:
-                errorMsg = e.what();
-                break;
-            }
-        
-        // Bubble up
-        } catch (const UI::WindowResize&) {
-            throw;
-        
-        // Bubble up
-        } catch (const UI::ExitRequest&) {
-            throw;
-        
-        } catch (const std::exception& e) {
-            errorMsg = e.what();
+            Git::Op gitOp = {
+                .type = Git::Op::Type::Combine,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+            _gitOpExec(gitOp);
+            break;
         }
         
-        if (!errorMsg.empty()) {
-            errorMsg[0] = toupper(errorMsg[0]);
-            _errorMessageRun(errorMsg, false);
+        case UI::Event::Type::KeyReturn: {
+            if (!_selectionCanEdit()) {
+                beep();
+                break;
+            }
+            
+            Git::Op gitOp = {
+                .type = Git::Op::Type::Edit,
+                .src = {
+                    .rev = _selection.rev,
+                    .commits = _selection.commits,
+                },
+            };
+            _gitOpExec(gitOp);
+            break;
+        }
+        
+        default: break;
         }
         
         return true;
@@ -401,11 +369,38 @@ public:
     
     void track(const UI::Event& ev, Deadline deadline=Forever) override {
         for (;;) {
+            std::string errorMsg;
+            
             try {
                 Screen::track(ev, deadline);
-                break;
+                break; // Deadline passed; break out of loop
+            
             } catch (const UI::WindowResize&) {
                 _reload();
+            
+            // Bubble up
+            } catch (const UI::ExitRequest&) {
+                throw;
+            
+            } catch (const Git::Error& e) {
+                switch (e.error) {
+                case GIT_EUNMERGED:
+                case GIT_EMERGECONFLICT:
+                    errorMsg = "a merge conflict occurred";
+                    break;
+                
+                default:
+                    errorMsg = e.what();
+                    break;
+                }
+            
+            } catch (const std::exception& e) {
+                errorMsg = e.what();
+            }
+            
+            if (!errorMsg.empty()) {
+                errorMsg[0] = toupper(errorMsg[0]);
+                _errorMessageRun(errorMsg, false);
             }
         }
     }
@@ -1441,8 +1436,12 @@ private:
                 _errorMessageRun(ss.str(), true);
                 return std::nullopt;
             
+            } else if (st == License::Status::Expired) {
+                _errorMessageRun("The license supplied by the server is already expired.", true);
+                return std::nullopt;
+            
             } else {
-                _errorMessageRun(std::string("The license supplied by the server is invalid."), true);
+                _errorMessageRun("The license supplied by the server is invalid.", true);
                 return std::nullopt;
             }
         }
