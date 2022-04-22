@@ -177,7 +177,7 @@ public:
         // the offscreen parts are lost (hence the need to redraw).
         if (windowSize() != _s.sizePrev) eraseNeeded(true);
         
-        // Set our window size to our desired window size
+        // Set our window frame to our desired window frame, which we won't necessarily get
         const Rect fwant = {gstate.originScreen, size()};
         windowFrame(fwant);
         const Rect fgot = windowFrame();
