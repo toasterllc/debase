@@ -57,6 +57,7 @@ public:
         x.window = this;
 //        x.finalWindow = this;
         x.originWindow = {};
+//        x.originScreen = windowOrigin();
         x.originScreen += origin();
         x.erased = false;
         return x;
@@ -158,24 +159,42 @@ public:
 //        windowFrame({gstate.originScreen, size()});
 //        _s.framePrev = windowFrame();
         
-        const Rect windowFrameWant = {gstate.originScreen, size()};
-        windowFrame(windowFrameWant);
-        const Rect windowFrameGot = windowFrame();
+//        const Rect windowFrameWant = {gstate.originScreen, size()};
+//        windowFrame(windowFrameWant);
+//        const Rect windowFrameGot = windowFrame();
+//        
+//        // If the window frame that we got isn't equal to the window frame that we wanted,
+//        // then ncurses 'denied' some aspect of our requested frame. We therefore need to
+//        // backport the delta to our view's frame, so that the view's frame reflects the
+//        // real on-screen frame, instead of merely the desired frame.
+//        if (windowFrameGot != windowFrameWant) {
+//            const Size originDelta = windowFrameGot.origin-windowFrameWant.origin;
+//            const Point viewOrigin = origin()+originDelta;
+//            
+//            size(windowFrameGot.size);
+//            origin(viewOrigin);
+//            
+//            gstate.originWindow = viewOrigin;
+//            gstate.originScreen = windowFrameGot.origin;
+//        }
         
-        // If the window frame that we got isn't equal to the window frame that we wanted,
-        // then ncurses 'denied' some aspect of our requested frame. We therefore need to
-        // backport the delta to our view's frame, so that the view's frame reflects the
-        // real on-screen frame, instead of merely the desired frame.
-        if (windowFrameGot != windowFrameWant) {
-            const Size originDelta = windowFrameGot.origin-windowFrameWant.origin;
-            const Point viewOrigin = origin()+originDelta;
-            
-            size(windowFrameGot.size);
-            origin(viewOrigin);
-            
-            gstate.originWindow = viewOrigin;
-            gstate.originScreen = windowFrameGot.origin;
-        }
+        
+        
+        
+        
+        windowFrame({gstate.originScreen, size()});
+        
+//        const Rect wf = windowFrame();
+//        if (gstate.originScreen != wf.origin) {
+//            const Size delta = wf.origin-gstate.originScreen;
+////            gstate.originWindow = origin()+delta;
+//            gstate.originScreen = wf.origin;
+//        }
+        
+        
+        
+        
+        
         
 //        const Rect frameWant = {gstate.originScreen, size()};
 //        windowFrame(frameWant);
@@ -261,21 +280,26 @@ public:
         View::layout(gstate);
     }
     
-//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-//        // Intercept and drop events before subviews get a chance
-//        if (!enabled()) return true;
-//        return Window::handleEvent(gstate, ev);
-//    }
-    
-//    virtual void draw(GraphicsState gstate) override {
-//        if (!visible()) return;
-//        if (eraseNeeded()) {
-//            gstate.erased = true;
-//            ::werase(*this);
-//            eraseNeeded(false);
+//    void draw(GraphicsState gstate) override {
+//        const Rect wf = windowFrame();
+//        if (gstate.originScreen != wf.origin) {
+//            const Size delta = wf.origin-gstate.originScreen;
+////            gstate.originWindow = origin()+delta;
+//            gstate.originScreen = wf.origin;
 //        }
 //        
 //        View::draw(gstate);
+//    }
+//    
+//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
+//        const Rect wf = windowFrame();
+//        if (gstate.originScreen != wf.origin) {
+//            const Size delta = wf.origin-gstate.originScreen;
+////            gstate.originWindow = origin()+delta;
+//            gstate.originScreen = wf.origin;
+//        }
+//        
+//        return View::handleEvent(gstate, ev);
 //    }
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
