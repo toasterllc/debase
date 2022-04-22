@@ -43,6 +43,7 @@ public:
         return {width, height};
     }
     
+    using Panel::layout;
     void layout() override {
         _title->frame({{}, {size().x, 1}});
         

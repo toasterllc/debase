@@ -43,6 +43,7 @@ public:
     App(Git::Repo repo, const std::vector<Git::Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
+    using UI::Screen::layout;
     void layout() override {
         
         // Layout columns
@@ -575,7 +576,7 @@ private:
     
     _HitTestResult _hitTest(const UI::Point& p) {
         for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelPtr panel = col->hitTest(View::SubviewConvert(*col, p));
+            UI::CommitPanelPtr panel = col->hitTestCommit(View::SubviewConvert(*col, p));
             if (panel) {
                 return {
                     .column = col,

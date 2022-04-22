@@ -151,7 +151,7 @@ public:
 //        drawRect();
 //    }
     
-    CommitPanelPtr hitTest(const Point& p) {
+    CommitPanelPtr hitTestCommit(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
             if (HitTest(panel->frame(), p)) return panel;
         }

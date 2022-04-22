@@ -79,6 +79,7 @@ public:
 //        return s;
     }
     
+    using Panel::layout;
     void layout() override {
         const Rect b   = _boundsLayout(bounds());
         const Rect inf = _interiorFrame(b);

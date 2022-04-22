@@ -25,6 +25,7 @@ public:
         return true;
     }
     
+    using Window::layout;
     void layout(GraphicsState gstate) override {
         if (!visible()) return;
         

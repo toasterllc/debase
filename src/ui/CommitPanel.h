@@ -57,6 +57,7 @@ public:
         return {constraint.x, height};
     }
     
+    using Panel::layout;
     void layout() override {
         const Size s = size();
         const bool header = !_header->text().empty();

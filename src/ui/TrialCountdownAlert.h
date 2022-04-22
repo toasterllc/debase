@@ -5,7 +5,7 @@ namespace UI {
 
 class TrialCountdownAlert : public Alert {
 public:
-    TrialCountdownAlert(std::chrono::seconds remaining) : _remaining(remaining) {
+    TrialCountdownAlert(std::chrono::seconds remaining) {
         width           (19);
         condensed       (true);
         color           (colors().menu);
@@ -53,7 +53,6 @@ private:
     static constexpr int _ButtonHeight = 1;
     
     ButtonPtr _registerButton = subviewCreate<Button>();
-    std::chrono::seconds _remaining = {};
 };
 
 using TrialCountdownAlertPtr = std::shared_ptr<TrialCountdownAlert>;
