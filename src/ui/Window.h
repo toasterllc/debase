@@ -139,16 +139,59 @@ public:
     void layout(GraphicsState gstate) override {
         if (!visible()) return;
         
-        // If the frame that we previously set doesn't match our current frame, then ncurses changed
-        // our frame out from beneath us. In that case, we need to do a full redraw.
-        // This handles the case where the window is clipped due to going offscreen, in which case
-        // the offscreen parts are lost (hence the need to redraw).
-        if (windowFrame() != _s.framePrev) {
-            eraseNeeded(true);
+//        // If the frame that we previously set doesn't match our current frame, then ncurses changed
+//        // our frame out from beneath us. In that case, we need to do a full redraw.
+//        // This handles the case where the window is clipped due to going offscreen, in which case
+//        // the offscreen parts are lost (hence the need to redraw).
+//        const Rect frameCur = windowFrame();
+//        if (_s.framePrev && frameCur!=*_s.framePrev) {
+//            eraseNeeded(true);
+//            
+//            size(frameCur.size);
+//            
+//            const Size originDelta = frameCur.origin-gstate.originScreen;
+//            
+//            gstate.originScreen += originDelta;
+//            origin(origin()+originDelta);
+//        }
+        
+//        windowFrame({gstate.originScreen, size()});
+//        _s.framePrev = windowFrame();
+        
+        const Rect windowFrameWant = {gstate.originScreen, size()};
+        windowFrame(windowFrameWant);
+        const Rect windowFrameGot = windowFrame();
+        
+        // If the window frame that we got isn't equal to the window frame that we wanted,
+        // then ncurses 'denied' some aspect of our requested frame. We therefore need to
+        // backport the delta to our view's frame, so that the view's frame reflects the
+        // real on-screen frame, instead of merely the desired frame.
+        if (windowFrameGot != windowFrameWant) {
+            const Size originDelta = windowFrameGot.origin-windowFrameWant.origin;
+            const Point viewOrigin = origin()+originDelta;
+            
+            size(windowFrameGot.size);
+            origin(viewOrigin);
+            
+            gstate.originWindow = viewOrigin;
+            gstate.originScreen = windowFrameGot.origin;
         }
         
-        windowFrame({gstate.originScreen, size()});
-        _s.framePrev = windowFrame();
+//        const Rect frameWant = {gstate.originScreen, size()};
+//        windowFrame(frameWant);
+//        const Rect frameGot = windowFrame();
+//        
+////        if (frameGot != frameWant) {
+////            eraseNeeded(true);
+////            
+////            size(frameGot.size);
+////            
+////            const Size originDelta = frameGot.origin-frameWant.origin;
+////            origin(origin()+originDelta);
+////        }
+//        
+//        gstate.originScreen = wf.origin;
+//        _s.framePrev = wf;
         
 //        const Rect sb = _screenBounds();
 //        const Rect wf = windowFrame();
@@ -242,7 +285,7 @@ public:
 private:
     struct {
         WINDOW* win = nullptr;
-        Rect framePrev;
+        std::optional<Rect> framePrev;
     } _s;
 };
 
