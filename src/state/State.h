@@ -269,9 +269,9 @@ please use a newer version of debase, or delete:
    %s
 
 *** Warning: deleting the above directory will delete all debase state, such as:
-***   - debase license
-***   - debase undo/redo history for all repositories
-***   - debase snapshots for all repositories
+***   debase license
+***   debase undo/redo history for all repositories
+***   debase snapshots for all repositories
 )#",
                 
                 (uintmax_t)version, (uintmax_t)_Version, rootDir.c_str()
