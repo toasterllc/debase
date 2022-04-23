@@ -31,8 +31,7 @@
 #include "CurrentExecutablePath.h"
 #include "PathIsInEnvironmentPath.h"
 #include "ProcessPath.h"
-#include "UserBinDir.h"
-#include "XDGDetected.h"
+#include "UserBinRelativePath.h"
 
 extern "C" {
     extern char** environ;
