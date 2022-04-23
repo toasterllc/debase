@@ -10,7 +10,7 @@
 ### Build ncurses
 
     cd lib/ncurses
-    ./configure CFLAGS='-mmacosx-version-min=10.15 -arch arm64 -arch x86_64' --prefix=/usr --enable-widec
+    ./configure CFLAGS='-mmacosx-version-min=10.15 -arch arm64 -arch x86_64' --prefix=/usr --enable-widec --without-cxx-binding
     make -j8
 
 ### Build libcurl

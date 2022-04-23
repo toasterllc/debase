@@ -93,13 +93,16 @@ endif
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
 # Link
-$(BUILDDIR)/$(NAME): lib $(OBJS)
+$(BUILDDIR)/$(NAME): $(OBJS)
 	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
 ifeq ($(DEBUG), 0)
 	strip $@
 endif
 
-# Libraries
+# Objects depend on libs being built first
+$(OBJS): lib
+
+# Libs: execute make from `lib` directory
 .PHONY: lib
 lib:
 	$(MAKE) -C $@

@@ -48,7 +48,10 @@ ncurses/%:
 	cd $(DIR) && ./configure												\
 		CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"	\
 		--prefix=/usr														\
-		--enable-widec
+		--enable-widec														\
+		--without-cxx-binding # ncurses c++ bindings fail to build when
+							  # host=arm64 & target=x86_64, but we use
+							  # them them anyway.
 	
 	$(MAKE) -C $(DIR) clean
 	$(MAKE) -C $(DIR)
@@ -97,5 +100,15 @@ libcurl/%:
 	mv $(TMP)/lib $@
 	rm -Rf $(TMP)
 
-clean:
+# Clean: execute `make clean` for each lib, and then delete $(BUILDDIRS)
+CLEANLIBS := $(addsuffix .clean, $(LIBS))
+
+clean: $(CLEANLIBS)
 	rm -Rf $(BUILDDIRS)
+
+$(CLEANLIBS):
+	$(MAKE) -C $(basename $@) clean || true
+
+# clean:
+# 	$(foreach lib, $(LIBS), $(MAKE) -C $(lib) clean || echo hello)
+# 	rm -Rf $(BUILDDIRS)
