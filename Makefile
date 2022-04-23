@@ -100,6 +100,16 @@ endif
 
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
+default: $(BUILDDIR)/$(NAME)
+
+archive: $(BUILDDIR)/$(NAME)
+	codesign														\
+		-vvvv														\
+		--timestamp													\
+		--options=runtime											\
+		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
+		$<
+
 # Link
 $(BUILDDIR)/$(NAME): $(OBJS)
 	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
