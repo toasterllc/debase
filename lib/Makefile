@@ -31,10 +31,10 @@ libgit2/%:
 	mkdir -p $(TMP)
 	
 ifeq ($(PLATFORM), mac)
-    $(eval PLATFORMFLAGS =                                                  \
-        -DCMAKE_OSX_ARCHITECTURES="$(shell echo $(ARCHS) | sed 's/ /;/')"   \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15                                 \
-    )
+	$(eval PLATFORMFLAGS =													\
+		-DCMAKE_OSX_ARCHITECTURES="$(shell echo $(ARCHS) | sed 's/ /;/')"	\
+		-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15									\
+	)
 endif
     
 	cd $(TMP) && cmake														\
@@ -52,9 +52,9 @@ ncurses/%:
 	$(eval DIR = $(dir $@))
 	
 ifeq ($(PLATFORM), mac)
-    $(eval PLATFORMFLAGS =                                                  \
-        CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"   \
-    )
+	$(eval PLATFORMFLAGS =													\
+		CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"	\
+	)
 endif
     
 	cd $(DIR) && ./configure												\
@@ -77,9 +77,9 @@ libcurl/%:
 	mkdir -p $(TMP)
 	
 ifeq ($(PLATFORM), mac)
-    $(eval PLATFORMFLAGS =                                                  \
-        CFLAGS='-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))'   \
-    )
+	$(eval PLATFORMFLAGS =													\
+		CFLAGS='-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))'	\
+	)
 endif
     
 	cd $(DIR) && ./configure												\
