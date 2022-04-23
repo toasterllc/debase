@@ -8,9 +8,10 @@ else
 	PLATFORM = linux
 endif
 
-BUILDDIR = build-$(PLATFORM)/release
+BUILDROOT = build-$(PLATFORM)
+BUILDDIR = $(BUILDROOT)/release
 ifeq ($(DEBUG), 1)
-	BUILDDIR = build-$(PLATFORM)/debug
+	BUILDDIR = $(BUILDROOT)/debug
 endif
 
 SRCS =											\
@@ -131,4 +132,4 @@ $(BUILDDIR)/%.o: %.mm
 
 clean:
 	$(MAKE) -C lib clean
-	rm -Rf $(BUILDDIR)
+	rm -Rf $(BUILDROOT)
