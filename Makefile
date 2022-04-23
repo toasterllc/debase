@@ -110,13 +110,6 @@ archive: $(BUILDDIR)/$(NAME)
 		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
 		$<
 
-# Link
-$(BUILDDIR)/$(NAME): $(OBJS)
-	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
-ifeq ($(DEBUG), 0)
-	strip $@
-endif
-
 # Objects depend on libs being built first
 $(OBJS): lib
 
@@ -139,6 +132,13 @@ $(BUILDDIR)/%.o: %.cpp
 $(BUILDDIR)/%.o: %.mm
 	mkdir -p $(dir $@)
 	$(COMPILE.cc) $(OBJCXXFLAGS) $< -o $@
+
+# Link
+$(BUILDDIR)/$(NAME): $(OBJS)
+	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
+ifeq ($(DEBUG), 0)
+	strip $@
+endif
 
 clean:
 	$(MAKE) -C lib clean
