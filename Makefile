@@ -34,6 +34,7 @@ SRCS =											\
 CPPFLAGS =										\
 	$(INCDIRS)									\
 	$(OPTFLAGS)									\
+	-g											\
 	-fvisibility=hidden							\
 	-fstrict-aliasing							\
 	-fno-common									\
@@ -46,7 +47,9 @@ CXXFLAGS =										\
 	-std=c++17									\
 	-fvisibility-inlines-hidden
 
-OBJCXXFLAGS = $(CXXFLAGS)
+OBJCXXFLAGS =									\
+	-fobjc-arc									\
+	-fobjc-weak
 
 OPTFLAGS = -Os
 ifeq ($(DEBUG), 1)
@@ -79,10 +82,6 @@ ifeq ($(PLATFORM), mac)
 		$(addprefix -arch , $(ARCHS))			\
 		-mmacosx-version-min=10.15				\
 		-fdiagnostics-show-note-include-stack
-	
-	OBJCXXFLAGS +=								\
-		-fobjc-arc								\
-		-fobjc-weak
 	
 	LIBS +=										\
 		-framework Foundation					\
