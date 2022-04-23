@@ -36,9 +36,9 @@ ifeq ($(PLATFORM), mac)
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15									\
 	)
 endif
-    
+	
 	cd $(TMP) && cmake														\
-        $(PLATFORMFLAGS)                                                    \
+		$(PLATFORMFLAGS)													\
 		-DCMAKE_BUILD_TYPE=Release											\
 		-DBUILD_SHARED_LIBS=OFF												\
 		-DUSE_HTTPS=OFF ..
@@ -56,14 +56,14 @@ ifeq ($(PLATFORM), mac)
 		CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"	\
 	)
 endif
-    
+	
 	cd $(DIR) && ./configure												\
-        $(PLATFORMFLAGS)                                                    \
+		$(PLATFORMFLAGS)													\
 		--prefix=/usr														\
 		--enable-widec														\
-		--without-cxx-binding # ncurses c++ bindings fail to build when
-							  # host=arm64 & target=x86_64, but we use
-							  # them them anyway.
+		--without-cxx-binding 	# ncurses c++ bindings fail to build when
+								# host=arm64 & target=x86_64, but we use
+								# them them anyway.
 	
 	$(MAKE) -C $(DIR) clean
 	$(MAKE) -C $(DIR)
@@ -79,13 +79,17 @@ libcurl/%:
 ifeq ($(PLATFORM), mac)
 	$(eval PLATFORMFLAGS =													\
 		CFLAGS='-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))'	\
+		--with-secure-transport												\
+	)
+else ifeq ($(PLATFORM), linux)
+	$(eval PLATFORMFLAGS =													\
+		--with-openssl														\
 	)
 endif
-    
+	
 	cd $(DIR) && ./configure												\
-        $(PLATFORMFLAGS)                                                    \
+		$(PLATFORMFLAGS)													\
 		--prefix=$(abspath $(TMP))											\
-		--with-secure-transport												\
 		--disable-shared													\
 		--disable-debug														\
 		--disable-curldebug													\
