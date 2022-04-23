@@ -32,13 +32,13 @@
 
     cd lib/libgit2
     mkdir build-linux && cd build-linux
-    cmake -DBUILD_SHARED_LIBS=OFF -DUSE_HTTPS=OFF ..
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DUSE_HTTPS=OFF ..
     make clean ; make -j8 git2
 
 ### Build ncurses
 
     cd lib/ncurses
-    ./configure --prefix=/usr --enable-widec
+    ./configure --prefix=/usr --enable-widec --without-cxx-binding
     make -j8
 
 ### Build libcurl

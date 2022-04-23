@@ -30,9 +30,15 @@ libgit2/%:
 	
 	mkdir -p $(TMP)
 	
+ifeq ($(PLATFORM), mac)
+    $(eval PLATFORMFLAGS =                                                  \
+        -DCMAKE_OSX_ARCHITECTURES="$(shell echo $(ARCHS) | sed 's/ /;/')"   \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15                                 \
+    )
+endif
+    
 	cd $(TMP) && cmake														\
-		-DCMAKE_OSX_ARCHITECTURES="$(shell echo $(ARCHS) | sed 's/ /;/')"	\
-		-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15									\
+        $(PLATFORMFLAGS)                                                    \
 		-DCMAKE_BUILD_TYPE=Release											\
 		-DBUILD_SHARED_LIBS=OFF												\
 		-DUSE_HTTPS=OFF ..
@@ -45,8 +51,14 @@ libgit2/%:
 ncurses/%:
 	$(eval DIR = $(dir $@))
 	
+ifeq ($(PLATFORM), mac)
+    $(eval PLATFORMFLAGS =                                                  \
+        CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"   \
+    )
+endif
+    
 	cd $(DIR) && ./configure												\
-		CFLAGS="-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))"	\
+        $(PLATFORMFLAGS)                                                    \
 		--prefix=/usr														\
 		--enable-widec														\
 		--without-cxx-binding # ncurses c++ bindings fail to build when
@@ -64,8 +76,14 @@ libcurl/%:
 	
 	mkdir -p $(TMP)
 	
+ifeq ($(PLATFORM), mac)
+    $(eval PLATFORMFLAGS =                                                  \
+        CFLAGS='-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))'   \
+    )
+endif
+    
 	cd $(DIR) && ./configure												\
-		CFLAGS='-mmacosx-version-min=10.15 $(addprefix -arch , $(ARCHS))'	\
+        $(PLATFORMFLAGS)                                                    \
 		--prefix=$(abspath $(TMP))											\
 		--with-secure-transport												\
 		--disable-shared													\
