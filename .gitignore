@@ -1,2 +1,4 @@
 /debase
 *.o
+build-mac
+build-linux
