@@ -1,5 +1,10 @@
 NAME = debase
+DEBUG ?= 0
+
 BUILDDIR = build-$(PLATFORM)/release
+ifeq ($(DEBUG), 1)
+    BUILDDIR = build-$(PLATFORM)/debug
+endif
 
 SRCS =                                      \
 	lib/c25519/src/sha512.c                 \
@@ -31,6 +36,9 @@ CXXFLAGS = $(CFLAGS) -std=c++17
 OBJCXXFLAGS = $(CXXFLAGS)
 
 OPTFLAGS = -Os
+ifeq ($(DEBUG), 1)
+    OPTFLAGS = -O0 -g3
+endif
 
 INCDIRS =                               \
 	-isystem ./lib/ncurses/include      \
@@ -108,6 +116,15 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 # debug: BUILDDIR = build-$(PLATFORM)/debug
 # debug: $(BUILDDIR)/$(NAME)
 
+# release: BUILDDIR := build/release
+# release: $(BUILDDIR)/$(NAME)
+
+$(BUILDDIR)/$(NAME): $(OBJS)
+	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
+ifeq ($(DEBUG), 0)
+	strip $@
+endif
+
 $(BUILDDIR)/%.o: %.c
 	mkdir -p $(dir $@)
 	$(COMPILE.c) $< -o $@
@@ -119,10 +136,6 @@ $(BUILDDIR)/%.o: %.cpp
 $(BUILDDIR)/%.o: %.mm
 	mkdir -p $(dir $@)
 	$(COMPILE.cc) $(OBJCXXFLAGS) $< -o $@
-
-$(BUILDDIR)/$(NAME): $(OBJS)
-	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
-	strip $@
 
 # ifeq ($(shell uname -s), Darwin)
 # 	@echo HELLO
