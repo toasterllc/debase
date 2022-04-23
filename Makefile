@@ -1,5 +1,6 @@
 NAME = debase
 DEBUG ?= 0
+ARCHS ?= x86_64 arm64
 
 ifeq ($(shell uname -s), Darwin)
 	PLATFORM = mac
@@ -28,13 +29,13 @@ SRCS =										\
 CFLAGS =									\
 	$(INCDIRS)								\
 	$(OPTFLAGS)								\
+	$(addprefix -arch , $(ARCHS))			\
 	-Wall									\
 	-fvisibility=hidden						\
 	-fvisibility-inlines-hidden				\
 	-fstrict-aliasing						\
 	-fdiagnostics-show-note-include-stack	\
 	-fno-common								\
-	-arch x86_64							\
 	-std=c11
 
 CXXFLAGS = $(CFLAGS) -std=c++17
@@ -67,10 +68,9 @@ LIBS =										\
 	-lpanelw								\
 	-lncursesw
 
-ifeq ($(PLATFORM), Mac)
+ifeq ($(PLATFORM), mac)
 	CFLAGS +=								\
-		-mmacosx-version-min=10.15			\
-		-arch arm64
+		-mmacosx-version-min=10.15
 	
 	OBJCXXFLAGS +=							\
 		-fobjc-arc							\
@@ -84,7 +84,7 @@ ifeq ($(PLATFORM), Mac)
 		-framework SystemConfiguration		\
 		-liconv
 
-else ifeq ($(PLATFORM), Linux)
+else ifeq ($(PLATFORM), linux)
 	LIBS +=									\
 		-lssl								\
 		-lcrypto
@@ -93,11 +93,16 @@ endif
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
 # Link
-$(BUILDDIR)/$(NAME): $(OBJS)
+$(BUILDDIR)/$(NAME): lib $(OBJS)
 	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
 ifeq ($(DEBUG), 0)
 	strip $@
 endif
+
+# Libraries
+.PHONY: lib
+lib:
+	$(MAKE) -C $@
 
 # C rule
 $(BUILDDIR)/%.o: %.c
@@ -113,3 +118,7 @@ $(BUILDDIR)/%.o: %.cpp
 $(BUILDDIR)/%.o: %.mm
 	mkdir -p $(dir $@)
 	$(COMPILE.cc) $(OBJCXXFLAGS) $< -o $@
+
+clean:
+	$(MAKE) -C lib clean
+	rm -Rf $(BUILDDIR)
