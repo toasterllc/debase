@@ -75,10 +75,10 @@ LIBS =											\
 	-lncursesw
 
 ifeq ($(PLATFORM), mac)
-	CFLAGS +=									\
-		-mmacosx-version-min=10.15				\
-		-fdiagnostics-show-note-include-stack	\
+	CPPFLAGS +=									\
 		$(addprefix -arch , $(ARCHS))			\
+		-mmacosx-version-min=10.15				\
+		-fdiagnostics-show-note-include-stack
 	
 	OBJCXXFLAGS +=								\
 		-fobjc-arc								\
