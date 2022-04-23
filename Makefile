@@ -1,5 +1,5 @@
 NAME = debase
-BUILDDIR = build-$(PLATFORM)
+BUILDDIR = build-$(PLATFORM)/release
 
 SRCS =                                      \
 	lib/c25519/src/sha512.c                 \
@@ -89,7 +89,9 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 # OBJDIRS = $(dir $(OBJS))
 # OBJDIRS = build/lib/c25519/src build/src build/src/machine build/src/state build/src/ui
 
-$(NAME): $(BUILDDIR)/$(NAME)
+# $(BUILDDIR)/$(NAME): $(OBJS)
+# 	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
+# 	strip $@
 
 # $(BUILDDIR)/%.o: %.c
 # 	$(CC) $(CFLAGS) -c $< -o $@
@@ -100,7 +102,11 @@ $(NAME): $(BUILDDIR)/$(NAME)
 # $(BUILDDIR)/%.o: %.mm
 # 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-
+# release: BUILDDIR = build-$(PLATFORM)/release
+# release: $(BUILDDIR)/$(NAME)
+#
+# debug: BUILDDIR = build-$(PLATFORM)/debug
+# debug: $(BUILDDIR)/$(NAME)
 
 $(BUILDDIR)/%.o: %.c
 	mkdir -p $(dir $@)
@@ -114,15 +120,21 @@ $(BUILDDIR)/%.o: %.mm
 	mkdir -p $(dir $@)
 	$(COMPILE.cc) $(OBJCXXFLAGS) $< -o $@
 
+$(BUILDDIR)/$(NAME): $(OBJS)
+	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
+	strip $@
+
+# ifeq ($(shell uname -s), Darwin)
+# 	@echo HELLO
+# else
+# 	@echo GOODBYE
+# endif
+
 # %.o: $(BUILDDIR)/%.o
 # 	mkdir -p $(dir $(BUILDDIR)/$@)
 # 
 # $(OBJDIRS):
 # 	mkdir -p $@
-
-$(BUILDDIR)/$(NAME): $(OBJS)
-	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
-	strip $@
 
 
 
