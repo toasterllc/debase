@@ -1,5 +1,11 @@
 #pragma once
-#include "lib/libcurl/include/curl/curl.h"
+
+#if __APPLE__
+#include "lib/libcurl/build-mac/include/curl.h"
+#elif __linux__
+#include "lib/libcurl/build-linux/include/curl.h"
+#endif
+
 #include "lib/toastbox/Defer.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/nlohmann/json.h"

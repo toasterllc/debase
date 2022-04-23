@@ -69,6 +69,7 @@ endif
 	$(MAKE) -C $(DIR)
 	
 	mv $(DIR)/lib $@
+	cp -R $(DIR)/include $@/include
 
 libcurl/%:
 	$(eval DIR = $(dir $@))
@@ -120,6 +121,7 @@ endif
 	$(MAKE) -C $(DIR) install-strip
 	
 	mv $(TMP)/lib $@
+	cp -R $(TMP)/include/curl $@/include
 	rm -Rf $(TMP)
 
 # Clean: execute `make clean` for each lib, and then delete $(BUILDDIRS)
