@@ -11,10 +11,19 @@ import (
 // License types used by both database and HTTP
 
 type Email string
-type LicenseCode string
-type MachineId string
+type MachineInfo string
+
+// LicenseCode / MachineId must be type aliases instead of real types, because they're used as keys
+// in our Firestore database. Firestore (and the reflect package) doesn't implicitly convert
+// them to/from strings, so we have to use a type alias instead.
+// The story changes in Go >=1.18, where the reflect package does implicitly convert map keys to
+// non-primitive types, but right now gcloud only supports Go 1.16, so we're stuck with type
+// aliases.
+type LicenseCode = string
+type MachineId = string
 
 const MachineIdLen = 2 * sha512.Size256 // 2* because 1 byte == 2 hex characters
+const MachineInfoMaxLen = 256
 
 func hashStringSanitize(str string) (string, error) {
 	str = strings.ToLower(str)
@@ -43,6 +52,13 @@ func MachineIdForString(str string) (MachineId, error) {
 
 	str, err := hashStringSanitize(str)
 	return MachineId(str), err
+}
+
+func MachineInfoForString(str string) MachineInfo {
+	if len(str) > MachineInfoMaxLen {
+		return MachineInfo(str[0:MachineInfoMaxLen])
+	}
+	return MachineInfo(str)
 }
 
 // func userIdForEmail(email Email) (UserId, error) {

@@ -1,6 +1,7 @@
 #import "Machine.h"
 #import <Foundation/Foundation.h>
 #import <IOKit/IOKitLib.h>
+#import <sys/utsname.h>
 #import "lib/toastbox/SendRight.h"
 
 namespace Machine {
@@ -26,6 +27,13 @@ MachineId MachineIdCalc(std::string_view domain) noexcept {
     } catch (...) {}
     
     return MachineIdBasicCalc(domain);
+}
+
+MachineInfo MachineInfoCalc() noexcept {
+    struct utsname un;
+    int ir = uname(&un);
+    if (ir) return "";
+    return un.version;
 }
 
 } // namespace Machine

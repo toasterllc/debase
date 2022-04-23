@@ -31,6 +31,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(License, email, licenseCode, machineId, versi
 
 struct Context {
     Machine::MachineId machineId;
+    Machine::MachineInfo machineInfo;
     uint32_t version = 0;
     std::chrono::system_clock::time_point time;
 };

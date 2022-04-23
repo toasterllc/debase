@@ -8,6 +8,7 @@
 namespace Machine {
 
 using MachineId = std::string;
+using MachineInfo = std::string;
 
 inline uint64_t RAMCapacity() {
     long pageCount = sysconf(_SC_PHYS_PAGES);
@@ -62,5 +63,7 @@ inline MachineId MachineIdBasicCalc(std::string_view domain) noexcept {
     SHA512Half::Hash hash = SHA512Half::Calc(stream.str());
     return SHA512Half::StringForHash(hash);
 }
+
+MachineInfo MachineInfoCalc() noexcept;
 
 } // namespace Machine

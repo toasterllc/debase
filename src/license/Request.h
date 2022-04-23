@@ -8,12 +8,13 @@ namespace License {
 struct Request {
     // Required
     Machine::MachineId machineId;
+    Machine::MachineInfo machineInfo;
     // Only used for registration (not trials)
     Email email;
     LicenseCode licenseCode;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, email, licenseCode, machineId);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, machineId, machineInfo, email, licenseCode);
 
 // RequestResponse: the server's response to `Request` (above)
 struct RequestResponse {

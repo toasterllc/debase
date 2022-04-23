@@ -97,6 +97,7 @@ Valid license still works after 2 weeks (ensures that trial logic isn't interfer
 Incorrect email prevents registration
 Incorrect license code prevents registration
 Corrupting the license on disk is detected because the signature is wrong
+Make sure MachineInfo is properly sent to the server
 
 * Server
 Stress test server by hitting it with lots of requests simultaneously

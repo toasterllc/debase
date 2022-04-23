@@ -1305,6 +1305,7 @@ private:
         using namespace std::chrono;
         using namespace std::filesystem;
         Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
+        Machine::MachineInfo machineInfo = Machine::MachineInfoCalc();
         
 //        // Find t = max(time(), <time of each file in repoDir>),
 //        // to help prevent time-rollback attacks.
@@ -1336,6 +1337,7 @@ private:
         
         return License::Context{
             .machineId = machineId,
+            .machineInfo = machineInfo,
             .version = DebaseVersion,
             .time = latestTime,
         };
@@ -1445,11 +1447,27 @@ private:
         return license;
     }
     
+    License::Request _trialRequestCreate() {
+        return {
+            .machineId      = _licenseCtxGet().machineId,
+            .machineInfo    = _licenseCtxGet().machineInfo,
+        };
+    }
+    
+    License::Request _licenseRequestCreate(std::string_view email, std::string_view licenseCode) {
+        return {
+            .machineId      = _licenseCtxGet().machineId,
+            .machineInfo    = _licenseCtxGet().machineInfo,
+            .email          = std::string(email),
+            .licenseCode    = std::string(licenseCode),
+        };
+    }
+    
     void _licenseRenewActionTrial() {
         assert(_registerPanel);
         
-        const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
-        std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), trialReq);
+        const License::Request req = _trialRequestCreate();
+        std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), req);
         if (license) {
             _trialCountdownShow(*license);
             _registerPanel = nullptr;
@@ -1472,17 +1490,13 @@ private:
         _registerPanel->dismissButton()->label()->text("Free Trial");
         _registerPanel->dismissAction(std::bind(&App::_licenseRenewActionTrial, this));
         
-        const License::Request renewReq = {
-            .machineId = _licenseCtxGet().machineId,
-            .email = license.email,
-            .licenseCode = license.licenseCode,
-        };
+        const License::Request req = _licenseRequestCreate(license.email, license.licenseCode);
         
         // Request license and wait until we get a response
         License::RequestResponse resp;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseAPIURL, renewReq, resp);
+            Network::Request(DebaseLicenseAPIURL, req, resp);
         });
         
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.
@@ -1535,8 +1549,8 @@ private:
     void _welcomePanelActionTrial() {
         assert(_welcomePanel);
         
-        const License::Request trialReq = { .machineId = _licenseCtxGet().machineId, };
-        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), trialReq);
+        const License::Request req = _trialRequestCreate();
+        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
         if (license) {
             _trialCountdownShow(*license);
             _welcomePanel = nullptr;
@@ -1561,14 +1575,8 @@ private:
         
         const std::string email = _registerPanel->email()->value();
         const std::string licenseCode = _registerPanel->code()->value();
-        
-        const License::Request registerReq = {
-            .machineId = _licenseCtxGet().machineId,
-            .email = email,
-            .licenseCode = licenseCode,
-        };
-        
-        bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), registerReq);
+        const License::Request req = _licenseRequestCreate(email, licenseCode);
+        bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), req);
         if (ok) {
             _trialCountdownPanel = nullptr;
             _welcomePanel = nullptr;
