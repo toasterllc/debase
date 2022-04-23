@@ -102,16 +102,8 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
 default: $(BUILDDIR)/$(NAME)
 
-archive: $(BUILDDIR)/$(NAME)
-	codesign														\
-		-vvvv														\
-		--timestamp													\
-		--options=runtime											\
-		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
-		$<
-
 # Objects depend on libs being built first
-$(OBJS): lib
+$(OBJS): | lib
 
 # Libs: execute make from `lib` directory
 .PHONY: lib
@@ -133,12 +125,40 @@ $(BUILDDIR)/%.o: %.mm
 	mkdir -p $(dir $@)
 	$(COMPILE.cc) $(OBJCXXFLAGS) $< -o $@
 
-# Link
+# Link, generate dsym, and strip
 $(BUILDDIR)/$(NAME): $(OBJS)
-	$(LINK.cc) $? -o $@ $(LIBDIRS) $(LIBS)
+	$(LINK.cc) $^ -o $@ $(LIBDIRS) $(LIBS)
+	xcrun dsymutil $@ -o $@.dSYM
 ifeq ($(DEBUG), 0)
 	strip $@
 endif
+
+codesign: $(BUILDDIR)/$(NAME)
+	codesign														\
+		-vvvv														\
+		--force														\
+		--timestamp													\
+		--options=runtime											\
+		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
+		$<
+
+notarize: codesign
+	cd $(BUILDDIR) && zip $(NAME).zip $(NAME)
+	
+	@echo "Uploading binary to be notarized..."
+	
+	xcrun altool									\
+		 --notarize-app								\
+		 --primary-bundle-id com.heytoaster.debase	\
+		 --username 'apple@heytoaster.com'			\
+		 --password '@keychain:altool'				\
+		 --file $(BUILDDIR)/$(NAME).zip
+	
+	rm $(BUILDDIR)/$(NAME).zip
+	
+	xcrun altool									\
+		--notarization-history 0					\
+		-p @keychain:altool
 
 clean:
 	$(MAKE) -C lib clean
