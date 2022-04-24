@@ -4,8 +4,8 @@
 
 namespace Machine {
 
-MachineId MachineIdCalc(std::string_view domain) noexcept {
-    return MachineIdBasicCalc(domain);
+std::string MachineIdContent() noexcept {
+    return MachineIdContentBasic();
 }
 
 MachineInfo MachineInfoCalc() noexcept {

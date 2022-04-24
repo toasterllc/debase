@@ -11,7 +11,11 @@ namespace Machine {
 using MachineId = std::string;
 using MachineInfo = std::string;
 
-inline uint64_t RAMCapacity() {
+// Platform-specific implementations
+std::string MachineIdContent() noexcept;
+MachineInfo MachineInfoCalc() noexcept;
+
+inline uint64_t _RAMCapacity() {
     long pageCount = sysconf(_SC_PHYS_PAGES);
     if (pageCount < 0) return 0;
     long pageSize = sysconf(_SC_PAGESIZE);
@@ -19,15 +23,11 @@ inline uint64_t RAMCapacity() {
     return (uint64_t)pageCount * (uint64_t)pageSize;
 }
 
-MachineId MachineIdCalc(std::string_view domain) noexcept;
-
-inline MachineId MachineIdBasicCalc(std::string_view domain) noexcept {
+inline std::string MachineIdContentBasic() noexcept {
     namespace Fs = std::filesystem;
     constexpr const char* Separator = ":";
     
     std::stringstream stream;
-    stream << domain << ":";
-    
     const Fs::path paths[] = {
         // Directories
         "/bin",
@@ -59,12 +59,14 @@ inline MachineId MachineIdBasicCalc(std::string_view domain) noexcept {
         stream << path.c_str() << "=" << std::to_string(inode) << Separator;
     }
     
-    stream << "ram=" << std::to_string(RAMCapacity()) << Separator;
-    
-    SHA512Half::Hash hash = SHA512Half::Calc(stream.str());
-    return SHA512Half::StringForHash(hash);
+    stream << "ram=" << std::to_string(_RAMCapacity()) << Separator;
+    return stream.str();
 }
 
-MachineInfo MachineInfoCalc() noexcept;
+inline MachineId MachineIdCalc(std::string_view domain) noexcept {
+    namespace Fs = std::filesystem;
+    const std::string str = std::string(domain) + ":" + MachineIdContent();
+    return SHA512Half::StringForHash(SHA512Half::Calc(str));
+}
 
 } // namespace Machine

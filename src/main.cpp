@@ -39,6 +39,10 @@ struct _Args {
     struct {
         bool en = false;
     } machineId;
+    
+    struct {
+        bool en = false;
+    } machineIdContent;
 };
 
 static _Args _ParseArgs(int argc, const char* argv[]) {
@@ -83,6 +87,14 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
     if (arg0 == "--machineid") {
         return _Args{
             .machineId = {
+                .en = true,
+            },
+        };
+    }
+    
+    if (arg0 == "--machineidcontent") {
+        return _Args{
+            .machineIdContent = {
                 .en = true,
             },
         };
@@ -512,6 +524,11 @@ int main(int argc, const char* argv[]) {
         } else if (args.machineId.en) {
             const Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
             printf("%s\n", machineId.c_str());
+            return 0;
+        
+        } else if (args.machineIdContent.en && DEBUG) {
+            const std::string machineIdContent = Machine::MachineIdContent();
+            printf("%s\n", machineIdContent.c_str());
             return 0;
         
         } else {

@@ -19,14 +19,11 @@ std::string _SerialGet() {
     }
 }
 
-MachineId MachineIdCalc(std::string_view domain) noexcept {
+std::string MachineIdContent() noexcept {
     try {
-        const std::string str = std::string(domain) + ":" + _SerialGet();
-        SHA512Half::Hash hash = SHA512Half::Calc(str);
-        return SHA512Half::StringForHash(hash);
+        return _SerialGet();
     } catch (...) {}
-    
-    return MachineIdBasicCalc(domain);
+    return MachineIdContentBasic();
 }
 
 MachineInfo MachineInfoCalc() noexcept {
