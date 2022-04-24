@@ -1317,13 +1317,15 @@ private:
         try {
             for (const path& p : directory_iterator(repoDir)) {
                 try {
-                    // We'd ideally use std::filesystem::last_write_time() here, but it returns a
-                    // time_point<file_clock>, but we need a time_point<system_clock>, and as of
-                    // C++17, there's no proper way to convert between the two (and they
+                    // We'd ideally use std::filesystem::last_write_time() here instead of our
+                    // custom Stat() function, but last_write_time() returns a
+                    // time_point<file_clock>, but we need a time_point<system_clock>, and as
+                    // of C++17, there's no proper way to convert between the two (and they
                     // apparently use different epochs on Linux!)
-                    // We should be able to use last_write_time when we upgrade to C++20, which
-                    // fixes the situation with file_clock::to_sys / file_clock::from_sys and
-                    // std::chrono::clock_cast.
+                    // 
+                    // We should be able to use last_write_time() when we upgrade to C++20,
+                    // which fixes the situation with file_clock::to_sys() /
+                    // file_clock::from_sys() and std::chrono::clock_cast().
                     auto writeTime = system_clock::from_time_t(Stat(p).st_mtime);
                     latestTime = std::max(latestTime, writeTime);
                 } catch (...) {} // Continue to next file if an error occurs
