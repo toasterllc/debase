@@ -102,10 +102,6 @@ endif
 
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
-# Include all .d files
-DEPS = $(OBJS:%.o=%.d)
--include $(DEPS)
-
 default: $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
@@ -175,3 +171,7 @@ notarize: codesign
 clean:
 	$(MAKE) -C lib clean
 	rm -Rf $(BUILDROOT)
+
+# Include all .d files
+DEPS = $(OBJS:%.o=%.d)
+-include $(DEPS)
