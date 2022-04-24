@@ -102,7 +102,7 @@ endif
 
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
-default: $(BUILDDIR)/$(NAME)
+$(NAME): $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
 $(OBJS): | lib
