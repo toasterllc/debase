@@ -28,11 +28,13 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     
-    // Encode request as json and put it in the request
-    // Curl doesn't copy the data, so it needs to stay live until curl is complete!
-    nlohmann::json j = req;
-    std::string jstr = j.dump();
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jstr.c_str());
+    if constexpr (!std::is_null_pointer_v<T_Req>) {
+        // Encode request as json and put it in the request
+        // Curl doesn't copy the data, so it needs to stay live until curl is complete!
+        nlohmann::json j = req;
+        std::string jstr = j.dump();
+        curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, jstr.c_str());
+    }
     
     std::stringstream respStream;
     auto respWriter = +[] (char* data, size_t _, size_t len, std::stringstream& respStream) -> size_t {
@@ -51,8 +53,10 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     if (httpRespCode != 200) throw Toastbox::RuntimeError("request failed with HTTP response code %jd", (intmax_t)httpRespCode);
     
     // Decode response
-    j = nlohmann::json::parse(respStream.str());
-    j.get_to(resp);
+    {
+        nlohmann::json j = nlohmann::json::parse(respStream.str());
+        j.get_to(resp);
+    }
     
 //    sleep(7);
     
