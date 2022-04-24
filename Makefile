@@ -106,6 +106,8 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 $(NAME): $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
+# We explicitly depend on GITHASHHEADER too, for the initial build where
+# our .d dependency files don't exist, so make doesn't know what depends on
 $(OBJS): | lib $(GITHASHHEADER)
 
 # Libs: execute make from `lib` directory
@@ -173,17 +175,5 @@ clean:
 	$(MAKE) -C lib clean
 	rm -Rf $(BUILDROOT)
 
-#DEPS = $(addsuffix .d, $(basename $(SRCS)))
--include $(OBJS:%.o=%.d)
-
-#$(shell echo hello)
-
 # Include all .d files
-#DEPS = $(OBJS:%.o=%.d)
-#-include $(DEPS)
-
-#@echo $(DEPS)
-#-include $(SRCS:%.*=%.d)
-
-
-#include $(SRCS:.c=.d)
+-include $(OBJS:%.o=%.d)
