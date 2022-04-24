@@ -7,6 +7,7 @@
 #include "App.h"
 #include "Terminal.h"
 #include "Debase.h"
+#include "DebaseGitHash.h"
 #include "UsageText.h"
 #include "LibsText.h"
 
@@ -96,7 +97,7 @@ static _Args _ParseArgs(int argc, const char* argv[]) {
 }
 
 static void _PrintUsage() {
-    std::cout << "debase version " Stringify(_DebaseVersion) "\n";
+    std::cout << "debase version " Stringify(_DebaseVersion) " (" _DebaseGitHashShort ")" "\n";
     std::cout << UsageText;
 }
 

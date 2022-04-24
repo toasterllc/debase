@@ -14,6 +14,8 @@ ifeq ($(DEBUG), 1)
 	BUILDDIR = $(BUILDROOT)/debug
 endif
 
+GITHASHHEADER = src/DebaseGitHash.h
+
 SRCS =											\
 	lib/c25519/src/sha512.c						\
 	lib/c25519/src/edsign.c						\
@@ -102,7 +104,7 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 default: $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
-$(OBJS): | lib
+$(OBJS): | $(GITHASHHEADER) lib
 
 # Libs: execute make from `lib` directory
 .PHONY: lib
@@ -131,6 +133,12 @@ $(BUILDDIR)/$(NAME): $(OBJS)
 ifeq ($(DEBUG), 0)
 	strip $@
 endif
+
+# Output the git HEAD hash to $(GITHASHHEADER)
+$(GITHASHHEADER): .git/HEAD .git/index
+	echo '#pragma once' > $@
+	echo '#define _DebaseGitHash "$(shell git rev-parse HEAD)"' >> $@
+	echo '#define _DebaseGitHashShort "$(shell git rev-parse HEAD | cut -c -10)"' >> $@
 
 codesign: $(BUILDDIR)/$(NAME)
 	codesign														\
