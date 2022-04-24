@@ -28,6 +28,8 @@ Running debase with a newer version of com.heytoaster.debase/Version: exits with
 Ctrl-C exits while dragging selection rect
 Ctrl-C exits while dragging context menu
 
+--machineid flag works
+
 * Edit commit
 Edit commit with double-click
 Edit commit with return key
@@ -56,7 +58,8 @@ Clicking outside is ignored
 Return key triggers OK button
 
 * Error panel
-Resize terminal
+Resize terminal vertically + vertical clipping
+Resize terminal horizontally + horizontal clipping
 Dismiss with OK key
 Dismiss with escape key
 
@@ -123,8 +126,8 @@ No network IO occurs on first launch, until a button is clicked
 Machine ID isn't calculated on first launch until a button is clicked
 
 * Move Offer
-debase offsers to move itself with zsh
-debase offsers to move itself with bash
+debase offers to move itself with zsh
+debase offers to move itself with bash
 
 Moving debase works with zsh, when PATH does include the destination dir
 Moving debase works with bash, when PATH does include the destination dir
