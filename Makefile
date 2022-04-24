@@ -104,7 +104,7 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 default: $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
-$(OBJS): | $(GITHASHHEADER) lib
+$(OBJS): $(GITHASHHEADER) | lib
 
 # Libs: execute make from `lib` directory
 .PHONY: lib
