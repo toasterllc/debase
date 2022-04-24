@@ -30,6 +30,10 @@ Ctrl-C exits while dragging context menu
 
 --machineid flag works
 
+<rev>^^^ syntax works, and branch is editable
+
+<rev>~3 syntax works, and branch is editable
+
 * Edit commit
 Edit commit with double-click
 Edit commit with return key

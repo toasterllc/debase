@@ -32,6 +32,7 @@
 #include "PathIsInEnvironmentPath.h"
 #include "ProcessPath.h"
 #include "UserBinRelativePath.h"
+#include "Stat.h"
 
 extern "C" {
     extern char** environ;
@@ -1310,29 +1311,20 @@ private:
         Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
         Machine::MachineInfo machineInfo = Machine::MachineInfoCalc();
         
-//        // Find t = max(time(), <time of each file in repoDir>),
-//        // to help prevent time-rollback attacks.
-//        auto t = std::chrono::system_clock::now();
-//        try {
-//            for (const _Path& p : Fs::directory_iterator(repoDir)) {
-//                try {
-//                    auto writeTimeSinceEpoch = std::chrono::time_point_cast<std::chrono::system_clock::duration>(Fs::last_write_time(p));
-//                    if (writeTimeSinceEpoch > t) {
-//                        t = writeTimeSinceEpoch;
-//                    }
-//                } catch (...) {} // Continue to next file if an error occurs
-//            }
-//        } catch (...) {} // Suppress failures while getting latest write time in repo dir
-        
-        
-        
         // Find t = max(time(), <time of each file in repoDir>),
         // to help prevent time-rollback attacks.
         system_clock::time_point latestTime = system_clock::now();
         try {
             for (const path& p : directory_iterator(repoDir)) {
                 try {
-                    auto writeTime = system_clock::time_point(duration_cast<seconds>(last_write_time(p).time_since_epoch()));
+                    // We'd ideally use std::filesystem::last_write_time() here, but it returns a
+                    // time_point<file_clock>, but we need a time_point<system_clock>, and as of
+                    // C++17, there's no proper way to convert between the two (and they
+                    // apparently use different epochs on Linux!)
+                    // We should be able to use last_write_time when we upgrade to C++20, which
+                    // fixes the situation with file_clock::to_sys / file_clock::from_sys and
+                    // std::chrono::clock_cast.
+                    auto writeTime = system_clock::from_time_t(Stat(p).st_mtime);
                     latestTime = std::max(latestTime, writeTime);
                 } catch (...) {} // Continue to next file if an error occurs
             }
