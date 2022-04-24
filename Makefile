@@ -146,14 +146,17 @@ $(GITHASHHEADER): .git/HEAD .git/index
 	echo '#define _DebaseGitHash "$(shell git rev-parse HEAD)"' >> $@
 	echo '#define _DebaseGitHashShort "$(shell git rev-parse HEAD | cut -c -10)"' >> $@
 
-codesign: $(BUILDDIR)/$(NAME)
+# codesign: intentionally no dependencies because we want to ensure
+# that codesigning/notarizing uses the existing binary and doesn't
+# trigger a new build
+codesign:
 	codesign														\
 		-vvvv														\
 		--force														\
 		--timestamp													\
 		--options=runtime											\
 		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
-		$<
+		$(BUILDDIR)/$(NAME)
 
 notarize: codesign
 	cd $(BUILDDIR) && zip $(NAME).zip $(NAME)
