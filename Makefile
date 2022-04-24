@@ -40,6 +40,7 @@ CPPFLAGS =										\
 	-fvisibility=hidden							\
 	-fstrict-aliasing							\
 	-fno-common									\
+	-MMD										\
 	-Wall										\
 
 CFLAGS =										\
@@ -101,10 +102,14 @@ endif
 
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
+# Include all .d files
+DEPS = $(OBJS:%.o=%.d)
+-include $(DEPS)
+
 default: $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
-$(OBJS): $(GITHASHHEADER) | lib
+$(OBJS): | lib
 
 # Libs: execute make from `lib` directory
 .PHONY: lib
