@@ -41,6 +41,7 @@ CPPFLAGS =										\
 	-fstrict-aliasing							\
 	-fno-common									\
 	-MMD										\
+	-MP											\
 	-Wall										\
 
 CFLAGS =										\
@@ -105,7 +106,7 @@ OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))
 $(NAME): $(BUILDDIR)/$(NAME)
 
 # Objects depend on libs being built first
-$(OBJS): | lib
+$(OBJS): | lib $(GITHASHHEADER)
 
 # Libs: execute make from `lib` directory
 .PHONY: lib
@@ -172,6 +173,17 @@ clean:
 	$(MAKE) -C lib clean
 	rm -Rf $(BUILDROOT)
 
+#DEPS = $(addsuffix .d, $(basename $(SRCS)))
+-include $(OBJS:%.o=%.d)
+
+#$(shell echo hello)
+
 # Include all .d files
-DEPS = $(OBJS:%.o=%.d)
--include $(DEPS)
+#DEPS = $(OBJS:%.o=%.d)
+#-include $(DEPS)
+
+#@echo $(DEPS)
+#-include $(SRCS:%.*=%.d)
+
+
+#include $(SRCS:.c=.d)
