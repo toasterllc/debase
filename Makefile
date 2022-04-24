@@ -133,7 +133,9 @@ $(BUILDDIR)/%.o: %.mm
 # Link, generate dsym, and strip
 $(BUILDDIR)/$(NAME): $(OBJS)
 	$(LINK.cc) $^ -o $@ $(LIBDIRS) $(LIBS)
+ifeq ($(PLATFORM), mac)
 	xcrun dsymutil $@ -o $@.dSYM
+endif
 ifeq ($(DEBUG), 0)
 	strip $@
 endif
