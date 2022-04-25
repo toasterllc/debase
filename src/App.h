@@ -32,7 +32,7 @@
 #include "PathIsInEnvironmentPath.h"
 #include "ProcessPath.h"
 #include "UserBinRelativePath.h"
-#include "Stat.h"
+#include "Syscall.h"
 
 extern "C" {
     extern char** environ;

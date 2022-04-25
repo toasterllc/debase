@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "SHA512Half.h"
-#include "Stat.h"
+#include "Syscall.h"
 
 namespace Machine {
 
