@@ -1403,7 +1403,7 @@ private:
         License::RequestResponse resp;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseAPIURL, req, resp);
+            Network::Request(DebaseLicenseURL, req, resp);
         });
         _waitForAsync(async, Forever, panel, animateButton);
         
@@ -1621,7 +1621,7 @@ private:
         License::RequestResponse resp;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseAPIURL, req, resp);
+            Network::Request(DebaseLicenseURL, req, resp);
         });
         
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.

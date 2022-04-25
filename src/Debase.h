@@ -24,7 +24,7 @@ inline const char* DebaseBaseURL            = _DebaseBaseURL;
 inline const char* DebaseDownloadURL        = _DebaseBaseURL;
 inline const char* DebasePurchaseURL        = _DebaseBaseURL;
 inline const char* DebaseCurrentVersionURL  = _DebaseBaseURL "/version";
-inline const char* DebaseLicenseAPIURL      = "https://us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer";
+inline const char* DebaseLicenseURL         = _DebaseBaseURL "/license";
 
 #if DebaseLicenseServer
 inline const uint8_t DebaseKeyPrivate[] = {
