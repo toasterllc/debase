@@ -23,8 +23,8 @@ import (
 // #include "Debase.h"
 import "C"
 
-const LicensesCollection = "Licenses"
-const TrialsCollection = "Trials"
+const LicensesCollection = "debase-licenses"
+const TrialsCollection = "debase-trials"
 const TrialDuration = 7 * 24 * time.Hour
 const TrialIssueCountMax = 25
 const MachineCountMax = 3
