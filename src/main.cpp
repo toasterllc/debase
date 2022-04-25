@@ -118,23 +118,23 @@ static void _PrintLibs() {
     std::cout << LibsText;
 }
 
-static void _StdinFlush() {
-    for (int i=0; i<100000; i++) {
-        int avail = 0;
-        Ioctl(STDIN_FILENO, FIONREAD, &avail);
-//        if (avail <= 0) break;
-        
-        uint8_t buf[128];
-        Toastbox::Read(STDIN_FILENO, buf, avail);
-        if (avail) printf("Flushed %d bytes\n", avail);
-    }
-}
-
-//static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
-//    auto deadline = std::chrono::steady_clock::now()+timeout;
-//    uint8_t buf[128];
-//    Toastbox::Read(STDIN_FILENO, buf, sizeof(buf), deadline);
+//static void _StdinFlush() {
+//    for (int i=0; i<100000; i++) {
+//        int avail = 0;
+//        Ioctl(STDIN_FILENO, FIONREAD, &avail);
+////        if (avail <= 0) break;
+//        
+//        uint8_t buf[128];
+//        Toastbox::Read(STDIN_FILENO, buf, avail);
+//        if (avail) printf("Flushed %d bytes\n", avail);
+//    }
 //}
+
+static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
+    auto deadline = std::chrono::steady_clock::now()+timeout;
+    uint8_t buf[128];
+    Toastbox::Read(STDIN_FILENO, buf, sizeof(buf), deadline);
+}
 
 //// _CurrentExecutableIsInEnvironmentPath() returns true if the current executable
 //// is located in a directory listed in the PATH environment variable
@@ -566,7 +566,7 @@ int main(int argc, const char* argv[]) {
         Terminal::Settings term(STDIN_FILENO);
         term.c_lflag &= ~(ICANON|ECHO);
         term.set();
-        Defer(_StdinFlush());
+        Defer(_StdinFlush(FlushTimeout));
         
         setlocale(LC_ALL, "");
         
