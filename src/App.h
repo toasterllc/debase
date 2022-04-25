@@ -93,23 +93,22 @@ public:
 //            _drag.titlePanel->orderFront();
 //        }
         
-        if (_trialCountdownPanel) {
-            auto panel = _trialCountdownPanel;
+        if (_trialCountdownAlert) {
+            auto panel = _trialCountdownAlert;
             const UI::Rect b = bounds();
             panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
             panel->origin(b.br()-panel->size());
         }
         
-        if (_welcomePanel) _layoutAlert(_welcomePanel);
-        if (_registerPanel) _layoutAlert(_registerPanel);
-        if (_moveDebasePanel) _layoutAlert(_moveDebasePanel);
-        if (_messagePanel) _layoutAlert(_messagePanel);
-        
-        if (_updateAvailablePanel) {
-            auto p = _updateAvailablePanel;
+        if (_updateAvailableAlert) {
+            auto p = _updateAvailableAlert;
             const UI::Rect b = bounds();
             p->size(p->sizeIntrinsic({b.size.x, ConstraintNone}));
             p->origin({(b.w()-p->frame().w())/2, b.h()-p->frame().h()});
+        }
+        
+        for (UI::AlertPtr alert : _alerts) {
+            _layoutAlert(alert);
         }
     }
     
@@ -307,7 +306,7 @@ public:
         
         if (!errorMsg.empty()) {
             errorMsg[0] = toupper(errorMsg[0]);
-            _errorMessageShow(errorMsg, false);
+            _errorMessageRun(errorMsg, false);
         }
         
         return true;
@@ -378,7 +377,7 @@ public:
             _licenseCheck();
             _updateCheck();
             
-//            _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(2);
+//            _updateAvailableAlert = subviewCreate<UI::UpdateAvailablePanel>(2);
             
             track({});
             
@@ -428,6 +427,51 @@ private:
             return (bool)column;
         }
     };
+    
+    // _AlertPresenter(): RAII class to handle pushing/popping an alert from our _alerts deque
+    template <typename T>
+    class _AlertPresenter {
+    public:
+        _AlertPresenter(std::deque<UI::AlertPtr>& alerts, T alert) : _s{.alerts=&alerts, .alert=alert} {
+            assert(alert);
+            _s.alerts->push_back(alert);
+        }
+        
+        ~_AlertPresenter() {
+            if (_s.alert) {
+                assert(!_s.alerts->empty());
+                assert(_s.alerts->back() == _s.alert);
+                _s.alerts->pop_back();
+            }
+        }
+        
+        _AlertPresenter(const _AlertPresenter& x) = delete;
+        
+        _AlertPresenter(_AlertPresenter&& x) {
+            swap(x);
+        }
+        
+        void swap(_AlertPresenter& x) {
+            std::swap(_s, x._s);
+        }
+        
+        operator T&() { return _s.alert; }
+        T operator ->() { return _s.alert; }
+        
+        T& alert() { return _s.alert; }
+    
+    private:
+        struct {
+            std::deque<UI::AlertPtr>* alerts = nullptr;
+            T alert;
+        } _s;
+    };
+    
+    template <typename T>
+    _AlertPresenter<std::shared_ptr<T>> _alertPresent() {
+        std::shared_ptr<T> alert = subviewCreate<T>();
+        return _AlertPresenter(_alerts, alert);
+    }
     
     static constexpr int _ColumnInsetX = 3;
     static constexpr int _ColumnWidth = 32;
@@ -710,12 +754,13 @@ private:
         _columns.erase(_columns.begin()+colCount, _columns.end());
         
         // Update subviews
-        if (_trialCountdownPanel) sv.push_back(_trialCountdownPanel);
-        if (_welcomePanel) sv.push_back(_welcomePanel);
-        if (_registerPanel) sv.push_back(_registerPanel);
-        if (_moveDebasePanel) sv.push_back(_moveDebasePanel);
-        if (_messagePanel) sv.push_back(_messagePanel);
-        if (_updateAvailablePanel) sv.push_back(_updateAvailablePanel);
+        if (_trialCountdownAlert) sv.push_back(_trialCountdownAlert);
+        if (_updateAvailableAlert) sv.push_back(_updateAvailableAlert);
+        
+        for (UI::AlertPtr alert : _alerts) {
+            sv.push_back(alert);
+        }
+        
         subviews(sv);
         
         layoutNeeded(true);
@@ -1349,7 +1394,7 @@ private:
         }
     }
     
-    std::optional<License::License> _licenseRequest(UI::AlertPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
+    std::optional<License::License> _licenseRequestRun(UI::AlertPtr panel, UI::ButtonPtr animateButton, const License::Request& req) {
         
 //        // Disable interaction while we wait for the license request
 //        assert(interaction());
@@ -1367,12 +1412,12 @@ private:
         try {
             async.get(); // Rethrows exception if one occurred on the async thread
         } catch (const std::exception& e) {
-            _errorMessageShow(std::string("An error occurred when talking to the server: ") + e.what(), true);
+            _errorMessageRun(std::string("An error occurred when talking to the server: ") + e.what(), true);
             return std::nullopt;
         }
         
         if (!resp.error.empty()) {
-            _errorMessageShow(resp.error, true);
+            _errorMessageRun(resp.error, true);
             return std::nullopt;
         }
         
@@ -1384,11 +1429,11 @@ private:
             if (st == License::Status::InvalidVersion) {
                 std::stringstream ss;
                 ss << "This license is only valid for debase version " << license.version << " and older, but this is debase version " << DebaseVersion << ".";
-                _errorMessageShow(ss.str(), true);
+                _errorMessageRun(ss.str(), true);
                 return std::nullopt;
             
             } else {
-                _errorMessageShow(std::string("The license supplied by the server is invalid."), true);
+                _errorMessageRun(std::string("The license supplied by the server is invalid."), true);
                 return std::nullopt;
             }
         }
@@ -1399,6 +1444,14 @@ private:
         state.write();
         
         return license;
+    }
+    
+    bool _trialRequestRun(UI::AlertPtr panel, UI::ButtonPtr animateButton) {
+        const License::Request req = _trialRequestCreate();
+        std::optional<License::License> license = _licenseRequestRun(panel, animateButton, req);
+        if (!license) return false;
+        _trialCountdownAlert = _trialCountdownAlertCreate(*license);
+        return true;
     }
     
     License::Request _trialRequestCreate() {
@@ -1428,29 +1481,136 @@ private:
 //        }
 //    }
     
-    void _licenseRenewRun(const License::License& license) {
+//    void _welcomePanelActionTrial() {
+//        assert(_welcomePanel);
+//        
+//        const License::Request req = _trialRequestCreate();
+//        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
+//        if (license) {
+//            _trialCountdownShow(*license);
+//            _welcomePanel = nullptr;
+//        }
+//    }
+//    
+//    void _welcomePanelActionRegister() {
+//        _registerPanelPresent();
+//    }
+    
+    void _welcomePanelRun() {
+        std::optional<bool> choice;
+        
+        auto panel = _alertPresent<UI::WelcomePanel>();
+        panel->width                    (40);
+        panel->color                    (colors().menu);
+        panel->title()->text            ("");
+        panel->message()->text          ("Welcome to debase!");
+        panel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
+        panel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
+        
+        for (;;) {
+            // Wait until the user clicks a button
+            while (!choice) track({}, Once);
+            
+            // Trial
+            if (*choice) {
+                if (_trialRequestRun(panel.alert(), panel->trialButton())) {
+                    return;
+                }
+            
+            // Register
+            } else {
+                if (_registerPanelRun()) {
+                    return;
+                }
+            }
+            
+            choice = std::nullopt;
+        }
+    }
+    
+    auto _registerPanelPresent(std::string_view title, std::string_view message) {
+        auto alert = _alertPresent<UI::RegisterPanel>();
+        alert->width            (50);
+        alert->color            (colors().menu);
+        alert->title()->text    (title);
+        alert->message()->text  (message);
+        return alert;
+    }
+    
+    bool _registerPanelRun(UI::RegisterPanelPtr panel, std::function<bool()> dismissAction=nullptr) {
+//        std::string msg = std::string(message)_showAlert;
+//        msg += " To purchase a license, please visit:\n";
+        
+        const auto dismissActionPrev = panel->dismissButton()->action();
+        std::optional<bool> choice;
+        
+        panel->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
+        if (dismissAction) {
+            panel->dismissButton()->action ( [&] (UI::Button& b) {
+                if (dismissAction()) {
+                    choice = false;
+                }
+            });
+        }
+        
+        for (;;) {
+            // Wait until the user clicks a button
+            while (!choice) track({}, Once);
+            
+            // Register
+            if (*choice) {
+                const std::string email = panel->email()->value();
+                const std::string licenseCode = panel->code()->value();
+                const License::Request req = _licenseRequestCreate(email, licenseCode);
+                bool ok = (bool)_licenseRequestRun(panel, panel->okButton(), req);
+                if (ok) {
+                    _trialCountdownAlert = nullptr;
+                    _thankYouMessageRun();
+                    return true;
+                }
+            
+            // Dismiss
+            } else {
+                return false;
+            }
+            
+            choice = std::nullopt;
+        }
+    }
+    
+    bool _registerPanelRun() {
+        constexpr const char* Title     = "Register debase";
+        constexpr const char* Message   = "Please enter your license information.";
+        
+        auto panel = _registerPanelPresent(Title, Message);
+        return _registerPanelRun(panel, []() { return true; });
+    }
+    
+    bool _trialExpiredPanelRun() {
+        constexpr const char* Title     = "Trial Expired";
+        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
+        
+        auto panel = _registerPanelPresent(Title, Message);
+        return _registerPanelRun(panel);
+    }
+    
+    bool _licenseRenewRun(const License::License& license) {
         constexpr const char* PanelTitle            = "Renew License";
         constexpr const char* PanelMessageUnderway  = "Renewing debase license for this machine...";
         constexpr const char* PanelMessageError     = "A problem was encountered with your debase license. Please try registering again.";
         
-        assert(!_registerPanel);
-        
         // Create the register panel, but keep it hidden for now
-        _registerPanelShow(PanelTitle, PanelMessageUnderway);
-        _registerPanel->visible(false);
-        _registerPanel->purchaseMessageVisible(false);
-        _registerPanel->email()->value(license.email);
-        _registerPanel->code()->value(license.licenseCode);
-        _registerPanel->dismissButton()->label()->text("Free Trial");
-        _registerPanel->okButton()->action([] (UI::Button&) {});
-        _registerPanel->dismissButton()->action([=] (UI::Button&) {
-            const License::Request req = _trialRequestCreate();
-            std::optional<License::License> license = _licenseRequest(_registerPanel, _registerPanel->dismissButton(), req);
-            if (license) {
-                _trialCountdownShow(*license);
-                _registerPanel = nullptr;
-            }
-        });
+        auto panel = _registerPanelPresent(PanelTitle, PanelMessageUnderway);
+        panel->visible(false);
+        panel->purchaseMessageVisible(false);
+        panel->email()->value(license.email);
+        panel->code()->value(license.licenseCode);
+        panel->dismissButton()->label()->text("Free Trial");
+        panel->okButton()->action([] (UI::Button&) {});
+        panel->dismissButton()->action([] (UI::Button&) {});
+//        panel->dismissButton()->action([&] (UI::Button&) {
+//            _trialRequestRun(panel.alert(), panel->dismissButton());
+//        });
 //        _registerPanel->layoutNeeded(true);
         
         const License::Request req = _licenseRequestCreate(license.email, license.licenseCode);
@@ -1477,8 +1637,8 @@ private:
         // If the license request hasn't completed yet, show the register panel until it does,
         // so that we block the app from being used until the license is valid
         if (!async.done()) {
-            _registerPanel->visible(true);
-            _waitForAsync(async, Forever, _registerPanel, _registerPanel->okButton());
+            panel->visible(true);
+            _waitForAsync(async, Forever, panel.alert(), panel->okButton());
         }
         
         bool ok = false;
@@ -1500,134 +1660,20 @@ private:
         } catch (...) {}
         
         if (!ok) {
-            _registerPanel->visible(true);
-            _registerPanel->purchaseMessageVisible(true);
-            _registerPanel->message()->text(PanelMessageError);
+            panel->visible(true);
+            panel->purchaseMessageVisible(true);
+            panel->message()->text(PanelMessageError);
             layoutNeeded(true);
-            _registerPanelRun(false);
-        
-        } else {
-            _registerPanel = nullptr;
+            return _registerPanelRun(panel, [&] {
+                // Dismiss action
+                return _trialRequestRun(panel.alert(), panel->dismissButton());
+            });
         }
+        
+        return true;
     }
     
-//    void _welcomePanelActionTrial() {
-//        assert(_welcomePanel);
-//        
-//        const License::Request req = _trialRequestCreate();
-//        std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
-//        if (license) {
-//            _trialCountdownShow(*license);
-//            _welcomePanel = nullptr;
-//        }
-//    }
-//    
-//    void _welcomePanelActionRegister() {
-//        _registerPanelShow();
-//    }
-    
-    void _welcomePanelRun() {
-        std::optional<bool> choice;
-        
-        _welcomePanel = subviewCreate<UI::WelcomePanel>();
-        _welcomePanel->width                    (40);
-        _welcomePanel->color                    (colors().menu);
-        _welcomePanel->title()->text            ("");
-        _welcomePanel->message()->text          ("Welcome to debase!");
-        _welcomePanel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
-        _welcomePanel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
-        
-        for (;;) {
-            // Wait until the user clicks a button
-            while (!choice) track({}, Once);
-            
-            // Trial
-            if (*choice) {
-                const License::Request req = _trialRequestCreate();
-                std::optional<License::License> license = _licenseRequest(_welcomePanel, _welcomePanel->trialButton(), req);
-                if (license) {
-                    _trialCountdownShow(*license);
-                    _welcomePanel = nullptr;
-                    return;
-                }
-            
-            // Register
-            } else {
-                _registerPanelRun();
-            }
-            
-            choice = std::nullopt;
-        }
-    }
-    
-    void _registerPanelShow(std::string_view title, std::string_view message) {
-        assert(!_registerPanel);
-        
-        _registerPanel = subviewCreate<UI::RegisterPanel>();
-        _registerPanel->width            (50);
-        _registerPanel->color            (colors().menu);
-        _registerPanel->title()->text    (title);
-        _registerPanel->message()->text  (message);
-    }
-    
-    void _registerPanelRun(bool dismissAllowed) {
-//        std::string msg = std::string(message);
-//        msg += " To purchase a license, please visit:\n";
-        
-        assert(_registerPanel);
-        
-        std::optional<bool> choice;
-        
-        _registerPanel->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
-        if (dismissAllowed) _registerPanel->dismissButton()->action ( [&] (UI::Button& b) { choice = false; } );
-        
-        for (;;) {
-            // Wait until the user clicks a button
-            while (!choice) track({}, Once);
-            
-            // Register
-            if (*choice) {
-                const std::string email = _registerPanel->email()->value();
-                const std::string licenseCode = _registerPanel->code()->value();
-                const License::Request req = _licenseRequestCreate(email, licenseCode);
-                bool ok = (bool)_licenseRequest(_registerPanel, _registerPanel->okButton(), req);
-                if (ok) {
-                    _trialCountdownPanel = nullptr;
-                    _welcomePanel = nullptr;
-                    _registerPanel = nullptr;
-                    _thankYouMessageRun();
-                    return;
-                }
-            
-            // Dismiss
-            } else {
-                _registerPanel = nullptr;
-                return;
-            }
-            
-            choice = std::nullopt;
-        }
-    }
-    
-    void _registerPanelRun(std::string_view title, std::string_view message, bool dismissAllowed) {
-        assert(!_registerPanel);
-        _registerPanelShow(title, message);
-        _registerPanelRun(dismissAllowed);
-    }
-    
-    void _registerPanelRun() {
-        constexpr const char* Title     = "Register debase";
-        constexpr const char* Message   = "Please enter your license information.";
-        _registerPanelRun(Title, Message, true);
-    }
-    
-    void _trialExpiredPanelRun() {
-        constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
-        _registerPanelRun(Title, Message, false);
-    }
-    
-    void _trialCountdownShow(const License::License& license) {
+    UI::TrialCountdownPanelPtr _trialCountdownAlertCreate(const License::License& license) {
         using namespace std::chrono;
         assert(license.expiration);
         
@@ -1651,23 +1697,24 @@ private:
         
         const License::Context& ctx = _licenseCtxGet();
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
-        _trialCountdownPanel = subviewCreate<UI::TrialCountdownPanel>(rem);
-        _trialCountdownPanel->registerButton()->action([&] (UI::Button&) {
+        UI::TrialCountdownPanelPtr p = subviewCreate<UI::TrialCountdownPanel>(rem);
+        p->registerButton()->action([&] (UI::Button&) {
             _registerPanelRun();
         });
+        return p;
     }
     
     void _thankYouMessageRun() {
         bool done = false;
         
-        _messagePanel = subviewCreate<UI::Alert>();
-        _messagePanel->width                (42);
-        _messagePanel->color                (colors().menu);
-        _messagePanel->title()->text        ("Thank You!");
-        _messagePanel->message()->text      ("Thank you for supporting debase!");
-        _messagePanel->message()->align     (UI::Align::Center);
-        _messagePanel->okButton()->action   ( [&] (UI::Button&) { done = true; } );
-        _messagePanel->escapeTriggersOK     (true);
+        auto alert = _alertPresent<UI::Alert>();
+        alert->width                (42);
+        alert->color                (colors().menu);
+        alert->title()->text        ("Thank You!");
+        alert->message()->text      ("Thank you for supporting debase!");
+        alert->message()->align     (UI::Align::Center);
+        alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
+        alert->escapeTriggersOK     (true);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
@@ -1677,42 +1724,44 @@ private:
         
         // Wait until the user clicks a button
         while (!done) track({}, Once);
-        
-        _messagePanel = nullptr;
     }
     
-    void _errorMessageShow(std::string_view msg, bool showSupportMessage) {
-        auto p = subviewCreate<UI::ErrorPanel>();
-        p->width                (40);
-        p->message()->text      (msg);
-        p->okButton()->action   ( [=] (UI::Button&) { _messagePanel = nullptr; } );
-        p->showSupportMessage   (showSupportMessage);
-        _messagePanel = p;
+    void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
+        bool done = false;
+        
+        auto alert = _alertPresent<UI::ErrorPanel>();
+        alert->width                (40);
+        alert->message()->text      (msg);
+        alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
+        alert->showSupportMessage   (showSupportMessage);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
         // due to a mouse event doesn't trigger the flicker, only keyboard events.
         // For some reason sleeping a short time fixes it.
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        
+        // Wait until the user clicks a button
+        while (!done) track({}, Once);
     }
     
-    void _updateAvailablePanelShow(Version version) {
-        _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(version);
+    void _updateAvailableAlertShow(Version version) {
+        _updateAvailableAlert = subviewCreate<UI::UpdateAvailablePanel>(version);
         
-        _updateAvailablePanel->okButton()->action([=] (UI::Button&) {
+        _updateAvailableAlert->okButton()->action([=] (UI::Button&) {
             OpenURL(DebaseDownloadURL);
-            _updateAvailablePanel = nullptr;
+            _updateAvailableAlert = nullptr;
         });
         
-//        _updateAvailablePanel->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
-//        _updateAvailablePanel->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
+//        _updateAvailableAlert->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
+//        _updateAvailableAlert->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
         
-        _updateAvailablePanel->dismissButton()->action([=] (UI::Button&) {
+        _updateAvailableAlert->dismissButton()->action([=] (UI::Button&) {
             // Ignore this version in the future
             State::State state(StateDir());
             state.updateIgnoreVersion(version);
             state.write();
-            _updateAvailablePanel = nullptr;
+            _updateAvailableAlert = nullptr;
         });
     }
     
@@ -1826,20 +1875,18 @@ private:
         }
         
         std::optional<bool> moveChoice;
-        _moveDebasePanel = subviewCreate<UI::Alert>();
-        _moveDebasePanel->width                            (50);
-        _moveDebasePanel->color                            (colors().menu);
-        _moveDebasePanel->title()->text                    (Title);
-        _moveDebasePanel->message()->text                  (message);
-        _moveDebasePanel->okButton()->label()->text        ("Move");
-        _moveDebasePanel->dismissButton()->label()->text   ("Don't Move");
-        _moveDebasePanel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
-        _moveDebasePanel->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
+        auto panel = _alertPresent<UI::Alert>();
+        panel->width                            (50);
+        panel->color                            (colors().menu);
+        panel->title()->text                    (Title);
+        panel->message()->text                  (message);
+        panel->okButton()->label()->text        ("Move");
+        panel->dismissButton()->label()->text   ("Don't Move");
+        panel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
+        panel->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
         
         // Wait until the user clicks a button
         while (!moveChoice) track({}, Once);
-        
-        _moveDebasePanel = nullptr;
         
         // We offerred to move debase; update State so we remember that we did so
         {
@@ -1922,7 +1969,7 @@ private:
         
         } else if (st == License::Status::Valid) {
             if (license.expiration) {
-                _trialCountdownShow(license);
+                _trialCountdownAlert = _trialCountdownAlertCreate(license);
             }
             
             // Done; debase is registered
@@ -1962,7 +2009,7 @@ private:
             // Show the update-available dialog if we're already aware that an update is available
             // and the user hasn't ignored that version.
             if (state.updateVersion()>DebaseVersion && state.updateVersion()>state.updateIgnoreVersion()) {
-                _updateAvailablePanelShow(state.updateVersion());
+                _updateAvailableAlertShow(state.updateVersion());
                 return;
             }
             
@@ -2006,7 +2053,7 @@ private:
             // Show the update-available dialog if the latest version is greater than our current version,
             // and the user hasn't ignored that version.
             if (latestVersion>DebaseVersion && latestVersion>state.updateIgnoreVersion()) {
-                _updateAvailablePanelShow(latestVersion);
+                _updateAvailableAlertShow(latestVersion);
             }
         }
         
@@ -2014,7 +2061,7 @@ private:
 //        if (latestVersion <= DebaseVersion) return;
 //        if (latestVersion <= state.updateIgnoreVersion()) return;
 //        
-//        _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(latestVersion);
+//        _updateAvailableAlert = subviewCreate<UI::UpdateAvailablePanel>(latestVersion);
 //        
 //        
 //        
@@ -2071,10 +2118,7 @@ private:
     
 //    AsyncFn<Version> _updateCheckAsync;
     
-    UI::TrialCountdownPanelPtr _trialCountdownPanel;
-    UI::WelcomePanelPtr _welcomePanel;
-    UI::RegisterPanelPtr _registerPanel;
-    UI::AlertPtr _moveDebasePanel;
-    UI::AlertPtr _messagePanel;
-    UI::AlertPtr _updateAvailablePanel;
+    UI::TrialCountdownPanelPtr _trialCountdownAlert;
+    UI::AlertPtr _updateAvailableAlert;
+    std::deque<UI::AlertPtr> _alerts;
 };
