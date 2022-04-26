@@ -1,4 +1,4 @@
-* General
+* General branch editing
 Copy commits
 Move commits
 Delete commits
@@ -33,6 +33,8 @@ Ctrl-C exits while dragging context menu
 <rev>^^^ syntax works, and branch is editable
 
 <rev>~3 syntax works, and branch is editable
+
+* General tag editing: same as General branch editing
 
 * Edit commit
 Edit commit with double-click
