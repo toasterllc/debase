@@ -9,17 +9,22 @@
 #define _ToasterShortURL        "heytoaster.com"
 #define _ToasterURL             "https://" _ToasterShortURL
 #define _ToasterSupportEmail    "support@heytoaster.com"
+
 #define _DebaseVersion          1
 #define _DebaseFilename         "debase"
+#define _DebaseBaseURL          _ToasterURL "/debase"
 
-inline const char* ToasterDisplayURL    = _ToasterShortURL;
-inline const char* ToasterSupportEmail  = _ToasterSupportEmail;
+inline const char* ToasterDisplayURL        = _ToasterShortURL;
+inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
 
-inline const Version DebaseVersion      = _DebaseVersion;
-inline const char* DebaseFilename       = _DebaseFilename;
-inline const char* DebaseProductId      = "com.heytoaster.debase";
-inline const char* DebasePurchaseURL    = _ToasterURL "/debase";
-inline const char* DebaseLicenseAPIURL  = "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer";
+inline const Version DebaseVersion          = _DebaseVersion;
+inline const char* DebaseFilename           = _DebaseFilename;
+inline const char* DebaseProductId          = "com.heytoaster.debase";
+inline const char* DebaseBaseURL            = _DebaseBaseURL;
+inline const char* DebaseDownloadURL        = _DebaseBaseURL;
+inline const char* DebasePurchaseURL        = _DebaseBaseURL;
+inline const char* DebaseCurrentVersionURL  = _DebaseBaseURL "/version";
+inline const char* DebaseLicenseAPIURL      = "us-central1-capable-sled-346322.cloudfunctions.net/DebaseLicenseServer";
 
 #if DebaseLicenseServer
 inline const uint8_t DebaseKeyPrivate[] = {

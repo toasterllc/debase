@@ -9,30 +9,35 @@ public:
     using RetType = typename std::invoke_result<Fn>::type;
     using RetTypeRef = std::add_lvalue_reference_t<RetType>;
     
+    Async() {}
+    
     Async(Fn&& fn) {
         _state = std::make_shared<_State>();
         
+        _StatePtr state = _state;
         std::thread([=] {
             try {
                 // Void return type
                 if constexpr (_RetTypeEmpty) {
                     fn();
-                    _state->val = _Empty();
+                    state->val = _Empty();
                 
                 // Non-void return type
                 } else {
-                    _state->val = fn();
+                    state->val = fn();
                 }
             } catch (...) {
-                _state->err = std::current_exception();
+                state->err = std::current_exception();
             }
             
             // Signal the fd
-            _state->signal.signal();
+            state->signal.signal();
         }).detach();
     }
     
     RetTypeRef get() {
+        assert(_state);
+        
         // Wait for the signal
         _state->signal.wait();
         
@@ -48,12 +53,16 @@ public:
     }
     
     const Toastbox::FileDescriptor& signal() {
+        assert(_state);
         return _state->signal;
     }
     
     bool done() const {
+        assert(_state);
         return _state->signal.signaled();
     }
+    
+    operator bool() const { return _state; }
     
 private:
     struct _Empty {};
@@ -69,3 +78,6 @@ private:
     
     _StatePtr _state;
 };
+
+template <typename T>
+using AsyncFn = Async<std::function<T()>>;

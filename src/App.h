@@ -376,6 +376,7 @@ public:
             
             _moveOffer();
             _licenseCheck();
+            _updateCheck();
             
 //            _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(2);
             
@@ -1331,7 +1332,7 @@ private:
         
         // Animate until we get a response
         UI::ButtonSpinnerPtr spinner = (button ? UI::ButtonSpinner::Create(button) : nullptr);
-        std::chrono::steady_clock::time_point nextFrameTime;
+        Deadline nextDeadline;
         
         for (;;) {
             if (async.done()) break;
@@ -1339,12 +1340,12 @@ private:
             std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
             if (deadline!=Forever && time>deadline) break;
             
-            if (time > nextFrameTime) {
+            if (time > nextDeadline) {
                 if (spinner) spinner->animate();
-                nextFrameTime = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
+                nextDeadline = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
             }
             
-            track({}, nextFrameTime);
+            track({}, nextDeadline);
         }
     }
     
@@ -1633,55 +1634,18 @@ private:
         _registerPanelShow(Title, Message, true);
     }
     
-    void _licenseCheck() {
-        State::State state(StateDir());
-        
-        License::License license;
-        License::Status st = _licenseUnseal(state.license(), license);
-        if (st == License::Status::Empty) {
-            if (!state.trialExpired()) {
-                _welcomePanelShow();
-            
-            } else {
-                // Show trial-expired panel
-                _trialExpiredPanelShow();
-            }
-        
-        } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            _licenseRenew(state, license);
-        
-        } else if (st == License::Status::Expired) {
-            // Delete license, set expired=1, show trial-expired panel
-            state.license({});
-            state.trialExpired(true);
-            state.write();
-            
-            _trialExpiredPanelShow();
-        
-        } else if (st == License::Status::Valid) {
-            if (license.expiration) {
-                _trialCountdownShow(license);
-            }
-            
-            // Done; debase is registered
-        
-        } else {
-            // Unknown license error
-            // Delete license, show welcome panel
-            state.license({});
-            state.write();
-            
-            _welcomePanelShow();
-        }
+    void _updateAvailablePanelShow(Version version) {
+        _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(version);
+        _updateAvailablePanel->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
+        _updateAvailablePanel->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
     }
     
     void _moveOffer() {
-//        using namespace std::filesystem;
         namespace fs = std::filesystem;
         
         State::State state(StateDir());
-        // Short-circuit if we've already asked the user to move this version of debase
-        if (state.moveOfferVersion() >= DebaseVersion) return;
+        // Short-circuit if we've already asked the user to move this version (or a newer version) of debase
+        if (state.lastMoveOfferVersion() >= DebaseVersion) return;
         
         fs::path currentExecutablePath;
         try {
@@ -1800,7 +1764,7 @@ private:
         _moveDebasePanel = nullptr;
         
         // We offerred to move debase; update State so we remember that we did so
-        state.moveOfferVersion(DebaseVersion);
+        state.lastMoveOfferVersion(DebaseVersion);
         state.write();
         
         // Bail if the user doesn't want to move
@@ -1839,6 +1803,139 @@ private:
         });
     }
     
+    void _licenseCheck() {
+        State::State state(StateDir());
+        
+        License::License license;
+        License::Status st = _licenseUnseal(state.license(), license);
+        if (st == License::Status::Empty) {
+            if (!state.trialExpired()) {
+                _welcomePanelShow();
+            
+            } else {
+                // Show trial-expired panel
+                _trialExpiredPanelShow();
+            }
+        
+        } else if (st==License::Status::InvalidMachineId && !license.expiration) {
+            _licenseRenew(state, license);
+        
+        } else if (st == License::Status::Expired) {
+            // Delete license, set expired=1, show trial-expired panel
+            state.license(License::SealedLicense{});
+            state.trialExpired(true);
+            state.write();
+            
+            _trialExpiredPanelShow();
+        
+        } else if (st == License::Status::Valid) {
+            if (license.expiration) {
+                _trialCountdownShow(license);
+            }
+            
+            // Done; debase is registered
+        
+        } else {
+            // Unknown license error
+            // Delete license, show welcome panel
+            state.license(License::SealedLicense{});
+            state.write();
+            
+            _welcomePanelShow();
+        }
+    }
+    
+    void _updateCheckActionDownload() {
+        OpenURL(DebaseDownloadURL);
+    }
+    
+    void _updateCheckActionIgnore() {
+        State::State state(StateDir());
+        state.updateIgnoreVersion();
+    }
+    
+    void _updateCheck() {
+        using namespace std::chrono;
+        
+        State::State state(StateDir());
+        
+        // Show the update-available dialog if we're already aware that an update is available
+        // and the user hasn't ignored that version.
+        if (state.updateVersion()>DebaseVersion && state.updateVersion()>state.updateIgnoreVersion()) {
+            _updateAvailablePanelShow(state.updateVersion());
+            return;
+        }
+        
+        const std::time_t currentTime = system_clock::to_time_t(system_clock::now());
+        
+        // If updateCheckTime is uninitialized, set it to the current time and return.
+        // We don't check for updates in this case, because we don't want to do network IO
+        // when debase is initially launched.
+        const system_clock::time_point updateCheckTime = system_clock::from_time_t(state.updateCheckTime());
+        if (updateCheckTime.time_since_epoch() == system_clock::duration::zero()) {
+            state.updateCheckTime(currentTime);
+            state.write();
+            return;
+        }
+        
+        // Rate-limit update checks to once per week
+        constexpr auto Week = seconds(60*60*24*7);
+        if (system_clock::now()-updateCheckTime < Week) return;
+        
+        Version latestVersion = 0;
+        auto async = Async([&]() {
+            Network::Request(DebaseCurrentVersionURL, nullptr, latestVersion);
+        });
+        
+        _waitForAsync(async);
+        try {
+            latestVersion = 2;
+//            async.get();
+        } catch (...) {
+            // Version check failed
+            return;
+        }
+        
+        state.updateVersion(latestVersion);
+        state.updateCheckTime(currentTime);
+        state.write();
+        
+        // Show the update-available dialog if the latest version is greater than our current version,
+        // and the user hasn't ignored that version.
+        if (latestVersion>DebaseVersion && latestVersion>state.updateIgnoreVersion()) {
+            _updateAvailablePanelShow(latestVersion);
+        }
+        
+//        // If the latest version is <= our version, there's nothing to do
+//        if (latestVersion <= DebaseVersion) return;
+//        if (latestVersion <= state.updateIgnoreVersion()) return;
+//        
+//        _updateAvailablePanel = subviewCreate<UI::UpdateAvailablePanel>(latestVersion);
+//        
+//        
+//        
+//        if (resp<=DebaseVersion resp>state.lastIgnoredUpdateVersion()) {
+//        
+//        }
+//        
+//        system_clock::from_time_t(license.expiration)
+//        
+//        if (lastIgnoredUpdateTime > )
+//        
+//        state.
+//        
+//        system_clock::from_time_t(license.expiration)
+//        
+//            {"lastIgnoredUpdateTime", state.lastIgnoredUpdateTime},
+//            {"lastIgnoredUpdateVersion", state.lastIgnoredUpdateVersion},
+//        
+//        _updateCheckAsync = AsyncFn<Version>([]() {
+//            Version resp = 0;
+//            Network::Request(DebaseCurrentVersionURL, nullptr, resp);
+//            return resp;
+//        });
+    }
+    
     Git::Repo _repo;
     std::vector<Git::Rev> _revs;
     
@@ -1867,6 +1964,8 @@ private:
     
     _Selection _selection;
     std::optional<UI::Rect> _selectionRect;
+    
+//    AsyncFn<Version> _updateCheckAsync;
     
     UI::TrialCountdownPanelPtr _trialCountdownPanel;
     UI::WelcomePanelPtr _welcomePanel;

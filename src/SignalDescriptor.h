@@ -18,9 +18,9 @@ public:
         swap(fd);
     }
     
-//    ~SignalDescriptor() {
-//        printf("~SignalDescriptor(%d)\n", (int)*this);
-//    }
+    ~SignalDescriptor() {
+        printf("~SignalDescriptor(%d)\n", (int)*this);
+    }
     
     void signal() {
         // Set our flag, which also ensures memory consistency (instead of relying on the fd signal).

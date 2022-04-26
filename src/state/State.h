@@ -161,7 +161,11 @@ private:
         License::SealedLicense license;
         bool trialExpired = false;
         Theme theme = Theme::None;
-        Version moveOfferVersion = 0; // The last debase version that was offerred to be moved
+        Version lastMoveOfferVersion = 0; // The last debase version that was offerred to be moved
+        
+        Version updateVersion = 0;       // Cached value for the most recent version, returned by server
+        int64_t updateCheckTime = 0;     // The most recent time that we checked for an update
+        Version updateIgnoreVersion = 0; // The most recent version that the user ignored
     };
     
     static constexpr uint32_t _Version = 0; // State format version (not Debase version)
@@ -182,7 +186,12 @@ private:
             j.at("license").get_to(state.license);
             j.at("trialExpired").get_to(state.trialExpired);
             j.at("theme").get_to(state.theme);
-            j.at("moveOfferVersion").get_to(state.moveOfferVersion);
+            
+            j.at("lastMoveOfferVersion").get_to(state.lastMoveOfferVersion);
+            
+            j.at("updateVersion").get_to(state.updateVersion);
+            j.at("updateCheckTime").get_to(state.updateCheckTime);
+            j.at("updateIgnoreVersion").get_to(state.updateIgnoreVersion);
         }
     }
     
@@ -193,7 +202,12 @@ private:
             {"license", state.license},
             {"trialExpired", state.trialExpired},
             {"theme", state.theme},
-            {"moveOfferVersion", state.moveOfferVersion},
+            
+            {"lastMoveOfferVersion", state.lastMoveOfferVersion},
+            
+            {"updateVersion", state.updateVersion},
+            {"updateCheckTime", state.updateCheckTime},
+            {"updateIgnoreVersion", state.updateIgnoreVersion},
         };
         f << std::setw(4) << j;
     }
@@ -294,17 +308,26 @@ public:
         _StateWrite(_StateFilePath(_rootDir), _state);
     }
     
-    const License::SealedLicense& license() const { return _state.license; }
-    void license(const License::SealedLicense& x) { _state.license = x; }
+    const auto& license() const { return _state.license; }
+    template <typename T> void license(const T& x) { _state.license = x; }
     
-    bool trialExpired() const { return _state.trialExpired; }
-    void trialExpired(bool x) { _state.trialExpired = x; }
+    const auto& trialExpired() const { return _state.trialExpired; }
+    template <typename T> void trialExpired(const T& x) { _state.trialExpired = x; }
     
-    Version moveOfferVersion() const { return _state.moveOfferVersion; }
-    void moveOfferVersion(Version x) { _state.moveOfferVersion = x; }
+    const auto& theme() const { return _state.theme; }
+    template <typename T> void theme(const T& x) { _state.theme = x; }
     
-    Theme theme() const { return _state.theme; }
-    void theme(Theme x) { _state.theme = x; }
+    const auto& lastMoveOfferVersion() const { return _state.lastMoveOfferVersion; }
+    template <typename T> void lastMoveOfferVersion(const T& x) { _state.lastMoveOfferVersion = x; }
+    
+    const auto& updateVersion() const { return _state.updateVersion; }
+    template <typename T> void updateVersion(const T& x) { _state.updateVersion = x; }
+    
+    const auto& updateCheckTime() const { return _state.updateCheckTime; }
+    template <typename T> void updateCheckTime(const T& x) { _state.updateCheckTime = x; }
+    
+    const auto& updateIgnoreVersion() const { return _state.updateIgnoreVersion; }
+    template <typename T> void updateIgnoreVersion(const T& x) { _state.updateIgnoreVersion = x; }
 };
 
 // MARK: - RepoState

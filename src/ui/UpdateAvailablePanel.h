@@ -13,8 +13,8 @@ public:
         condensed                       (true);
         okButton()->label()->text       ("Download");
         dismissButton()->label()->text  ("Ignore");
-        okButton()->action              ([] (UI::Button&) {});
-        dismissButton()->action         ([] (UI::Button&) {});
+//        okButton()->action              ([] (UI::Button&) {});
+//        dismissButton()->action         ([] (UI::Button&) {});
         truncateEdges                   (UI::Edges{.l=0, .r=0, .t=0, .b=1});
     }
     
