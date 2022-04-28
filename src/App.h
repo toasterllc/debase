@@ -301,6 +301,14 @@ public:
                 break;
             }
         
+        // Bubble up
+        } catch (const UI::WindowResize&) {
+            throw;
+        
+        // Bubble up
+        } catch (const UI::ExitRequest&) {
+            throw;
+        
         } catch (const std::exception& e) {
             errorMsg = e.what();
         }

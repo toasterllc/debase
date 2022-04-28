@@ -162,8 +162,8 @@ struct GraphicsState {
     bool orderPanels = false;
 };
 
-struct ExitRequest : std::exception {};
 struct WindowResize : std::exception {};
+struct ExitRequest : std::exception {};
 
 enum class Align {
     Left,
