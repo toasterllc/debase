@@ -175,6 +175,7 @@ public:
     }
     
     bool handleEvent(const UI::Event& ev) override {
+        std::string errorMsg;
         try {
 //            if (_messagePanel) {
 //                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
@@ -289,20 +290,23 @@ public:
             }}
         
         } catch (const Git::Error& e) {
-            std::string errorMsg;
-            
             switch (e.error) {
             case GIT_EUNMERGED:
             case GIT_EMERGECONFLICT:
-                errorMsg = "A merge conflict occurred";
+                errorMsg = "a merge conflict occurred";
                 break;
             
             default:
                 errorMsg = e.what();
-                errorMsg[0] = toupper(errorMsg[0]);
                 break;
             }
-            
+        
+        } catch (const std::exception& e) {
+            errorMsg = e.what();
+        }
+        
+        if (!errorMsg.empty()) {
+            errorMsg[0] = toupper(errorMsg[0]);
             _errorMessageRun(errorMsg, false);
         }
         
