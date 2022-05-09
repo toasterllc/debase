@@ -37,10 +37,11 @@ type CommandLicenseEmailSend struct {
 
 // Replies
 
-type Reply struct {
-	Error   string      `json:"error"`
-	Payload interface{} `json:"payload"`
-}
+type Reply interface{}
 
-type ReplyLicenseLookup license.HTTPSealedLicense
-type ReplyTrialLookup license.HTTPSealedLicense
+type ReplyLicenseLookup struct {
+	Error   string `json:"error"`
+	Payload struct {
+		License license.HTTPSealedLicense `json:"license"`
+	} `json:"payload"`
+}

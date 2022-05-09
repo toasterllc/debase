@@ -108,15 +108,15 @@ func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	}, nil
 }
 
-func replyErr(userErr error, logErr string, logArgs ...interface{}) (*Reply, error) {
-	var reply *Reply
+func replyErr(userErr error, logErr string, logArgs ...interface{}) (*ReplyLicenseLookup, error) {
+	var reply *ReplyLicenseLookup
 	if userErr != nil {
-		reply = &Reply{Error: userErr.Error()}
+		reply = &ReplyLicenseLookup{Error: userErr.Error()}
 	}
 	return reply, fmt.Errorf(logErr, logArgs...)
 }
 
-func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*ReplyLicenseLookup, error) {
 	var cmd CommandLicenseLookup
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
@@ -218,10 +218,12 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, p json.Raw
 		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &Reply{Payload: ReplyLicenseLookup(sealed)}, nil
+	var reply ReplyLicenseLookup
+	reply.Payload.License = sealed
+	return &reply, nil
 }
 
-func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*ReplyLicenseLookup, error) {
 	var cmd CommandTrialLookup
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
@@ -310,19 +312,21 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, p json.RawMe
 		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &Reply{Payload: ReplyTrialLookup(sealed)}, nil
+	var reply ReplyLicenseLookup
+	reply.Payload.License = sealed
+	return &reply, nil
 }
 
-func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.RawMessage) error {
 	var cmd CommandLicenseEmailSend
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
-		return replyErr(nil, "invalid command payload", string(p))
+		return fmt.Errorf("invalid command payload")
 	}
 
 	email, err := license.EmailForString(cmd.Email)
 	if err != nil {
-		return replyErr(nil, "license.EmailForString() failed: %w", err)
+		return fmt.Errorf("license.EmailForString() failed: %w", err)
 	}
 	uid := license.DBUserIdForEmail(DebaseProductId, email)
 
@@ -348,7 +352,7 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.
 	})
 
 	if err != nil {
-		return replyErr(nil, "db.RunTransaction() failed: %w", err)
+		return fmt.Errorf("db.RunTransaction() failed: %w", err)
 	}
 
 	awsAccessKey := os.Getenv("AWS_ACCESS_KEY_ID")
@@ -360,13 +364,13 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.
 	body := fmt.Sprintf(LicenseEmailBody, strings.Join(codes, ", "))
 	err = sesgo.SendEmail(awsAccessKey, awsSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
 	if err != nil {
-		return replyErr(nil, "sesgo.SendEmail() failed: %w", err)
+		return fmt.Errorf("sesgo.SendEmail() failed: %w", err)
 	}
 
-	return nil, nil
+	return nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
+func handler(w http.ResponseWriter, r *http.Request) (Reply, error) {
 	ctx := r.Context()
 
 	var cmd Command
@@ -381,7 +385,7 @@ func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
 	case TrialLookup:
 		return handlerTrialLookup(ctx, w, cmd.Payload)
 	case LicenseEmailSend:
-		return handlerLicenseEmailSend(ctx, w, cmd.Payload)
+		return nil, handlerLicenseEmailSend(ctx, w, cmd.Payload)
 	default:
 		return nil, fmt.Errorf("invalid command type: %v", cmd.Type)
 	}
@@ -389,18 +393,18 @@ func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
 
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
-	reply, err := handler(w, r)
+	reply, errLog := handler(w, r)
 
 	// Log the error before doing anything else
-	if err != nil {
-		log.Printf("Error: %v", err)
+	if errLog != nil {
+		log.Printf("Error: %v", errLog)
 	}
 
 	// If there was a reply, write it and return (which implicitly triggers an HTTP 200).
 	// A 200 doesn't mean we succeeded, it just means that we returned a valid json response
 	// to the client.
 	if reply != nil {
-		err = json.NewEncoder(w).Encode(reply)
+		err := json.NewEncoder(w).Encode(reply)
 		if err != nil {
 			log.Printf("json.NewEncoder().Encode() failed: %w", err)
 		}
