@@ -30,8 +30,9 @@ type DBLicense struct {
 }
 
 type DBLicenses struct {
-	Email    string
-	Licenses map[LicenseCode]*DBLicense
+	Email                     string
+	Licenses                  map[LicenseCode]*DBLicense
+	LastLicenseEmailTimestamp int64
 }
 
 // Helper Functions

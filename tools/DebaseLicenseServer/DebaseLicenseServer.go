@@ -43,6 +43,7 @@ If you have any questions please respond to this email.
 
 Toaster Support
 `
+const LicenseEmailRateLimit = 10 * time.Minute
 
 var DebaseProductId = C.GoString(C.DebaseProductId)
 
@@ -347,6 +348,21 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.
 		err = licsDoc.DataTo(&lics)
 		if err != nil {
 			return fmt.Errorf("licsDoc.DataTo() failed: %w", err)
+		}
+
+		now := time.Now()
+		lastLicenseEmailTimestamp := time.Unix(lics.LastLicenseEmailTimestamp, 0)
+
+		if now.Sub(lastLicenseEmailTimestamp) < LicenseEmailRateLimit {
+			return fmt.Errorf("rejecting license-email-send request due to rate limit")
+		}
+
+		// Update time of last email being sent
+		lics.LastLicenseEmailTimestamp = now.Unix()
+
+		err = tx.Set(licsRef, lics)
+		if err != nil {
+			return fmt.Errorf("tx.Set() failed for UserId=%v", uid)
 		}
 
 		return nil
