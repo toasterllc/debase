@@ -45,3 +45,5 @@ type ReplyLicenseLookup struct {
 		License license.HTTPSealedLicense `json:"license"`
 	} `json:"payload"`
 }
+
+type ReplyLicenseEmailSend struct{}
