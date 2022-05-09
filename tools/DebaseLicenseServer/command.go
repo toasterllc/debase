@@ -44,4 +44,3 @@ type Reply struct {
 
 type ReplyLicenseLookup license.HTTPSealedLicense
 type ReplyTrialLookup license.HTTPSealedLicense
-type ReplyLicenseEmailSend struct{}

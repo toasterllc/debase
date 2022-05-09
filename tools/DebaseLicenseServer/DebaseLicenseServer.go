@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 	"unsafe"
 
 	// "github.com/heytoaster/sesgo"
+	"github.com/heytoaster/sesgo"
 	"heytoaster.com/DebaseLicenseServer/license"
 
 	"cloud.google.com/go/firestore"
@@ -29,6 +32,16 @@ const TrialsCollection = "debase-trials"
 const TrialDuration = 7 * 24 * time.Hour
 const TrialIssueCountMax = 25
 const MachineCountMax = 3
+const ToasterSupportEmail = "Toaster Support <support@heytoaster.com>"
+const LicenseEmailSubject = "Debase License"
+const LicenseEmailBody = `
+Hello, please find your debase license codes below.
+
+    %v
+
+Thanks!
+Toaster
+`
 
 var DebaseProductId = C.GoString(C.DebaseProductId)
 
@@ -307,7 +320,50 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.
 		return replyErr(nil, "invalid command payload", string(p))
 	}
 
-	return &Reply{Payload: ReplyLicenseEmailSend{}}, nil
+	email, err := license.EmailForString(cmd.Email)
+	if err != nil {
+		return replyErr(nil, "license.EmailForString() failed: %w", err)
+	}
+	uid := license.DBUserIdForEmail(DebaseProductId, email)
+
+	var lics *license.DBLicenses
+	licsRef := db.Collection(LicensesCollection).Doc(string(uid))
+	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		// Transactions can run multiple times, where the last one wins.
+		// So make sure that our output vars are cleared by default, so they don't
+		// contain values from a previous transaction
+		lics = nil
+
+		licsDoc, err := tx.Get(licsRef)
+		if err != nil {
+			return fmt.Errorf("tx.Get() failed for UserId=%v: %w", uid, err)
+		}
+
+		err = licsDoc.DataTo(&lics)
+		if err != nil {
+			return fmt.Errorf("licsDoc.DataTo() failed: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return replyErr(nil, "db.RunTransaction() failed: %w", err)
+	}
+
+	awsAccessKey := os.Getenv("AWS_ACCESS_KEY_ID")
+	awsSecretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	codes := []string{}
+	for code := range lics.Licenses {
+		codes = append(codes, string(code))
+	}
+	body := fmt.Sprintf(LicenseEmailBody, strings.Join(codes, ", "))
+	err = sesgo.SendEmail(awsAccessKey, awsSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
+	if err != nil {
+		return replyErr(nil, "sesgo.SendEmail() failed: %w", err)
+	}
+
+	return nil, nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
