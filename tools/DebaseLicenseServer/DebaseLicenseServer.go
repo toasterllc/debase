@@ -103,8 +103,8 @@ func replyErr(userErr error, logErr string, logArgs ...interface{}) (*Reply, err
 	return reply, fmt.Errorf(logErr, logArgs...)
 }
 
-func handlerLookupLicense(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
-	var cmd LookupLicenseCommand
+func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd CommandLicenseLookup
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
 		return replyErr(LicenseNotFoundErr, "invalid command payload", string(p))
@@ -205,11 +205,11 @@ func handlerLookupLicense(ctx context.Context, w http.ResponseWriter, p json.Raw
 		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &Reply{Payload: LookupLicenseReply(sealed)}, nil
+	return &Reply{Payload: ReplyLicenseLookup(sealed)}, nil
 }
 
-func handlerLookupTrial(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
-	var cmd LookupTrialCommand
+func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd CommandTrialLookup
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
 		return replyErr(LicenseNotFoundErr, "invalid command payload", string(p))
@@ -297,17 +297,17 @@ func handlerLookupTrial(ctx context.Context, w http.ResponseWriter, p json.RawMe
 		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &Reply{Payload: LookupTrialReply(sealed)}, nil
+	return &Reply{Payload: ReplyTrialLookup(sealed)}, nil
 }
 
-func handlerSendLicenseEmail(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
-	var cmd SendLicenseEmailCommand
+func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd CommandLicenseEmailSend
 	err := json.Unmarshal(p, &cmd)
 	if err != nil {
 		return replyErr(nil, "invalid command payload", string(p))
 	}
 
-	return &Reply{Payload: SendEmailReply{}}, nil
+	return &Reply{Payload: ReplyLicenseEmailSend{}}, nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
@@ -320,12 +320,12 @@ func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
 	}
 
 	switch cmd.Type {
-	case LookupLicense:
-		return handlerLookupLicense(ctx, w, cmd.Payload)
-	case LookupTrial:
-		return handlerLookupTrial(ctx, w, cmd.Payload)
-	case SendLicenseEmail:
-		return handlerSendLicenseEmail(ctx, w, cmd.Payload)
+	case LicenseLookup:
+		return handlerLicenseLookup(ctx, w, cmd.Payload)
+	case TrialLookup:
+		return handlerTrialLookup(ctx, w, cmd.Payload)
+	case LicenseEmailSend:
+		return handlerLicenseEmailSend(ctx, w, cmd.Payload)
 	default:
 		return nil, fmt.Errorf("invalid command type: %v", cmd.Type)
 	}

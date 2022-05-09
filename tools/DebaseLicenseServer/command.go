@@ -9,9 +9,9 @@ import (
 // Commands
 
 const (
-	LookupLicense    = "LookupLicense"
-	LookupTrial      = "LookupTrial"
-	SendLicenseEmail = "SendLicenseEmail"
+	LicenseLookup    = "LicenseLookup"
+	TrialLookup      = "TrialLookup"
+	LicenseEmailSend = "LicenseEmailSend"
 )
 
 type Command struct {
@@ -19,19 +19,19 @@ type Command struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-type LookupLicenseCommand struct {
+type CommandLicenseLookup struct {
 	Email       string `json:"email"`
 	LicenseCode string `json:"licenseCode"`
 	MachineId   string `json:"machineId"`
 	MachineInfo string `json:"machineInfo"`
 }
 
-type LookupTrialCommand struct {
+type CommandTrialLookup struct {
 	MachineId   string `json:"machineId"`
 	MachineInfo string `json:"machineInfo"`
 }
 
-type SendLicenseEmailCommand struct {
+type CommandLicenseEmailSend struct {
 	Email string `json:"email"`
 }
 
@@ -42,6 +42,6 @@ type Reply struct {
 	Payload interface{} `json:"payload"`
 }
 
-type LookupLicenseReply license.HTTPSealedLicense
-type LookupTrialReply license.HTTPSealedLicense
-type SendEmailReply struct{}
+type ReplyLicenseLookup license.HTTPSealedLicense
+type ReplyTrialLookup license.HTTPSealedLicense
+type ReplyLicenseEmailSend struct{}
