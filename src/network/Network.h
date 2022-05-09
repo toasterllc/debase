@@ -54,8 +54,6 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     
     // Decode response
     {
-        volatile const std::string x = respStream.str();
-        std::string str = "{\"error\":\"The existing trial has already expired.\",\"payload\":null}\n";
         nlohmann::json j = nlohmann::json::parse(respStream.str());
         j.get_to(resp);
     }

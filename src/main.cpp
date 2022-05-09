@@ -143,11 +143,11 @@ static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
 //}
 
 int main(int argc, const char* argv[]) {
-    std::string str = "{\"error\":\"The existing trial has already expired.\"}\n";
-    License::Server::ReplyLicenseLookup resp;
-    nlohmann::json j = nlohmann::json::parse(str);
-    j.get_to(resp);
-    return 0;
+//    std::string str = "{\"error\":\"The existing trial has already expired.\"}\n";
+//    License::Server::ReplyLicenseLookup resp;
+//    nlohmann::json j = nlohmann::json::parse(str);
+//    j.get_to(resp);
+//    return 0;
     
     
     
