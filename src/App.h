@@ -1450,14 +1450,14 @@ private:
     }
     
     bool _trialLookup(UI::AlertPtr panel, UI::ButtonPtr animateButton) {
-        const auto cmd = _lookupTrialCommand();
+        const auto cmd = _commandTrialLookup();
         std::optional<License::License> license = _licenseLookupRun(panel, animateButton, cmd);
         if (!license) return false;
         _trialCountdownAlert = _trialCountdownAlertCreate(*license);
         return true;
     }
     
-    License::Server::CommandTrialLookup _lookupTrialCommand() {
+    License::Server::CommandTrialLookup _commandTrialLookup() {
         return {
             .payload = {
                 .machineId      = _licenseCtxGet().machineId,
@@ -1465,7 +1465,7 @@ private:
         }};
     }
     
-    License::Server::CommandLicenseLookup _lookupLicenseCommand(std::string_view email, std::string_view licenseCode) {
+    License::Server::CommandLicenseLookup _commandLicenseLookup(std::string_view email, std::string_view licenseCode) {
         return {
             .payload = {
                 .machineId      = _licenseCtxGet().machineId,
@@ -1566,7 +1566,7 @@ private:
             if (*choice) {
                 const std::string email = panel->email()->value();
                 const std::string licenseCode = panel->code()->value();
-                const auto cmd = _lookupLicenseCommand(email, licenseCode);
+                const auto cmd = _commandLicenseLookup(email, licenseCode);
                 bool ok = (bool)_licenseLookupRun(panel, panel->okButton(), cmd);
                 if (ok) {
                     _trialCountdownAlert = nullptr;
@@ -1618,7 +1618,7 @@ private:
 //        });
 //        _registerAlert->layoutNeeded(true);
         
-        const auto cmd = _lookupLicenseCommand(license.email, license.licenseCode);
+        const auto cmd = _commandLicenseLookup(license.email, license.licenseCode);
         
         // Request license and wait until we get a response
         License::Server::ReplyLicenseLookup reply;
