@@ -12,6 +12,7 @@ import (
 	"time"
 	"unsafe"
 
+	// "github.com/heytoaster/sesgo"
 	"heytoaster.com/DebaseLicenseServer/license"
 
 	"cloud.google.com/go/firestore"
@@ -94,30 +95,36 @@ func sealedLicense(lic license.HTTPLicense) (license.HTTPSealedLicense, error) {
 	}, nil
 }
 
-func respErr(userErr error, logErr string, logArgs ...interface{}) (*license.HTTPResponse, error) {
-	var httpResp *license.HTTPResponse
+func replyErr(userErr error, logErr string, logArgs ...interface{}) (*Reply, error) {
+	var reply *Reply
 	if userErr != nil {
-		httpResp = &license.HTTPResponse{Error: userErr.Error()}
+		reply = &Reply{Error: userErr.Error()}
 	}
-	return httpResp, fmt.Errorf(logErr, logArgs...)
+	return reply, fmt.Errorf(logErr, logArgs...)
 }
 
-func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
-	email, err := license.EmailForString(req.Email)
+func handlerLookupLicense(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd LookupLicenseCommand
+	err := json.Unmarshal(p, &cmd)
 	if err != nil {
-		return respErr(LicenseNotFoundErr, "license.EmailForString() failed: %w", err)
+		return replyErr(LicenseNotFoundErr, "invalid command payload", string(p))
 	}
 
-	mid, err := license.MachineIdForString(req.MachineId)
+	email, err := license.EmailForString(cmd.Email)
 	if err != nil {
-		return respErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+		return replyErr(LicenseNotFoundErr, "license.EmailForString() failed: %w", err)
 	}
 
-	minfo := license.MachineInfoForString(req.MachineInfo)
-
-	code, err := license.LicenseCodeForString(req.LicenseCode)
+	mid, err := license.MachineIdForString(cmd.MachineId)
 	if err != nil {
-		return respErr(LicenseNotFoundErr, "license.LicenseCodeForString() failed: %w", err)
+		return replyErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+	}
+
+	minfo := license.MachineInfoForString(cmd.MachineInfo)
+
+	code, err := license.LicenseCodeForString(cmd.LicenseCode)
+	if err != nil {
+		return replyErr(LicenseNotFoundErr, "license.LicenseCodeForString() failed: %w", err)
 	}
 
 	uid := license.DBUserIdForEmail(DebaseProductId, email)
@@ -185,7 +192,7 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 	})
 
 	if err != nil {
-		return respErr(userErr, "db.RunTransaction() failed: %w", err)
+		return replyErr(userErr, "db.RunTransaction() failed: %w", err)
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{
@@ -195,19 +202,25 @@ func handlerLicense(ctx context.Context, w http.ResponseWriter, req license.HTTP
 		Version:     lic.Version,
 	})
 	if err != nil {
-		return respErr(nil, "sealedLicense() failed: %w", err)
+		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &license.HTTPResponse{License: sealed}, nil
+	return &Reply{Payload: LookupLicenseReply(sealed)}, nil
 }
 
-func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRequest) (*license.HTTPResponse, error) {
-	mid, err := license.MachineIdForString(req.MachineId)
+func handlerLookupTrial(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd LookupTrialCommand
+	err := json.Unmarshal(p, &cmd)
 	if err != nil {
-		return respErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+		return replyErr(LicenseNotFoundErr, "invalid command payload", string(p))
 	}
 
-	minfo := license.MachineInfoForString(req.MachineInfo)
+	mid, err := license.MachineIdForString(cmd.MachineId)
+	if err != nil {
+		return replyErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+	}
+
+	minfo := license.MachineInfoForString(cmd.MachineInfo)
 
 	// Create the trial license that we'll insert if one doesn't already exist
 	trialNew := trialCreate(minfo)
@@ -261,7 +274,7 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRe
 	})
 
 	if err != nil {
-		return respErr(nil, "db.RunTransaction() failed: %w", err)
+		return replyErr(nil, "db.RunTransaction() failed: %w", err)
 	}
 
 	// Check if license is expired
@@ -272,7 +285,7 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRe
 	// hopefully unrecoverable.
 	expiration := time.Unix(trial.Expiration, 0)
 	if time.Now().After(expiration) {
-		return respErr(TrialExpiredErr, "trial expired for MachineId=%v", mid)
+		return replyErr(TrialExpiredErr, "trial expired for MachineId=%v", mid)
 	}
 
 	sealed, err := sealedLicense(license.HTTPLicense{
@@ -281,57 +294,65 @@ func handlerTrial(ctx context.Context, w http.ResponseWriter, req license.HTTPRe
 		Expiration: trial.Expiration,
 	})
 	if err != nil {
-		return respErr(nil, "sealedLicense() failed: %w", err)
+		return replyErr(nil, "sealedLicense() failed: %w", err)
 	}
 
-	return &license.HTTPResponse{License: sealed}, nil
+	return &Reply{Payload: LookupTrialReply(sealed)}, nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) (*license.HTTPResponse, error) {
+func handlerSendLicenseEmail(ctx context.Context, w http.ResponseWriter, p json.RawMessage) (*Reply, error) {
+	var cmd SendLicenseEmailCommand
+	err := json.Unmarshal(p, &cmd)
+	if err != nil {
+		return replyErr(nil, "invalid command payload", string(p))
+	}
+
+	return &Reply{Payload: SendEmailReply{}}, nil
+}
+
+func handler(w http.ResponseWriter, r *http.Request) (*Reply, error) {
 	ctx := r.Context()
 
-	var req license.HTTPRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	var cmd Command
+	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
 		return nil, fmt.Errorf("json.NewDecoder() failed: %w", err)
 	}
 
-	// req, err = reqSanitize(req)
-	// if err != nil {
-	//     return &license.HTTPResponse{Error: LicenseNotFoundErr.Error()}, fmt.Errorf("reqSanitize failed: %w", err)
-	// }
-
-	if req.Email != "" {
-		// License request
-		return handlerLicense(ctx, w, req)
-
-	} else {
-		// Trial request
-		return handlerTrial(ctx, w, req)
+	switch cmd.Type {
+	case LookupLicense:
+		return handlerLookupLicense(ctx, w, cmd.Payload)
+	case LookupTrial:
+		return handlerLookupTrial(ctx, w, cmd.Payload)
+	case SendLicenseEmail:
+		return handlerSendLicenseEmail(ctx, w, cmd.Payload)
+	default:
+		return nil, fmt.Errorf("invalid command type: %v", cmd.Type)
 	}
 }
 
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
-	resp, err := handler(w, r)
+	reply, err := handler(w, r)
 
 	// Log the error before doing anything else
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
 
-	// If there was a response, write it and return (which implicitly triggers an HTTP 200).
+	// If there was a reply, write it and return (which implicitly triggers an HTTP 200).
 	// A 200 doesn't mean we succeeded, it just means that we returned a valid json response
 	// to the client.
-	if resp != nil {
-		err = json.NewEncoder(w).Encode(resp)
+	if reply != nil {
+		err = json.NewEncoder(w).Encode(reply)
 		if err != nil {
 			log.Printf("json.NewEncoder().Encode() failed: %w", err)
 		}
 		return
 	}
 
-	// Deliberately not divulging the error in the response, for security and to protect our licensing scheme
+	// Deliberately not divulging the error in the response, for security and to protect
+	// our licensing scheme
 	// The actual errors are logged via log.Printf()
 	http.Error(w, "Error", http.StatusBadRequest)
 }
