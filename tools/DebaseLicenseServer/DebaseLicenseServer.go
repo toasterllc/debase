@@ -39,8 +39,9 @@ Hello, please find your debase license codes below.
 
     %v
 
-Thanks!
-Toaster
+If you have any questions please respond to this email.
+
+Toaster Support
 `
 
 var DebaseProductId = C.GoString(C.DebaseProductId)
@@ -385,6 +386,8 @@ func handler(w http.ResponseWriter, r *http.Request) (Reply, error) {
 	case TrialLookup:
 		return handlerTrialLookup(ctx, w, cmd.Payload)
 	case LicenseEmailSend:
+		// We never return a reply because we don't want to give any indication
+		// as to whether the email address is being used
 		return nil, handlerLicenseEmailSend(ctx, w, cmd.Payload)
 	default:
 		return nil, fmt.Errorf("invalid command type: %v", cmd.Type)
