@@ -8,17 +8,6 @@ import (
 
 // Commands
 
-const (
-	LicenseLookup    = "LicenseLookup"
-	TrialLookup      = "TrialLookup"
-	LicenseEmailSend = "LicenseEmailSend"
-)
-
-type Command struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
-
 type CommandLicenseLookup struct {
 	Email       string `json:"email"`
 	LicenseCode string `json:"licenseCode"`
@@ -37,13 +26,9 @@ type CommandLicenseEmailSend struct {
 
 // Replies
 
-type Reply interface{}
-
 type ReplyLicenseLookup struct {
-	Error   string `json:"error"`
-	Payload struct {
-		License license.HTTPSealedLicense `json:"license"`
-	} `json:"payload"`
+	Error   string                    `json:"error"`
+	License license.HTTPSealedLicense `json:"license"`
 }
 
 type ReplyLicenseEmailSend struct{}
