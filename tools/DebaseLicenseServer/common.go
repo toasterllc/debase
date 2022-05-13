@@ -5,11 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"log"
-	"time"
 	"unsafe"
-
-	// "github.com/heytoaster/sesgo"
 
 	"heytoaster.com/DebaseLicenseServer/license"
 
@@ -34,7 +30,7 @@ var MachineLimitErr = errors.New("The maximum number of machines has already bee
 var TrialExpiredErr = errors.New("The existing trial has already expired.")
 var UnknownErr = errors.New("An unknown error occurred.")
 
-var db *firestore.Client
+var Db *firestore.Client
 
 func sealedLicense(lic license.HTTPLicense) license.HTTPSealedLicense {
 	// Convert `lic` to json

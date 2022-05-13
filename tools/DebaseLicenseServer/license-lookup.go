@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"cloud.google.com/go/firestore"
@@ -50,8 +51,8 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	var lic *license.DBLicense
 	var userErr error
-	licsRef := db.Collection(LicensesCollection).Doc(string(uid))
-	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	licsRef := Db.Collection(LicensesCollection).Doc(string(uid))
+	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins.
 		// So make sure that our output vars are cleared by default, so they don't
 		// contain values from a previous transaction
@@ -103,7 +104,7 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Re
 	})
 
 	if err != nil {
-		return licenseErr(userErr, "db.RunTransaction() failed: %v", err)
+		return licenseErr(userErr, "Db.RunTransaction() failed: %v", err)
 	}
 
 	sealed := sealedLicense(license.HTTPLicense{

@@ -20,7 +20,7 @@ const (
 
 func init() {
 	var err error
-	db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
+	Db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("firestore.NewClient() failed: %v", err)
 	}

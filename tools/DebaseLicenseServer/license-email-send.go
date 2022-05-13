@@ -50,8 +50,8 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 	uid := license.DBUserIdForEmail(DebaseProductId, email)
 
 	var lics *license.DBLicenses
-	licsRef := db.Collection(LicensesCollection).Doc(string(uid))
-	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	licsRef := Db.Collection(LicensesCollection).Doc(string(uid))
+	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins.
 		// So make sure that our output vars are cleared by default, so they don't
 		// contain values from a previous transaction
@@ -86,7 +86,7 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 	})
 
 	if err != nil {
-		return emailErr("db.RunTransaction() failed: %v", err)
+		return emailErr("Db.RunTransaction() failed: %v", err)
 	}
 
 	awsAccessKey := os.Getenv("AWS_ACCESS_KEY_ID")

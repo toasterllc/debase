@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -51,8 +52,8 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	trialNew := trialCreate(minfo)
 
 	var trial *license.DBTrial
-	trialRef := db.Collection(TrialsCollection).Doc(string(mid))
-	err = db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	trialRef := Db.Collection(TrialsCollection).Doc(string(mid))
+	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Get the license
 		trialDoc, err := tx.Get(trialRef)
 		// If we failed to get the license because it didn't exist, create it
@@ -84,7 +85,7 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		// fingerprinting logic isn't perfect.
 		// With many machines potentially using the same machine-id, they'll all reference the
 		// same Firestore document, and lots of machines modifying the same document introduces
-		// contention, resulting in db.RunTransaction() failing. Capping the IssueCount fixes
+		// contention, resulting in Db.RunTransaction() failing. Capping the IssueCount fixes
 		// this contention since we'll stop trying to modify the document once the IssueCount
 		// reaches its max value.
 		if trial.Machine.IssueCount < TrialIssueCountMax {
@@ -99,7 +100,7 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	})
 
 	if err != nil {
-		return trialErr(LicenseNotFoundErr, "db.RunTransaction() failed: %v", err)
+		return trialErr(LicenseNotFoundErr, "Db.RunTransaction() failed: %v", err)
 	}
 
 	// Check if license is expired
