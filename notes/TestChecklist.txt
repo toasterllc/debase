@@ -17,6 +17,9 @@ Redo Delete commits
 Redo Combine commits
 Redo Edit commit
 
+Previously-fixed bug: With no undo history on any branch, copy commits from one branch to another
+    Undo history should now be populated
+
 Delete commits using delete key
 
 History lost when head commit doesn't match saved commit

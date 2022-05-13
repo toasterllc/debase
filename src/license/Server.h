@@ -6,38 +6,27 @@
 namespace License::Server {
 
 struct CommandLicenseLookup {
-    std::string type = "LicenseLookup";
-    struct {
-        Email email;
-        LicenseCode licenseCode;
-        Machine::MachineId machineId;
-        Machine::MachineInfo machineInfo;
-    } payload;
+    Email email;
+    LicenseCode licenseCode;
+    Machine::MachineId machineId;
+    Machine::MachineInfo machineInfo;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(decltype(CommandLicenseLookup::payload), email, licenseCode, machineId, machineInfo);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CommandLicenseLookup, type, payload);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CommandLicenseLookup, email, licenseCode, machineId, machineInfo);
 
 struct CommandTrialLookup {
-    std::string type = "TrialLookup";
-    struct {
-        Machine::MachineId machineId;
-        Machine::MachineInfo machineInfo;
-    } payload;
+    Machine::MachineId machineId;
+    Machine::MachineInfo machineInfo;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(decltype(CommandTrialLookup::payload), machineId, machineInfo);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CommandTrialLookup, type, payload);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CommandTrialLookup, machineId, machineInfo);
 
 struct ReplyLicenseLookup {
     std::string error;
-    struct {
-        SealedLicense license;
-    } payload;
+    SealedLicense license;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(decltype(ReplyLicenseLookup::payload), license);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ReplyLicenseLookup, error, payload);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReplyLicenseLookup, error, license);
 
 } // namespace License::Server
 

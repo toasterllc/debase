@@ -1393,7 +1393,7 @@ private:
     }
     
     template <typename T>
-    std::optional<License::License> _licenseLookupRun(UI::AlertPtr panel, UI::ButtonPtr animateButton, const T& cmd) {
+    std::optional<License::License> _licenseLookupRun(UI::AlertPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
         
 //        // Disable interaction while we wait for the license request
 //        assert(interaction());
@@ -1404,7 +1404,7 @@ private:
         License::Server::ReplyLicenseLookup reply;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseURL, cmd, reply);
+            Network::Request(url, cmd, reply);
         });
         _waitForAsync(async, Forever, panel, animateButton);
         
@@ -1421,7 +1421,7 @@ private:
         }
         
         // Validate response
-        const License::SealedLicense& sealed = reply.payload.license;
+        const License::SealedLicense& sealed = reply.license;
         License::License license;
         License::Status st = _licenseUnseal(sealed, license);
         if (st != License::Status::Valid) {
@@ -1451,7 +1451,7 @@ private:
     
     bool _trialLookup(UI::AlertPtr panel, UI::ButtonPtr animateButton) {
         const auto cmd = _commandTrialLookup();
-        std::optional<License::License> license = _licenseLookupRun(panel, animateButton, cmd);
+        std::optional<License::License> license = _licenseLookupRun(panel, animateButton, DebaseTrialLookupURL, cmd);
         if (!license) return false;
         _trialCountdownAlert = _trialCountdownAlertCreate(*license);
         return true;
@@ -1459,20 +1459,18 @@ private:
     
     License::Server::CommandTrialLookup _commandTrialLookup() {
         return {
-            .payload = {
-                .machineId      = _licenseCtxGet().machineId,
-                .machineInfo    = _licenseCtxGet().machineInfo,
-        }};
+            .machineId      = _licenseCtxGet().machineId,
+            .machineInfo    = _licenseCtxGet().machineInfo,
+        };
     }
     
     License::Server::CommandLicenseLookup _commandLicenseLookup(std::string_view email, std::string_view licenseCode) {
         return {
-            .payload = {
-                .machineId      = _licenseCtxGet().machineId,
-                .machineInfo    = _licenseCtxGet().machineInfo,
-                .email          = std::string(email),
-                .licenseCode    = std::string(licenseCode),
-        }};
+            .machineId      = _licenseCtxGet().machineId,
+            .machineInfo    = _licenseCtxGet().machineInfo,
+            .email          = std::string(email),
+            .licenseCode    = std::string(licenseCode),
+        };
     }
     
 //    void _licenseRenewActionTrial() {
@@ -1567,7 +1565,7 @@ private:
                 const std::string email = panel->email()->value();
                 const std::string licenseCode = panel->code()->value();
                 const auto cmd = _commandLicenseLookup(email, licenseCode);
-                bool ok = (bool)_licenseLookupRun(panel, panel->okButton(), cmd);
+                bool ok = (bool)_licenseLookupRun(panel, panel->okButton(), DebaseLicenseLookupURL, cmd);
                 if (ok) {
                     _trialCountdownAlert = nullptr;
                     _thankYouMessageRun();
@@ -1624,7 +1622,7 @@ private:
         License::Server::ReplyLicenseLookup reply;
         Async async([&] () {
 //            for (;;) sleep(1);
-            Network::Request(DebaseLicenseURL, cmd, reply);
+            Network::Request(DebaseLicenseLookupURL, cmd, reply);
         });
         
         // Wait until the async to complete, or for the timeout to occur, whichever comes first.
@@ -1652,7 +1650,7 @@ private:
             
             // Check the license
             // If it's not valid, show or update the register panel
-            const License::SealedLicense& sealed = reply.payload.license;
+            const License::SealedLicense& sealed = reply.license;
             License::License license;
             License::Status st = _licenseUnseal(sealed, license);
             if (st == License::Status::Valid) {

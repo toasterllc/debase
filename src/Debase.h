@@ -24,7 +24,8 @@ inline const char* DebaseBaseURL            = _DebaseBaseURL;
 inline const char* DebaseDownloadURL        = _DebaseBaseURL;
 inline const char* DebasePurchaseURL        = _DebaseBaseURL;
 inline const char* DebaseCurrentVersionURL  = _DebaseBaseURL "/version";
-inline const char* DebaseLicenseURL         = _DebaseBaseURL "/license";
+inline const char* DebaseLicenseLookupURL   = _DebaseBaseURL "/license/license-lookup";
+inline const char* DebaseTrialLookupURL     = _DebaseBaseURL "/license/trial-lookup";
 
 #if DebaseLicenseServer
 inline const uint8_t DebaseKeyPrivate[] = {
