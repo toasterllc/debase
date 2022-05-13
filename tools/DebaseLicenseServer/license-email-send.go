@@ -29,6 +29,12 @@ If you have any questions please respond to this email.
 Toaster Support
 `
 
+type CommandLicenseEmailSend struct {
+	Email string `json:"email"`
+}
+
+type ReplyLicenseEmailSend struct{}
+
 func emailErr(logFmt string, logArgs ...interface{}) Reply {
 	log.Printf("License email send error: "+logFmt, logArgs...)
 	// We always return a success reply, to ensure we don't divulge

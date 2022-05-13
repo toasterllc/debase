@@ -3,6 +3,7 @@ package DebaseLicenseServer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,21 @@ import (
 )
 
 const MachineCountMax = 3
+
+var LicenseNotFoundErr = errors.New("No matching license was found.")
+var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
+
+type CommandLicenseLookup struct {
+	Email       string `json:"email"`
+	LicenseCode string `json:"licenseCode"`
+	MachineId   string `json:"machineId"`
+	MachineInfo string `json:"machineInfo"`
+}
+
+type ReplyLicenseLookup struct {
+	Error   string                    `json:"error"`
+	License license.HTTPSealedLicense `json:"license"`
+}
 
 func licenseErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
 	log.Printf("License lookup error: "+logFmt, logArgs...)

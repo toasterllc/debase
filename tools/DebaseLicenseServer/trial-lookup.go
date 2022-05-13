@@ -3,6 +3,7 @@ package DebaseLicenseServer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,8 +15,15 @@ import (
 	"heytoaster.com/DebaseLicenseServer/license"
 )
 
+type CommandTrialLookup struct {
+	MachineId   string `json:"machineId"`
+	MachineInfo string `json:"machineInfo"`
+}
+
 const TrialDuration = 7 * 24 * time.Hour
 const TrialIssueCountMax = 25
+
+var TrialExpiredErr = errors.New("The existing trial has already expired.")
 
 func trialCreate(minfo license.MachineInfo) *license.DBTrial {
 	expiration := time.Now().Add(TrialDuration)

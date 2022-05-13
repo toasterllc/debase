@@ -25,9 +25,6 @@ var DebaseProductId = C.GoString(C.DebaseProductId)
 var DebaseKeyPrivate = *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
 var DebaseVersion = uint32(C.DebaseVersion)
 
-var LicenseNotFoundErr = errors.New("No matching license was found.")
-var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
-var TrialExpiredErr = errors.New("The existing trial has already expired.")
 var UnknownErr = errors.New("An unknown error occurred.")
 
 var Db *firestore.Client

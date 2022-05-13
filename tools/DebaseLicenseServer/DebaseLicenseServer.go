@@ -16,6 +16,7 @@ const (
 	EndpointLicenseLookup    = "license-lookup"
 	EndpointTrialLookup      = "trial-lookup"
 	EndpointLicenseEmailSend = "license-email-send"
+	EndpointPaymentIntent    = "payment-intent"
 )
 
 func init() {
@@ -37,6 +38,8 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 		return handlerTrialLookup(ctx, w, r)
 	case EndpointLicenseEmailSend:
 		return handlerLicenseEmailSend(ctx, w, r)
+	case EndpointPaymentIntent:
+		return handlePaymentIntent(ctx, w, r)
 	default:
 		return nil
 	}
