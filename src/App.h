@@ -1185,18 +1185,18 @@ private:
         assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         
-        if (srcRev && srcRev.commit!=srcRevPrev.commit) {
-            State::History& h = _repoState.history(srcRev.ref);
-            h.push({
+        State::History* srcHistory = (srcRev.ref ? &_repoState.history(srcRev.ref) : nullptr);
+        if (srcHistory && srcRev.commit!=srcRevPrev.commit) {
+            srcHistory->push({
                 .head = State::Convert(srcRev.commit),
                 .selection = State::Convert(opResult->src.selection),
                 .selectionPrev = State::Convert(opResult->src.selectionPrev),
             });
         }
         
-        if (dstRev && dstRev.commit!=dstRevPrev.commit && dstRev.commit!=srcRev.commit) {
-            State::History& h = _repoState.history(dstRev.ref);
-            h.push({
+        State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
+        if (dstHistory && dstRev.commit!=dstRevPrev.commit && dstHistory!=srcHistory) {
+            dstHistory->push({
                 .head = State::Convert(dstRev.commit),
                 .selection = State::Convert(opResult->dst.selection),
                 .selectionPrev = State::Convert(opResult->dst.selectionPrev),
