@@ -61,6 +61,7 @@ var DebaseProductId = C.GoString(C.DebaseProductId)
 var LicenseNotFoundErr = errors.New("No matching license was found.")
 var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
 var TrialExpiredErr = errors.New("The existing trial has already expired.")
+var UnknownErr = errors.New("An unknown error occurred.")
 
 var db *firestore.Client
 
@@ -97,15 +98,15 @@ func sealedLicense(lic license.HTTPLicense) license.HTTPSealedLicense {
 	}
 }
 
-func licenseErr(userErr error, logErr string, logArgs ...interface{}) (Reply, error) {
-	var reply Reply
-	if userErr != nil {
-		reply = &ReplyLicenseLookup{Error: userErr.Error()}
+func licenseErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
+	log.Printf("License error: "+logFmt, logArgs...)
+	if userErr == nil {
+		userErr = UnknownErr
 	}
-	return reply, fmt.Errorf(logErr, logArgs...)
+	return &ReplyLicenseLookup{Error: userErr.Error()}
 }
 
-func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) (Reply, error) {
+func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandLicenseLookup
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
@@ -114,19 +115,19 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	email, err := license.EmailForString(cmd.Email)
 	if err != nil {
-		return licenseErr(LicenseNotFoundErr, "license.EmailForString() failed: %w", err)
+		return licenseErr(LicenseNotFoundErr, "license.EmailForString() failed: %v", err)
 	}
 
 	mid, err := license.MachineIdForString(cmd.MachineId)
 	if err != nil {
-		return licenseErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+		return licenseErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %v", err)
 	}
 
 	minfo := license.MachineInfoForString(cmd.MachineInfo)
 
 	code, err := license.LicenseCodeForString(cmd.LicenseCode)
 	if err != nil {
-		return licenseErr(LicenseNotFoundErr, "license.LicenseCodeForString() failed: %w", err)
+		return licenseErr(LicenseNotFoundErr, "license.LicenseCodeForString() failed: %v", err)
 	}
 
 	uid := license.DBUserIdForEmail(DebaseProductId, email)
@@ -186,7 +187,7 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Re
 	})
 
 	if err != nil {
-		return licenseErr(userErr, "db.RunTransaction() failed: %w", err)
+		return licenseErr(userErr, "db.RunTransaction() failed: %v", err)
 	}
 
 	sealed := sealedLicense(license.HTTPLicense{
@@ -198,10 +199,10 @@ func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	return &ReplyLicenseLookup{
 		License: sealed,
-	}, nil
+	}
 }
 
-func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) (Reply, error) {
+func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandTrialLookup
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
@@ -210,7 +211,7 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	mid, err := license.MachineIdForString(cmd.MachineId)
 	if err != nil {
-		return licenseErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %w", err)
+		return licenseErr(LicenseNotFoundErr, "license.MachineIdForString() failed: %v", err)
 	}
 
 	minfo := license.MachineInfoForString(cmd.MachineInfo)
@@ -267,7 +268,7 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	})
 
 	if err != nil {
-		return licenseErr(nil, "db.RunTransaction() failed: %w", err)
+		return licenseErr(LicenseNotFoundErr, "db.RunTransaction() failed: %v", err)
 	}
 
 	// Check if license is expired
@@ -289,19 +290,26 @@ func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	return &ReplyLicenseLookup{
 		License: sealed,
-	}, nil
+	}
 }
 
-func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func emailErr(logFmt string, logArgs ...interface{}) Reply {
+	log.Printf("License email send error: "+logFmt, logArgs...)
+	// We always return a success reply, to ensure we don't divulge
+	// any info about the existence of users
+	return &ReplyLicenseEmailSend{}
+}
+
+func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandLicenseEmailSend
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
-		return fmt.Errorf("invalid command payload")
+		return emailErr("invalid command payload")
 	}
 
 	email, err := license.EmailForString(cmd.Email)
 	if err != nil {
-		return fmt.Errorf("license.EmailForString() failed: %w", err)
+		return emailErr("license.EmailForString() failed: %v", err)
 	}
 	uid := license.DBUserIdForEmail(DebaseProductId, email)
 
@@ -342,7 +350,7 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 	})
 
 	if err != nil {
-		return fmt.Errorf("db.RunTransaction() failed: %w", err)
+		return emailErr("db.RunTransaction() failed: %v", err)
 	}
 
 	awsAccessKey := os.Getenv("AWS_ACCESS_KEY_ID")
@@ -354,13 +362,13 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 	body := fmt.Sprintf(LicenseEmailBody, strings.Join(codes, ", "))
 	err = sesgo.SendEmail(awsAccessKey, awsSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
 	if err != nil {
-		return fmt.Errorf("sesgo.SendEmail() failed: %w", err)
+		return emailErr("sesgo.SendEmail() failed: %v", err)
 	}
 
-	return nil
+	return &ReplyLicenseEmailSend{}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) (Reply, error) {
+func handler(w http.ResponseWriter, r *http.Request) Reply {
 	ctx := r.Context()
 
 	endpoint := path.Base(r.URL.Path)
@@ -370,36 +378,25 @@ func handler(w http.ResponseWriter, r *http.Request) (Reply, error) {
 	case EndpointTrialLookup:
 		return handlerTrialLookup(ctx, w, r)
 	case EndpointLicenseEmailSend:
-		// We always return ReplyEmpty (==success) because we don't want to give any indication
-		// as to whether the email address is being used
-		return ReplyEmpty, handlerLicenseEmailSend(ctx, w, r)
+		return handlerLicenseEmailSend(ctx, w, r)
 	default:
-		return nil, fmt.Errorf("invalid endpoint: %v", endpoint)
+		return nil
 	}
 }
 
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
-	reply, errLog := handler(w, r)
-
-	// Log the error before doing anything else
-	if errLog != nil {
-		log.Printf("Error: %v", errLog)
-	}
-
-	// If there was a reply, write it and return (which implicitly triggers an HTTP 200).
-	// A 200 doesn't mean we succeeded, it just means that we returned a valid json response
-	// to the client.
-	if reply != nil {
-		err := json.NewEncoder(w).Encode(reply)
-		if err != nil {
-			log.Printf("json.NewEncoder().Encode() failed: %w", err)
-		}
-
-	} else {
-		// Deliberately not divulging the error in the response, for security and to protect
-		// our licensing scheme
+	reply := handler(w, r)
+	if reply == nil {
+		// We deliberately don't divulge any error in the response, for security / to protect
+		// our licensing scheme.
 		// The actual errors are logged via log.Printf()
 		http.Error(w, "Error", http.StatusBadRequest)
+		return
+	}
+
+	err := json.NewEncoder(w).Encode(reply)
+	if err != nil {
+		log.Printf("json.NewEncoder().Encode() failed: %v", err)
 	}
 }
