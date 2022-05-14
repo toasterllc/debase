@@ -8,10 +8,8 @@ import (
 	"os"
 	"path"
 
-	// "github.com/heytoaster/sesgo"
-
 	"cloud.google.com/go/firestore"
-	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/v72"
 )
 
 const (
