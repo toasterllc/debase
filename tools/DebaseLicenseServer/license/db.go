@@ -25,8 +25,10 @@ type DBTrial struct {
 }
 
 type DBLicense struct {
-	Version  Version
-	Machines map[MachineId]*DBMachine
+	Version   Version
+	Timestamp int64
+	Machines  map[MachineId]*DBMachine
+	PaymentId string
 }
 
 type DBLicenses struct {

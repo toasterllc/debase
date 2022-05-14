@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -17,8 +16,22 @@ import (
 const ToasterSupportEmail = "Toaster Support <support@heytoaster.com>"
 
 const LicenseEmailRateLimit = 10 * time.Minute
-const LicenseEmailSubject = "Debase License"
-const LicenseEmailBody = `
+
+const LicenseEmailReceiptSubject = "Debase License Receipt"
+const LicenseEmailReminderSubject = "Debase License Reminder"
+
+const LicenseEmailReceiptBodyFmt = `
+Hello, thanks for supporting debase! Please find your license codes below.
+
+    %v
+
+If you have any questions please respond to this email.
+
+Toaster Support
+heytoaster.com
+`
+
+const LicenseEmailReminderBodyFmt = `
 Hello, please find your debase license codes below.
 
     %v
@@ -26,6 +39,7 @@ Hello, please find your debase license codes below.
 If you have any questions please respond to this email.
 
 Toaster Support
+heytoaster.com
 `
 
 type CommandLicenseEmailSend struct {
@@ -33,6 +47,20 @@ type CommandLicenseEmailSend struct {
 }
 
 type ReplyLicenseEmailSend struct{}
+
+func sendLicenseCodesEmail(to, subject, bodyFmt string, codes []string) error {
+	codesStr := ""
+	for _, code := range codes {
+		if codesStr != "" {
+			codesStr += ", "
+		}
+
+		codesStr += string(code)
+	}
+
+	body := fmt.Sprintf(bodyFmt, codesStr)
+	return sesgo.SendEmail(AWSAccessKey, AWSSecretKey, to, ToasterSupportEmail, subject, body)
+}
 
 func emailErr(logFmt string, logArgs ...interface{}) Reply {
 	log.Printf("License email send error: "+logFmt, logArgs...)
@@ -94,12 +122,12 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 		return emailErr("Db.RunTransaction() failed: %v", err)
 	}
 
-	codes := []string{}
+	var codes []string
 	for code := range lics.Licenses {
 		codes = append(codes, string(code))
 	}
-	body := fmt.Sprintf(LicenseEmailBody, strings.Join(codes, ", "))
-	err = sesgo.SendEmail(AWSAccessKey, AWSSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
+
+	err = sendLicenseCodesEmail(lics.Email, LicenseEmailReminderSubject, LicenseEmailReminderBodyFmt, codes)
 	if err != nil {
 		return emailErr("sesgo.SendEmail() failed: %v", err)
 	}

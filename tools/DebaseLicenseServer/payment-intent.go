@@ -14,6 +14,7 @@ import (
 
 const LicenseCountKey = "licenseCount"
 const LicensePrice = 1000 // USD cents
+const LicenseCountMin = 1
 const LicenseCountMax = 10
 
 var InvalidLicenseCountErr = errors.New("Invalid license count.")
@@ -43,7 +44,7 @@ func handlePaymentIntent(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return paymentIntentErr(UnknownErr, "invalid command payload")
 	}
 
-	if cmd.LicenseCount < 1 || cmd.LicenseCount > LicenseCountMax {
+	if cmd.LicenseCount < LicenseCountMin || cmd.LicenseCount > LicenseCountMax {
 		return paymentIntentErr(InvalidLicenseCountErr, "invalid license count: %v", cmd.LicenseCount)
 	}
 

@@ -1,6 +1,7 @@
 package license
 
 import (
+	"crypto/rand"
 	"crypto/sha512"
 	"fmt"
 	"net/mail"
@@ -28,6 +29,9 @@ type Version = uint32
 
 const MachineIdLen = 2 * sha512.Size256 // 2* because 1 byte == 2 hex characters
 const MachineInfoMaxLen = 256
+const LicenseCodeLen = 10
+
+var LicenseCodeAlphabet = []byte("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789") // omits: ilo01
 
 func hashStringSanitize(str string) (string, error) {
 	str = strings.ToLower(str)
@@ -77,10 +81,26 @@ func MachineInfoForString(str string) MachineInfo {
 // }
 
 func LicenseCodeForString(str string) (LicenseCode, error) {
-	str = strings.ToLower(str)
-	regex := regexp.MustCompile(`^[a-z0-9]+$`)
+	regex := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !regex.MatchString(str) {
 		return "", fmt.Errorf("invalid characters")
 	}
 	return LicenseCode(str), nil
+}
+
+func LicenseCodeGenerate() (LicenseCode, error) {
+	// Generate `LicenseCodeLen` random integers, which we'll use to index into `LicenseCodeAlphabet`
+	var r [LicenseCodeLen]byte
+	_, err := rand.Read(r[:])
+	if err != nil {
+		return "", fmt.Errorf("rand.Read failed: %w", err)
+	}
+
+	// Generate our random string by indexing into LicenseCodeAlphabet
+	var x [LicenseCodeLen]byte
+	for i := range x {
+		x[i] = LicenseCodeAlphabet[int(r[i])%len(LicenseCodeAlphabet)]
+	}
+
+	return LicenseCode(x[:]), nil
 }
