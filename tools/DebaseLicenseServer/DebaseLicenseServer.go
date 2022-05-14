@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"path"
 
 	// "github.com/heytoaster/sesgo"
 
 	"cloud.google.com/go/firestore"
+	"github.com/stripe/stripe-go"
 )
 
 const (
@@ -19,11 +21,29 @@ const (
 	EndpointPaymentIntent    = "payment-intent"
 )
 
+var AWSAccessKey string
+var AWSSecretKey string
+
 func init() {
 	var err error
 	Db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("firestore.NewClient() failed: %v", err)
+	}
+
+	AWSAccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
+	if AWSAccessKey == "" {
+		log.Fatalf("AWS_ACCESS_KEY_ID not set")
+	}
+
+	AWSSecretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+	if AWSSecretKey == "" {
+		log.Fatalf("AWS_SECRET_ACCESS_KEY not set")
+	}
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	if stripe.Key == "" {
+		log.Fatalf("STRIPE_SECRET_KEY not set")
 	}
 }
 

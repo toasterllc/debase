@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -95,14 +94,12 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 		return emailErr("Db.RunTransaction() failed: %v", err)
 	}
 
-	awsAccessKey := os.Getenv("AWS_ACCESS_KEY_ID")
-	awsSecretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	codes := []string{}
 	for code := range lics.Licenses {
 		codes = append(codes, string(code))
 	}
 	body := fmt.Sprintf(LicenseEmailBody, strings.Join(codes, ", "))
-	err = sesgo.SendEmail(awsAccessKey, awsSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
+	err = sesgo.SendEmail(AWSAccessKey, AWSSecretKey, lics.Email, ToasterSupportEmail, LicenseEmailSubject, body)
 	if err != nil {
 		return emailErr("sesgo.SendEmail() failed: %v", err)
 	}
