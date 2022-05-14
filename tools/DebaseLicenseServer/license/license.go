@@ -46,7 +46,9 @@ func EmailForString(str string) (Email, error) {
 		return "", fmt.Errorf("mail.ParseAddress failed: %w", err)
 	}
 
-	return Email(parsed.Address), nil
+	// Lowercase the email
+	email := strings.ToLower(parsed.Address)
+	return Email(email), nil
 }
 
 func MachineIdForString(str string) (MachineId, error) {
