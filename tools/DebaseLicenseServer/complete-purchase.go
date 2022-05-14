@@ -50,6 +50,18 @@ func licensesForPaymentId(lics *license.DBLicenses, paymentId string) map[licens
 	return r
 }
 
+func createLicenseCodesPool(count int) ([]license.LicenseCode, error) {
+	var r []license.LicenseCode
+	for i := 0; i < count; i++ {
+		c, err := license.LicenseCodeGenerate()
+		if err != nil {
+			return nil, fmt.Errorf("license.LicenseCodeGenerate failed: %w", err)
+		}
+		r = append(r, c)
+	}
+	return r, nil
+}
+
 func completePurchaseErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
 	log.Printf("Payment intent error: "+logFmt, logArgs...)
 	if userErr == nil {
@@ -107,72 +119,14 @@ func handleCompletePurchase(ctx context.Context, w http.ResponseWriter, r *http.
 	if licenseCount < LicenseCountMin || licenseCount > LicenseCountMax {
 		return completePurchaseErr(InvalidLicenseCountErr, "invalid license count: %v", licenseCount)
 	}
-	// // Create the trial license that we'll insert if one doesn't already exist
-	// trialNew := trialCreate(minfo)
-	//
-	// var trial *license.DBTrial
-	// trialRef := Db.Collection(TrialsCollection).Doc(string(mid))
-	// err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
-	//     // Get the license
-	//     trialDoc, err := tx.Get(trialRef)
-	//     // If we failed to get the license because it didn't exist, create it
-	//     // If we failed for any other reason, return the error
-	//     if err != nil {
-	//         if status.Code(err) == codes.NotFound {
-	//             // Create the license
-	//             err = tx.Create(trialRef, trialNew)
-	//             if err != nil {
-	//                 return fmt.Errorf("tx.Create() failed: %w", err)
-	//             }
-	//             // Remember the license that we created via the `trial` variable that resides outside
-	//             // of our scope, so it can be sent to the client.
-	//             trial = trialNew
-	//             return nil
-	//         } else {
-	//             return fmt.Errorf("tx.Get() failed: %w", err)
-	//         }
-	//     }
-	//
-	//     // The license exists; read it into `trial`
-	//     if err = trialDoc.DataTo(&trial); err != nil {
-	//         return fmt.Errorf("trialDoc.DataTo() failed: %w", err)
-	//     }
-	//
-	//     // Update the trial's machine's IssueCount, but limit it to `TrialIssueCountMax`
-	//     // This limiting is necessary to reduce contention in the case where many machines are
-	//     // using the same machineId. This should ideally never happen, but our machine-id
-	//     // fingerprinting logic isn't perfect.
-	//     // With many machines potentially using the same machine-id, they'll all reference the
-	//     // same Firestore document, and lots of machines modifying the same document introduces
-	//     // contention, resulting in Db.RunTransaction() failing. Capping the IssueCount fixes
-	//     // this contention since we'll stop trying to modify the document once the IssueCount
-	//     // reaches its max value.
-	//     if trial.Machine.IssueCount < TrialIssueCountMax {
-	//         trial.Machine.IssueCount++
-	//         err = tx.Set(trialRef, trial)
-	//         if err != nil {
-	//             return fmt.Errorf("tx.Set() failed for MachineId=%v", mid)
-	//         }
-	//     }
-	//
-	//     return nil
-	// })
-	//
-	// if err != nil {
-	//     return trialErr(LicenseNotFoundErr, "Db.RunTransaction() failed: %v", err)
-	// }
 
 	// Pre-create double the number of license codes than we need (just in case we we have
-	// a collision).
+	// a collision with existing license codes).
 	// We may not need them at all if we've already created the licenses for the
 	// PaymentIntent, but we'd like to avoid generating them within the db transaction
-	var licenseCodesPool []license.LicenseCode
-	for i := 0; i < 2*licenseCount; i++ {
-		c, err := license.LicenseCodeGenerate()
-		if err != nil {
-			return completePurchaseErr(UnknownErr, "LicenseCodeGenerate() failed: %v", err)
-		}
-		licenseCodesPool = append(licenseCodesPool, c)
+	licenseCodesPool, err := createLicenseCodesPool(2 * licenseCount)
+	if err != nil {
+		return completePurchaseErr(UnknownErr, "createLicenseCodesPool() failed: %v", err)
 	}
 
 	var licsForPayment map[license.LicenseCode]*license.DBLicense
