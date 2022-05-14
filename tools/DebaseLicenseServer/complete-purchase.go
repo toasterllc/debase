@@ -131,7 +131,6 @@ func handleCompletePurchase(ctx context.Context, w http.ResponseWriter, r *http.
 
 	var licsForPayment map[license.LicenseCode]*license.DBLicense
 	var licsForPaymentCreated bool
-	var userErr error
 	licsRef := Db.Collection(LicensesCollection).Doc(string(uid))
 	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins.
@@ -139,7 +138,6 @@ func handleCompletePurchase(ctx context.Context, w http.ResponseWriter, r *http.
 		// contain values from a previous transaction
 		licsForPayment = nil
 		licsForPaymentCreated = false
-		userErr = nil
 
 		// Get the `lics` DBLicenses for the user id, creating it if it doesn't already exist
 		var lics license.DBLicenses
@@ -188,19 +186,19 @@ func handleCompletePurchase(ctx context.Context, w http.ResponseWriter, r *http.
 				licsForPayment[licenseCode] = lic
 			}
 
-			licsForPaymentCreated = true
-		}
+			err = tx.Set(licsRef, lics)
+			if err != nil {
+				return fmt.Errorf("tx.Set() failed for UserId=%v", uid)
+			}
 
-		err = tx.Set(licsRef, lics)
-		if err != nil {
-			return fmt.Errorf("tx.Set() failed for UserId=%v", uid)
+			licsForPaymentCreated = true
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		return completePurchaseErr(userErr, "Db.RunTransaction() failed: %v", err)
+		return completePurchaseErr(UnknownErr, "Db.RunTransaction() failed: %v", err)
 	}
 
 	// Collect the license codes for the payment id into a slice
