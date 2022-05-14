@@ -1,0 +1,96 @@
+frontend:
+    - disable collection of billingDetails.email, since we'll explicitly request it
+
+    - when calling confirmPayment(), supply payment_method_data.billing_details.email from our custom email field
+
+backend:
+    - payment-intent endpoint
+        - creates a PaymentIntent and returns its ClientSecret
+        
+        - in the future we may want to allow the user to specify the number of licenses to purchase.
+          in that case, the payment-intent endpoint should accept both a PaymentIntent.id and a
+          LicenseCount:
+          
+            - if PaymentIntent.id == null, then it creates and returns a PaymentIntent for
+              LicenseCount licenses
+            
+            - if PaymentIntent.id != null, it updates the existing PaymentIntent with the specified
+              number of licenses. The frontend is then responsible for calling elements.fetchUpdates(),
+              which should update eg the price visible to the user
+            
+            
+            
+            
+              
+    
+    - complete-purchase endpoint
+        1. frontend: after confirmPayment() completes, frontend issues request
+           to backend's complete-purchase endpoint, supplying PaymentIntent.id
+        
+        2. server looks up PaymentIntent from its id
+        
+        3. server verifies that PaymentIntent.status == 'succeeded'
+        
+        4. server gets email via PaymentIntent.payment_method.billing_details.email
+        
+        5. server looks up DBLicenses = debase-licenses[email]
+            - if DBLicenses == nil:
+                - create debase-licenses[email] = DBLicenses{}
+            
+            - if payment id doesn't match any of DBLicenses.Licenses[*].PaymentId:
+                - generate random LicenseCode
+                - create DBLicenses.Licenses[LicenseCode] = DBLicense{Version:x, PaymentId:x}
+                - send receipt email to user containing the new license code
+            
+            
+            
+            
+            
+            
+in the future we may want to allow specifying the number of licenses in the checkout page. if we do so, the 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            - create DBLicenses struct for the email
+            - create {license code -> DBLicense} entry in the DBLicenses.Licenses map
+            - create {payment id -> true} entry in the DBLicenses.PaymentIds
+            - send receipt email to user containing the new license code
+            
+            - email does exist in `debase-licenses` db collection:
+                - 
+            
+            
+            
+            
+            - email doesn't exist in `debase-licenses` db collection:
+                - create DBLicenses struct for the email
+                - create {license code -> DBLicense} entry in the DBLicenses.Licenses map
+                - create {payment id -> true} entry in the DBLicenses.PaymentIds
+                - send receipt email to user containing the new license code
+            
+            - email does exist in `debase-licenses` db collection:
+                - 
+            

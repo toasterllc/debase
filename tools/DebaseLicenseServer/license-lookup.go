@@ -14,7 +14,7 @@ import (
 	"heytoaster.com/DebaseLicenseServer/license"
 )
 
-const MachineCountMax = 3
+const MachineCountMax = 5
 
 var LicenseNotFoundErr = errors.New("No matching license was found.")
 var MachineLimitErr = errors.New("The maximum number of machines has already been registered for this license code.")
