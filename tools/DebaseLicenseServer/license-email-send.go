@@ -20,23 +20,29 @@ const LicenseEmailRateLimit = 10 * time.Minute
 const LicenseEmailReceiptSubject = "Debase License Receipt"
 const LicenseEmailReminderSubject = "Debase License Reminder"
 
-const LicenseEmailReceiptBodyFmt = `
-Hello, thanks for supporting debase! Please find your license codes below.
+const LicenseEmailReceiptBodyFmt = `Hello, thanks for supporting debase! Please find your license information below.
 
+%v:
     %v
 
-If you have any questions please respond to this email.
+%v:
+    %v
+
+Please respond to this email if you have any questions.
 
 Toaster Support
 heytoaster.com
 `
 
-const LicenseEmailReminderBodyFmt = `
-Hello, please find your debase license codes below.
+const LicenseEmailReminderBodyFmt = `Hello, please find your debase license information below.
 
+%v:
     %v
 
-If you have any questions please respond to this email.
+%v:
+    %v
+
+Please respond to this email if you have any questions.
 
 Toaster Support
 heytoaster.com
@@ -48,7 +54,13 @@ type CommandLicenseEmailSend struct {
 
 type ReplyLicenseEmailSend struct{}
 
-func sendLicenseCodesEmail(to, subject, bodyFmt string, codes []string) error {
+func sendLicenseCodesEmail(to, subject, bodyFmt, email string, codes []string) error {
+	emailFieldName := "License email:"
+	codesFieldName := "License code:"
+	if len(codes) > 1 {
+		codesFieldName = "License codes:"
+	}
+
 	codesStr := ""
 	for _, code := range codes {
 		if codesStr != "" {
@@ -58,7 +70,7 @@ func sendLicenseCodesEmail(to, subject, bodyFmt string, codes []string) error {
 		codesStr += string(code)
 	}
 
-	body := fmt.Sprintf(bodyFmt, codesStr)
+	body := fmt.Sprintf(bodyFmt, emailFieldName, email, codesFieldName, codesStr)
 	return sesgo.SendEmail(AWSAccessKey, AWSSecretKey, to, ToasterSupportEmail, subject, body)
 }
 
@@ -127,7 +139,7 @@ func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http
 		codes = append(codes, string(code))
 	}
 
-	err = sendLicenseCodesEmail(lics.Email, LicenseEmailReminderSubject, LicenseEmailReminderBodyFmt, codes)
+	err = sendLicenseCodesEmail(lics.Email, LicenseEmailReminderSubject, LicenseEmailReminderBodyFmt, lics.Email, codes)
 	if err != nil {
 		return emailErr("sesgo.SendEmail() failed: %v", err)
 	}

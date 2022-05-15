@@ -209,7 +209,7 @@ func handleCompletePurchase(ctx context.Context, w http.ResponseWriter, r *http.
 
 	// Send email if we created the licenses for the payment
 	if licsForPaymentCreated {
-		err := sendLicenseCodesEmail(string(email), LicenseEmailReceiptSubject, LicenseEmailReceiptBodyFmt, licenseCodes)
+		err := sendLicenseCodesEmail(string(email), LicenseEmailReceiptSubject, LicenseEmailReceiptBodyFmt, string(email), licenseCodes)
 		if err != nil {
 			// Not returning here! We don't want to fail this endpoint just because we couldn't send the email
 			completePurchaseErr(UnknownErr, "sendLicenseCodesEmail() failed: %v", err)
