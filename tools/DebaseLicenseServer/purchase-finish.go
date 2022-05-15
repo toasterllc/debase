@@ -187,6 +187,7 @@ func handlePurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Re
 				lic := licenseCreate(pid)
 				lics.Licenses[licenseCode] = lic
 				licsForPayment[licenseCode] = lic
+				i++
 			}
 
 			err = tx.Set(licsRef, lics)
