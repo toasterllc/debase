@@ -37,10 +37,10 @@ heytoaster.com
 const LicenseEmailReminderBodyFmt = `Hello, please find your debase license information below.
 
 %v:
-    %v
+%v
 
 %v:
-    %v
+%v
 
 Please respond to this email if you have any questions.
 
@@ -55,16 +55,18 @@ type CommandLicenseEmailSend struct {
 type ReplyLicenseEmailSend struct{}
 
 func sendLicenseCodesEmail(to, subject, bodyFmt, email string, codes []string) error {
-	emailFieldName := "License email:"
-	codesFieldName := "License code:"
+	indent := "    "
+	emailFieldName := "License email"
+	codesFieldName := "License code"
 	if len(codes) > 1 {
-		codesFieldName = "License codes:"
+		codesFieldName = "License codes"
 	}
 
-	codesStr := ""
+	email = indent + email
+	codesStr := indent
 	for _, code := range codes {
 		if codesStr != "" {
-			codesStr += ", "
+			codesStr += indent + "\n"
 		}
 
 		codesStr += string(code)
