@@ -47,10 +47,10 @@ inline void Request(const char* url, const T_Req& req, T_Resp& resp) {
     CURLcode cc = curl_easy_perform(curl);
     if (cc != CURLE_OK) throw Toastbox::RuntimeError("curl_easy_perform failed: %s", curl_easy_strerror(cc));
     
-    long httpRespCode = 0;
-    cc = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpRespCode);
+    long httpStatusCode = 0;
+    cc = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpStatusCode);
     if (cc != CURLE_OK) throw Toastbox::RuntimeError("curl_easy_getinfo failed: %s", curl_easy_strerror(cc));
-    if (httpRespCode != 200) throw Toastbox::RuntimeError("request failed with HTTP response code %jd", (intmax_t)httpRespCode);
+    if (httpStatusCode != 200) throw Toastbox::RuntimeError("request failed with HTTP status code %jd", (intmax_t)httpStatusCode);
     
     // Decode response
     {
