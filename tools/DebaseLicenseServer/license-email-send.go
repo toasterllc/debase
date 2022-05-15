@@ -23,10 +23,10 @@ const LicenseEmailReminderSubject = "Debase License Reminder"
 const LicenseEmailReceiptBodyFmt = `Hello, thanks for supporting debase! Please find your license information below.
 
 %v:
-    %v
+%v
 
 %v:
-    %v
+%v
 
 Please respond to this email if you have any questions.
 
