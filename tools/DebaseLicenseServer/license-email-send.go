@@ -64,12 +64,11 @@ func sendLicenseCodesEmail(to, subject, bodyFmt, email string, codes []string) e
 
 	email = indent + email
 	codesStr := indent
-	for _, code := range codes {
-		if codesStr != "" {
-			codesStr += indent + "\n"
+	for i, code := range codes {
+		if i != 0 {
+			codesStr += "\n"
 		}
-
-		codesStr += string(code)
+		codesStr += indent + string(code)
 	}
 
 	body := fmt.Sprintf(bodyFmt, emailFieldName, email, codesFieldName, codesStr)
