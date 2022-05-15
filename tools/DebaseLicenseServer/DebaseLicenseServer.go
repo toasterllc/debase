@@ -17,6 +17,7 @@ const (
 	EndpointTrialLookup      = "trial-lookup"
 	EndpointLicenseEmailSend = "license-email-send"
 	EndpointPaymentIntent    = "payment-intent"
+	EndpointPurchaseFinish   = "purchase-finish"
 )
 
 var AWSAccessKey string
@@ -58,6 +59,8 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 		return handlerLicenseEmailSend(ctx, w, r)
 	case EndpointPaymentIntent:
 		return handlePaymentIntent(ctx, w, r)
+	case EndpointPurchaseFinish:
+		return handlePurchaseFinish(ctx, w, r)
 	default:
 		return nil
 	}
