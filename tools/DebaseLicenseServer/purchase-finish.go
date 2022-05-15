@@ -79,7 +79,10 @@ func handlePurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	// Get the PaymentIntent
 	pid := cmd.PaymentIntentId
-	pi, err := paymentintent.Get(pid, nil)
+	params := stripe.PaymentIntentParams{}
+	params.AddExpand("payment_method")
+
+	pi, err := paymentintent.Get(pid, &params)
 	if err != nil {
 		return purchaseFinishErr(UnknownErr, "paymentintent.Get failed: %v", err)
 	}
