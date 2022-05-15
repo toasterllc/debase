@@ -37,7 +37,7 @@ func paymentIntentCreateErr(userErr error, logFmt string, logArgs ...interface{}
 	return &ReplyPaymentIntentCreate{Error: userErr.Error()}
 }
 
-func handlePaymentIntentCreate(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+func endpointPaymentIntentCreate(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandPaymentIntentCreate
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {

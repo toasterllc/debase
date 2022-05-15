@@ -82,7 +82,7 @@ func emailErr(logFmt string, logArgs ...interface{}) Reply {
 	return &ReplyLicenseEmailSend{}
 }
 
-func handlerLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+func endpointLicenseEmailSend(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandLicenseEmailSend
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {

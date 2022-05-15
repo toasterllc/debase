@@ -52,15 +52,15 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 	endpoint := path.Base(r.URL.Path)
 	switch endpoint {
 	case EndpointLicenseLookup:
-		return handlerLicenseLookup(ctx, w, r)
+		return endpointLicenseLookup(ctx, w, r)
 	case EndpointTrialLookup:
-		return handlerTrialLookup(ctx, w, r)
+		return endpointTrialLookup(ctx, w, r)
 	case EndpointLicenseEmailSend:
-		return handlerLicenseEmailSend(ctx, w, r)
+		return endpointLicenseEmailSend(ctx, w, r)
 	case EndpointPaymentIntentCreate:
-		return handlePaymentIntentCreate(ctx, w, r)
+		return endpointPaymentIntentCreate(ctx, w, r)
 	case EndpointPurchaseFinish:
-		return handlePurchaseFinish(ctx, w, r)
+		return endpointPurchaseFinish(ctx, w, r)
 	default:
 		return nil
 	}

@@ -42,7 +42,7 @@ func trialErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
 	return &ReplyLicenseLookup{Error: userErr.Error()}
 }
 
-func handlerTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+func endpointTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandTrialLookup
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {

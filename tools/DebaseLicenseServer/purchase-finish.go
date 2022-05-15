@@ -70,7 +70,7 @@ func purchaseFinishErr(userErr error, logFmt string, logArgs ...interface{}) Rep
 	return &ReplyPurchaseFinish{Error: userErr.Error()}
 }
 
-func handlePurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandPurchaseFinish
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {

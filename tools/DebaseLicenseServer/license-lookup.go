@@ -39,7 +39,7 @@ func licenseErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
 	return &ReplyLicenseLookup{Error: userErr.Error()}
 }
 
-func handlerLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+func endpointLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
 	var cmd CommandLicenseLookup
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
