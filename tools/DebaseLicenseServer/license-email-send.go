@@ -63,7 +63,7 @@ func sendLicenseCodesEmail(to, subject, bodyFmt, email string, codes []string) e
 	}
 
 	email = indent + email
-	codesStr := indent
+	codesStr := ""
 	for i, code := range codes {
 		if i != 0 {
 			codesStr += "\n"
