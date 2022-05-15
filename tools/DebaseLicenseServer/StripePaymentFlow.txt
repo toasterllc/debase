@@ -4,11 +4,11 @@ frontend:
     - when calling confirmPayment(), supply payment_method_data.billing_details.email from our custom email field
 
 backend:
-    - payment-intent endpoint
+    - payment-intent-create endpoint
         - creates a PaymentIntent and returns its ClientSecret
         
         - in the future we may want to allow the user to specify the number of licenses to purchase.
-          in that case, the payment-intent endpoint should accept both a PaymentIntent.id and a
+          in that case, the payment-intent-create endpoint should accept both a PaymentIntent.id and a
           LicenseCount:
           
             - if PaymentIntent.id == null, then it creates and returns a PaymentIntent for
