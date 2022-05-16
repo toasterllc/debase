@@ -13,15 +13,17 @@ import (
 )
 
 const (
-	EndpointLicenseLookup       = "license-lookup"
-	EndpointTrialLookup         = "trial-lookup"
-	EndpointLicenseEmailSend    = "license-email-send"
-	EndpointPaymentIntentCreate = "payment-intent-create"
-	EndpointPurchaseFinish      = "purchase-finish"
+	EndpointLicenseLookup         = "license-lookup"
+	EndpointTrialLookup           = "trial-lookup"
+	EndpointLicenseEmailSend      = "license-email-send"
+	EndpointPaymentIntentCreate   = "payment-intent-create"
+	EndpointPurchaseFinish        = "purchase-finish"
+	EndpointPurchaseFinishWebhook = "purchase-finish-webhook"
 )
 
 var AWSAccessKey string
 var AWSSecretKey string
+var StripePurchaseFinishWebhookSecret string
 
 func init() {
 	var err error
@@ -44,6 +46,11 @@ func init() {
 	if stripe.Key == "" {
 		log.Fatalf("STRIPE_SECRET_KEY not set")
 	}
+
+	StripePurchaseFinishWebhookSecret = os.Getenv("STRIPE_SECRET_PURCHASE_FINISH_WEBHOOK")
+	if StripePurchaseFinishWebhookSecret == "" {
+		log.Fatalf("STRIPE_SECRET_PURCHASE_FINISH_WEBHOOK not set")
+	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) Reply {
@@ -61,6 +68,8 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 		return endpointPaymentIntentCreate(ctx, w, r)
 	case EndpointPurchaseFinish:
 		return endpointPurchaseFinish(ctx, w, r)
+	case EndpointPurchaseFinishWebhook:
+		return endpointPurchaseFinishWebhook(ctx, w, r)
 	default:
 		return nil
 	}
@@ -70,9 +79,9 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
 	reply := handler(w, r)
 	if reply == nil {
-		// We deliberately don't divulge any error in the response, for security / to protect
-		// our licensing scheme.
-		// The actual errors are logged via log.Printf()
+		// We deliberately don't divulge any error in the response, for
+		// security / user privacy / to protect our licensing scheme.
+		// The actual errors are logged via log.Printf().
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}

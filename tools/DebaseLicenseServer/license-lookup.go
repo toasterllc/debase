@@ -32,7 +32,7 @@ type ReplyLicenseLookup struct {
 }
 
 func licenseErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
-	log.Printf("License lookup error: "+logFmt, logArgs...)
+	log.Printf("license-lookup error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}

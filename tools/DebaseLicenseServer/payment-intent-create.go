@@ -30,7 +30,7 @@ type ReplyPaymentIntentCreate struct {
 }
 
 func paymentIntentCreateErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
-	log.Printf("Payment intent error: "+logFmt, logArgs...)
+	log.Printf("payment-intent error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}

@@ -35,7 +35,7 @@ func trialCreate(minfo license.MachineInfo) *license.DBTrial {
 }
 
 func trialErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
-	log.Printf("Trial lookup error: "+logFmt, logArgs...)
+	log.Printf("trial-lookup error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}

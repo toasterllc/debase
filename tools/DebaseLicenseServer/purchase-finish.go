@@ -63,8 +63,12 @@ func createLicenseCodesPool(count int) ([]license.LicenseCode, error) {
 	return r, nil
 }
 
+// func purchaseFinish() {
+//
+// }
+
 func purchaseFinishErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
-	log.Printf("Payment intent error: "+logFmt, logArgs...)
+	log.Printf("purchase-finish error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}
@@ -216,7 +220,8 @@ func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.
 	if licsForPaymentCreated {
 		err := sendLicenseCodesEmail(string(email), LicenseEmailReceiptSubject, LicenseEmailReceiptBodyFmt, string(email), licenseCodes)
 		if err != nil {
-			// Not returning here! We don't want to fail this endpoint just because we couldn't send the email
+			// Not returning here! We don't want to fail this endpoint just because we
+			// couldn't send the email, but we do want the logging
 			purchaseFinishErr(UnknownErr, "sendLicenseCodesEmail() failed: %v", err)
 		}
 	}
