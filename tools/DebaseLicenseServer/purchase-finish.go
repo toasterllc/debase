@@ -28,8 +28,9 @@ type ReplyPurchaseFinish struct {
 	LicenseCodes []string `json:"licenseCodes"`
 }
 
+var PaymentIntentInvalidErr = errors.New("The payment intent is invalid.")
 var PaymentUnsuccessfulErr = errors.New("The payment was unsuccessful.")
-var InvalidEmailErr = errors.New("Invalid email address.")
+var InvalidEmailErr = errors.New("The email address is invalid.")
 
 func licenseCreate(paymentId string) *license.DBLicense {
 	return &license.DBLicense{
@@ -84,7 +85,7 @@ func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.
 
 	pi, err := paymentintent.Get(pid, &params)
 	if err != nil {
-		return purchaseFinishErr(UnknownErr, "paymentintent.Get failed: %v", err)
+		return purchaseFinishErr(PaymentIntentInvalidErr, "paymentintent.Get failed: %v", err)
 	}
 
 	// Confirm that the payment succeeded
