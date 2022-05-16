@@ -11,11 +11,11 @@ import (
 	"github.com/stripe/stripe-go/v72/webhook"
 )
 
-type ReplyPurchaseFinishWebhook struct{}
-
-func purchaseFinishWebhookErr(logFmt string, logArgs ...interface{}) Reply {
+func purchaseFinishWebhookErr(w http.ResponseWriter, logFmt string, logArgs ...interface{}) Reply {
 	log.Printf("purchase-finish-webhook error: "+logFmt, logArgs...)
-	// We always return nil on error, to trigger a 400
+	http.Error(w, "Error", http.StatusBadRequest)
+	// We always return a nil Reply, because we handled the HTTP request ourself,
+	// and don't want DebaseLicenseServer() to write anything more
 	return nil
 }
 
@@ -25,32 +25,43 @@ func endpointPurchaseFinishWebhook(ctx context.Context, w http.ResponseWriter, r
 	r.Body = http.MaxBytesReader(w, r.Body, BodyLenMax)
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return purchaseFinishWebhookErr("ioutil.ReadAll() failed: %v", err)
+		return purchaseFinishWebhookErr(w, "ioutil.ReadAll() failed: %v", err)
 	}
 
 	// Verify event signature
 	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), StripePurchaseFinishWebhookSecret)
 	if err != nil {
-		return purchaseFinishWebhookErr("webhook.ConstructEvent() failed: %v", err)
+		return purchaseFinishWebhookErr(w, "webhook.ConstructEvent() failed: %v", err)
 	}
 
 	// Verify that the event is the payment-succeeded event
 	if event.Type != "payment_intent.succeeded" {
-		return purchaseFinishWebhookErr("invalid event.Type: %v", event.Type)
+		return purchaseFinishWebhookErr(w, "invalid event.Type: %v", event.Type)
 	}
 
 	// Unmarshal the PaymentIntent
 	var pi stripe.PaymentIntent
 	err = json.Unmarshal(event.Data.Raw, &pi)
 	if err != nil {
-		return purchaseFinishWebhookErr("json.Unmarshal() failed: %v", err)
+		return purchaseFinishWebhookErr(w, "json.Unmarshal() failed: %v", err)
 	}
 
-	payMethod := pi.PaymentMethod
-	if payMethod == nil {
-		return purchaseFinishWebhookErr("PaymentIntent.PaymentMethod nil")
+	// Respond to Stripe with 'success' / HTTP 200 before we do the purchaseFinish()
+	// heavy lifting, because Stripe docs say:
+	//
+	// > Your endpoint must quickly return a successful status code (2xx) prior
+	// > to any complex logic that could cause a timeout. For example, you must
+	// > return a 200 response before updating a customer’s invoice as paid in
+	// > your accounting system.
+	//
+	w.WriteHeader(http.StatusOK)
+
+	_, _, err = purchaseFinish(ctx, pi.ID)
+	if err != nil {
+		return purchaseFinishWebhookErr(w, "purchaseFinish failed: %v", err)
 	}
 
-	log.Printf("payMethod: %v", payMethod)
-	return ReplyPurchaseFinishWebhook{}
+	// We always return a nil Reply, because we handled the HTTP request ourself,
+	// and don't want DebaseLicenseServer() to write anything more
+	return nil
 }

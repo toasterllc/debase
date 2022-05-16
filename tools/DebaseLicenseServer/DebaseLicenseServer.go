@@ -71,6 +71,10 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 	case EndpointPurchaseFinishWebhook:
 		return endpointPurchaseFinishWebhook(ctx, w, r)
 	default:
+		// We deliberately don't divulge any error in the response, for
+		// security / user privacy / to protect our licensing scheme.
+		// The actual errors are logged via log.Printf().
+		http.Error(w, "Error", http.StatusBadRequest)
 		return nil
 	}
 }
@@ -78,17 +82,11 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 // Entry point
 func DebaseLicenseServer(w http.ResponseWriter, r *http.Request) {
 	reply := handler(w, r)
-	if reply == nil {
-		// We deliberately don't divulge any error in the response, for
-		// security / user privacy / to protect our licensing scheme.
-		// The actual errors are logged via log.Printf().
-		http.Error(w, "Error", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(reply)
-	if err != nil {
-		log.Printf("json.NewEncoder().Encode() failed: %v", err)
+	if reply != nil {
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(reply)
+		if err != nil {
+			log.Printf("json.NewEncoder().Encode() failed: %v", err)
+		}
 	}
 }

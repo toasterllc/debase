@@ -63,31 +63,19 @@ func createLicenseCodesPool(count int) ([]license.LicenseCode, error) {
 	return r, nil
 }
 
-// func purchaseFinish() {
-//
-// }
-
-func purchaseFinishErr(userErr error, logFmt string, logArgs ...interface{}) Reply {
+func purchaseFinishErr(userErr error, logFmt string, logArgs ...interface{}) (license.Email, []string, error) {
 	log.Printf("purchase-finish error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}
-	return &ReplyPurchaseFinish{Error: userErr.Error()}
+	return "", nil, userErr
 }
 
-func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
-	var cmd CommandPurchaseFinish
-	err := json.NewDecoder(r.Body).Decode(&cmd)
-	if err != nil {
-		return purchaseFinishErr(UnknownErr, "invalid command payload")
-	}
-
-	// Get the PaymentIntent
-	pid := cmd.PaymentIntentId
+func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email, []string, error) {
 	params := stripe.PaymentIntentParams{}
 	params.AddExpand("payment_method")
 
-	pi, err := paymentintent.Get(pid, &params)
+	pi, err := paymentintent.Get(paymentIntentId, &params)
 	if err != nil {
 		return purchaseFinishErr(PaymentIntentInvalidErr, "paymentintent.Get failed: %v", err)
 	}
@@ -172,7 +160,7 @@ func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.
 		// code when the payment completes, so inevitably one of them will lose, and we
 		// need to make sure we only act on the payment and create the necessarily
 		// licenses once.
-		licsForPayment = licensesForPaymentId(&lics, pid)
+		licsForPayment = licensesForPaymentId(&lics, paymentIntentId)
 		if len(licsForPayment) == 0 {
 			// The payment id doesn't exist in `lics`, so licenses haven't yet been created
 			// for the successful payment.
@@ -189,7 +177,7 @@ func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.
 				}
 
 				// Create the license
-				lic := licenseCreate(pid)
+				lic := licenseCreate(paymentIntentId)
 				lics.Licenses[licenseCode] = lic
 				licsForPayment[licenseCode] = lic
 				i++
@@ -226,8 +214,40 @@ func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.
 		}
 	}
 
+	return email, licenseCodes, nil
+}
+
+// func purchaseFinishErr2(userErr error, logFmt string, logArgs ...interface{}) Reply {
+//     log.Printf("purchase-finish error: "+logFmt, logArgs...)
+//     if userErr == nil {
+//         userErr = UnknownErr
+//     }
+//     return &ReplyPurchaseFinish{Error: userErr.Error()}
+// }
+
+// func purchaseFinishErr2(userErr error, logFmt string, logArgs ...interface{}) error {
+//     log.Printf("purchase-finish error: "+logFmt, logArgs...)
+//     if userErr == nil {
+//         userErr = UnknownErr
+//     }
+//     return userErr
+// }
+
+func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+	var cmd CommandPurchaseFinish
+	err := json.NewDecoder(r.Body).Decode(&cmd)
+	if err != nil {
+		log.Printf("purchase-finish error: invalid command payload")
+		return &ReplyPurchaseFinish{Error: UnknownErr.Error()}
+	}
+
+	licenseEmail, licenseCodes, err := purchaseFinish(ctx, cmd.PaymentIntentId)
+	if err != nil {
+		return &ReplyPurchaseFinish{Error: err.Error()}
+	}
+
 	return &ReplyPurchaseFinish{
-		LicenseEmail: string(email),
+		LicenseEmail: string(licenseEmail),
 		LicenseCodes: licenseCodes,
 	}
 }
