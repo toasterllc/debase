@@ -58,7 +58,7 @@ func endpointPurchaseFinishWebhook(ctx context.Context, w http.ResponseWriter, r
 
 	_, _, err = purchaseFinish(ctx, pi.ID)
 	if err != nil {
-		return purchaseFinishWebhookErr(w, "purchaseFinish failed: %v", err)
+		return purchaseFinishWebhookErr(w, "purchaseFinish() failed: %v", err)
 	}
 
 	// We always return a nil Reply, because we handled the HTTP request ourself,
