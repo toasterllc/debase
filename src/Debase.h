@@ -7,6 +7,7 @@
 #endif
 
 #define _ToasterShortURL        "heytoaster.com"
+//#define _ToasterShortURL        "stage.heytoaster.com"
 #define _ToasterURL             "https://" _ToasterShortURL
 #define _ToasterSupportEmail    "support@heytoaster.com"
 
