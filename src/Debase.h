@@ -6,13 +6,12 @@
 #define inline // Go can't handle 'inline' below
 #endif
 
-#define _ToasterShortURL        "heytoaster.com"
-#define _ToasterURL             "https://" _ToasterShortURL
-#define _ToasterSupportEmail    "support@heytoaster.com"
+#define _ToasterShortURL            "heytoaster.com"
+#define _ToasterURL                 "https://" _ToasterShortURL
+#define _ToasterSupportEmail        "support@heytoaster.com"
 
-#define _DebaseVersion          1
-#define _DebaseFilename         "debase"
-#define _DebaseBaseURL          _ToasterURL "/debase"
+#define _DebaseVersion              1
+#define _DebaseFilename             "debase"
 
 inline const char* ToasterDisplayURL        = _ToasterShortURL;
 inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
@@ -20,12 +19,11 @@ inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
 inline const Version DebaseVersion          = _DebaseVersion;
 inline const char* DebaseFilename           = _DebaseFilename;
 inline const char* DebaseProductId          = "com.heytoaster.debase";
-inline const char* DebaseBaseURL            = _DebaseBaseURL;
-inline const char* DebaseDownloadURL        = _DebaseBaseURL;
-inline const char* DebasePurchaseURL        = _DebaseBaseURL;
-inline const char* DebaseCurrentVersionURL  = _DebaseBaseURL "/version";
-inline const char* DebaseLicenseLookupURL   = _DebaseBaseURL "/license/license-lookup";
-inline const char* DebaseTrialLookupURL     = _DebaseBaseURL "/license/trial-lookup";
+inline const char* DebaseDownloadURL        = _ToasterURL "/#debase-download;
+inline const char* DebasePurchaseURL        = _ToasterURL "/#debase-buy;
+inline const char* DebaseCurrentVersionURL  = _ToasterURL "/debase/version;
+inline const char* DebaseLicenseLookupURL   = _ToasterURL "/debase/license/license-lookup";
+inline const char* DebaseTrialLookupURL     = _ToasterURL "/debase/license/trial-lookup";
 
 #if DebaseLicenseServer
 inline const uint8_t DebaseKeyPrivate[] = {
