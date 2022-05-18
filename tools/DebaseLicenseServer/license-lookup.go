@@ -98,16 +98,22 @@ func endpointLicenseLookup(ctx context.Context, w http.ResponseWriter, r *http.R
 
 		machine := lic.Machines[mid]
 		if machine == nil {
-			// Otherwise, the machine id doesn't exist in the license, so we need to add it
+			// The machine id doesn't exist in the license, so we need to add it
 			// Bail if we don't have any free machine id slots
 			if len(lic.Machines) >= MachineCountMax {
 				userErr = MachineLimitErr
 				return fmt.Errorf("max machines already reached for UserId=%v LicenseCode=%v", uid, code)
 			}
 
+			// Create the map if it doesn't already exist
+			if lic.Machines == nil {
+				lic.Machines = map[license.MachineId]*license.DBMachine{}
+			}
 			lic.Machines[mid] = license.DBMachineCreate(minfo)
 
 		} else {
+			// The machine has been seen before
+			// Bump its counter that tracks the number of times a license has been issued for it
 			machine.IssueCount++
 		}
 

@@ -178,6 +178,12 @@ func buyFinish(ctx context.Context, paymentIntentId string) (license.Email, []st
 
 				// Create the license
 				lic := licenseCreate(paymentIntentId)
+
+				// Create the map if it doesn't already exist
+				if lics.Licenses == nil {
+					lics.Licenses = map[license.LicenseCode]*license.DBLicense{}
+				}
+
 				lics.Licenses[licenseCode] = lic
 				licsForPayment[licenseCode] = lic
 				i++
