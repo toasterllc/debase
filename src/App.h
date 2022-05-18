@@ -1466,10 +1466,10 @@ private:
     
     License::Server::CommandLicenseLookup _commandLicenseLookup(std::string_view email, std::string_view licenseCode) {
         return {
-            .machineId      = _licenseCtxGet().machineId,
-            .machineInfo    = _licenseCtxGet().machineInfo,
             .email          = std::string(email),
             .licenseCode    = std::string(licenseCode),
+            .machineId      = _licenseCtxGet().machineId,
+            .machineInfo    = _licenseCtxGet().machineInfo,
         };
     }
     
