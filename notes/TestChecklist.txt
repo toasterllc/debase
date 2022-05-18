@@ -122,6 +122,8 @@ Corrupting the license on disk is detected because the signature is wrong
 Make sure MachineInfo is properly sent to the server
 A mismatched machine id during trial mode shows the welcome dialog
 Buying a license with one email capitalization, and registering with a different capitalization works
+Buying a license + registering with a new email address works (ie an email that isn't in the database)
+Starting a trial with a new machine id works (ie a machine id that isn't in the database)
 
 * License escape
 Welcome alert: can't be escaped
