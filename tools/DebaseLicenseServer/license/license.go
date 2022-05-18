@@ -45,6 +45,9 @@ func hashStringSanitize(str string) (string, error) {
 }
 
 func EmailForString(str string) (Email, error) {
+	// Trim space from the email as an affordance to the user
+	str = strings.TrimSpace(str)
+
 	parsed, err := mail.ParseAddress(str)
 	if err != nil {
 		return "", fmt.Errorf("mail.ParseAddress failed: %w", err)
@@ -81,6 +84,9 @@ func MachineInfoForString(str string) MachineInfo {
 // }
 
 func LicenseCodeForString(str string) (LicenseCode, error) {
+	// Trim space from the license code as an affordance to the user
+	str = strings.TrimSpace(str)
+
 	regex := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !regex.MatchString(str) {
 		return "", fmt.Errorf("invalid characters")
