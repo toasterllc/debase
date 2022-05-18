@@ -1542,7 +1542,7 @@ private:
     
     bool _registerAlertRun(UI::RegisterAlertPtr panel, std::function<bool()> dismissAction=nullptr) {
 //        std::string msg = std::string(message)_showAlert;
-//        msg += " To purchase a license, please visit:\n";
+//        msg += " To buy a license, please visit:\n";
         
         const auto dismissActionPrev = panel->dismissButton()->action();
         std::optional<bool> choice;
@@ -1605,7 +1605,7 @@ private:
         // Create the register panel, but keep it hidden for now
         auto panel = _registerAlertPresent(PanelTitle, PanelMessageUnderway);
         panel->visible(false);
-        panel->purchaseMessageVisible(false);
+        panel->buyMessageVisible(false);
         panel->email()->value(license.email);
         panel->code()->value(license.licenseCode);
         panel->dismissButton()->label()->text("Free Trial");
@@ -1664,7 +1664,7 @@ private:
         
         if (!ok) {
             panel->visible(true);
-            panel->purchaseMessageVisible(true);
+            panel->buyMessageVisible(true);
             panel->message()->text(PanelMessageError);
             layoutNeeded(true);
             return _registerAlertRun(panel, [&] {

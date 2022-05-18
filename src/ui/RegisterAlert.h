@@ -15,11 +15,11 @@ public:
     RegisterAlert() {
         message()->centerSingleLine(false);
         
-        _purchaseMessage->text("To purchase a license, please visit:");
-        _purchaseMessage->wrap(true);
+        _buyMessage->text("To buy a license, please visit:");
+        _buyMessage->wrap(true);
         
-        _purchaseLink->label()->text(ToasterDisplayURL);
-        _purchaseLink->link(DebasePurchaseURL);
+        _buyLink->label()->text(ToasterDisplayURL);
+        _buyLink->link(DebaseBuyURL);
         
         auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
         auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
@@ -43,10 +43,10 @@ public:
     
     // MARK: - Alert Overrides
     int contentHeight(int width) const override {
-        const int purchaseMessageHeight = (_purchaseMessage->visible() ? _purchaseMessage->sizeIntrinsic({width, ConstraintNone}).y : 0);
+        const int buyMessageHeight = (_buyMessage->visible() ? _buyMessage->sizeIntrinsic({width, ConstraintNone}).y : 0);
         return
-            (purchaseMessageHeight ? purchaseMessageHeight + _ElementSpacingY : 0) +
-            (purchaseMessageHeight ? _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY : 0) +
+            (buyMessageHeight ? buyMessageHeight + _ElementSpacingY : 0) +
+            (buyMessageHeight ? _BuyLinkHeight + _ElementSpacingY + _ElementSpacingY : 0) +
             _FieldHeight + _ElementSpacingY +
             _FieldHeight;
     }
@@ -94,13 +94,13 @@ public:
         
         int offY = cf.t();
         
-        if (purchaseMessageVisible()) {
-            _purchaseMessage->sizeToFit({cf.w(), ConstraintNone});
-            _purchaseMessage->origin({cf.origin.x, offY});
-            offY += _purchaseMessage->frame().h() + _ElementSpacingY;
+        if (buyMessageVisible()) {
+            _buyMessage->sizeToFit({cf.w(), ConstraintNone});
+            _buyMessage->origin({cf.origin.x, offY});
+            offY += _buyMessage->frame().h() + _ElementSpacingY;
             
-            _purchaseLink->frame({{cf.origin.x, offY}, {cf.w(), _PurchaseLinkHeight}});
-            offY += _PurchaseLinkHeight + _ElementSpacingY + _ElementSpacingY;
+            _buyLink->frame({{cf.origin.x, offY}, {cf.w(), _BuyLinkHeight}});
+            offY += _BuyLinkHeight + _ElementSpacingY + _ElementSpacingY;
         }
         
         _email->frame({{cf.origin.x, offY}, {cf.size.x, _FieldHeight}});
@@ -120,17 +120,17 @@ public:
     auto& email() { return _email->textField(); }
     auto& code() { return _code->textField(); }
     
-    bool purchaseMessageVisible() const { return _purchaseMessage->visible(); }
-    void purchaseMessageVisible(bool x) {
-        _purchaseMessage->visible(x);
-        _purchaseLink->visible(x);
+    bool buyMessageVisible() const { return _buyMessage->visible(); }
+    void buyMessageVisible(bool x) {
+        _buyMessage->visible(x);
+        _buyLink->visible(x);
         layoutNeeded(true);
     }
     
 private:
-    static constexpr int _ElementSpacingY       = 1;
-    static constexpr int _PurchaseLinkHeight    = 1;
-    static constexpr int _FieldHeight           = 1;
+    static constexpr int _ElementSpacingY   = 1;
+    static constexpr int _BuyLinkHeight     = 1;
+    static constexpr int _FieldHeight       = 1;
     
     void _fieldValueChanged(TextField& field) {
         // Update OK button enabled
@@ -184,8 +184,8 @@ private:
             !_email->textField()->value().empty()   ;
     }
     
-    LabelPtr _purchaseMessage   = subviewCreate<Label>();
-    LinkButtonPtr _purchaseLink = subviewCreate<LinkButton>();
+    LabelPtr _buyMessage   = subviewCreate<Label>();
+    LinkButtonPtr _buyLink = subviewCreate<LinkButton>();
     
     LabelTextFieldPtr _email    = subviewCreate<LabelTextField>();
     LabelTextFieldPtr _code     = subviewCreate<LabelTextField>();

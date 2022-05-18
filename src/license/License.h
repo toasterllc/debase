@@ -22,7 +22,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SealedLicense, payload, signature);
 
 struct License {
     Email email;
-    LicenseCode licenseCode;        // Code supplied to user upon purchase
+    LicenseCode licenseCode;        // Code supplied to user upon buy
     Machine::MachineId machineId;   // Stable, unique identifier for the licensed machine
     Version version = 0;            // Debase version
     int64_t expiration = 0;         // Expiration (non-zero only for trial licenses)
