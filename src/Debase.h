@@ -19,9 +19,9 @@ inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
 inline const Version DebaseVersion          = _DebaseVersion;
 inline const char* DebaseFilename           = _DebaseFilename;
 inline const char* DebaseProductId          = "com.heytoaster.debase";
-inline const char* DebaseDownloadURL        = _ToasterURL "/#debase-download;
-inline const char* DebaseBuyURL             = _ToasterURL "/#debase-buy;
-inline const char* DebaseCurrentVersionURL  = _ToasterURL "/debase/version;
+inline const char* DebaseDownloadURL        = _ToasterURL "/#debase-download";
+inline const char* DebaseBuyURL             = _ToasterURL "/#debase-buy";
+inline const char* DebaseCurrentVersionURL  = _ToasterURL "/debase/version";
 inline const char* DebaseLicenseLookupURL   = _ToasterURL "/debase/license/license-lookup";
 inline const char* DebaseTrialLookupURL     = _ToasterURL "/debase/license/trial-lookup";
 
