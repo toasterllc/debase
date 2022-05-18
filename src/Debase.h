@@ -6,12 +6,12 @@
 #define inline // Go can't handle 'inline' below
 #endif
 
-#define _ToasterShortURL            "heytoaster.com"
-#define _ToasterURL                 "https://" _ToasterShortURL
-#define _ToasterSupportEmail        "support@heytoaster.com"
+#define _ToasterShortURL        "heytoaster.com"
+#define _ToasterURL             "https://" _ToasterShortURL
+#define _ToasterSupportEmail    "support@heytoaster.com"
 
-#define _DebaseVersion              1
-#define _DebaseFilename             "debase"
+#define _DebaseVersion          1
+#define _DebaseFilename         "debase"
 
 inline const char* ToasterDisplayURL        = _ToasterShortURL;
 inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
