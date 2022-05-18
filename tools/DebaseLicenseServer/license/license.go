@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"fmt"
-	"net/mail"
 	"regexp"
 	"strings"
 )
@@ -48,13 +47,13 @@ func EmailForString(str string) (Email, error) {
 	// Trim space from the email as an affordance to the user
 	str = strings.TrimSpace(str)
 
-	parsed, err := mail.ParseAddress(str)
-	if err != nil {
-		return "", fmt.Errorf("mail.ParseAddress failed: %w", err)
+	regex := regexp.MustCompile(`.+@.+`)
+	if !regex.MatchString(str) {
+		return "", fmt.Errorf("invalid email")
 	}
 
 	// Lowercase the email
-	email := strings.ToLower(parsed.Address)
+	email := strings.ToLower(str)
 	return Email(email), nil
 }
 
