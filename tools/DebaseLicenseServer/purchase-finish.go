@@ -18,11 +18,11 @@ import (
 	"heytoaster.com/DebaseLicenseServer/license"
 )
 
-type CommandPurchaseFinish struct {
+type CommandBuyFinish struct {
 	PaymentIntentId string `json:"paymentIntentId"`
 }
 
-type ReplyPurchaseFinish struct {
+type ReplyBuyFinish struct {
 	Error        string   `json:"error"`
 	LicenseEmail string   `json:"licenseEmail"`
 	LicenseCodes []string `json:"licenseCodes"`
@@ -63,44 +63,44 @@ func createLicenseCodesPool(count int) ([]license.LicenseCode, error) {
 	return r, nil
 }
 
-func purchaseFinishErr(userErr error, logFmt string, logArgs ...interface{}) (license.Email, []string, error) {
-	log.Printf("purchase-finish error: "+logFmt, logArgs...)
+func buyFinishErr(userErr error, logFmt string, logArgs ...interface{}) (license.Email, []string, error) {
+	log.Printf("buy-finish error: "+logFmt, logArgs...)
 	if userErr == nil {
 		userErr = UnknownErr
 	}
 	return "", nil, userErr
 }
 
-func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email, []string, error) {
+func buyFinish(ctx context.Context, paymentIntentId string) (license.Email, []string, error) {
 	params := stripe.PaymentIntentParams{}
 	params.AddExpand("payment_method")
 
 	pi, err := paymentintent.Get(paymentIntentId, &params)
 	if err != nil {
-		return purchaseFinishErr(PaymentIntentInvalidErr, "paymentintent.Get failed: %v", err)
+		return buyFinishErr(PaymentIntentInvalidErr, "paymentintent.Get failed: %v", err)
 	}
 
 	// Confirm that the payment succeeded
 	if pi.Status != stripe.PaymentIntentStatusSucceeded {
-		return purchaseFinishErr(PaymentUnsuccessfulErr, "PaymentIntent.Status invalid: expected %v, got %v", stripe.PaymentIntentStatusSucceeded, pi.Status)
+		return buyFinishErr(PaymentUnsuccessfulErr, "PaymentIntent.Status invalid: expected %v, got %v", stripe.PaymentIntentStatusSucceeded, pi.Status)
 	}
 
 	// Get the PaymentMethod
 	payMethod := pi.PaymentMethod
 	if payMethod == nil {
-		return purchaseFinishErr(UnknownErr, "PaymentIntent.PaymentMethod nil")
+		return buyFinishErr(UnknownErr, "PaymentIntent.PaymentMethod nil")
 	}
 
 	// Get the BillingDetails
 	billing := payMethod.BillingDetails
 	if billing == nil {
-		return purchaseFinishErr(UnknownErr, "PaymentMethod.BillingDetails nil")
+		return buyFinishErr(UnknownErr, "PaymentMethod.BillingDetails nil")
 	}
 
 	// string -> license.Email
 	email, err := license.EmailForString(billing.Email)
 	if err != nil {
-		return purchaseFinishErr(InvalidEmailErr, "license.EmailForString failed: %v", err)
+		return buyFinishErr(InvalidEmailErr, "license.EmailForString failed: %v", err)
 	}
 
 	// license.Email -> license.DBUserId
@@ -109,11 +109,11 @@ func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email,
 	// Get the license count
 	licenseCount, err := strconv.Atoi(pi.Metadata[LicenseCountKey])
 	if err != nil {
-		return purchaseFinishErr(InvalidLicenseCountErr, "strconv.Atoi(license count = %v) failed: %v", pi.Metadata[LicenseCountKey], err)
+		return buyFinishErr(InvalidLicenseCountErr, "strconv.Atoi(license count = %v) failed: %v", pi.Metadata[LicenseCountKey], err)
 	}
 
 	if licenseCount < LicenseCountMin || licenseCount > LicenseCountMax {
-		return purchaseFinishErr(InvalidLicenseCountErr, "invalid license count: %v", licenseCount)
+		return buyFinishErr(InvalidLicenseCountErr, "invalid license count: %v", licenseCount)
 	}
 
 	// Pre-create double the number of license codes than we need (just in case we we have
@@ -122,7 +122,7 @@ func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email,
 	// PaymentIntent, but we'd like to avoid generating them within the db transaction
 	licenseCodesPool, err := createLicenseCodesPool(2 * licenseCount)
 	if err != nil {
-		return purchaseFinishErr(UnknownErr, "createLicenseCodesPool() failed: %v", err)
+		return buyFinishErr(UnknownErr, "createLicenseCodesPool() failed: %v", err)
 	}
 
 	var licsForPayment map[license.LicenseCode]*license.DBLicense
@@ -195,7 +195,7 @@ func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email,
 	})
 
 	if err != nil {
-		return purchaseFinishErr(UnknownErr, "Db.RunTransaction() failed: %v", err)
+		return buyFinishErr(UnknownErr, "Db.RunTransaction() failed: %v", err)
 	}
 
 	// Collect the license codes for the payment id into a slice
@@ -210,43 +210,43 @@ func purchaseFinish(ctx context.Context, paymentIntentId string) (license.Email,
 		if err != nil {
 			// Not returning here! We don't want to fail this endpoint just because we
 			// couldn't send the email, but we do want the logging
-			purchaseFinishErr(UnknownErr, "sendLicenseCodesEmail() failed: %v", err)
+			buyFinishErr(UnknownErr, "sendLicenseCodesEmail() failed: %v", err)
 		}
 	}
 
 	return email, licenseCodes, nil
 }
 
-// func purchaseFinishErr2(userErr error, logFmt string, logArgs ...interface{}) Reply {
-//     log.Printf("purchase-finish error: "+logFmt, logArgs...)
+// func buyFinishErr2(userErr error, logFmt string, logArgs ...interface{}) Reply {
+//     log.Printf("buy-finish error: "+logFmt, logArgs...)
 //     if userErr == nil {
 //         userErr = UnknownErr
 //     }
-//     return &ReplyPurchaseFinish{Error: userErr.Error()}
+//     return &ReplyBuyFinish{Error: userErr.Error()}
 // }
 
-// func purchaseFinishErr2(userErr error, logFmt string, logArgs ...interface{}) error {
-//     log.Printf("purchase-finish error: "+logFmt, logArgs...)
+// func buyFinishErr2(userErr error, logFmt string, logArgs ...interface{}) error {
+//     log.Printf("buy-finish error: "+logFmt, logArgs...)
 //     if userErr == nil {
 //         userErr = UnknownErr
 //     }
 //     return userErr
 // }
 
-func endpointPurchaseFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
-	var cmd CommandPurchaseFinish
+func endpointBuyFinish(ctx context.Context, w http.ResponseWriter, r *http.Request) Reply {
+	var cmd CommandBuyFinish
 	err := json.NewDecoder(r.Body).Decode(&cmd)
 	if err != nil {
-		log.Printf("purchase-finish error: invalid command payload")
-		return &ReplyPurchaseFinish{Error: UnknownErr.Error()}
+		log.Printf("buy-finish error: invalid command payload")
+		return &ReplyBuyFinish{Error: UnknownErr.Error()}
 	}
 
-	licenseEmail, licenseCodes, err := purchaseFinish(ctx, cmd.PaymentIntentId)
+	licenseEmail, licenseCodes, err := buyFinish(ctx, cmd.PaymentIntentId)
 	if err != nil {
-		return &ReplyPurchaseFinish{Error: err.Error()}
+		return &ReplyBuyFinish{Error: err.Error()}
 	}
 
-	return &ReplyPurchaseFinish{
+	return &ReplyBuyFinish{
 		LicenseEmail: string(licenseEmail),
 		LicenseCodes: licenseCodes,
 	}

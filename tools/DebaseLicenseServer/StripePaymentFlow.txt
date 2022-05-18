@@ -23,9 +23,9 @@ backend:
             
     
     
-    - purchase-finish endpoint
+    - buy-finish endpoint
         1. frontend: after confirmPayment() completes, frontend issues request
-           to backend's purchase-finish endpoint, supplying PaymentIntent.id
+           to backend's buy-finish endpoint, supplying PaymentIntent.id
         
         2. server looks up PaymentIntent from its id
         

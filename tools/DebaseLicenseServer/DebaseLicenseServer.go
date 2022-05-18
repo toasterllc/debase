@@ -13,17 +13,17 @@ import (
 )
 
 const (
-	EndpointLicenseLookup         = "license-lookup"
-	EndpointTrialLookup           = "trial-lookup"
-	EndpointLicenseEmailSend      = "license-email-send"
-	EndpointPaymentIntentCreate   = "payment-intent-create"
-	EndpointPurchaseFinish        = "purchase-finish"
-	EndpointPurchaseFinishWebhook = "purchase-finish-webhook"
+	EndpointLicenseLookup       = "license-lookup"
+	EndpointTrialLookup         = "trial-lookup"
+	EndpointLicenseEmailSend    = "license-email-send"
+	EndpointPaymentIntentCreate = "payment-intent-create"
+	EndpointBuyFinish           = "buy-finish"
+	EndpointBuyFinishWebhook    = "buy-finish-webhook"
 )
 
 var AWSAccessKey string
 var AWSSecretKey string
-var StripePurchaseFinishWebhookSecret string
+var StripeBuyFinishWebhookSecret string
 
 func init() {
 	var err error
@@ -47,9 +47,9 @@ func init() {
 		log.Fatalf("STRIPE_SECRET_KEY not set")
 	}
 
-	StripePurchaseFinishWebhookSecret = os.Getenv("STRIPE_SECRET_PURCHASE_FINISH_WEBHOOK")
-	if StripePurchaseFinishWebhookSecret == "" {
-		log.Fatalf("STRIPE_SECRET_PURCHASE_FINISH_WEBHOOK not set")
+	StripeBuyFinishWebhookSecret = os.Getenv("STRIPE_SECRET_BUY_FINISH_WEBHOOK")
+	if StripeBuyFinishWebhookSecret == "" {
+		log.Fatalf("STRIPE_SECRET_BUY_FINISH_WEBHOOK not set")
 	}
 }
 
@@ -66,10 +66,10 @@ func handler(w http.ResponseWriter, r *http.Request) Reply {
 		return endpointLicenseEmailSend(ctx, w, r)
 	case EndpointPaymentIntentCreate:
 		return endpointPaymentIntentCreate(ctx, w, r)
-	case EndpointPurchaseFinish:
-		return endpointPurchaseFinish(ctx, w, r)
-	case EndpointPurchaseFinishWebhook:
-		return endpointPurchaseFinishWebhook(ctx, w, r)
+	case EndpointBuyFinish:
+		return endpointBuyFinish(ctx, w, r)
+	case EndpointBuyFinishWebhook:
+		return endpointBuyFinishWebhook(ctx, w, r)
 	default:
 		// We deliberately don't divulge any error in the response, for
 		// security / user privacy / to protect our licensing scheme.
