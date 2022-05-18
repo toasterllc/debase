@@ -124,6 +124,8 @@ A mismatched machine id during trial mode shows the welcome dialog
 Buying a license with one email capitalization, and registering with a different capitalization works
 Buying a license + registering with a new email address works (ie an email that isn't in the database)
 Starting a trial with a new machine id works (ie a machine id that isn't in the database)
+Verify that if the client's internet connection fails during checkout, the webhook still triggers an email to be sent
+    This can be simulated by changing the /debase/license/buy-finish endpoint to have an incorrect address
 
 * License escape
 Welcome alert: can't be escaped
