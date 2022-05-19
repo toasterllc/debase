@@ -171,9 +171,12 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: first run experience: allow running debase from outside a git repo
-    
     #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
+    
+    #warning TODO: startup perf: detach head lazily when the relevant branch is modified
+    #warning TODO:   starting/exiting debase is slow on linux, apparently due to detaching/attaching head
+    
+    #warning TODO: first run experience: allow running debase from outside a git repo
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -192,8 +195,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: when changing the author of a commit, change the committer too
     #warning TODO: look at the content of github when doing so -- if the author/committer are different, they're both displayed, which isn't what we want
     #warning TODO: maybe both author and committer should be shown in editor? but maybe only if theyre different?
-    
-    #warning TODO: linux: starting/exiting is slow (apparently due to detaching/attaching head). detach head lazily when the branch relevant branch is modified?
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
     
