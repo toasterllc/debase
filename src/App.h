@@ -330,30 +330,30 @@ public:
 //        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
 //        // we try to replace that ref.
 //        if (detachHead) _repo.headDetach();
-//        Defer(
-//            if (detachHead) {
-//                // Restore previous head on exit
-//                std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
-//                std::string err;
-//                try {
-//                    _repo.headAttach(_head);
-//                } catch (const Git::ConflictError& e) {
-//                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
-//                    for (const _Path& path : e.paths) {
-//                        err += "  " + std::string(path) + "\n";
-//                    }
-//                    
-//                    err += "\n";
-//                    err += "Please move or delete them and run:\n";
-//                    err += "  git checkout " + _head.ref.name() + "\n";
-//                
-//                } catch (const std::exception& e) {
-//                    err = std::string("Error: ") + e.what();
-//                }
-//                
-//                std::cout << (!err.empty() ? err : "Done") << std::endl;
-//            }
-//        );
+        Defer(
+            if (_headReattach) {
+                // Restore previous head on exit
+                std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
+                std::string err;
+                try {
+                    _repo.headAttach(_head);
+                } catch (const Git::ConflictError& e) {
+                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
+                    for (const _Path& path : e.paths) {
+                        err += "  " + std::string(path) + "\n";
+                    }
+                    
+                    err += "\n";
+                    err += "Please move or delete them and run:\n";
+                    err += "  git checkout " + _head.ref.name() + "\n";
+                
+                } catch (const std::exception& e) {
+                    err = std::string("Error: ") + e.what();
+                }
+                
+                std::cout << (!err.empty() ? err : "Done") << std::endl;
+            }
+        );
         
         try {
             _cursesInit();
@@ -1144,7 +1144,7 @@ private:
             if (commitNew != commitCur) {
                 Git::Commit commit = State::Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
-                _repo.refReplace(ref, commit);
+                _refReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1167,7 +1167,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _repo.refReplace(rev.ref, commit);
+            (Git::Rev&)rev = _refReplace(rev.ref, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -1293,15 +1293,13 @@ private:
     }
     
     Git::Ref _refReplace(const Git::Ref& ref, const Git::Commit& commit) {
+        // Detach HEAD if it's attached to the ref that we're modifying, otherwise
+        // we'll get an error when we try to replace that ref.
+        if (!_headReattach && ref==_head.ref) {
+            _repo.headDetach();
+            _headReattach = true;
+        }
         return _repo.refReplace(ref, commit);
-//        assert();
-//        if (_head.ref && _head.re) {
-//            
-//        }
-//        
-//        Rev r = rev;
-//        (Git::Rev&)r = _repo.refReplace(rev, commit);
-//        return r;
     }
     
     void _spawn(const char*const* argv) {
@@ -2160,6 +2158,7 @@ private:
     std::optional<License::Context> _licenseCtx;
     State::RepoState _repoState;
     Git::Rev _head;
+    bool _headReattach = false;
     std::vector<UI::RevColumnPtr> _columns;
 //    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
