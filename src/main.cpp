@@ -171,6 +171,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: first run experience: allow running debase from outside a git repo
+    
+    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
+    
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
@@ -182,6 +186,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   - in the debase repo: create a tag `v<VersionNumber>`
     #warning TODO:   - in the submodule: copy the binaries, create the zip, commit
     #warning TODO:   - in the debase repo: create a commit with the updated debase-releases submodule
+    
+    #warning TODO: make update mechanism automatically replace debase binary, instead of forcing user to go to website
     
     #warning TODO: when changing the author of a commit, change the committer too
     #warning TODO: look at the content of github when doing so -- if the author/committer are different, they're both displayed, which isn't what we want
