@@ -6,6 +6,7 @@
 #include "UTF8.h"
 #include "Button.h"
 #include "View.h"
+#include "Rev.h"
 
 namespace UI {
 
@@ -187,7 +188,7 @@ private:
     static constexpr int _CommitSpacing  = 1;
     
     Git::Repo _repo;
-    Git::Rev _rev;
+    Rev _rev;
     bool _head = false;
     CommitPanelVec _panels;
     

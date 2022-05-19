@@ -438,117 +438,59 @@ struct Tag : Ref {
     }
 };
 
-class _Rev {
+// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
+// that targets that commit
+class Rev {
 public:
-    // Subclass Implementation
-    virtual Commit commit() const = 0;
-    virtual Ref ref() const = 0;
-    virtual size_t skip() const = 0;
+    // Invalid Rev
+    Rev() {}
     
-    // Methods
-    virtual operator bool() const { return (bool)commit(); }
+    Rev(Commit commit) : commit(commit) {}
     
-    virtual bool operator ==(const _Rev& x) const {
-        if (commit() != x.commit()) return false;
-        if (ref() != x.ref()) return false;
-        if (skip() != x.skip()) return false;
+    Rev(Ref ref) : ref(ref) {
+        commit = ref.commit();
+        assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
+    }
+    
+    operator bool() const { return (bool)commit; }
+    
+    bool operator ==(const Rev& x) const {
+        if (commit != x.commit) return false;
+        if (ref != x.ref) return false;
         return true;
     }
     
-    virtual bool operator !=(const _Rev& x) const { return !(*this==x); }
+    bool operator !=(const Rev& x) const { return !(*this==x); }
     
-    virtual bool operator <(const _Rev& x) const {
-        if (commit() != x.commit()) return commit()<x.commit();
-        if (ref() != x.ref()) return ref()<x.ref();
-        if (skip() != x.skip()) return skip()<x.skip();
+    bool operator <(const Rev& x) const {
+        if (commit != x.commit) return commit<x.commit;
+        if (ref != x.ref) return ref<x.ref;
         return false;
     }
     
-    virtual std::string displayName() const {
-        constexpr size_t Len = 7;
-        if (const Ref r = ref()) {
-            const size_t s = skip();
-            return r.name() + (s ? "~" + std::to_string(s) : "");
-        }
-        return DisplayStringForId(commit().id(), Len);
-    }
-    
-    // displayHead(): returns the head commit considering `skip`
-    // skip==0 -> return `commit`
-    // skip>0  -> returns the `skip` parent of `commit`
-    virtual Commit displayHead() const {
-        Commit c = commit();
-        size_t s = skip();
-        while (c && s) {
-            c = c.parent();
-            s--;
-        }
-        return c;
-    }
-    
-    virtual std::string fullName() const {
-        if (Ref r = ref()) return r.fullName();
-        return StringForId(commit().id());
-    }
-    
-    virtual bool isMutable() const {
-        assert(*this);
-        // Only ref-backed revs are mutable
-        if (const Ref r = ref()) {
-            return r.isBranch() || r.isTag();
-        }
-        return false;
-    }
-};
-using Rev = std::shared_ptr<_Rev>;
-
-template <typename T, typename ...T_Args>
-std::shared_ptr<T> RevCreate(T_Args&&... args) {
-    return std::make_shared<T>(std::forward<T_Args>(args)...);
-}
-
-class RevBasic : public _Rev {
-public:
-    // Invalid Rev
-    RevBasic() {}
-    
-    RevBasic(Commit commit) : _commit(commit) {}
-    
-    RevBasic(Ref ref, size_t skip) : _ref(ref), _skip(skip) {
-        _commit = ref.commit();
-        assert(_commit); // Verify assumption: if we have a ref, it points to a valid commit
-    }
-    
-    Commit commit() const override { return _commit; }
-    Ref ref() const override { return _ref; }
-    size_t skip() const override { return _skip; }
-    
-private:
-    Commit _commit;
-    Ref _ref;
-    size_t _skip = 0;
-};
-
-//// A Rev holds a mandatory commit, along with an optional reference (ie a branch/tag)
-//// that targets that commit
-//class Rev {
-//public:
-//    // Invalid Rev
-//    Rev() {}
-//    
-//    Rev(Commit commit) : commit(commit) {}
-//    
-//    Rev(Ref ref, size_t skip) : ref(ref), skip(skip) {
-//        commit = ref.commit();
-//        assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
+//    std::string name() const {
+//        constexpr size_t Len = 7;
+//        if (ref) return ref.name();
+//        return Git::DisplayStringForId(commit.id(), Len);
 //    }
-//    
+    
+    std::string fullName() const {
+        if (ref) return ref.fullName();
+        return StringForId(commit.id());
+    }
+    
+//    bool isMutable() const {
+//        assert(*this);
+//        // Only ref-backed revs are mutable
+//        if (!ref) return false;
+//        return ref.isBranch() || ref.isTag();
+//    }
+    
 //    operator bool() const { return (bool)commit; }
 //    
 //    bool operator ==(const Rev& x) const {
 //        if (commit != x.commit) return false;
 //        if (ref != x.ref) return false;
-//        if (skip != x.skip) return false;
 //        return true;
 //    }
 //    
@@ -557,45 +499,23 @@ private:
 //    bool operator <(const Rev& x) const {
 //        if (commit != x.commit) return commit<x.commit;
 //        if (ref != x.ref) return ref<x.ref;
-//        if (skip != x.skip) return skip<x.skip;
 //        return false;
 //    }
 //    
 //    std::string displayName() const {
 //        constexpr size_t Len = 7;
-//        if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
+//        if (ref) return ref.name();
 //        return DisplayStringForId(commit.id(), Len);
-//    }
-//    
-//    // displayHead(): returns the head commit considering `skip`
-//    // skip==0 -> return `commit`
-//    // skip>0  -> returns the `skip` parent of `commit`
-//    Commit displayHead() const {
-//        Commit c = commit;
-//        size_t s = skip;
-//        while (c && s) {
-//            c = c.parent();
-//            s--;
-//        }
-//        return c;
 //    }
 //    
 //    std::string fullName() const {
 //        if (ref) return ref.fullName();
 //        return StringForId(commit.id());
 //    }
-//    
-//    bool isMutable() const {
-//        assert(*this);
-//        // Only ref-backed revs are mutable
-//        if (!ref) return false;
-//        return ref.isBranch() || ref.isTag();
-//    }
-//    
-//    Commit commit;      // Mandatory
-//    Ref ref;            // Optional
-//    size_t skip = 0;
-//};
+    
+    Commit commit;  // Mandatory
+    Ref ref;        // Optional
+};
 
 inline void _RepoFree(git_repository* repo) {
     git_repository_free(repo);
@@ -659,7 +579,7 @@ public:
             ref = x;
         }
         if (ref.isBranch()) return revLookup(ref.fullName());
-        return RevCreate<RevBasic>(ref.commit());
+        return ref.commit();
     }
     
     void checkout(const Rev& rev) const {
@@ -686,17 +606,17 @@ public:
             return 0;
         };
         
-        int ir = git_checkout_tree(*get(), (git_object*)*rev->commit().tree(), &opts);
+        int ir = git_checkout_tree(*get(), (git_object*)*rev.commit.tree(), &opts);
         if (ir == GIT_ECONFLICT) throw ConflictError(ir, ctx.conflicts);
         else if (ir)             throw Error(ir, "git_checkout_tree failed");
         
-        if (rev->ref()) {
-            const std::string fullName = rev->ref().fullName();
+        if (rev.ref) {
+            const std::string fullName = rev.ref.fullName();
             ir = git_repository_set_head(*get(), fullName.c_str());
             if (ir) throw Error(ir, "git_repository_set_head failed");
         
         } else {
-            ir = git_repository_set_head_detached(*get(), &rev->commit().id());
+            ir = git_repository_set_head_detached(*get(), &rev.commit.id());
             if (ir) throw Error(ir, "git_repository_set_head_detached failed");
         }
         
@@ -851,8 +771,8 @@ public:
     }
     
     Rev revReplace(const Rev& rev, const Commit& commit) const {
-        assert(rev->ref());
-        return Rev(refReplace(rev.ref, commit), rev->skip());
+        assert(rev.ref);
+        return refReplace(rev.ref, commit);
     }
     
 //    Rev revReplace(Rev rev, Commit commit) const {
@@ -903,52 +823,24 @@ public:
 //    }
     
     Rev revReload(const Rev& rev) const {
-        if (rev.ref) return Rev(refReload(rev.ref), rev.skip);
+        if (rev.ref) return refReload(rev.ref);
         return rev;
     }
     
     Rev revLookup(std::string_view str) const {
-        Rev rev = _revLookup(str);
-        if (rev.ref) return rev;
-        
-        // Try to get a ref-backed rev (with skip parameter) by removing the ^ or ~ suffix from `str`
-        Rev skipRev;
-        if (!skipRev.ref) {
-            std::string name(str);
-            size_t pos = name.find("^");
-            if (pos != std::string::npos) {
-                name.erase(pos);
-                skipRev = _revLookup(name);
-            }
+        Ref ref;
+        Object obj;
+        {
+            git_reference* pr = nullptr;
+            git_object* po = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
+            if (ir) throw Error(ir, "git_revparse_ext failed");
+            obj = po;
+            ref = pr;
         }
         
-        if (!skipRev.ref) {
-            std::string name(str);
-            size_t pos = name.find("~");
-            if (pos != std::string::npos) {
-                name.erase(pos);
-                skipRev = _revLookup(name);
-            }
-        }
-        
-        // If we found a `skipRev.ref` by removing the ^~ suffix, calculate the `skip` value
-        if (skipRev.ref) {
-            size_t skip = 0;
-            Commit head = skipRev.commit;
-            while (head && head!=rev.commit) {
-                head = head.parent();
-                skip++;
-            }
-            
-            if (head) {
-                skipRev.skip = skip;
-                return skipRev;
-            }
-        }
-        
-        // We couldn't parse `str` directly as a ref, nor could we parse it as "ref+skip" (ie rev^ / rev~X).
-        // So just return the commit itself.
-        return rev;
+        if (ref) return ref;
+        return Commit::ForObject(obj);
     }
     
     Branch branchLookup(std::string_view name) const {
@@ -1072,29 +964,13 @@ public:
     }
     
 private:
-    Rev _revLookup(std::string_view str) const {
-        Ref ref;
-        Object obj;
-        {
-            git_reference* pr = nullptr;
-            git_object* po = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
-            if (ir) throw Error(ir, "git_revparse_ext failed");
-            obj = po;
-            ref = pr;
-        }
-        
-        if (ref) return Rev(ref, 0);
-        return Commit::ForObject(obj);
-    }
-    
     Index _cherryPick(const Commit& dst, const Commit& commit) const {
         unsigned int mainline = (commit.isMerge() ? 1 : 0);
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
         opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
         
         git_index* x = nullptr;
-        int ir = git_cherrypick_commit(&x, *get(), *commit, *dst, mainline, &opts);
+        int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*dst, mainline, &opts);
         if (ir) throw Error(ir, "git_cherrypick_commit failed");
         return x;
     }

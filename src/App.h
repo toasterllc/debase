@@ -33,6 +33,7 @@
 #include "ProcessPath.h"
 #include "UserBinRelativePath.h"
 #include "Syscall.h"
+#include "Rev.h"
 
 extern "C" {
     extern char** environ;
@@ -40,7 +41,7 @@ extern "C" {
 
 class App : public UI::Screen {
 public:
-    App(Git::Repo repo, const std::vector<Git::Rev>& revs) :
+    App(Git::Repo repo, const std::vector<Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
     using UI::Screen::layout;
@@ -296,7 +297,7 @@ public:
         
         // Create _repoState
         std::set<Git::Ref> refs;
-        for (Git::Rev rev : _revs) {
+        for (const Rev& rev : _revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
         _repoState = State::RepoState(StateDir(), _repo, refs);
@@ -311,7 +312,7 @@ public:
                 "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
                 "\n"
                 "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
-            _head.displayName().c_str());
+            _head.ref.name().c_str());
         }
         
         // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
@@ -410,7 +411,7 @@ private:
     using _Path = std::filesystem::path;
     
     struct _Selection {
-        Git::Rev rev;
+        Rev rev;
         std::set<Git::Commit> commits;
     };
     
@@ -631,7 +632,7 @@ private:
         return _InsertionPosition{icol, iiter};
     }
     
-    UI::RevColumnPtr _columnForRev(Git::Rev rev) {
+    UI::RevColumnPtr _columnForRev(const Rev& rev) {
         for (UI::RevColumnPtr col : _columns) {
             if (col->rev() == rev) return col;
         }
@@ -694,22 +695,18 @@ private:
     
     void _reload() {
         // Reload head's ref
-        if (_head.ref) {
-            _head = _repo.revReload(_head);
-        }
+        _head = _repo.revReload(_head);
         
         // Reload all ref-based revs
-        for (Git::Rev& rev : _revs) {
-            if (rev.ref) {
-                rev = _repo.revReload(rev);
-            }
+        for (Rev& rev : _revs) {
+            (Git::Rev&)rev = _repo.revReload(rev);
         }
         
         // Create columns
         std::list<UI::ViewPtr> sv;
         int offX = _ColumnInsetX;
         size_t colCount = 0;
-        for (const Git::Rev& rev : _revs) {
+        for (const Rev& rev : _revs) {
             State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
             const int rem = size().x-offX;
             if (rem < _ColumnWidth) break;
@@ -925,8 +922,8 @@ private:
                 };
                 
                 auto currentTime = std::chrono::steady_clock::now();
-                Git::Rev rev = _selection.rev;
-                Git::Commit commit = *_selection.commits.begin();
+                const Rev& rev = _selection.rev;
+                const Git::Commit& commit = *_selection.commits.begin();
                 const bool doubleClicked =
                     doubleClickStatePrev.rev                                            &&
                     doubleClickStatePrev.rev==rev                                       &&
@@ -1142,7 +1139,7 @@ private:
     }
     
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
-        Git::Rev rev = col->rev();
+        Rev rev = col->rev();
         State::History& h = _repoState.history(col->rev().ref);
         State::RefState refStatePrev = h.get();
         State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
@@ -1156,7 +1153,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            rev = _repo.revReplace(rev, commit);
+            (Git::Rev&)rev = _repo.revReplace(rev, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -2125,7 +2122,7 @@ private:
     }
     
     Git::Repo _repo;
-    std::vector<Git::Rev> _revs;
+    std::vector<Rev> _revs;
     
 //    UI::ColorPalette _colors;
 //    UI::ColorPalette _colorsPrev;
@@ -2144,7 +2141,7 @@ private:
     } _drag;
     
     struct {
-        Git::Rev rev;
+        Rev rev;
         Git::Commit commit;
         UI::Point mouseUpOrigin;
         std::chrono::steady_clock::time_point mouseUpTime;
