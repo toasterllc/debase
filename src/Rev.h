@@ -6,13 +6,12 @@ public:
     using Git::Rev::Rev;
 //    Rev(const Git::Rev& x) : Git::Rev(x) {}
     
-    // Methods
     operator bool() const { return Git::Rev::operator bool(); }
     
     bool operator ==(const Rev& x) const {
         if (!(Git::Rev::operator ==(x))) return false;
         if (skip != x.skip) return false;
-        if (mutationAllowed != x.mutationAllowed) return false;
+        if (mutability != x.mutability) return false;
         return true;
     }
     
@@ -21,7 +20,7 @@ public:
     bool operator <(const Rev& x) const {
         if (Git::Rev::operator !=(x)) return Git::Rev::operator <(x);
         if (skip != x.skip) return skip<x.skip;
-        if (mutationAllowed != x.mutationAllowed) return mutationAllowed<x.mutationAllowed;
+        if (mutability != x.mutability) return (int)mutability<(int)x.mutability;
         return false;
     }
     
@@ -50,14 +49,19 @@ public:
 //        return true;
 //    }
     
+    enum class Mutability {
+        Allowed,
+        DisallowedUncommittedChanges,
+    };
+    
     bool isMutable() const {
         // Check if mutation has been explicitly disabled
-        if (!mutationAllowed) return false;
+        if (mutability != Mutability::Allowed) return false;
         return Git::Rev::isMutable();
     }
     
     size_t skip = 0;
-    bool mutationAllowed = true;
+    Mutability mutability = Mutability::Allowed;
 };
 
 

@@ -302,46 +302,54 @@ public:
         }
         _repoState = State::RepoState(StateDir(), _repo, refs);
         
-        // Determine if we need to detach head.
-        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
-        // In other words, we need to detach head when whatever is checked-out may be modified.
-        bool detachHead = _head.ref && refs.find(_head.ref)!=refs.end();
-        
-        if (detachHead && _repo.dirty()) {
-            throw Toastbox::RuntimeError(
-                "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
-                "\n"
-                "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
-            _head.ref.name().c_str());
+        if (_repo.dirty()) {
+            for (Rev& rev : _revs) {
+                if (rev.ref && rev.ref==_head.ref) {
+                    rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
+                }
+            }
         }
         
-        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
-        // we try to replace that ref.
-        if (detachHead) _repo.headDetach();
-        Defer(
-            if (detachHead) {
-                // Restore previous head on exit
-                std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
-                std::string err;
-                try {
-                    _repo.headAttach(_head);
-                } catch (const Git::ConflictError& e) {
-                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
-                    for (const _Path& path : e.paths) {
-                        err += "  " + std::string(path) + "\n";
-                    }
-                    
-                    err += "\n";
-                    err += "Please move or delete them and run:\n";
-                    err += "  git checkout " + _head.ref.name() + "\n";
-                
-                } catch (const std::exception& e) {
-                    err = std::string("Error: ") + e.what();
-                }
-                
-                std::cout << (!err.empty() ? err : "Done") << std::endl;
-            }
-        );
+//        // Determine if we need to detach head.
+//        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
+//        // In other words, we need to detach head when whatever is checked-out may be modified.
+//        bool detachHead = _head.ref && refs.find(_head.ref)!=refs.end();
+//        
+//        if (detachHead && _repo.dirty()) {
+//            throw Toastbox::RuntimeError(
+//                "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
+//                "\n"
+//                "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
+//            _head.ref.name().c_str());
+//        }
+//        
+//        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
+//        // we try to replace that ref.
+//        if (detachHead) _repo.headDetach();
+//        Defer(
+//            if (detachHead) {
+//                // Restore previous head on exit
+//                std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
+//                std::string err;
+//                try {
+//                    _repo.headAttach(_head);
+//                } catch (const Git::ConflictError& e) {
+//                    err = "Error: checkout failed because these untracked files would be overwritten:\n";
+//                    for (const _Path& path : e.paths) {
+//                        err += "  " + std::string(path) + "\n";
+//                    }
+//                    
+//                    err += "\n";
+//                    err += "Please move or delete them and run:\n";
+//                    err += "  git checkout " + _head.ref.name() + "\n";
+//                
+//                } catch (const std::exception& e) {
+//                    err = std::string("Error: ") + e.what();
+//                }
+//                
+//                std::cout << (!err.empty() ? err : "Done") << std::endl;
+//            }
+//        );
         
         try {
             _cursesInit();

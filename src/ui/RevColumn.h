@@ -34,6 +34,10 @@ public:
         _readOnly->align(Align::Center);
         _readOnly->textAttr(colors().error);
         
+//        _readOnlyReason->text("read-only");
+        _readOnlyReason->align(Align::Center);
+        _readOnlyReason->textAttr(colors().error);
+        
 //        borderColor(colors().normal);
     }
     
@@ -47,7 +51,11 @@ public:
             _name->suffix("");
         }
         
-        _readOnly->visible(!_rev.isMutable());
+        const bool readOnlyVisible = !_rev.isMutable();
+        const char* readOnlyReason = _ReadOnlyReason(_rev.mutability);
+        _readOnly->visible(readOnlyVisible);
+        _readOnlyReason->visible(readOnlyVisible && readOnlyReason);
+        if (readOnlyReason) _readOnlyReason->text(readOnlyReason);
         
         _undoButton->visible(_rev.isMutable());
         _redoButton->visible(_rev.isMutable());
@@ -100,7 +108,8 @@ public:
         const Size s = size();
         
         _name->frame({{0,_NameInsetY}, {s.x, 1}});
-        _readOnly->frame({{0,_ReadonlyInsetY}, {s.x, 1}});
+        _readOnly->frame({{0,_ReadOnlyInsetY}, {s.x, 1}});
+        _readOnlyReason->frame({{0,_ReadOnlyReasonInsetY}, {s.x, 1}});
         
         _undoButton->frame({{0, _ButtonsInsetY}, {UndoWidth,3}});
         _redoButton->frame({{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}});
@@ -139,7 +148,7 @@ public:
 //        if (!_rev.isMutable()) {
 //            Attr color = attr(colors().error);
 //            const char immutableText[] = "read-only";
-//            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+//            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadOnlyInsetY};
 //            drawText(p, immutableText);
 //        }
 //        
@@ -181,11 +190,19 @@ public:
     template <typename T> bool snapshotsButton(const T& x) { return _set(_snapshotsButton, x); }
     
 private:
-    static constexpr int _NameInsetY    = 0;
-    static constexpr int _ReadonlyInsetY = 2;
-    static constexpr int _ButtonsInsetY  = 1;
-    static constexpr int _CommitsInsetY  = 5;
-    static constexpr int _CommitSpacing  = 1;
+    static constexpr int _NameInsetY            = 0;
+    static constexpr int _ReadOnlyInsetY        = 1;
+    static constexpr int _ReadOnlyReasonInsetY  = 2;
+    static constexpr int _ButtonsInsetY         = 1;
+    static constexpr int _CommitsInsetY         = 5;
+    static constexpr int _CommitSpacing         = 1;
+    
+    static const char* _ReadOnlyReason(Rev::Mutability mutability) {
+        switch (mutability) {
+        case Rev::Mutability::Allowed:                      return nullptr;
+        case Rev::Mutability::DisallowedUncommittedChanges: return "(uncommitted changes)";
+        }
+    }
     
     Git::Repo _repo;
     Rev _rev;
@@ -194,6 +211,7 @@ private:
     
     LabelPtr _name              = subviewCreate<Label>();
     LabelPtr _readOnly          = subviewCreate<Label>();
+    LabelPtr _readOnlyReason    = subviewCreate<Label>();
     
     ButtonPtr _undoButton       = subviewCreate<Button>();
     ButtonPtr _redoButton       = subviewCreate<Button>();
