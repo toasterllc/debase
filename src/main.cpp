@@ -177,6 +177,10 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: when changing the author of a commit, change the committer too
+    #warning TODO: look at the content of github when doing so -- if the author/committer are different, they're both displayed, which isn't what we want
+    #warning TODO: maybe both author and committer should be shown in editor? but maybe only if theyre different?
+    
     #warning TODO: linux: starting/exiting is slow (apparently due to detaching/attaching head). detach head lazily when the branch relevant branch is modified?
     
     #warning TODO: move commits away from dragged commits to show where the commits will land
