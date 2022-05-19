@@ -33,6 +33,7 @@
 #include "ProcessPath.h"
 #include "UserBinRelativePath.h"
 #include "Syscall.h"
+#include "Rev.h"
 
 extern "C" {
     extern char** environ;
@@ -40,7 +41,7 @@ extern "C" {
 
 class App : public UI::Screen {
 public:
-    App(Git::Repo repo, const std::vector<Git::Rev>& revs) :
+    App(Git::Repo repo, const std::vector<Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
     using UI::Screen::layout;
@@ -202,7 +203,7 @@ public:
                 if (hitTest && !shift) {
                     if (hitTest.panel) {
                         // Mouse down inside of a CommitPanel, without shift key
-                        std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                        std::optional<_GitOp> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
                         if (gitOp) _gitOpExec(*gitOp);
                     }
                 
@@ -214,7 +215,7 @@ public:
             } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
                 if (hitTest) {
                     if (hitTest.panel) {
-                        std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
+                        std::optional<_GitOp> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
                         if (gitOp) _gitOpExec(*gitOp);
                     }
                 }
@@ -229,8 +230,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Delete,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Delete,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -256,8 +257,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Combine,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Combine,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -273,8 +274,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Edit,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Edit,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -290,35 +291,63 @@ public:
         return true;
     }
     
+    void _runNoRepo() {
+        try {
+            _cursesInit();
+            Defer(_cursesDeinit());
+            
+            // Create our window now that ncurses is initialized
+            Window::operator =(Window(::stdscr));
+            
+            _reload();
+            _moveOffer();
+            _licenseCheck();
+            _errorMessageRun("debase must be run from a git repository.", false);
+            
+        } catch (const UI::ExitRequest&) {
+            // Nothing to do
+        } catch (...) {
+            throw;
+        }
+    }
+    
     void run() {
         _theme = State::ThemeRead();
+        
+        // Handle being run outside of a git repo
+        // We show a dialog in this case, and still offer to move debase to ~/bin, so that
+        // the first-run experience is decent even when run outside of a git repo, which
+        // is likely on the first invocation
+        if (!_repo) {
+            _runNoRepo();
+            return;
+        }
+        
         _head = _repo.headResolved();
         
         // Create _repoState
         std::set<Git::Ref> refs;
-        for (Git::Rev rev : _revs) {
+        for (const Rev& rev : _revs) {
             if (rev.ref) refs.insert(rev.ref);
         }
         _repoState = State::RepoState(StateDir(), _repo, refs);
         
-        // Determine if we need to detach head.
-        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
-        // In other words, we need to detach head when whatever is checked-out may be modified.
-        bool detachHead = _head.ref && refs.find(_head.ref)!=refs.end();
-        
-        if (detachHead && _repo.dirty()) {
-            throw Toastbox::RuntimeError(
-                "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
-                "\n"
-                "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
-            _head.displayName().c_str());
+        // If the repo has outstanding changes, prevent the currently checked-out
+        // branch from being modified, since we can't clobber the uncommitted
+        // changes. We do this by marking all refs that match HEAD's ref as
+        // immutable.
+        if (_repo.dirty() && _head.ref) {
+            for (Rev& rev : _revs) {
+                if (rev.ref && rev.ref==_head.ref) {
+                    rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
+                }
+            }
         }
         
-        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
-        // we try to replace that ref.
-        if (detachHead) _repo.headDetach();
+        // Reattach head upon return
+        // We do this via Defer() so that it executes even if there's an exception
         Defer(
-            if (detachHead) {
+            if (_headReattach) {
                 // Restore previous head on exit
                 std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
                 std::string err;
@@ -350,13 +379,9 @@ public:
             Window::operator =(Window(::stdscr));
             
             _reload();
-            
             _moveOffer();
             _licenseCheck();
             _updateCheck();
-            
-//            _updateAvailableAlert = subviewCreate<UI::UpdateAvailableAlert>(2);
-            
             track({});
             
         } catch (const UI::ExitRequest&) {
@@ -408,9 +433,11 @@ public:
     
 private:
     using _Path = std::filesystem::path;
+    using _GitModify = Git::Modify<Rev>;
+    using _GitOp = _GitModify::Op;
     
     struct _Selection {
-        Git::Rev rev;
+        Rev rev;
         std::set<Git::Commit> commits;
     };
     
@@ -631,7 +658,7 @@ private:
         return _InsertionPosition{icol, iiter};
     }
     
-    UI::RevColumnPtr _columnForRev(Git::Rev rev) {
+    UI::RevColumnPtr _columnForRev(const Rev& rev) {
         for (UI::RevColumnPtr col : _columns) {
             if (col->rev() == rev) return col;
         }
@@ -693,23 +720,23 @@ private:
     }
     
     void _reload() {
-        // Reload head's ref
-        if (_head.ref) {
+        // We allow ourself to be called outside of a git repo, so we need
+        // to check _repo for null
+        if (_repo) {
+            // Reload head's ref
             _head = _repo.revReload(_head);
         }
         
         // Reload all ref-based revs
-        for (Git::Rev& rev : _revs) {
-            if (rev.ref) {
-                rev = _repo.revReload(rev);
-            }
+        for (Rev& rev : _revs) {
+            (Git::Rev&)rev = _repo.revReload(rev);
         }
         
         // Create columns
         std::list<UI::ViewPtr> sv;
         int offX = _ColumnInsetX;
         size_t colCount = 0;
-        for (const Git::Rev& rev : _revs) {
+        for (const Rev& rev : _revs) {
             State::History* h = (rev.ref ? &_repoState.history(rev.ref) : nullptr);
             const int rem = size().x-offX;
             if (rem < _ColumnWidth) break;
@@ -774,7 +801,7 @@ private:
     
     // _trackMouseInsideCommitPanel
     // Handles clicking/dragging a set of CommitPanels
-    std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<_GitOp> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
         const UI::Size mouseDownOffset = SuperviewConvert(*mouseDownColumn, mouseDownPanelFrame.origin) - mouseDownEvent.mouse.origin;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
@@ -900,12 +927,12 @@ private:
             }
         }
         
-        std::optional<Git::Op> gitOp;
+        std::optional<_GitOp> gitOp;
         if (!abort) {
             if (_drag.titlePanel && ipos) {
                 Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
-                gitOp = Git::Op{
-                    .type = (_drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
+                gitOp = _GitOp{
+                    .type = (_drag.copy ? _GitOp::Type::Copy : _GitOp::Type::Move),
                     .src = {
                         .rev = _selection.rev,
                         .commits = _selection.commits,
@@ -925,8 +952,8 @@ private:
                 };
                 
                 auto currentTime = std::chrono::steady_clock::now();
-                Git::Rev rev = _selection.rev;
-                Git::Commit commit = *_selection.commits.begin();
+                const Rev& rev = _selection.rev;
+                const Git::Commit& commit = *_selection.commits.begin();
                 const bool doubleClicked =
                     doubleClickStatePrev.rev                                            &&
                     doubleClickStatePrev.rev==rev                                       &&
@@ -938,7 +965,7 @@ private:
                 if (doubleClicked) {
                     if (validTarget) {
                         gitOp = {
-                            .type = Git::Op::Type::Edit,
+                            .type = _GitOp::Type::Edit,
                             .src = {
                                 .rev = _selection.rev,
                                 .commits = _selection.commits,
@@ -1039,7 +1066,7 @@ private:
         _selectionRect = std::nullopt;
     }
     
-    std::optional<Git::Op> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
             _selection = {
@@ -1065,10 +1092,10 @@ private:
         menu->track(mouseDownEvent);
         
         // Handle the clicked button
-        std::optional<Git::Op> gitOp;
+        std::optional<_GitOp> gitOp;
         if (menuButton == combineButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Combine,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Combine,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1076,8 +1103,8 @@ private:
             };
         
         } else if (menuButton == editButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Edit,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Edit,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1085,8 +1112,8 @@ private:
             };
         
         } else if (menuButton == deleteButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Delete,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Delete,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1133,7 +1160,7 @@ private:
             if (commitNew != commitCur) {
                 Git::Commit commit = State::Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
-                _repo.refReplace(ref, commit);
+                _refReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1142,7 +1169,7 @@ private:
     }
     
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
-        Git::Rev rev = col->rev();
+        Rev rev = col->rev();
         State::History& h = _repoState.history(col->rev().ref);
         State::RefState refStatePrev = h.get();
         State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
@@ -1156,7 +1183,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            rev = _repo.revReplace(rev, commit);
+            (Git::Rev&)rev = _refReplace(rev.ref, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -1173,15 +1200,20 @@ private:
         _reload();
     }
     
-    void _gitOpExec(const Git::Op& gitOp) {
-        auto spawnFn = [&] (const char*const* argv) { _spawn(argv); };
-        std::optional<Git::OpResult> opResult = Git::Exec(_repo, gitOp, spawnFn);
+    void _gitOpExec(const _GitOp& gitOp) {
+        const _GitModify::Ctx ctx = {
+            .repo = _repo,
+            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _refReplace(ref, commit); },
+            .spawn = [&] (const char*const* argv) { _spawn(argv); },
+        };
+        
+        auto opResult = _GitModify::Exec(ctx, gitOp);
         if (!opResult) return;
         
-        Git::Rev srcRevPrev = gitOp.src.rev;
-        Git::Rev dstRevPrev = gitOp.dst.rev;
-        Git::Rev srcRev = opResult->src.rev;
-        Git::Rev dstRev = opResult->dst.rev;
+        Rev srcRevPrev = gitOp.src.rev;
+        Rev dstRevPrev = gitOp.dst.rev;
+        Rev srcRev = opResult->src.rev;
+        Rev dstRev = opResult->dst.rev;
         assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         
@@ -1275,7 +1307,17 @@ private:
         
     //    sleep(1);
     }
-
+    
+    Git::Ref _refReplace(const Git::Ref& ref, const Git::Commit& commit) {
+        // Detach HEAD if it's attached to the ref that we're modifying, otherwise
+        // we'll get an error when we try to replace that ref.
+        if (!_headReattach && ref==_head.ref) {
+            _repo.headDetach();
+            _headReattach = true;
+        }
+        return _repo.refReplace(ref, commit);
+    }
+    
     void _spawn(const char*const* argv) {
         // preserveTerminalCmds: these commands don't modify the terminal, and therefore
         // we don't want to deinit/reinit curses when calling them.
@@ -1305,17 +1347,17 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    static License::Context _LicenseContext(const _Path& repoDir) {
+    static License::Context _LicenseContext(const _Path& dir) {
         using namespace std::chrono;
         using namespace std::filesystem;
         Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
         Machine::MachineInfo machineInfo = Machine::MachineInfoCalc();
         
-        // Find t = max(time(), <time of each file in repoDir>),
+        // Find t = max(time(), <time of each file in dir>),
         // to help prevent time-rollback attacks.
         system_clock::time_point latestTime = system_clock::now();
         try {
-            for (const path& p : directory_iterator(repoDir)) {
+            for (const path& p : directory_iterator(dir)) {
                 try {
                     // We'd ideally use std::filesystem::last_write_time() here instead of our
                     // custom Stat() function, but last_write_time() returns a
@@ -1345,7 +1387,11 @@ private:
 //    }
     
     const License::Context& _licenseCtxGet() {
-        if (!_licenseCtx) _licenseCtx = _LicenseContext(_repo.path());
+        // We'd normally use _repo.path(), but we allow ourself to be
+        // executed from outside a git repo (for an improved first-run
+        // experience). So use "." instead, which will work whether
+        // _repo==null or not.
+        if (!_licenseCtx) _licenseCtx = _LicenseContext(".");
         return *_licenseCtx;
     }
     
@@ -2125,13 +2171,14 @@ private:
     }
     
     Git::Repo _repo;
-    std::vector<Git::Rev> _revs;
+    std::vector<Rev> _revs;
     
 //    UI::ColorPalette _colors;
 //    UI::ColorPalette _colorsPrev;
     std::optional<License::Context> _licenseCtx;
     State::RepoState _repoState;
     Git::Rev _head;
+    bool _headReattach = false;
     std::vector<UI::RevColumnPtr> _columns;
 //    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
@@ -2144,7 +2191,7 @@ private:
     } _drag;
     
     struct {
-        Git::Rev rev;
+        Rev rev;
         Git::Commit commit;
         UI::Point mouseUpOrigin;
         std::chrono::steady_clock::time_point mouseUpTime;

@@ -6,6 +6,7 @@
 #include "UTF8.h"
 #include "Button.h"
 #include "View.h"
+#include "Rev.h"
 
 namespace UI {
 
@@ -27,13 +28,12 @@ public:
         
         _name->textAttr(colors().menu | WA_BOLD);
         _name->align(Align::Center);
-//        _name->visible(false);
         
-        _readOnly->text("read-only");
-        _readOnly->align(Align::Center);
-        _readOnly->textAttr(colors().error);
+        _statusLine1->align(Align::Center);
+        _statusLine1->textAttr(colors().error);
         
-//        borderColor(colors().normal);
+        _statusLine2->align(Align::Center);
+        _statusLine2->textAttr(colors().error);
     }
     
     void reload(Size size) {
@@ -46,11 +46,29 @@ public:
             _name->suffix("");
         }
         
-        _readOnly->visible(!_rev.isMutable());
+        const bool readOnly = !_rev.isMutable();
+        const char* readOnlyReason = _ReadOnlyReason(_rev.mutability);
+        if (readOnly && readOnlyReason) {
+            _statusLine1->text("read-only");
+            _statusLine1->visible(true);
+            
+            _statusLine2->text(readOnlyReason);
+            _statusLine2->visible(true);
         
-        _undoButton->visible(_rev.isMutable());
-        _redoButton->visible(_rev.isMutable());
-        _snapshotsButton->visible(_rev.isMutable());
+        } else if (readOnly) {
+            _statusLine1->visible(false);
+            
+            _statusLine2->text("read-only");
+            _statusLine2->visible(true);
+        
+        } else {
+            _statusLine1->visible(false);
+            _statusLine2->visible(false);
+        }
+        
+        _undoButton->visible(!readOnly);
+        _redoButton->visible(!readOnly);
+        _snapshotsButton->visible(!readOnly);
         
 //        _redoButton->visible(false);
 //        _snapshotsButton->visible(false);
@@ -99,7 +117,8 @@ public:
         const Size s = size();
         
         _name->frame({{0,_NameInsetY}, {s.x, 1}});
-        _readOnly->frame({{0,_ReadonlyInsetY}, {s.x, 1}});
+        _statusLine1->frame({{0,_StatusLine1InsetY}, {s.x, 1}});
+        _statusLine2->frame({{0,_StatusLine2InsetY}, {s.x, 1}});
         
         _undoButton->frame({{0, _ButtonsInsetY}, {UndoWidth,3}});
         _redoButton->frame({{UndoWidth, _ButtonsInsetY}, {RedoWidth,3}});
@@ -138,7 +157,7 @@ public:
 //        if (!_rev.isMutable()) {
 //            Attr color = attr(colors().error);
 //            const char immutableText[] = "read-only";
-//            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadonlyInsetY};
+//            const Point p = pos + Size{std::max(0, (width-(int)(std::size(immutableText)-1))/2), _ReadOnlyInsetY};
 //            drawText(p, immutableText);
 //        }
 //        
@@ -180,19 +199,28 @@ public:
     template <typename T> bool snapshotsButton(const T& x) { return _set(_snapshotsButton, x); }
     
 private:
-    static constexpr int _NameInsetY    = 0;
-    static constexpr int _ReadonlyInsetY = 2;
-    static constexpr int _ButtonsInsetY  = 1;
-    static constexpr int _CommitsInsetY  = 5;
-    static constexpr int _CommitSpacing  = 1;
+    static constexpr int _NameInsetY            = 0;
+    static constexpr int _StatusLine1InsetY     = 1;
+    static constexpr int _StatusLine2InsetY     = 2;
+    static constexpr int _ButtonsInsetY         = 1;
+    static constexpr int _CommitsInsetY         = 5;
+    static constexpr int _CommitSpacing         = 1;
+    
+    static const char* _ReadOnlyReason(Rev::Mutability mutability) {
+        switch (mutability) {
+        case Rev::Mutability::Allowed:                      return nullptr;
+        case Rev::Mutability::DisallowedUncommittedChanges: return "(uncommitted changes)";
+        }
+    }
     
     Git::Repo _repo;
-    Git::Rev _rev;
+    Rev _rev;
     bool _head = false;
     CommitPanelVec _panels;
     
     LabelPtr _name              = subviewCreate<Label>();
-    LabelPtr _readOnly          = subviewCreate<Label>();
+    LabelPtr _statusLine1       = subviewCreate<Label>();
+    LabelPtr _statusLine2       = subviewCreate<Label>();
     
     ButtonPtr _undoButton       = subviewCreate<Button>();
     ButtonPtr _redoButton       = subviewCreate<Button>();

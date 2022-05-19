@@ -11,6 +11,7 @@
 #include "UsageText.h"
 #include "LibsText.h"
 #include "Syscall.h"
+#include "Rev.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -142,6 +143,51 @@ static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
 //    return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
 //}
 
+Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
+    Rev rev;
+    (Git::Rev&)rev = repo.revLookup(str);
+    if (rev.ref) return rev;
+    
+    // Try to get a ref-backed rev (with skip parameter) by removing the ^ or ~ suffix from `str`
+    Rev skipRev;
+    {
+        std::string name(str);
+        size_t pos = name.find("^");
+        if (pos != std::string::npos) {
+            name.erase(pos);
+            (Git::Rev&)skipRev = repo.revLookup(name);
+        }
+    }
+    
+    if (!skipRev.ref) {
+        std::string name(str);
+        size_t pos = name.find("~");
+        if (pos != std::string::npos) {
+            name.erase(pos);
+            (Git::Rev&)skipRev = repo.revLookup(name);
+        }
+    }
+    
+    // If we found a `skipRev.ref` by removing the ^~ suffix, calculate the `skip` value
+    if (skipRev.ref) {
+        size_t skip = 0;
+        Git::Commit head = skipRev.commit;
+        while (head && head!=rev.commit) {
+            head = head.parent();
+            skip++;
+        }
+        
+        if (head) {
+            skipRev.skip = skip;
+            return skipRev;
+        }
+    }
+    
+    // We couldn't parse `str` directly as a ref, nor could we parse it as "ref+skip" (ie rev^ / rev~X).
+    // So just return the commit itself.
+    return rev;
+}
+
 int main(int argc, const char* argv[]) {
 //    std::string str = "{\"error\":\"The existing trial has already expired.\"}\n";
 //    License::Server::ReplyLicenseLookup resp;
@@ -170,13 +216,6 @@ int main(int argc, const char* argv[]) {
     
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
-    
-    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
-    
-    #warning TODO: startup perf: detach head lazily when the relevant branch is modified
-    #warning TODO:   starting/exiting debase is slow on linux, apparently due to detaching/attaching head
-    
-    #warning TODO: first run experience: allow running debase from outside a git repo
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -207,6 +246,17 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: first run experience: allow running debase from outside a git repo
+//
+//    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
+//    #warning TODO:   make sure that all instances of the same branch are read-only too
+//    
+//    #warning TODO: startup perf: detach head lazily when the relevant branch is modified
+//    #warning TODO:   starting/exiting debase is slow on linux, apparently due to detaching/attaching head
+//
+//    #warning TODO: audit all uses of Rev==/!=/< to make sure they're not using the shared_ptr version
+//                   nevermind, we didn't end up using a shared_ptr version of Rev
+//
 //    #warning TODO: strip whitespace from email / license code
 //
 //    #warning TODO: configure binary to be stripped
@@ -598,47 +648,48 @@ int main(int argc, const char* argv[]) {
         setlocale(LC_ALL, "");
         
         Git::Repo repo;
-        std::vector<Git::Rev> revs;
+        std::vector<Rev> revs;
         try {
             repo = Git::Repo::Open(".");
-        } catch (...) {
-            throw Toastbox::RuntimeError("current directory isn't a git repository");
-        }
+        } catch (...) {}
         
-        if (args.run.revs.empty()) {
-            constexpr size_t RevCountDefault = 5;
-            std::set<Git::Rev> unique;
-            ssize_t i = 0;
-            while (revs.size() < RevCountDefault) {
-                Git::Rev rev;
-                try {
-                    rev = (!i ? repo.headResolved() : repo.revLookup("@{" + std::to_string(i) + "}"));
+        if (repo) {
+            if (args.run.revs.empty()) {
+                constexpr size_t RevCountDefault = 5;
+                std::set<Rev> unique;
+                ssize_t i = 0;
+                while (revs.size() < RevCountDefault) {
+                    Rev rev;
+                    try {
+                        if (!i) (Git::Rev&)rev = repo.headResolved();
+                        else rev = _RevLookup(repo, "@{" + std::to_string(i) + "}");
+                        
+                        if (unique.find(rev) == unique.end()) {
+                            revs.emplace_back(rev);
+                            unique.insert(rev);
+                        }
+                    
+                    } catch (...) {
+                        break;
+                    }
+                    i--;
+                }
+            
+            } else {
+                // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
+                std::set<Rev> unique;
+                for (const std::string& revName : args.run.revs) {
+                    Rev rev;
+                    try {
+                        rev = _RevLookup(repo, revName);
+                    } catch (...) {
+                        throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
+                    }
                     
                     if (unique.find(rev) == unique.end()) {
-                        revs.emplace_back(rev);
+                        revs.push_back(rev);
                         unique.insert(rev);
                     }
-                
-                } catch (...) {
-                    break;
-                }
-                i--;
-            }
-        
-        } else {
-            // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
-            std::set<Git::Rev> unique;
-            for (const std::string& revName : args.run.revs) {
-                Git::Rev rev;
-                try {
-                    rev = repo.revLookup(revName);
-                } catch (...) {
-                    throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
-                }
-                
-                if (unique.find(rev) == unique.end()) {
-                    revs.push_back(rev);
-                    unique.insert(rev);
                 }
             }
         }

@@ -9,7 +9,7 @@
 #include "lib/toastbox/FDStream.h"
 #include "lib/nlohmann/json.h"
 #include "git/Git.h"
-#include "git/GitOp.h"
+#include "git/Modify.h"
 #include "license/License.h"
 #include "Version.h"
 #include "History.h"

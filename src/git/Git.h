@@ -387,7 +387,7 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
 struct Branch : Ref {
     using Ref::Ref;
     
-    static Branch ForRef(Ref ref) {
+    static Branch ForRef(const Ref& ref) {
         assert(ref.isBranch());
         git_reference* x = nullptr;
         int ir = git_reference_dup(&x, *ref);
@@ -421,7 +421,7 @@ struct Branch : Ref {
 struct Tag : Ref {
     using Ref::Ref;
     
-    static Tag ForRef(Ref ref) {
+    static Tag ForRef(const Ref& ref) {
         assert(ref.isTag());
         git_reference* x = nullptr;
         int ir = git_reference_dup(&x, *ref);
@@ -432,9 +432,9 @@ struct Tag : Ref {
     TagAnnotation annotation() const {
         git_tag* x = nullptr;
         int ir = git_reference_peel((git_object**)&x, *get(), GIT_OBJECT_TAG);
-        // Allow failures, since we use this method to determine whether the tag is an annotated tag or not
-        if (!ir) return x;
-        return nullptr;
+        // Don't throw on failures, since we use this method to determine whether the tag is an annotated tag or not
+        if (ir) return nullptr;
+        return x;
     }
 };
 
@@ -447,7 +447,7 @@ public:
     
     Rev(Commit commit) : commit(commit) {}
     
-    Rev(Ref ref, size_t skip) : ref(ref), skip(skip) {
+    Rev(Ref ref) : ref(ref) {
         commit = ref.commit();
         assert(commit); // Verify assumption: if we have a ref, it points to a valid commit
     }
@@ -457,7 +457,6 @@ public:
     bool operator ==(const Rev& x) const {
         if (commit != x.commit) return false;
         if (ref != x.ref) return false;
-        if (skip != x.skip) return false;
         return true;
     }
     
@@ -466,28 +465,14 @@ public:
     bool operator <(const Rev& x) const {
         if (commit != x.commit) return commit<x.commit;
         if (ref != x.ref) return ref<x.ref;
-        if (skip != x.skip) return skip<x.skip;
         return false;
     }
     
-    std::string displayName() const {
-        constexpr size_t Len = 7;
-        if (ref) return ref.name() + (skip ? "~" + std::to_string(skip) : "");
-        return DisplayStringForId(commit.id(), Len);
-    }
-    
-    // displayHead(): returns the head commit considering `skip`
-    // skip==0 -> return `commit`
-    // skip>0  -> returns the `skip` parent of `commit`
-    Commit displayHead() const {
-        Commit c = commit;
-        size_t s = skip;
-        while (c && s) {
-            c = c.parent();
-            s--;
-        }
-        return c;
-    }
+//    std::string name() const {
+//        constexpr size_t Len = 7;
+//        if (ref) return ref.name();
+//        return Git::DisplayStringForId(commit.id(), Len);
+//    }
     
     std::string fullName() const {
         if (ref) return ref.fullName();
@@ -501,9 +486,35 @@ public:
         return ref.isBranch() || ref.isTag();
     }
     
-    Commit commit;      // Mandatory
-    Ref ref;            // Optional
-    size_t skip = 0;
+//    operator bool() const { return (bool)commit; }
+//    
+//    bool operator ==(const Rev& x) const {
+//        if (commit != x.commit) return false;
+//        if (ref != x.ref) return false;
+//        return true;
+//    }
+//    
+//    bool operator !=(const Rev& x) const { return !(*this==x); }
+//    
+//    bool operator <(const Rev& x) const {
+//        if (commit != x.commit) return commit<x.commit;
+//        if (ref != x.ref) return ref<x.ref;
+//        return false;
+//    }
+//    
+//    std::string displayName() const {
+//        constexpr size_t Len = 7;
+//        if (ref) return ref.name();
+//        return DisplayStringForId(commit.id(), Len);
+//    }
+//    
+//    std::string fullName() const {
+//        if (ref) return ref.fullName();
+//        return StringForId(commit.id());
+//    }
+    
+    Commit commit;  // Mandatory
+    Ref ref;        // Optional
 };
 
 inline void _RepoFree(git_repository* repo) {
@@ -537,7 +548,7 @@ public:
         return x;
     }
     
-    static Repo Open(Submodule sm) {
+    static Repo Open(const Submodule& sm) {
         bool shutdown = true;
         git_libgit2_init();
         Defer( if (shutdown) git_libgit2_shutdown() );
@@ -571,7 +582,7 @@ public:
         return ref.commit();
     }
     
-    void checkout(Rev rev) const {
+    void checkout(const Rev& rev) const {
         struct Ctx {
             std::vector<std::filesystem::path> conflicts;
         };
@@ -600,7 +611,7 @@ public:
         else if (ir)             throw Error(ir, "git_checkout_tree failed");
         
         if (rev.ref) {
-            std::string fullName = rev.ref.fullName();
+            const std::string fullName = rev.ref.fullName();
             ir = git_repository_set_head(*get(), fullName.c_str());
             if (ir) throw Error(ir, "git_repository_set_head failed");
         
@@ -621,7 +632,7 @@ public:
         reflog.drop(0);
     }
     
-    void headAttach(Rev rev) const {
+    void headAttach(const Rev& rev) const {
         checkout(rev);
         
         // Forget that we attached head
@@ -629,7 +640,7 @@ public:
         reflog.drop(0);
     }
     
-    Index treesMerge(Tree ancestorTree, Tree dstTree, Tree srcTree) const {
+    Index treesMerge(const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
         git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
         git_index* x = nullptr;
         int ir = git_merge_trees(
@@ -644,7 +655,7 @@ public:
         return x;
     }
     
-    Tree indexWrite(Index index) const {
+    Tree indexWrite(const Index& index) const {
         git_oid treeId;
         int ir = git_index_write_tree_to(&treeId, *index, *get());
         if (ir) throw Error(ir, "git_index_write_tree_to failed");
@@ -656,7 +667,7 @@ public:
     }
     
     // commitParentSet(): commit.parent[0] = parent
-    Commit commitParentSet(Commit commit, Commit parent) const {
+    Commit commitParentSet(const Commit& commit, const Commit& parent) const {
         assert(commit);
         
         Index index;
@@ -678,7 +689,7 @@ public:
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    Commit commitIntegrate(Commit dst, Commit src) const {
+    Commit commitIntegrate(const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree(); // TODO:MERGE
@@ -698,7 +709,7 @@ public:
     }
     
     // commitAmend(): change parents/tree of a commit
-    Commit commitAmend(Commit commit, std::vector<Commit> parents, Tree tree) const {
+    Commit commitAmend(const Commit& commit, const std::vector<Commit>& parents, const Tree& tree) const {
         git_oid id;
         
         assert(parents.size() <= 4); // Protect stack-allocated array from being too large
@@ -724,7 +735,7 @@ public:
     }
     
     // commitAmend(): change the author/message of a commit
-    Commit commitAmend(Commit commit, Signature author, std::string_view msg) const {
+    Commit commitAmend(const Commit& commit, const Signature& author, std::string_view msg) const {
         git_oid id;
         int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
             nullptr, (!msg.empty() ? msg.data() : nullptr), nullptr);
@@ -746,7 +757,7 @@ public:
         return commitLookup(id);
     }
     
-    Ref refReplace(Ref ref, Commit commit) const {
+    Ref refReplace(const Ref& ref, const Commit& commit) const {
         if (ref.isBranch()) {
             return branchReplace(Branch::ForRef(ref), commit);
         
@@ -759,17 +770,17 @@ public:
         }
     }
     
-    Rev revReplace(Rev rev, Commit commit) const {
-        assert(rev.ref);
-        return Rev(refReplace(rev.ref, commit), rev.skip);
-    }
-    
+//    Rev revReplace(const Rev& rev, const Commit& commit) const {
+//        assert(rev.ref);
+//        return refReplace(rev.ref, commit);
+//    }
+//    
 //    Rev revReplace(Rev rev, Commit commit) const {
 //        assert(rev.isMutable());
 //        return Rev(refReplace(rev.ref, commit), rev.refSkip);
 //    }
     
-    Branch branchReplace(Branch branch, Commit commit) const {
+    Branch branchReplace(const Branch& branch, const Commit& commit) const {
         Branch upstream = branch.upstream();
         Branch newBranch = branchCreate(branch.name(), commit, true);
         Branch newBranchUpstream = newBranch.upstream();
@@ -781,7 +792,7 @@ public:
         return newBranch;
     }
     
-    Tag tagReplace(Tag tag, Commit commit) const {
+    Tag tagReplace(const Tag& tag, const Commit& commit) const {
         if (TagAnnotation ann = tag.annotation()) {
             return tagCreateAnnotated(tag.name(), commit, ann.author(), ann.message(), true);
         }
@@ -802,7 +813,7 @@ public:
         return x;
     }
     
-    Ref refReload(Ref ref) const {
+    Ref refReload(const Ref& ref) const {
         return refFullNameLookup(ref.fullName());
     }
     
@@ -811,53 +822,25 @@ public:
 //        return refFullNameLookup(rev.ref.fullName());
 //    }
     
-    Rev revReload(Rev rev) const {
-        if (rev.ref) return Rev(refReload(rev.ref), rev.skip);
+    Rev revReload(const Rev& rev) const {
+        if (rev.ref) return refReload(rev.ref);
         return rev;
     }
     
     Rev revLookup(std::string_view str) const {
-        Rev rev = _revLookup(str);
-        if (rev.ref) return rev;
-        
-        // Try to get a ref-backed rev (with skip parameter) by removing the ^ or ~ suffix from `str`
-        Rev skipRev;
-        if (!skipRev.ref) {
-            std::string name(str);
-            size_t pos = name.find("^");
-            if (pos != std::string::npos) {
-                name.erase(pos);
-                skipRev = _revLookup(name);
-            }
+        Ref ref;
+        Object obj;
+        {
+            git_reference* pr = nullptr;
+            git_object* po = nullptr;
+            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
+            if (ir) throw Error(ir, "git_revparse_ext failed");
+            obj = po;
+            ref = pr;
         }
         
-        if (!skipRev.ref) {
-            std::string name(str);
-            size_t pos = name.find("~");
-            if (pos != std::string::npos) {
-                name.erase(pos);
-                skipRev = _revLookup(name);
-            }
-        }
-        
-        // If we found a `skipRev.ref` by removing the ^~ suffix, calculate the `skip` value
-        if (skipRev.ref) {
-            size_t skip = 0;
-            Commit head = skipRev.commit;
-            while (head && head!=rev.commit) {
-                head = head.parent();
-                skip++;
-            }
-            
-            if (head) {
-                skipRev.skip = skip;
-                return skipRev;
-            }
-        }
-        
-        // We couldn't parse `str` directly as a ref, nor could we parse it as "ref+skip" (ie rev^ / rev~X).
-        // So just return the commit itself.
-        return rev;
+        if (ref) return ref;
+        return Commit::ForObject(obj);
     }
     
     Branch branchLookup(std::string_view name) const {
@@ -867,7 +850,7 @@ public:
         return x;
     }
     
-    Branch branchCreate(std::string_view name, Commit commit, bool force=false) const {
+    Branch branchCreate(std::string_view name, const Commit& commit, bool force=false) const {
         git_reference* x = nullptr;
         int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
         if (ir) throw Error(ir, "git_branch_create failed");
@@ -878,14 +861,14 @@ public:
         return Tag::ForRef(refLookup(name));
     }
     
-    Tag tagCreate(std::string_view name, Commit commit, bool force=false) const {
+    Tag tagCreate(std::string_view name, const Commit& commit, bool force=false) const {
         git_oid id;
         int ir = git_tag_create_lightweight(&id, *get(), name.data(), *(Object)commit, force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }
     
-    Tag tagCreateAnnotated(std::string_view name, Commit commit, Signature author, std::string_view message, bool force=false) const {
+    Tag tagCreateAnnotated(std::string_view name, const Commit& commit, const Signature& author, std::string_view message, bool force=false) const {
         git_oid id;
         int ir = git_tag_create(&id, *get(), name.data(), *((Object)commit), *author, message.data(), force);
         if (ir) throw Error(ir, "git_tag_create failed");
@@ -973,7 +956,7 @@ public:
         }
     }
     
-    Reflog reflogForRef(Ref ref) const {
+    Reflog reflogForRef(const Ref& ref) const {
         git_reflog* x = nullptr;
         int ir = git_reflog_read(&x, *get(), ref.fullName().c_str());
         if (ir) throw Error(ir, "git_reflog_read failed");
@@ -981,29 +964,13 @@ public:
     }
     
 private:
-    Rev _revLookup(std::string_view str) const {
-        Ref ref;
-        Object obj;
-        {
-            git_reference* pr = nullptr;
-            git_object* po = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
-            if (ir) throw Error(ir, "git_revparse_ext failed");
-            obj = po;
-            ref = pr;
-        }
-        
-        if (ref) return Rev(ref, 0);
-        return Commit::ForObject(obj);
-    }
-    
-    Index _cherryPick(Commit dst, Commit commit) const {
+    Index _cherryPick(const Commit& dst, const Commit& commit) const {
         unsigned int mainline = (commit.isMerge() ? 1 : 0);
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
         opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
         
         git_index* x = nullptr;
-        int ir = git_cherrypick_commit(&x, *get(), *commit, *dst, mainline, &opts);
+        int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*dst, mainline, &opts);
         if (ir) throw Error(ir, "git_cherrypick_commit failed");
         return x;
     }
