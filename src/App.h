@@ -349,13 +349,15 @@ public:
             Window::operator =(Window(::stdscr));
             
             _reload();
-            
             _moveOffer();
             _licenseCheck();
+            
+            if (!_repo) {
+                _errorMessageRun("debase must be run from the directory of a git repository.", false);
+                throw UI::ExitRequest();
+            }
+            
             _updateCheck();
-            
-//            _updateAvailableAlert = subviewCreate<UI::UpdateAvailableAlert>(2);
-            
             track({});
             
         } catch (const UI::ExitRequest&) {

@@ -217,12 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
-    #warning TODO:   make sure that all instances of the same branch are read-only too
-    
-    #warning TODO: startup perf: detach head lazily when the relevant branch is modified
-    #warning TODO:   starting/exiting debase is slow on linux, apparently due to detaching/attaching head
-    
     #warning TODO: first run experience: allow running debase from outside a git repo
     
     #warning TODO: linux:       run through TestChecklist.txt
@@ -254,6 +248,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
+//    #warning TODO:   make sure that all instances of the same branch are read-only too
+//    
+//    #warning TODO: startup perf: detach head lazily when the relevant branch is modified
+//    #warning TODO:   starting/exiting debase is slow on linux, apparently due to detaching/attaching head
+//
 //    #warning TODO: audit all uses of Rev==/!=/< to make sure they're not using the shared_ptr version
 //                   nevermind, we didn't end up using a shared_ptr version of Rev
 //
