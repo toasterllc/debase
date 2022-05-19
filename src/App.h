@@ -293,23 +293,26 @@ public:
     
     void run() {
         _theme = State::ThemeRead();
-        _head = _repo.headResolved();
         
-        // Create _repoState
-        std::set<Git::Ref> refs;
-        for (const Rev& rev : _revs) {
-            if (rev.ref) refs.insert(rev.ref);
-        }
-        _repoState = State::RepoState(StateDir(), _repo, refs);
-        
-        // If the repo has outstanding changes, prevent the currently checked-out
-        // branch from being modified, since we can't clobber the uncommitted
-        // changes. We do this by marking all refs that match HEAD's ref as
-        // immutable.
-        if (_repo.dirty() && _head.ref) {
-            for (Rev& rev : _revs) {
-                if (rev.ref && rev.ref==_head.ref) {
-                    rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
+        if (_repo) {
+            _head = _repo.headResolved();
+            
+            // Create _repoState
+            std::set<Git::Ref> refs;
+            for (const Rev& rev : _revs) {
+                if (rev.ref) refs.insert(rev.ref);
+            }
+            _repoState = State::RepoState(StateDir(), _repo, refs);
+            
+            // If the repo has outstanding changes, prevent the currently checked-out
+            // branch from being modified, since we can't clobber the uncommitted
+            // changes. We do this by marking all refs that match HEAD's ref as
+            // immutable.
+            if (_repo.dirty() && _head.ref) {
+                for (Rev& rev : _revs) {
+                    if (rev.ref && rev.ref==_head.ref) {
+                        rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
+                    }
                 }
             }
         }
@@ -350,13 +353,13 @@ public:
             
             _reload();
             _moveOffer();
-            _licenseCheck();
             
             if (!_repo) {
                 _errorMessageRun("debase must be run from the directory of a git repository.", false);
                 throw UI::ExitRequest();
             }
             
+            _licenseCheck();
             _updateCheck();
             track({});
             
@@ -366,7 +369,9 @@ public:
             throw;
         }
         
-        _repoState.write();
+        if (_repo) {
+            _repoState.write();
+        }
     }
     
     void track(const UI::Event& ev, Deadline deadline=Forever) override {

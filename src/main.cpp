@@ -584,6 +584,7 @@ int main(int argc, const char* argv[]) {
 //    }
     
     try {
+        sleep(5);
         _Args args = _ParseArgs(argc-1, argv+1);
         
         if (args.run.en) {
@@ -651,45 +652,45 @@ int main(int argc, const char* argv[]) {
         std::vector<Rev> revs;
         try {
             repo = Git::Repo::Open(".");
-        } catch (...) {
-            throw Toastbox::RuntimeError("current directory isn't a git repository");
-        }
+        } catch (...) {}
         
-        if (args.run.revs.empty()) {
-            constexpr size_t RevCountDefault = 5;
-            std::set<Rev> unique;
-            ssize_t i = 0;
-            while (revs.size() < RevCountDefault) {
-                Rev rev;
-                try {
-                    if (!i) (Git::Rev&)rev = repo.headResolved();
-                    else rev = _RevLookup(repo, "@{" + std::to_string(i) + "}");
+        if (repo) {
+            if (args.run.revs.empty()) {
+                constexpr size_t RevCountDefault = 5;
+                std::set<Rev> unique;
+                ssize_t i = 0;
+                while (revs.size() < RevCountDefault) {
+                    Rev rev;
+                    try {
+                        if (!i) (Git::Rev&)rev = repo.headResolved();
+                        else rev = _RevLookup(repo, "@{" + std::to_string(i) + "}");
+                        
+                        if (unique.find(rev) == unique.end()) {
+                            revs.emplace_back(rev);
+                            unique.insert(rev);
+                        }
+                    
+                    } catch (...) {
+                        break;
+                    }
+                    i--;
+                }
+            
+            } else {
+                // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
+                std::set<Rev> unique;
+                for (const std::string& revName : args.run.revs) {
+                    Rev rev;
+                    try {
+                        rev = _RevLookup(repo, revName);
+                    } catch (...) {
+                        throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
+                    }
                     
                     if (unique.find(rev) == unique.end()) {
-                        revs.emplace_back(rev);
+                        revs.push_back(rev);
                         unique.insert(rev);
                     }
-                
-                } catch (...) {
-                    break;
-                }
-                i--;
-            }
-        
-        } else {
-            // Unique the supplied revs, because our code assumes a 1:1 mapping between Revs and RevColumns
-            std::set<Rev> unique;
-            for (const std::string& revName : args.run.revs) {
-                Rev rev;
-                try {
-                    rev = _RevLookup(repo, revName);
-                } catch (...) {
-                    throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
-                }
-                
-                if (unique.find(rev) == unique.end()) {
-                    revs.push_back(rev);
-                    unique.insert(rev);
                 }
             }
         }
