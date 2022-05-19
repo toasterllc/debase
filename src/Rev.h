@@ -4,7 +4,7 @@
 class Rev : public Git::Rev {
 public:
     using Git::Rev::Rev;
-    Rev(const Git::Rev& x) : Git::Rev(x) {}
+//    Rev(const Git::Rev& x) : Git::Rev(x) {}
     
     // Methods
     operator bool() const { return Git::Rev::operator bool(); }

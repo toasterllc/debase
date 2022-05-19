@@ -1177,10 +1177,10 @@ private:
         auto opResult = _GitModify::Exec(_repo, gitOp, spawnFn);
         if (!opResult) return;
         
-        Git::Rev srcRevPrev = gitOp.src.rev;
-        Git::Rev dstRevPrev = gitOp.dst.rev;
-        Git::Rev srcRev = opResult->src.rev;
-        Git::Rev dstRev = opResult->dst.rev;
+        Rev srcRevPrev = gitOp.src.rev;
+        Rev dstRevPrev = gitOp.dst.rev;
+        Rev srcRev = opResult->src.rev;
+        Rev dstRev = opResult->dst.rev;
         assert((bool)srcRev.ref == (bool)srcRevPrev.ref);
         assert((bool)dstRev.ref == (bool)dstRevPrev.ref);
         

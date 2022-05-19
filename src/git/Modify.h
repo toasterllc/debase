@@ -221,8 +221,10 @@ private:
             // we're moving commits between eg master and master~4. In this case, the revs are different
             // even though the underlying refs are the same, so we can't use the same rev for both
             // OpResult.src.rev and OpResult.dst.rev.
-            T_Rev srcRev = repo.revReload(op.src.rev);
-            T_Rev dstRev = repo.revReload(op.dst.rev);
+            T_Rev srcRev = op.src.rev;
+            T_Rev dstRev = op.dst.rev;
+            (Git::Rev&)srcRev = repo.revReload(srcRev);
+            (Git::Rev&)dstRev = repo.revReload(dstRev);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -259,8 +261,10 @@ private:
             );
             
             // Replace the source and destination branches/tags
-            T_Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
-            T_Rev dstRev = repo.revReplace(op.dst.rev, dstResult.commit);
+            T_Rev srcRev = op.src.rev;
+            T_Rev dstRev = op.dst.rev;
+            (Git::Rev&)srcRev = repo.revReplace(srcRev, srcResult.commit);
+            (Git::Rev&)dstRev = repo.revReplace(dstRev, dstResult.commit);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -290,7 +294,8 @@ private:
         );
         
         // Replace the destination branch/tag
-        T_Rev dstRev = repo.revReplace(op.dst.rev, dstResult.commit);
+        T_Rev dstRev = op.dst.rev;
+        (Git::Rev&)dstRev = repo.revReplace(dstRev, dstResult.commit);
         return OpResult{
             .src = {
                 .rev = op.src.rev,
@@ -322,7 +327,8 @@ private:
         }
         
         // Replace the source branch/tag
-        T_Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
+        T_Rev srcRev = op.src.rev;
+        (Git::Rev&)srcRev = repo.revReplace(srcRev, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -368,7 +374,8 @@ private:
         }
         
         // Replace the source branch/tag
-        T_Rev srcRev = repo.revReplace(op.src.rev, head);
+        T_Rev srcRev = op.src.rev;
+        (Git::Rev&)srcRev = repo.revReplace(srcRev, head);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -604,7 +611,8 @@ private:
         );
         
         // Replace the source branch/tag
-        T_Rev srcRev = repo.revReplace(op.src.rev, srcResult.commit);
+        T_Rev srcRev = op.src.rev;
+        (Git::Rev&)srcRev = repo.revReplace(srcRev, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,

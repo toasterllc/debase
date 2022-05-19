@@ -144,7 +144,8 @@ static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
 //}
 
 Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
-    Rev rev = repo.revLookup(str);
+    Rev rev;
+    (Git::Rev&)rev = repo.revLookup(str);
     if (rev.ref) return rev;
     
     // Try to get a ref-backed rev (with skip parameter) by removing the ^ or ~ suffix from `str`
@@ -154,7 +155,7 @@ Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
         size_t pos = name.find("^");
         if (pos != std::string::npos) {
             name.erase(pos);
-            skipRev = repo.revLookup(name);
+            (Git::Rev&)skipRev = repo.revLookup(name);
         }
     }
     
@@ -163,7 +164,7 @@ Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
         size_t pos = name.find("~");
         if (pos != std::string::npos) {
             name.erase(pos);
-            skipRev = repo.revLookup(name);
+            (Git::Rev&)skipRev = repo.revLookup(name);
         }
     }
     
@@ -660,7 +661,8 @@ int main(int argc, const char* argv[]) {
             while (revs.size() < RevCountDefault) {
                 Rev rev;
                 try {
-                    rev = (!i ? repo.headResolved() : _RevLookup(repo, "@{" + std::to_string(i) + "}"));
+                    if (!i) (Git::Rev&)rev = repo.headResolved();
+                    else rev = _RevLookup(repo, "@{" + std::to_string(i) + "}");
                     
                     if (unique.find(rev) == unique.end()) {
                         revs.emplace_back(rev);
