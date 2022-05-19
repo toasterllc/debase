@@ -177,6 +177,12 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: integrate debase-releases as a submodule into debase.
+    #warning TODO: invoke with `make release`; its tasks are:
+    #warning TODO:   - in the debase repo: create a tag `v<VersionNumber>`
+    #warning TODO:   - in the submodule: copy the binaries, create the zip, commit
+    #warning TODO:   - in the debase repo: create a commit with the updated debase-releases submodule
+    
     #warning TODO: when changing the author of a commit, change the committer too
     #warning TODO: look at the content of github when doing so -- if the author/committer are different, they're both displayed, which isn't what we want
     #warning TODO: maybe both author and committer should be shown in editor? but maybe only if theyre different?
