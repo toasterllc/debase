@@ -291,28 +291,55 @@ public:
         return true;
     }
     
+    void _runNoRepo() {
+        try {
+            _cursesInit();
+            Defer(_cursesDeinit());
+            
+            // Create our window now that ncurses is initialized
+            Window::operator =(Window(::stdscr));
+            
+            _reload();
+            _moveOffer();
+            _licenseCheck();
+            _errorMessageRun("debase must be run from the directory of a git repository.", false);
+            
+        } catch (const UI::ExitRequest&) {
+            // Nothing to do
+        } catch (...) {
+            throw;
+        }
+    }
+    
     void run() {
         _theme = State::ThemeRead();
         
-        if (_repo) {
-            _head = _repo.headResolved();
-            
-            // Create _repoState
-            std::set<Git::Ref> refs;
-            for (const Rev& rev : _revs) {
-                if (rev.ref) refs.insert(rev.ref);
-            }
-            _repoState = State::RepoState(StateDir(), _repo, refs);
-            
-            // If the repo has outstanding changes, prevent the currently checked-out
-            // branch from being modified, since we can't clobber the uncommitted
-            // changes. We do this by marking all refs that match HEAD's ref as
-            // immutable.
-            if (_repo.dirty() && _head.ref) {
-                for (Rev& rev : _revs) {
-                    if (rev.ref && rev.ref==_head.ref) {
-                        rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
-                    }
+        // Handle being run outside of a git repo
+        // We show a dialog in this case, and still offer to move debase to ~/bin, so that
+        // the first-run experience is decent even when run outside of a git repo, which
+        // is likely on the first invocation
+        if (!_repo) {
+            _runNoRepo();
+            return;
+        }
+        
+        _head = _repo.headResolved();
+        
+        // Create _repoState
+        std::set<Git::Ref> refs;
+        for (const Rev& rev : _revs) {
+            if (rev.ref) refs.insert(rev.ref);
+        }
+        _repoState = State::RepoState(StateDir(), _repo, refs);
+        
+        // If the repo has outstanding changes, prevent the currently checked-out
+        // branch from being modified, since we can't clobber the uncommitted
+        // changes. We do this by marking all refs that match HEAD's ref as
+        // immutable.
+        if (_repo.dirty() && _head.ref) {
+            for (Rev& rev : _revs) {
+                if (rev.ref && rev.ref==_head.ref) {
+                    rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;
                 }
             }
         }
@@ -353,12 +380,6 @@ public:
             
             _reload();
             _moveOffer();
-            
-            if (!_repo) {
-                _errorMessageRun("debase must be run from the directory of a git repository.", false);
-                throw UI::ExitRequest();
-            }
-            
             _licenseCheck();
             _updateCheck();
             track({});
@@ -369,9 +390,7 @@ public:
             throw;
         }
         
-        if (_repo) {
-            _repoState.write();
-        }
+        _repoState.write();
     }
     
     void track(const UI::Event& ev, Deadline deadline=Forever) override {
@@ -701,8 +720,12 @@ private:
     }
     
     void _reload() {
-        // Reload head's ref
-        _head = _repo.revReload(_head);
+        // We allow ourself to be called outside of a git repo, so we need
+        // to check _repo for null
+        if (_repo) {
+            // Reload head's ref
+            _head = _repo.revReload(_head);
+        }
         
         // Reload all ref-based revs
         for (Rev& rev : _revs) {
@@ -1324,17 +1347,17 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    static License::Context _LicenseContext(const _Path& repoDir) {
+    static License::Context _LicenseContext(const _Path& dir) {
         using namespace std::chrono;
         using namespace std::filesystem;
         Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
         Machine::MachineInfo machineInfo = Machine::MachineInfoCalc();
         
-        // Find t = max(time(), <time of each file in repoDir>),
+        // Find t = max(time(), <time of each file in dir>),
         // to help prevent time-rollback attacks.
         system_clock::time_point latestTime = system_clock::now();
         try {
-            for (const path& p : directory_iterator(repoDir)) {
+            for (const path& p : directory_iterator(dir)) {
                 try {
                     // We'd ideally use std::filesystem::last_write_time() here instead of our
                     // custom Stat() function, but last_write_time() returns a
@@ -1364,7 +1387,11 @@ private:
 //    }
     
     const License::Context& _licenseCtxGet() {
-        if (!_licenseCtx) _licenseCtx = _LicenseContext(_repo.path());
+        // We'd normally use _repo.path(), but we allow ourself to be
+        // executed from outside a git repo (for an improved first-run
+        // experience). So use "." instead, which will work whether
+        // _repo==null or not.
+        if (!_licenseCtx) _licenseCtx = _LicenseContext(".");
         return *_licenseCtx;
     }
     

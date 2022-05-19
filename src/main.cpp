@@ -584,7 +584,6 @@ int main(int argc, const char* argv[]) {
 //    }
     
     try {
-        sleep(5);
         _Args args = _ParseArgs(argc-1, argv+1);
         
         if (args.run.en) {
