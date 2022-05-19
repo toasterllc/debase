@@ -1187,7 +1187,7 @@ private:
     void _gitOpExec(const _GitOp& gitOp) {
         const _GitModify::Ctx ctx = {
             .repo = _repo,
-//            .willModify = ,
+            .revReplace = [&] (const Rev& rev, const Git::Commit& commit) { return _revReplace(rev, commit); },
             .spawn = [&] (const char*const* argv) { _spawn(argv); },
         };
         
@@ -1291,7 +1291,13 @@ private:
         
     //    sleep(1);
     }
-
+    
+    Rev _revReplace(const Rev& rev, const Git::Commit& commit) {
+        Rev r = rev;
+        (Git::Rev&)r = _repo.revReplace(rev, commit);
+        return r;
+    }
+    
     void _spawn(const char*const* argv) {
         // preserveTerminalCmds: these commands don't modify the terminal, and therefore
         // we don't want to deinit/reinit curses when calling them.
