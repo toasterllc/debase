@@ -314,22 +314,8 @@ public:
             }
         }
         
-//        // Determine if we need to detach head.
-//        // This is required when a ref (ie a branch or tag) is checked out, and the ref is specified in _revs.
-//        // In other words, we need to detach head when whatever is checked-out may be modified.
-//        bool detachHead = _head.ref && refs.find(_head.ref)!=refs.end();
-//        
-//        if (detachHead && _repo.dirty()) {
-//            throw Toastbox::RuntimeError(
-//                "can't run debase on the checked-out branch (%s) while there are outstanding changes.\n"
-//                "\n"
-//                "Please commit or stash your changes, or detach HEAD (git checkout -d).\n",
-//            _head.ref.name().c_str());
-//        }
-//        
-//        // Detach HEAD if it's attached to a ref, otherwise we'll get an error if
-//        // we try to replace that ref.
-//        if (detachHead) _repo.headDetach();
+        // Reattach head upon return
+        // We do this via Defer() so that it executes even if there's an exception
         Defer(
             if (_headReattach) {
                 // Restore previous head on exit
