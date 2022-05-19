@@ -171,6 +171,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: audit all uses of Rev==/!=/< to make sure they're not using the shared_ptr version
+    
     #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
     
     #warning TODO: startup perf: detach head lazily when the relevant branch is modified
