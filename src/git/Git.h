@@ -770,11 +770,11 @@ public:
         }
     }
     
-    Rev revReplace(const Rev& rev, const Commit& commit) const {
-        assert(rev.ref);
-        return refReplace(rev.ref, commit);
-    }
-    
+//    Rev revReplace(const Rev& rev, const Commit& commit) const {
+//        assert(rev.ref);
+//        return refReplace(rev.ref, commit);
+//    }
+//    
 //    Rev revReplace(Rev rev, Commit commit) const {
 //        assert(rev.isMutable());
 //        return Rev(refReplace(rev.ref, commit), rev.refSkip);

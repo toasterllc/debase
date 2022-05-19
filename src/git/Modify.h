@@ -11,7 +11,7 @@ class Modify {
 public:
     struct Ctx {
         Repo repo;
-        std::function<T_Rev(const T_Rev&, const Commit&)> revReplace;
+        std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
     };
     
@@ -219,7 +219,7 @@ private:
             );
             
             // Replace the source branch/tag
-            ctx.revReplace(op.src.rev, srcDstResult.commit);
+            ctx.refReplace(op.src.rev.ref, srcDstResult.commit);
             // srcRev/dstRev: we're not using the result from revReplace() as the OpResult src/dst revs,
             // and instead use repo.revReload() to get the new revs. This is to handle the case where
             // we're moving commits between eg master and master~4. In this case, the revs are different
@@ -267,8 +267,8 @@ private:
             // Replace the source and destination branches/tags
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Git::Rev&)srcRev = ctx.revReplace(srcRev, srcResult.commit);
-            (Git::Rev&)dstRev = ctx.revReplace(dstRev, dstResult.commit);
+            (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+            (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -299,7 +299,7 @@ private:
         
         // Replace the destination branch/tag
         T_Rev dstRev = op.dst.rev;
-        (Git::Rev&)dstRev = ctx.revReplace(dstRev, dstResult.commit);
+        (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
         return OpResult{
             .src = {
                 .rev = op.src.rev,
@@ -332,7 +332,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.revReplace(srcRev, srcResult.commit);
+        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -379,7 +379,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.revReplace(srcRev, head);
+        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, head);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -616,7 +616,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.revReplace(srcRev, srcResult.commit);
+        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,

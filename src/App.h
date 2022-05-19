@@ -1167,7 +1167,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _repo.revReplace(rev, commit);
+            (Git::Rev&)rev = _repo.refReplace(rev.ref, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -1187,7 +1187,7 @@ private:
     void _gitOpExec(const _GitOp& gitOp) {
         const _GitModify::Ctx ctx = {
             .repo = _repo,
-            .revReplace = [&] (const Rev& rev, const Git::Commit& commit) { return _revReplace(rev, commit); },
+            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _refReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _spawn(argv); },
         };
         
@@ -1292,10 +1292,16 @@ private:
     //    sleep(1);
     }
     
-    Rev _revReplace(const Rev& rev, const Git::Commit& commit) {
-        Rev r = rev;
-        (Git::Rev&)r = _repo.revReplace(rev, commit);
-        return r;
+    Git::Ref _refReplace(const Git::Ref& ref, const Git::Commit& commit) {
+        return _repo.refReplace(ref, commit);
+//        assert();
+//        if (_head.ref && _head.re) {
+//            
+//        }
+//        
+//        Rev r = rev;
+//        (Git::Rev&)r = _repo.refReplace(rev, commit);
+//        return r;
     }
     
     void _spawn(const char*const* argv) {
