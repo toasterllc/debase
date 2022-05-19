@@ -1185,8 +1185,13 @@ private:
     }
     
     void _gitOpExec(const _GitOp& gitOp) {
-        auto spawnFn = [&] (const char*const* argv) { _spawn(argv); };
-        auto opResult = _GitModify::Exec(_repo, gitOp, spawnFn);
+        const _GitModify::Ctx ctx = {
+            .repo = _repo,
+//            .willModify = ,
+            .spawn = [&] (const char*const* argv) { _spawn(argv); },
+        };
+        
+        auto opResult = _GitModify::Exec(ctx, gitOp);
         if (!opResult) return;
         
         Rev srcRevPrev = gitOp.src.rev;
