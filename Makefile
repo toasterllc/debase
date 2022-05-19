@@ -159,6 +159,7 @@ codesign:
 		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
 		$(BUILDDIR)/$(NAME)
 
+# notarize: initiates the notarization process using the build output
 notarize: codesign
 	cd $(BUILDDIR) && zip $(NAME).zip $(NAME)
 	
@@ -172,10 +173,17 @@ notarize: codesign
 		 --file $(BUILDDIR)/$(NAME).zip
 	
 	rm $(BUILDDIR)/$(NAME).zip
-	
+
+# notarize-status: checks Apple's notarization progress
+notarize-status:
 	xcrun altool									\
 		--notarization-history 0					\
 		-p @keychain:altool
+
+# notarize-test: checks whether the local system considers the binary notarized
+# Note that the system won't update the binary's notarization status until it's first launched!
+notarize-test:
+	codesign -vvvv --verify --test-requirement="=notarized" $(BUILDDIR)/$(NAME)
 
 clean:
 	$(MAKE) -C lib clean
