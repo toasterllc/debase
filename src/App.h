@@ -302,7 +302,11 @@ public:
         }
         _repoState = State::RepoState(StateDir(), _repo, refs);
         
-        if (_repo.dirty()) {
+        // If the repo has outstanding changes, prevent the currently checked-out
+        // branch from being modified, since we can't clobber the uncommitted
+        // changes. We do this by marking all refs that match HEAD's ref as
+        // immutable.
+        if (_repo.dirty() && _head.ref) {
             for (Rev& rev : _revs) {
                 if (rev.ref && rev.ref==_head.ref) {
                     rev.mutability = Rev::Mutability::DisallowedUncommittedChanges;

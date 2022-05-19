@@ -217,8 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: audit all uses of Rev==/!=/< to make sure they're not using the shared_ptr version
-    
     #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
     #warning TODO:   make sure that all instances of the same branch are read-only too
     
@@ -256,6 +254,9 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: audit all uses of Rev==/!=/< to make sure they're not using the shared_ptr version
+//                   nevermind, we didn't end up using a shared_ptr version of Rev
+//
 //    #warning TODO: strip whitespace from email / license code
 //
 //    #warning TODO: configure binary to be stripped
