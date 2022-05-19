@@ -203,7 +203,7 @@ public:
                 if (hitTest && !shift) {
                     if (hitTest.panel) {
                         // Mouse down inside of a CommitPanel, without shift key
-                        std::optional<Git::Op> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
+                        std::optional<_GitOp> gitOp = _trackMouseInsideCommitPanel(ev, hitTest.column, hitTest.panel);
                         if (gitOp) _gitOpExec(*gitOp);
                     }
                 
@@ -215,7 +215,7 @@ public:
             } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
                 if (hitTest) {
                     if (hitTest.panel) {
-                        std::optional<Git::Op> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
+                        std::optional<_GitOp> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
                         if (gitOp) _gitOpExec(*gitOp);
                     }
                 }
@@ -230,8 +230,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Delete,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Delete,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -257,8 +257,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Combine,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Combine,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -274,8 +274,8 @@ public:
                 break;
             }
             
-            Git::Op gitOp = {
-                .type = Git::Op::Type::Edit,
+            _GitOp gitOp = {
+                .type = _GitOp::Type::Edit,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -409,6 +409,8 @@ public:
     
 private:
     using _Path = std::filesystem::path;
+    using _GitModify = Git::Modify<Rev>;
+    using _GitOp = _GitModify::Op;
     
     struct _Selection {
         Rev rev;
@@ -771,7 +773,7 @@ private:
     
     // _trackMouseInsideCommitPanel
     // Handles clicking/dragging a set of CommitPanels
-    std::optional<Git::Op> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<_GitOp> _trackMouseInsideCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         const UI::Rect mouseDownPanelFrame = mouseDownPanel->frame();
         const UI::Size mouseDownOffset = SuperviewConvert(*mouseDownColumn, mouseDownPanelFrame.origin) - mouseDownEvent.mouse.origin;
         const bool wasSelected = _selected(mouseDownColumn, mouseDownPanel);
@@ -897,12 +899,12 @@ private:
             }
         }
         
-        std::optional<Git::Op> gitOp;
+        std::optional<_GitOp> gitOp;
         if (!abort) {
             if (_drag.titlePanel && ipos) {
                 Git::Commit dstCommit = ((ipos->iter != ipos->col->panels().end()) ? (*ipos->iter)->commit() : nullptr);
-                gitOp = Git::Op{
-                    .type = (_drag.copy ? Git::Op::Type::Copy : Git::Op::Type::Move),
+                gitOp = _GitOp{
+                    .type = (_drag.copy ? _GitOp::Type::Copy : _GitOp::Type::Move),
                     .src = {
                         .rev = _selection.rev,
                         .commits = _selection.commits,
@@ -935,7 +937,7 @@ private:
                 if (doubleClicked) {
                     if (validTarget) {
                         gitOp = {
-                            .type = Git::Op::Type::Edit,
+                            .type = _GitOp::Type::Edit,
                             .src = {
                                 .rev = _selection.rev,
                                 .commits = _selection.commits,
@@ -1036,7 +1038,7 @@ private:
         _selectionRect = std::nullopt;
     }
     
-    std::optional<Git::Op> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
             _selection = {
@@ -1062,10 +1064,10 @@ private:
         menu->track(mouseDownEvent);
         
         // Handle the clicked button
-        std::optional<Git::Op> gitOp;
+        std::optional<_GitOp> gitOp;
         if (menuButton == combineButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Combine,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Combine,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1073,8 +1075,8 @@ private:
             };
         
         } else if (menuButton == editButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Edit,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Edit,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1082,8 +1084,8 @@ private:
             };
         
         } else if (menuButton == deleteButton.get()) {
-            gitOp = Git::Op{
-                .type = Git::Op::Type::Delete,
+            gitOp = _GitOp{
+                .type = _GitOp::Type::Delete,
                 .src = {
                     .rev = _selection.rev,
                     .commits = _selection.commits,
@@ -1170,9 +1172,9 @@ private:
         _reload();
     }
     
-    void _gitOpExec(const Git::Op& gitOp) {
+    void _gitOpExec(const _GitOp& gitOp) {
         auto spawnFn = [&] (const char*const* argv) { _spawn(argv); };
-        std::optional<Git::OpResult> opResult = Git::Exec(_repo, gitOp, spawnFn);
+        auto opResult = _GitModify::Exec(_repo, gitOp, spawnFn);
         if (!opResult) return;
         
         Git::Rev srcRevPrev = gitOp.src.rev;

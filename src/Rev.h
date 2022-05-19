@@ -4,7 +4,7 @@
 class Rev : public Git::Rev {
 public:
     using Git::Rev::Rev;
-//    Rev(const Git::Rev& x) : Git::Rev(x) {}
+    Rev(const Git::Rev& x) : Git::Rev(x) {}
     
     // Methods
     operator bool() const { return Git::Rev::operator bool(); }
@@ -46,15 +46,15 @@ public:
         return c;
     }
     
-    bool isMutable() const {
-        return true;
-    }
-    
 //    bool isMutable() const {
-//        // Check if mutation has been explicitly disabled
-//        if (!mutationAllowed) return false;
-//        return Git::Rev::isMutable();
+//        return true;
 //    }
+    
+    bool isMutable() const {
+        // Check if mutation has been explicitly disabled
+        if (!mutationAllowed) return false;
+        return Git::Rev::isMutable();
+    }
     
     size_t skip = 0;
     bool mutationAllowed = true;

@@ -479,12 +479,12 @@ public:
         return StringForId(commit.id());
     }
     
-//    bool isMutable() const {
-//        assert(*this);
-//        // Only ref-backed revs are mutable
-//        if (!ref) return false;
-//        return ref.isBranch() || ref.isTag();
-//    }
+    bool isMutable() const {
+        assert(*this);
+        // Only ref-backed revs are mutable
+        if (!ref) return false;
+        return ref.isBranch() || ref.isTag();
+    }
     
 //    operator bool() const { return (bool)commit; }
 //    
