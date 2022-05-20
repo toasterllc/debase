@@ -223,6 +223,8 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: license text field: option-left/option-right closes window
+    
     #warning TODO: bug: when a tag is checked out, `git status` says `HEAD detached at <tag>`, but treats it as a hash:
     #warning TODO:   RevColumn shows a hash / is read-only
     #warning TODO:   further, when exiting debase, if the tag was modified, we don't re-attach head to the rewritten tag -- HEAD stays attached to the old hash
