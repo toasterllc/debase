@@ -17,6 +17,21 @@ Redo Delete commits
 Redo Combine commits
 Redo Edit commit
 
+Previously-fixed bug: With no undo history on any branch, copy commits from one branch to another
+    Undo history should now be populated
+
+History lost when head commit doesn't match saved commit
+
+<rev>^^^ syntax works, and branch is editable
+
+<rev>~3 syntax works, and branch is editable
+
+
+* General tag editing: same as 'General branch editing'
+
+
+* Other features
+
 If the current branch has uncomitted changes, debase considers all instances of that
 branch read-only (eg master, master~10, and other skip'd instances)
 
@@ -24,12 +39,7 @@ Running debase from outside of a git repo shows an error and then exits
 
 Modifying currently-checked-out branch lazily detaches head / reattaches head upon exit
 
-Previously-fixed bug: With no undo history on any branch, copy commits from one branch to another
-    Undo history should now be populated
-
 Delete commits using delete key
-
-History lost when head commit doesn't match saved commit
 
 Moving mouse and exiting debase doesn't result in mouse-moved escape sequences being printed to terminal
 
@@ -40,11 +50,6 @@ Ctrl-C exits while dragging context menu
 
 --machineid flag works
 
-<rev>^^^ syntax works, and branch is editable
-
-<rev>~3 syntax works, and branch is editable
-
-* General tag editing: same as General branch editing
 
 * Edit commit
 Edit commit with double-click
@@ -55,11 +60,13 @@ Edit commit with vi
 Edit commit with pico
 Edit commit with TextMate
 
+
 * Readonly rev
 Copy commits allowed
 Move commits disallowed
 Delete commits disallowed
 Edit commit disallowed
+
 
 * Register window
 Resize terminal
@@ -73,16 +80,19 @@ Esc doesn't close (unless dismiss is allowed)
 Clicking outside is ignored
 Return key triggers OK button
 
+
 * Error panel
 Resize terminal vertically + vertical clipping
 Resize terminal horizontally + horizontal clipping
 Dismiss with OK key
 Dismiss with escape key
 
+
 * Bad commit id in state file
 Corrupt snapshot commit id in repo state file -- snapshot hidden
 Corrupt undo commit id in repo state file -- shows error
 Corrupt redo commit id in repo state file -- shows error
+
 
 * Context menu
 Right mouse down -> drag -> select -- works?
@@ -91,6 +101,7 @@ Menu is re-positioned to prevent clipping when right-clicking near terminal edge
 When menu is re-positioned away from terminal edge, clicking buttons still works (ie hitzone is correctly calculated)
 Resize terminal while menu is open -> menu disappears
 Esc dismissed menu
+
 
 * Snapshots menu
 Set active snapshot
@@ -102,6 +113,7 @@ Menu properly clipped if window is too small to contain it
 Resize terminal while menu is open -> menu dismissed
 Clicking button after opening snapshots menu requires delay + moving mouse 1 character
 
+
 * Theme
 Dark mode looks good
 Light mode looks good
@@ -110,6 +122,7 @@ Dark mode automatically detected
 Setting theme=light works
 Setting theme=dark works
 Setting theme=auto works
+
 
 * License
 Entering valid license works
@@ -134,17 +147,21 @@ Starting a trial with a new machine id works (ie a machine id that isn't in the 
 Verify that if the client's internet connection fails during checkout, the webhook still triggers an email to be sent
     This can be simulated by changing the /debase/license/buy-finish endpoint to have an incorrect address
 
+
 * License escape
 Welcome alert: can't be escaped
 Renewal alert (ie mismatched machine id): can't be escaped
 Trial expired alert: can't be escaped
 
+
 * Server
 Stress test server by hitting it with lots of requests simultaneously
+
 
 * Privacy
 No network IO occurs on first launch, until a button is clicked
 Machine ID isn't calculated on first launch until a button is clicked
+
 
 * Move Offer
 debase offers to move itself with zsh
@@ -158,9 +175,11 @@ Moving debase works with bash, when PATH didn't originally include the destinati
 
 After first launch, debase can be launched a second time after running the suggested command (printed at exit of the first launch)
 
+
 * Clickable Links
 Clicking URL works
 Clicking email address works
+
 
 * Update check
 Update dialog appears when there's an update available

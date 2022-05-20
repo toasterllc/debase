@@ -223,6 +223,10 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: bug: when a tag is checked out, `git status` says `HEAD detached at <tag>`, but treats it as a hash:
+    #warning TODO:   RevColumn shows a hash / is read-only
+    #warning TODO:   further, when exiting debase, if the tag was modified, we don't re-attach head to the rewritten tag -- HEAD stays attached to the old hash
+    
     #warning TODO: integrate debase-releases as a submodule into debase.
     #warning TODO: invoke with `make release`; its tasks are:
     #warning TODO:   - in the debase repo: create a tag `v<VersionNumber>`
