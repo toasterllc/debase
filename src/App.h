@@ -302,7 +302,7 @@ public:
             _reload();
             _moveOffer();
             _licenseCheck();
-            _errorMessageRun("debase must be run from the directory of a git repository.", false);
+            _errorMessageRun("debase must be run from a git repository.", false);
             
         } catch (const UI::ExitRequest&) {
             // Nothing to do

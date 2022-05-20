@@ -217,8 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: first run experience: allow running debase from outside a git repo
-    
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
@@ -248,6 +246,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: first run experience: allow running debase from outside a git repo
+//
 //    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
 //    #warning TODO:   make sure that all instances of the same branch are read-only too
 //    
