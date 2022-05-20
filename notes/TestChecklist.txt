@@ -72,11 +72,11 @@ Edit commit disallowed
 Resize terminal
 Text field interactions (arrow keys, delete, forward delete)
 Registration works
-Click text fields
+Click/drag text fields
 Ctrl-C exits
 Ctrl-D exits
 Cmd-. exits
-Esc doesn't close (unless dismiss is allowed)
+Esc closes (unless dismiss isn't allowed, confirm in License section)
 Clicking outside is ignored
 Return key triggers OK button
 
@@ -84,7 +84,8 @@ Return key triggers OK button
 * Error panel
 Resize terminal vertically + vertical clipping
 Resize terminal horizontally + horizontal clipping
-Dismiss with OK key
+Dismiss with OK button
+Dismiss with enter key
 Dismiss with escape key
 
 
@@ -131,6 +132,10 @@ Trial license is deleted upon expiration
 Too many machine ids prevents registration
 Starting a trial after it's expired doesn't work
 Server doesn't send trial license if it's expired
+        curl                                                                                    \
+        https://stage.heytoaster.com/debase/license/trial-lookup                                \
+        -d '{"machineId":"0f2abc4e7a4d38cc756d8c015f07ec1f619718aa2616b1269d1d106067531664"}'
+
 A mismatched machine id triggers a license renewal, renewal succeeds silently if there is a machine slot available
 A mismatched machine id triggers a license renewal, renewal fails and shows dialog fails if no machine slots available
 A mismatched machine id + no internet shows renewal dialog immediately
@@ -150,8 +155,12 @@ Verify that if the client's internet connection fails during checkout, the webho
 
 * License escape
 Welcome alert: can't be escaped
+    Try: escape key, enter key, clicking outside window
 Renewal alert (ie mismatched machine id): can't be escaped
+    Try: escape key, enter key, clicking outside window
 Trial expired alert: can't be escaped
+    Try: escape key, enter key, clicking outside window
+
 
 
 * Server
@@ -160,7 +169,9 @@ Stress test server by hitting it with lots of requests simultaneously
 
 * Privacy
 No network IO occurs on first launch, until a button is clicked
+    Test by: add abort() to Network::Request()
 Machine ID isn't calculated on first launch until a button is clicked
+    Test by: add abort() to Machine::MachineIdCalc()
 
 
 * Move Offer
@@ -179,7 +190,8 @@ After first launch, debase can be launched a second time after running the sugge
 * Clickable Links
 Clicking URL works
 Clicking email address works
-
+Clicking buy link (register panel) goes to buy page
+Clicking download link (update-available panel) goes to download page
 
 * Update check
 Update dialog appears when there's an update available
