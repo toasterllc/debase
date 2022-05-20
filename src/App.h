@@ -1579,7 +1579,7 @@ private:
     
     auto _registerAlertPresent(std::string_view title, std::string_view message) {
         auto alert = _alertPresent<UI::RegisterAlert>();
-        alert->width            (50);
+        alert->width            (52);
         alert->color            (colors().menu);
         alert->title()->text    (title);
         alert->message()->text  (message);
