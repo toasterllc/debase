@@ -162,7 +162,6 @@ Trial expired alert: can't be escaped
     Try: escape key, enter key, clicking outside window
 
 
-
 * Server
 Stress test server by hitting it with lots of requests simultaneously
 
@@ -192,6 +191,7 @@ Clicking URL works
 Clicking email address works
 Clicking buy link (register panel) goes to buy page
 Clicking download link (update-available panel) goes to download page
+
 
 * Update check
 Update dialog appears when there's an update available
