@@ -683,9 +683,8 @@ int main(int argc, const char* argv[]) {
                             unique.insert(rev);
                         }
                     
-                    } catch (...) {
-                        break;
-                    }
+                    // Ignore errors -- refs mentioned in the reflog maybe have been deleted, which will throw
+                    } catch (...) {}
                     i--;
                 }
             
