@@ -217,17 +217,9 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: figure out what the columns being shown in heytoaster.com repo are
-    
     #warning TODO: explanation of what the columns indicate
     
     #warning TODO: elaborate in help page about what kind of revs can be given
-    
-    #warning TODO: abiltiy to identify a tag, especially in the checkout history
-    
-    #warning TODO: bug: when a tag is checked out, `git status` says `HEAD detached at <tag>`, but treats it as a hash:
-    #warning TODO:   RevColumn shows a hash / is read-only
-    #warning TODO:   further, when exiting debase, if the tag was modified, we don't re-attach head to the rewritten tag -- HEAD stays attached to the old hash
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -260,6 +252,16 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: abiltiy to identify a tag, especially in the checkout history
+//    
+//    #warning TODO: bug: when a tag is checked out, `git status` says `HEAD detached at <tag>`, but treats it as a hash:
+//    #warning TODO:   RevColumn shows a hash / is read-only
+//    #warning TODO:   further, when exiting debase, if the tag was modified, we don't re-attach head to the rewritten tag -- HEAD stays attached to the old hash
+//
+//    #warning TODO: figure out what the columns being shown in heytoaster.com repo are
+//             it was correct, just the reflog
+//
 //    #warning TODO: first run experience: allow running debase from outside a git repo
 //
 //    #warning TODO: don't bail if current branch has outstanding changes, just make the branch read-only
