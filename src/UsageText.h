@@ -18,6 +18,10 @@ debase --help
 
 debase --theme <auto|dark|light>
     Set theme
+    
+    With `auto`, debase will automatically determine whether the
+    terminal background is dark or light and choose the
+    appropriate theme.
 
 debase --libs
     Print library acknowledgments and legalese
