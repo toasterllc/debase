@@ -98,13 +98,13 @@ inline int _MonthParse(std::string_view str) {
     throw RuntimeError("failed to parse weekday: %s", str);
 }
 
-inline Time TimeFromString(const char* str) {
+inline Time TimeFromString(std::string_view str) {
     struct tm tm = {};
     
     char weekday[16];
     char month[16];
     int offset = 0;
-    int ir = sscanf(str, "%15s %15s %d %d:%d:%d %d %d",
+    int ir = sscanf(str.data(), "%15s %15s %d %d:%d:%d %d %d",
         weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
     );
     if (ir != 8) throw RuntimeError("sscanf failed");
@@ -182,8 +182,8 @@ struct Signature : RefCounted<git_signature*, git_signature_free> {
         return x;
     }
     
-    const char* name() const { return (*get())->name; }
-    const char* email() const { return (*get())->email; }
+    std::string name() const { return (*get())->name; }
+    std::string email() const { return (*get())->email; }
     git_time time() const { return (*get())->when; }
 };
 
@@ -200,11 +200,11 @@ struct Object : RefCounted<git_object*, git_object_free> {
 
 struct Config : RefCounted<git_config*, git_config_free> {
     using RefCounted::RefCounted;
-    std::optional<std::string> stringGet(const char* key) {
+    std::optional<std::string> stringGet(std::string_view key) {
         Buf buf;
         {
             git_buf x = GIT_BUF_INIT;
-            int ir = git_config_get_string_buf(&x, *get(), key);
+            int ir = git_config_get_string_buf(&x, *get(), key.data());
             if (ir == GIT_ENOTFOUND) return std::nullopt;
             if (ir) throw Error(ir, "git_config_get_string_buf failed");
             buf = x;
@@ -297,7 +297,7 @@ struct Commit : Object {
         return x;
     }
     
-    const char* message() const {
+    std::string message() const {
         return git_commit_message(*get());
     }
     
@@ -312,7 +312,7 @@ struct Commit : Object {
         return git_commit_parentcount(*get()) > 1;
     }
     
-    const char* idStr() const {
+    std::string idStr() const {
         return git_oid_tostr_s(&id());
     }
     
@@ -337,11 +337,11 @@ struct TagAnnotation : Object {
         return x;
     }
     
-    const char* name() const {
+    std::string name() const {
         return git_tag_name(*get());
     }
     
-    const char* message() const {
+    std::string message() const {
         return git_tag_message(*get());
     }
 };
@@ -352,11 +352,11 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     bool operator !=(const Ref& x) const { return !(*this==x); }
     bool operator <(const Ref& x) const { return _Less(*this, x, fullName()<x.fullName()); }
     
-    const char* name() const {
+    std::string name() const {
         return git_reference_shorthand(*get());
     }
     
-    const char* fullName() const {
+    std::string fullName() const {
         return git_reference_name(*get());
     }
     
@@ -399,7 +399,7 @@ struct Branch : Ref {
         return x;
     }
     
-    const char* name() const {
+    std::string name() const {
         const char* x = nullptr;
         int ir = git_branch_name(&x, *get());
         if (ir) throw Error(ir, "git_branch_name failed");
@@ -478,11 +478,9 @@ public:
 //        return Git::DisplayStringForId(commit.id(), Len);
 //    }
     
-    const char* fullName() const {
+    std::string fullName() const {
         if (ref) return ref.fullName();
-        #warning need to find a way to fix this
-//        if (_id.empty()) _id = StringForId(commit.id());
-        return _id.c_str();
+        return StringForId(commit.id());
     }
     
     bool isMutable() const {
@@ -521,9 +519,6 @@ public:
     
     Commit commit;  // Mandatory
     Ref ref;        // Optional
-
-private:
-    std::string _id;
 };
 
 inline void _RepoFree(git_repository* repo) {
@@ -620,7 +615,8 @@ public:
         else if (ir)             throw Error(ir, "git_checkout_tree failed");
         
         if (rev.ref) {
-            ir = git_repository_set_head(*get(), rev.ref.fullName());
+            const std::string fullName = rev.ref.fullName();
+            ir = git_repository_set_head(*get(), fullName.c_str());
             if (ir) throw Error(ir, "git_repository_set_head failed");
         
         } else {
@@ -743,10 +739,10 @@ public:
     }
     
     // commitAmend(): change the author/message of a commit
-    Commit commitAmend(const Commit& commit, const Signature& author, const char* msg) const {
+    Commit commitAmend(const Commit& commit, const Signature& author, std::string_view msg) const {
         git_oid id;
         int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
-            nullptr, msg, nullptr);
+            nullptr, (!msg.empty() ? msg.data() : nullptr), nullptr);
         if (ir) throw Error(ir, "git_commit_amend failed");
         return commitLookup(id);
     }
@@ -758,9 +754,9 @@ public:
         return x;
     }
     
-    Commit commitLookup(const char* idStr) const {
+    Commit commitLookup(std::string_view idStr) const {
         Id id;
-        int ir = git_oid_fromstr(&id, idStr);
+        int ir = git_oid_fromstr(&id, idStr.data());
         if (ir) throw Error(ir, "git_oid_fromstr failed");
         return commitLookup(id);
     }
@@ -807,16 +803,16 @@ public:
         return tagCreate(tag.name(), commit, true);
     }
     
-    Ref refLookup(const char* name) const {
+    Ref refLookup(std::string_view name) const {
         git_reference* x = nullptr;
-        int ir = git_reference_dwim(&x, *get(), name);
+        int ir = git_reference_dwim(&x, *get(), name.data());
         if (ir) throw Error(ir, "git_reference_dwim failed");
         return x;
     }
     
-    Ref refFullNameLookup(const char* name) const {
+    Ref refFullNameLookup(std::string_view name) const {
         git_reference* x = nullptr;
-        int ir = git_reference_lookup(&x, *get(), name);
+        int ir = git_reference_lookup(&x, *get(), name.data());
         if (ir) throw Error(ir, "git_reference_dwim failed");
         return x;
     }
@@ -835,13 +831,13 @@ public:
         return rev;
     }
     
-    Rev revLookup(const char* str) const {
+    Rev revLookup(std::string_view str) const {
         Ref ref;
         Object obj;
         {
             git_reference* pr = nullptr;
             git_object* po = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *get(), str);
+            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
             if (ir) throw Error(ir, "git_revparse_ext failed");
             obj = po;
             ref = pr;
@@ -851,34 +847,34 @@ public:
         return Commit::ForObject(obj);
     }
     
-    Branch branchLookup(const char* name) const {
+    Branch branchLookup(std::string_view name) const {
         git_reference* x = nullptr;
-        int ir = git_branch_lookup(&x, *get(), name, GIT_BRANCH_LOCAL);
+        int ir = git_branch_lookup(&x, *get(), name.data(), GIT_BRANCH_LOCAL);
         if (ir) throw Error(ir, "git_branch_lookup failed");
         return x;
     }
     
-    Branch branchCreate(const char* name, const Commit& commit, bool force=false) const {
+    Branch branchCreate(std::string_view name, const Commit& commit, bool force=false) const {
         git_reference* x = nullptr;
-        int ir = git_branch_create(&x, *get(), name, (commit ? *commit : nullptr), force);
+        int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
         if (ir) throw Error(ir, "git_branch_create failed");
         return x;
     }
     
-    Tag tagLookup(const char* name) const {
+    Tag tagLookup(std::string_view name) const {
         return Tag::ForRef(refLookup(name));
     }
     
-    Tag tagCreate(const char* name, const Commit& commit, bool force=false) const {
+    Tag tagCreate(std::string_view name, const Commit& commit, bool force=false) const {
         git_oid id;
-        int ir = git_tag_create_lightweight(&id, *get(), name, *(Object)commit, force);
+        int ir = git_tag_create_lightweight(&id, *get(), name.data(), *(Object)commit, force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }
     
-    Tag tagCreateAnnotated(const char* name, const Commit& commit, const Signature& author, const char* message, bool force=false) const {
+    Tag tagCreateAnnotated(std::string_view name, const Commit& commit, const Signature& author, std::string_view message, bool force=false) const {
         git_oid id;
-        int ir = git_tag_create(&id, *get(), name, *((Object)commit), *author, message, force);
+        int ir = git_tag_create(&id, *get(), name.data(), *((Object)commit), *author, message.data(), force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }
@@ -966,7 +962,7 @@ public:
     
     Reflog reflogForRef(const Ref& ref) const {
         git_reflog* x = nullptr;
-        int ir = git_reflog_read(&x, *get(), ref.fullName());
+        int ir = git_reflog_read(&x, *get(), ref.fullName().c_str());
         if (ir) throw Error(ir, "git_reflog_read failed");
         return x;
     }

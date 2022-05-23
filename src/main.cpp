@@ -143,7 +143,7 @@ static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
 //    return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
 //}
 
-Rev _RevLookup(const Git::Repo& repo, const char* str) {
+Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
     Rev rev;
     (Git::Rev&)rev = repo.revLookup(str);
     if (rev.ref) return rev;
@@ -155,7 +155,7 @@ Rev _RevLookup(const Git::Repo& repo, const char* str) {
         size_t pos = name.find("^");
         if (pos != std::string::npos) {
             name.erase(pos);
-            (Git::Rev&)skipRev = repo.revLookup(name.c_str());
+            (Git::Rev&)skipRev = repo.revLookup(name);
         }
     }
     
@@ -164,7 +164,7 @@ Rev _RevLookup(const Git::Repo& repo, const char* str) {
         size_t pos = name.find("~");
         if (pos != std::string::npos) {
             name.erase(pos);
-            (Git::Rev&)skipRev = repo.revLookup(name.c_str());
+            (Git::Rev&)skipRev = repo.revLookup(name);
         }
     }
     
@@ -245,7 +245,7 @@ namespace _ReflogCheckoutEntry {
         revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
         // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
         if (HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
-        return repo.revLookup(std::string(revName).c_str());
+        return repo.revLookup(revName);
     }
 }
 
@@ -770,7 +770,7 @@ int main(int argc, const char* argv[]) {
                 for (const std::string& revName : args.run.revs) {
                     Rev rev;
                     try {
-                        rev = _RevLookup(repo, revName.c_str());
+                        rev = _RevLookup(repo, revName);
                     } catch (...) {
                         throw Toastbox::RuntimeError("invalid rev: %s", revName.c_str());
                     }
