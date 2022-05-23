@@ -190,28 +190,62 @@ Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
 }
 
 namespace _ReflogCheckoutEntry {
-    // Valid(): returns whether this is a valid checkout message in the reflog
-    // There are other message types (such as `commit:` and `commit (amend):`),
-    // so this filters for checkouts.
-    bool Valid(const git_reflog_entry* entry) {
-        const char* msg = git_reflog_entry_message(entry);
-        if (!msg) return false;
-        return String::StartsWith("checkout: moving from ", msg);
+    bool HEADSpecialPointer(std::string_view name) {
+        return String::EndsWith("HEAD", name);
     }
     
-    // RevGet(): parse and lookup the rev from the message string
+    // RevGet(): parse and lookup the rev from the reflog message string
     // For example, a checkout message in the reflog looks like:
     //   checkout: moving from master to v1
     // And we want to extract `v1` and turn it into a Rev.
+    //
+    // This is of course an imperfect heuristic and ideally we wouldn't
+    // be parsing log strings, but there doesn't seem to be a better option,
+    // and this is how libgit2 does it to implement its handling of the
+    // @{N} syntax.
+    // 
+    // We decided to implement this ourself instead of using libgit2's
+    // implementation for 2 reasons:
+    // 
+    //   1. libgit2 parses the first rev in the string but we want the second,
+    //      because git includes the symbolic name of revs in the second, but
+    //      not the first. For example if you checkout a tag (master -> v1),
+    //      the message will say:
+    //      
+    //          checkout: moving from master to v1
+    //      
+    //      but when moving from v1 -> master it'll say:
+    //      
+    //          checkout: moving from a561d03 to master
+    //      
+    //      So if we use libgit2's implementation, we can't get the tag name.
+    //   
+    //   2. We can implement reflog iteration much more efficiently. When
+    //      parsing `@{-3}` for example, libgit2 has to perform a regex match
+    //      on at least 3 reflog entries (to match the 'checkout: moving from
+    //      X to Y' string), and then has to redo that same work when parsing
+    //      `@{-4}`. Whereas with our implementation, we process each reflog
+    //      entry only once.
+    
     Git::Rev RevGet(const Git::Repo& repo, const git_reflog_entry* entry) {
+        assert(entry);
+        
         const char* msg = git_reflog_entry_message(entry);
         if (!msg) throw std::runtime_error("invalid message");
-        const std::string_view sv = msg;
-        const size_t lastSpaceIdx = sv.find_last_of(' ');
+        if (!String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
+        
+        const std::string_view msgv = msg;
+        const size_t lastSpaceIdx = msgv.find_last_of(' ');
         // This function should only be called for checkout reflog messages, so there must be a space.
         // If there's not, it's programmer error.
         assert(lastSpaceIdx != std::string::npos);
-        const std::string_view revName = sv.substr(lastSpaceIdx+1);
+        std::string_view revName = msgv.substr(lastSpaceIdx+1);
+        
+        const size_t tildeIdx = revName.find_first_of('~');
+        const size_t carrotIdx = revName.find_first_of('^');
+        revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
+        // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
+        if (HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
         return repo.revLookup(revName);
     }
 }
@@ -244,6 +278,8 @@ int main(int argc, const char* argv[]) {
     
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
+    
+    #warning TODO: audit and fix uses of string_view::data()
     
     #warning TODO: investigate daniel's cherrypick issue
     
@@ -717,7 +753,6 @@ int main(int argc, const char* argv[]) {
                 for (size_t i=0; revs.size()<RevCountDefault; i++) {
                     const git_reflog_entry*const entry = reflog[i];
                     if (!entry) break; // End of reflog
-                    if (!_ReflogCheckoutEntry::Valid(entry)) continue;
                     
                     try {
                         Rev rev;

@@ -50,6 +50,9 @@ Ctrl-C exits while dragging context menu
 
 --machineid flag works
 
+Recent tags/branches correctly reflects:
+    git reflog | grep 'checkout:'
+
 
 * Edit commit
 Edit commit with double-click
