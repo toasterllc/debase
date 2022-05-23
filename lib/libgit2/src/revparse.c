@@ -153,7 +153,7 @@ static int retrieve_previously_checked_out_branch_or_revision(git_object **out, 
 	if (*identifier != '\0' || *base_ref != NULL)
 		return GIT_EINVALIDSPEC;
 
-	if (build_regex(&preg, "checkout: moving from .* to (.*)") < 0)
+	if (build_regex(&preg, "checkout: moving from (.*) to .*") < 0)
 		return -1;
 
 	if (git_reference_lookup(&ref, repo, GIT_HEAD_FILE) < 0)
@@ -175,10 +175,10 @@ static int retrieve_previously_checked_out_branch_or_revision(git_object **out, 
 		if (git_regexp_search(&preg, msg, 2, regexmatches) < 0)
 			continue;
 
-		if (cur > 0) {
-			cur--;
+		cur--;
+
+		if (cur > 0)
 			continue;
-		}
 
 		if ((git_str_put(&buf, msg+regexmatches[1].start, regexmatches[1].end - regexmatches[1].start)) < 0)
 			goto cleanup;
