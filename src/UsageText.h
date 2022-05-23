@@ -7,8 +7,8 @@ debase [<rev>...]
     Supports standard git revision syntax, such as:
         branch^ tag~2 HEAD^^^
 
-    When no arguments are given, debase opens the 5 most
-    recently checked-out revisions, as can be seen with:
+    When no revs are supplied, debase opens the 5 most recently
+    checked-out revisions, as can be seen with:
 
         git reflog | grep checkout:
 
