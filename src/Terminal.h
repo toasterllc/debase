@@ -5,7 +5,7 @@
 #include <termios.h>
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/ReadWrite.h"
-#include "lib/toastbox/StringSplit.h"
+#include "lib/toastbox/String.h"
 #include "lib/toastbox/IntForStr.h"
 #include "lib/toastbox/Defer.h"
 
@@ -133,10 +133,10 @@ struct _Color {
 };
 
 inline _Color _Parse(std::string_view str) {
-    std::vector<std::string> parts = Toastbox::StringSplit(str, ";");
+    std::vector<std::string> parts = Toastbox::String::Split(str, ";");
     if (parts.size() != 2) throw Toastbox::RuntimeError("invalid input string");
     
-    parts = Toastbox::StringSplit(parts[1], ":");
+    parts = Toastbox::String::Split(parts[1], ":");
     if (parts.size() != 2) throw Toastbox::RuntimeError("invalid input string");
     
     std::string colorspace = parts[0];
@@ -148,7 +148,7 @@ inline _Color _Parse(std::string_view str) {
     if (colorsStr[colorsStr.size()-1] != 0x07) throw Toastbox::RuntimeError("colors string doesn't end with BEL: %s", colorsStr.c_str());
     colorsStr.erase(colorsStr.end()-1);
     
-    parts = Toastbox::StringSplit(colorsStr, "/");
+    parts = Toastbox::String::Split(colorsStr, "/");
     if (parts.size() != 3) throw Toastbox::RuntimeError("invalid color string count: %ju", (uintmax_t)parts.size());
     
     float colors[3] = {};

@@ -22,7 +22,7 @@ inline bool PathIsInEnvironmentPath(const std::filesystem::path& x) noexcept {
     const char* pathEnv = getenv("PATH");
     if (!pathEnv) return false;
     
-    const std::vector<std::string> pathStrs = Toastbox::StringSplit(pathEnv, ":");
+    const std::vector<std::string> pathStrs = Toastbox::String::Split(pathEnv, ":");
     for (const std::string& pathStr : pathStrs) {
         if (pathStr.empty()) continue;
         
@@ -81,7 +81,7 @@ inline bool PathIsInEnvironmentPath(const std::filesystem::path& x) noexcept {
 //    const char* pathEnv = getenv("PATH");
 //    if (!pathEnv) return false;
 //    
-//    const std::vector<std::string> pathStrs = Toastbox::StringSplit(pathEnv, ":");
+//    const std::vector<std::string> pathStrs = Toastbox::String::Split(pathEnv, ":");
 //    for (const std::string& str : pathStrs) {
 //        const path envDir = str;
 //        

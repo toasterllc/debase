@@ -2,7 +2,7 @@
 #include <spawn.h>
 #include "state/StateDir.h"
 #include "lib/toastbox/Stringify.h"
-#include "lib/toastbox/StringSplit.h"
+#include "lib/toastbox/String.h"
 #include "machine/Machine.h"
 #include "App.h"
 #include "Terminal.h"
@@ -12,7 +12,6 @@
 #include "LibsText.h"
 #include "Syscall.h"
 #include "Rev.h"
-#include "String.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -191,7 +190,7 @@ Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
 
 namespace _ReflogCheckoutEntry {
     bool HEADSpecialPointer(std::string_view name) {
-        return String::EndsWith("HEAD", name);
+        return Toastbox::String::EndsWith("HEAD", name);
     }
     
     // RevGet(): parse and lookup the rev from the reflog message string
@@ -232,7 +231,7 @@ namespace _ReflogCheckoutEntry {
         
         const char* msg = git_reflog_entry_message(entry);
         if (!msg) throw std::runtime_error("invalid message");
-        if (!String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
+        if (!Toastbox::String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
         
         const std::string_view msgv = msg;
         const size_t lastSpaceIdx = msgv.find_last_of(' ');
