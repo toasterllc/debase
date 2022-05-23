@@ -11,8 +11,8 @@ extern "C" {
     extern char** environ;
 };
 
-static void _Spawn(std::string_view prog, std::string_view arg) {
-    const char*const argv[] = { prog.data(), arg.data(), nullptr };
+static void _Spawn(const char* prog, const char* arg) {
+    const char*const argv[] = { prog, arg, nullptr };
     
     // Route stdin/stdout/stderr to /dev/null
     // We do this because when xdg-open fails, it writes errors to stdout/stderr,
@@ -45,7 +45,7 @@ static void _Spawn(std::string_view prog, std::string_view arg) {
     if (ir != pid) throw Toastbox::RuntimeError("unknown waitpid result: %d", ir);
 }
 
-void OpenURL(std::string_view url) noexcept {
+void OpenURL(const char* url) noexcept {
     try {
         _Spawn("xdg-open", url);
     } catch (...) {}

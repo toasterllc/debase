@@ -3,8 +3,8 @@
 #import <string>
 #import "OpenURL.h"
 
-void OpenURL(std::string_view url) noexcept {
+void OpenURL(const char* url) noexcept {
     @autoreleasepool {
-        LSOpenCFURLRef((__bridge CFURLRef)[NSURL URLWithString:@(url.data())], nil);
+        LSOpenCFURLRef((__bridge CFURLRef)[NSURL URLWithString:@(url)], nil);
     }
 }
