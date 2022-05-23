@@ -39,7 +39,7 @@ endif
 	
 	cd $(TMP) && cmake														\
 		$(PLATFORMFLAGS)													\
-		-DCMAKE_BUILD_TYPE=Debug											\
+		-DCMAKE_BUILD_TYPE=Release											\
 		-DBUILD_SHARED_LIBS=OFF												\
 		-DUSE_HTTPS=OFF ..
 	
