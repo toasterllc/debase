@@ -98,13 +98,13 @@ inline int _MonthParse(std::string_view str) {
     throw RuntimeError("failed to parse weekday: %s", str);
 }
 
-inline Time TimeFromString(std::string_view str) {
+inline Time TimeFromString(const std::string& str) {
     struct tm tm = {};
     
     char weekday[16];
     char month[16];
     int offset = 0;
-    int ir = sscanf(str.data(), "%15s %15s %d %d:%d:%d %d %d",
+    int ir = sscanf(str.c_str(), "%15s %15s %d %d:%d:%d %d %d",
         weekday, month, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &tm.tm_year, &offset
     );
     if (ir != 8) throw RuntimeError("sscanf failed");
@@ -175,9 +175,9 @@ struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
 
 struct Signature : RefCounted<git_signature*, git_signature_free> {
     using RefCounted::RefCounted;
-    static Signature Create(std::string_view name, std::string_view email, git_time_t time, int offset) {
+    static Signature Create(const std::string& name, const std::string& email, git_time_t time, int offset) {
         git_signature* x = nullptr;
-        int ir = git_signature_new(&x, name.data(), email.data(), time, offset);
+        int ir = git_signature_new(&x, name.c_str(), email.c_str(), time, offset);
         if (ir) throw Error(ir, "git_signature_new failed");
         return x;
     }
@@ -200,11 +200,11 @@ struct Object : RefCounted<git_object*, git_object_free> {
 
 struct Config : RefCounted<git_config*, git_config_free> {
     using RefCounted::RefCounted;
-    std::optional<std::string> stringGet(std::string_view key) {
+    std::optional<std::string> stringGet(const std::string& key) {
         Buf buf;
         {
             git_buf x = GIT_BUF_INIT;
-            int ir = git_config_get_string_buf(&x, *get(), key.data());
+            int ir = git_config_get_string_buf(&x, *get(), key.c_str());
             if (ir == GIT_ENOTFOUND) return std::nullopt;
             if (ir) throw Error(ir, "git_config_get_string_buf failed");
             buf = x;
@@ -739,10 +739,10 @@ public:
     }
     
     // commitAmend(): change the author/message of a commit
-    Commit commitAmend(const Commit& commit, const Signature& author, std::string_view msg) const {
+    Commit commitAmend(const Commit& commit, const Signature& author, const std::string& msg) const {
         git_oid id;
         int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
-            nullptr, (!msg.empty() ? msg.data() : nullptr), nullptr);
+            nullptr, (!msg.empty() ? msg.c_str() : nullptr), nullptr);
         if (ir) throw Error(ir, "git_commit_amend failed");
         return commitLookup(id);
     }
@@ -754,9 +754,9 @@ public:
         return x;
     }
     
-    Commit commitLookup(std::string_view idStr) const {
+    Commit commitLookup(const std::string& idStr) const {
         Id id;
-        int ir = git_oid_fromstr(&id, idStr.data());
+        int ir = git_oid_fromstr(&id, idStr.c_str());
         if (ir) throw Error(ir, "git_oid_fromstr failed");
         return commitLookup(id);
     }
@@ -803,16 +803,16 @@ public:
         return tagCreate(tag.name(), commit, true);
     }
     
-    Ref refLookup(std::string_view name) const {
+    Ref refLookup(const std::string& name) const {
         git_reference* x = nullptr;
-        int ir = git_reference_dwim(&x, *get(), name.data());
+        int ir = git_reference_dwim(&x, *get(), name.c_str());
         if (ir) throw Error(ir, "git_reference_dwim failed");
         return x;
     }
     
-    Ref refFullNameLookup(std::string_view name) const {
+    Ref refFullNameLookup(const std::string& name) const {
         git_reference* x = nullptr;
-        int ir = git_reference_lookup(&x, *get(), name.data());
+        int ir = git_reference_lookup(&x, *get(), name.c_str());
         if (ir) throw Error(ir, "git_reference_dwim failed");
         return x;
     }
@@ -831,13 +831,13 @@ public:
         return rev;
     }
     
-    Rev revLookup(std::string_view str) const {
+    Rev revLookup(const std::string& str) const {
         Ref ref;
         Object obj;
         {
             git_reference* pr = nullptr;
             git_object* po = nullptr;
-            int ir = git_revparse_ext(&po, &pr, *get(), str.data());
+            int ir = git_revparse_ext(&po, &pr, *get(), str.c_str());
             if (ir) throw Error(ir, "git_revparse_ext failed");
             obj = po;
             ref = pr;
@@ -847,34 +847,34 @@ public:
         return Commit::ForObject(obj);
     }
     
-    Branch branchLookup(std::string_view name) const {
+    Branch branchLookup(const std::string& name) const {
         git_reference* x = nullptr;
-        int ir = git_branch_lookup(&x, *get(), name.data(), GIT_BRANCH_LOCAL);
+        int ir = git_branch_lookup(&x, *get(), name.c_str(), GIT_BRANCH_LOCAL);
         if (ir) throw Error(ir, "git_branch_lookup failed");
         return x;
     }
     
-    Branch branchCreate(std::string_view name, const Commit& commit, bool force=false) const {
+    Branch branchCreate(const std::string& name, const Commit& commit, bool force=false) const {
         git_reference* x = nullptr;
-        int ir = git_branch_create(&x, *get(), name.data(), (commit ? *commit : nullptr), force);
+        int ir = git_branch_create(&x, *get(), name.c_str(), (commit ? *commit : nullptr), force);
         if (ir) throw Error(ir, "git_branch_create failed");
         return x;
     }
     
-    Tag tagLookup(std::string_view name) const {
+    Tag tagLookup(const std::string& name) const {
         return Tag::ForRef(refLookup(name));
     }
     
-    Tag tagCreate(std::string_view name, const Commit& commit, bool force=false) const {
+    Tag tagCreate(const std::string& name, const Commit& commit, bool force=false) const {
         git_oid id;
-        int ir = git_tag_create_lightweight(&id, *get(), name.data(), *(Object)commit, force);
+        int ir = git_tag_create_lightweight(&id, *get(), name.c_str(), *(Object)commit, force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }
     
-    Tag tagCreateAnnotated(std::string_view name, const Commit& commit, const Signature& author, std::string_view message, bool force=false) const {
+    Tag tagCreateAnnotated(const std::string& name, const Commit& commit, const Signature& author, const std::string& message, bool force=false) const {
         git_oid id;
-        int ir = git_tag_create(&id, *get(), name.data(), *((Object)commit), *author, message.data(), force);
+        int ir = git_tag_create(&id, *get(), name.c_str(), *((Object)commit), *author, message.c_str(), force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }

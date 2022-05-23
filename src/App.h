@@ -687,9 +687,9 @@ private:
     UI::ButtonPtr _makeContextMenuButton(std::string_view label, std::string_view key, bool enabled, UI::Button*& chosen) {
         constexpr int ContextMenuWidth = 12;
         UI::ButtonPtr b = std::make_shared<UI::Button>();
-        b->label()->text(std::string(label));
+        b->label()->text(label);
         b->label()->align(UI::Align::Left);
-        b->key()->text(std::string(key));
+        b->key()->text(key);
         b->action([&] (UI::Button& button) { chosen = &button; });
         b->enabled(enabled);
         b->size({ContextMenuWidth, 1});

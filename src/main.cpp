@@ -143,7 +143,7 @@ static void _StdinFlush(std::chrono::steady_clock::duration timeout) {
 //    return PathIsInEnvironmentPath(CurrentExecutablePath().parent_path());
 //}
 
-Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
+Rev _RevLookup(const Git::Repo& repo, const std::string& str) {
     Rev rev;
     (Git::Rev&)rev = repo.revLookup(str);
     if (rev.ref) return rev;
@@ -245,7 +245,7 @@ namespace _ReflogCheckoutEntry {
         revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
         // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
         if (HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
-        return repo.revLookup(revName);
+        return repo.revLookup(std::string(revName));
     }
 }
 

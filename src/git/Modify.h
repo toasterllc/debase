@@ -444,7 +444,7 @@ private:
         };
     }
     
-    static std::optional<Time> _CommitTimeParse(std::string_view str) {
+    static std::optional<Time> _CommitTimeParse(const std::string& str) {
         try {
             return TimeFromString(str);
         } catch (...) {
