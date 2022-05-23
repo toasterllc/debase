@@ -444,7 +444,7 @@ private:
         };
     }
     
-    static std::optional<Time> _CommitTimeParse(std::string_view str) {
+    static std::optional<Time> _CommitTimeParse(const char* str) {
         try {
             return TimeFromString(str);
         } catch (...) {
@@ -531,7 +531,7 @@ private:
         std::optional<Time> time;
         
         if (authorStr) author = _CommitAuthorParse(*authorStr);
-        if (timeStr) time = _CommitTimeParse(*timeStr);
+        if (timeStr) time = _CommitTimeParse(timeStr->c_str());
         
         return _CommitMessage{
             .author = author,
@@ -598,7 +598,7 @@ private:
         time_t newTime = newMsg.time ? newMsg.time->time : origAuthor->when.time;
         int newOffset = newMsg.time ? newMsg.time->offset : origAuthor->when.offset;
         const Signature newAuthor = Signature::Create(newName, newEmail, newTime, newOffset);
-        const Commit newCommit = ctx.repo.commitAmend(origCommit, newAuthor, newMsg.message);
+        const Commit newCommit = ctx.repo.commitAmend(origCommit, newAuthor, (!newMsg.message.empty() ? newMsg.message.c_str() : nullptr));
         
         // Rewrite the rev
         // Add and remove commits

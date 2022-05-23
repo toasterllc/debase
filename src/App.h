@@ -361,7 +361,7 @@ public:
                     
                     err += "\n";
                     err += "Please move or delete them and run:\n";
-                    err += "  git checkout " + _head.ref.name() + "\n";
+                    err += "  git checkout " + std::string(_head.ref.name()) + "\n";
                 
                 } catch (const std::exception& e) {
                     err = std::string("Error: ") + e.what();
