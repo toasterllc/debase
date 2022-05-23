@@ -12,6 +12,7 @@
 #include "LibsText.h"
 #include "Syscall.h"
 #include "Rev.h"
+#include "String.h"
 
 //extern "C" {
 //#include "lib/libcurl/include/curl/curl.h"
@@ -188,6 +189,33 @@ Rev _RevLookup(const Git::Repo& repo, std::string_view str) {
     return rev;
 }
 
+namespace _ReflogCheckoutEntry {
+    // Valid(): returns whether this is a valid checkout message in the reflog
+    // There are other message types (such as `commit:` and `commit (amend):`),
+    // so this filters for checkouts.
+    bool Valid(const git_reflog_entry* entry) {
+        const char* msg = git_reflog_entry_message(entry);
+        if (!msg) return false;
+        return String::StartsWith("checkout: moving from ", msg);
+    }
+    
+    // RevGet(): parse and lookup the rev from the message string
+    // For example, a checkout message in the reflog looks like:
+    //   checkout: moving from master to v1
+    // And we want to extract `v1` and turn it into a Rev.
+    Git::Rev RevGet(const Git::Repo& repo, const git_reflog_entry* entry) {
+        const char* msg = git_reflog_entry_message(entry);
+        if (!msg) throw std::runtime_error("invalid message");
+        const std::string_view sv = msg;
+        const size_t lastSpaceIdx = sv.find_last_of(' ');
+        // This function should only be called for checkout reflog messages, so there must be a space.
+        // If there's not, it's programmer error.
+        assert(lastSpaceIdx != std::string::npos);
+        const std::string_view revName = sv.substr(lastSpaceIdx+1);
+        return repo.revLookup(revName);
+    }
+}
+
 int main(int argc, const char* argv[]) {
 //    std::string str = "{\"error\":\"The existing trial has already expired.\"}\n";
 //    License::Server::ReplyLicenseLookup resp;
@@ -217,9 +245,9 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: explanation of what the columns indicate
+    #warning TODO: investigate daniel's cherrypick issue
     
-    #warning TODO: elaborate in help page about what kind of revs can be given
+    #warning TODO: explanation of what the columns indicate
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -252,6 +280,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: elaborate in help page about what kind of revs can be given
 //
 //    #warning TODO: abiltiy to identify a tag, especially in the checkout history
 //    
@@ -673,21 +703,31 @@ int main(int argc, const char* argv[]) {
             if (args.run.revs.empty()) {
                 constexpr size_t RevCountDefault = 5;
                 std::set<Rev> unique;
-                ssize_t i = 0;
-                while (revs.size() < RevCountDefault) {
+                
+                // Add HEAD to `revs`
+                {
                     Rev rev;
-                    try {
-                        if (!i) (Git::Rev&)rev = repo.headResolved();
-                        else rev = _RevLookup(repo, "@{" + std::to_string(i) + "}");
-                        
-                        if (unique.find(rev) == unique.end()) {
-                            revs.emplace_back(rev);
-                            unique.insert(rev);
-                        }
+                    (Git::Rev&)rev = repo.headResolved();
+                    revs.emplace_back(rev);
+                    unique.insert(rev);
+                }
+                
+                // Fill out `revs` with recent revs that were checked out, until we hit `RevCountDefault`
+                Git::Reflog reflog = repo.reflogForRef(repo.head());
+                for (size_t i=0; revs.size()<RevCountDefault; i++) {
+                    const git_reflog_entry*const entry = reflog[i];
+                    if (!entry) break; // End of reflog
+                    if (!_ReflogCheckoutEntry::Valid(entry)) continue;
                     
-                    // Ignore errors -- refs mentioned in the reflog maybe have been deleted, which will throw
-                    } catch (...) {}
-                    i--;
+                    try {
+                        Rev rev;
+                        (Git::Rev&)rev = _ReflogCheckoutEntry::RevGet(repo, entry);
+                        const auto [_, inserted] = unique.insert(rev);
+                        if (inserted) revs.emplace_back(rev);
+                        
+                    // Ignore errors -- refs mentioned in the reflog may have been deleted,
+                    // which will throw when we try to lookup
+                    } catch (const std::exception& e) {}
                 }
             
             } else {

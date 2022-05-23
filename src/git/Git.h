@@ -233,6 +233,10 @@ struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
         }
         return git_reflog_entry_byindex(*get(), idx);
     }
+    
+    size_t len() const {
+        return git_reflog_entrycount(*get());
+    }
 };
 
 struct Submodule : RefCounted<git_submodule*, git_submodule_free> {

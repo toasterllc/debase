@@ -2,6 +2,7 @@
 #include <fstream>
 #include <deque>
 #include "Git.h"
+#include "String.h"
 #include "lib/toastbox/Defer.h"
 
 namespace Git {
@@ -404,10 +405,6 @@ private:
         return x;
     }
     
-    static bool _StartsWith(std::string_view prefix, std::string_view str) {
-        return !str.compare(0, prefix.size(), prefix);
-    }
-    
     struct _CommitAuthor {
         std::string name;
         std::string email;
@@ -502,7 +499,7 @@ private:
         std::optional<std::string> authorStr;
         for (; !authorStr && iter!=lines.end(); iter++) {
             std::string line = _Trim(*iter);
-            if (_StartsWith(_AuthorPrefix, line)) {
+            if (String::StartsWith(_AuthorPrefix, line)) {
                 authorStr = _Trim(line.substr(std::size(_AuthorPrefix)-1));
             }
             else if (!line.empty()) break;
@@ -512,7 +509,7 @@ private:
         std::optional<std::string> timeStr;
         for (; !timeStr && iter!=lines.end(); iter++) {
             std::string line = _Trim(*iter);
-            if (_StartsWith(_TimePrefix, line)) {
+            if (String::StartsWith(_TimePrefix, line)) {
                 timeStr = _Trim(line.substr(std::size(_TimePrefix)-1));
             }
             else if (!line.empty()) break;

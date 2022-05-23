@@ -4,7 +4,13 @@
 class Rev : public Git::Rev {
 public:
     using Git::Rev::Rev;
-//    Rev(const Git::Rev& x) : Git::Rev(x) {}
+    
+    // TODO: add this in the future after v1 release; too scared to add before v1
+    // TODO: search project for `(Git::Rev&)` to find oppurtunities to use
+//    // Explicit because we don't want to implicitly allow: `Rev = Git::Rev`,
+//    // because it'll wipe Rev's skip and mutability, which we typically
+//    // don't want.
+//    explicit Rev(const Git::Rev& x) : Git::Rev(x) {}
     
     operator bool() const { return Git::Rev::operator bool(); }
     
