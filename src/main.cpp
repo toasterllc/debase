@@ -278,11 +278,7 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: audit and fix uses of string_view::data()
-    
     #warning TODO: investigate daniel's cherrypick issue
-    
-    #warning TODO: explanation of what the columns indicate
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -315,6 +311,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: explanation of what the columns indicate
+//
+//    #warning TODO: audit and fix uses of string_view::data()
 //
 //    #warning TODO: elaborate in help page about what kind of revs can be given
 //
