@@ -175,9 +175,9 @@ struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
 
 struct Signature : RefCounted<git_signature*, git_signature_free> {
     using RefCounted::RefCounted;
-    static Signature Create(const char* name, const char* email, git_time_t time, int offset) {
+    static Signature Create(std::string_view name, std::string_view email, git_time_t time, int offset) {
         git_signature* x = nullptr;
-        int ir = git_signature_new(&x, name, email, time, offset);
+        int ir = git_signature_new(&x, name.data(), email.data(), time, offset);
         if (ir) throw Error(ir, "git_signature_new failed");
         return x;
     }
