@@ -278,8 +278,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: investigate daniel's cherrypick issue
-    
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
@@ -322,6 +320,8 @@ int main(int argc, const char* argv[]) {
     
 //  DONE:
 //
+//    #warning TODO: investigate daniel's cherrypick issue
+//    
 //    #warning TODO: explanation of what the columns indicate
 //
 //    #warning TODO: audit and fix uses of string_view::data()
