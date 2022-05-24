@@ -971,7 +971,6 @@ private:
     Index _cherryPick(const Commit& dst, const Commit& commit) const {
         unsigned int mainline = (commit.isMerge() ? 1 : 0);
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
-        opts.file_favor = GIT_MERGE_FILE_FAVOR_THEIRS;
         
         git_index* x = nullptr;
         int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*dst, mainline, &opts);
