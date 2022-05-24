@@ -290,6 +290,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: add branch copying
     
+    #warning TODO: add 'create branch from commit'
+    
     #warning TODO: license text field: option-left/option-right closes window
     
     #warning TODO: integrate debase-releases as a submodule into debase.
