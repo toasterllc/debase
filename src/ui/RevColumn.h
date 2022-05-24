@@ -211,6 +211,8 @@ private:
         case Rev::Mutability::Allowed:                      return nullptr;
         case Rev::Mutability::DisallowedUncommittedChanges: return "(uncommitted changes)";
         }
+        // Invalid mutability
+        abort();
     }
     
     Git::Repo _repo;
