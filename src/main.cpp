@@ -286,9 +286,20 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: add scrolling
     
-    #warning TODO: add branch copying
+    #warning TODO: add branch copying; action menu? drag branch name? both?
+    #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
+    #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
+    #warning TODO:        branch might be readonly, so we might not be able to checkout.
+    #warning TODO:     2. manually update the reflog. we'll need to generate a signature for the current user,
+    #warning TODO:        but that should be doable?
+    #warning TODO:     3. add new schema to State to track additional refs that should be considered in addition
+    #warning TODO:        to the reflog. the new state will need to track the date so that we can sort the refs
+    #warning TODO:        relative to the reflog. (the reflog appears to track dates too.)
     
     #warning TODO: add 'create branch from commit'
+    #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
+    
+    #warning TODO: add branch name editing by clicking on the name of the branch
     
     #warning TODO: license text field: option-left/option-right closes window
     
