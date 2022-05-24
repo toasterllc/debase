@@ -26,6 +26,8 @@ History lost when head commit doesn't match saved commit
 
 <rev>~3 syntax works, and branch is editable
 
+Executing debase outside of git repo shows error dialog
+
 
 * General tag editing: same as 'General branch editing'
 
