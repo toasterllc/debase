@@ -284,10 +284,6 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
-    #warning TODO: 5 recent branches behavior: when composing the rev list, if the current reflog entry has a ref, but it has the same commit as a previous reflog entry that doesn't have a ref, replace the previous entry
-    #warning TODO:                             similarly, if the current reflog entry doesn't have a ref, and matches a previous reflog entry that does have a ref, ignore the current entry
-    #warning TODO:                             alternatively to all the above, what if we only add revs that have refs?
-    
     #warning TODO: add scrolling
     
     #warning TODO: add branch copying
@@ -319,6 +315,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: 5 recent branches behavior: when composing the rev list, if the current reflog entry has a ref, but it has the same commit as a previous reflog entry that doesn't have a ref, replace the previous entry
+//    #warning TODO:                             similarly, if the current reflog entry doesn't have a ref, and matches a previous reflog entry that does have a ref, ignore the current entry
+//    #warning TODO:                             alternatively to all the above, what if we only add revs that have refs?
 //
 //    #warning TODO: investigate daniel's cherrypick issue
 //    
