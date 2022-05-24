@@ -286,6 +286,10 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: add scrolling
+    
+    #warning TODO: add branch copying
+    
     #warning TODO: license text field: option-left/option-right closes window
     
     #warning TODO: integrate debase-releases as a submodule into debase.
