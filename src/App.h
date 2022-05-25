@@ -111,8 +111,8 @@ public:
             p->origin({(b.w()-p->frame().w())/2, b.h()-p->frame().h()});
         }
         
-        for (UI::AlertPtr alert : _alerts) {
-            _layoutAlert(alert);
+        for (UI::PanelPtr panel : _panels) {
+            _layoutPanel(panel);
         }
     }
     
@@ -461,49 +461,49 @@ private:
         }
     };
     
-    // _AlertPresenter(): RAII class to handle pushing/popping an alert from our _alerts deque
+    // _PanelPresenter(): RAII class to handle pushing/popping an panel from our _panels deque
     template <typename T>
-    class _AlertPresenter {
+    class _PanelPresenter {
     public:
-        _AlertPresenter(std::deque<UI::AlertPtr>& alerts, T alert) : _s{.alerts=&alerts, .alert=alert} {
-            assert(alert);
-            _s.alerts->push_back(alert);
+        _PanelPresenter(std::deque<UI::PanelPtr>& panels, T panel) : _s{.panels=&panels, .panel=panel} {
+            assert(panel);
+            _s.panels->push_back(panel);
         }
         
-        ~_AlertPresenter() {
-            if (_s.alert) {
-                assert(!_s.alerts->empty());
-                assert(_s.alerts->back() == _s.alert);
-                _s.alerts->pop_back();
+        ~_PanelPresenter() {
+            if (_s.panel) {
+                assert(!_s.panels->empty());
+                assert(_s.panels->back() == _s.panel);
+                _s.panels->pop_back();
             }
         }
         
-        _AlertPresenter(const _AlertPresenter& x) = delete;
+        _PanelPresenter(const _PanelPresenter& x) = delete;
         
-        _AlertPresenter(_AlertPresenter&& x) {
+        _PanelPresenter(_PanelPresenter&& x) {
             swap(x);
         }
         
-        void swap(_AlertPresenter& x) {
+        void swap(_PanelPresenter& x) {
             std::swap(_s, x._s);
         }
         
-        operator T&() { return _s.alert; }
-        T operator ->() { return _s.alert; }
+        operator T&() { return _s.panel; }
+        T operator ->() { return _s.panel; }
         
-        T& alert() { return _s.alert; }
+        T& panel() { return _s.panel; }
     
     private:
         struct {
-            std::deque<UI::AlertPtr>* alerts = nullptr;
-            T alert;
+            std::deque<UI::PanelPtr>* panels = nullptr;
+            T panel;
         } _s;
     };
     
     template <typename T>
-    _AlertPresenter<std::shared_ptr<T>> _alertPresent() {
-        std::shared_ptr<T> alert = subviewCreate<T>();
-        return _AlertPresenter(_alerts, alert);
+    _PanelPresenter<std::shared_ptr<T>> _panelPresent() {
+        std::shared_ptr<T> panel = subviewCreate<T>();
+        return _PanelPresenter(_panels, panel);
     }
     
     static constexpr int _ColumnInsetX = 3;
@@ -790,8 +790,8 @@ private:
         if (_trialCountdownAlert) sv.push_back(_trialCountdownAlert);
         if (_updateAvailableAlert) sv.push_back(_updateAvailableAlert);
         
-        for (UI::AlertPtr alert : _alerts) {
-            sv.push_back(alert);
+        for (UI::PanelPtr panel : _panels) {
+            sv.push_back(panel);
         }
         
         subviews(sv);
@@ -1457,7 +1457,7 @@ private:
         return License::Validate(_licenseCtxGet(), license);
     }
     
-    void _layoutAlert(UI::AlertPtr panel) {
+    void _layoutPanel(UI::PanelPtr panel) {
         panel->size(panel->sizeIntrinsic({bounds().w(), ConstraintNone}));
         
         UI::Size ps = panel->size();
@@ -1470,7 +1470,7 @@ private:
     }
     
     template <typename T_Async>
-    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::AlertPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
+    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::PanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
         
         if (panel) panel->enabled(false);
         Defer( if (panel) panel->enabled(true); );
@@ -1495,7 +1495,7 @@ private:
     }
     
     template <typename T>
-    std::optional<License::License> _licenseLookupRun(UI::AlertPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
+    std::optional<License::License> _licenseLookupRun(UI::PanelPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
         
 //        // Disable interaction while we wait for the license request
 //        assert(interaction());
@@ -1551,7 +1551,7 @@ private:
         return license;
     }
     
-    bool _trialLookup(UI::AlertPtr panel, UI::ButtonPtr animateButton) {
+    bool _trialLookup(UI::PanelPtr panel, UI::ButtonPtr animateButton) {
         const auto cmd = _commandTrialLookup();
         std::optional<License::License> license = _licenseLookupRun(panel, animateButton, DebaseTrialLookupURL, cmd);
         if (!license) return false;
@@ -1604,7 +1604,7 @@ private:
     void _welcomeAlertRun() {
         std::optional<bool> choice;
         
-        auto alert = _alertPresent<UI::WelcomeAlert>();
+        auto alert = _panelPresent<UI::WelcomeAlert>();
         alert->width                    (40);
         alert->color                    (colors().menu);
         alert->title()->text            ("");
@@ -1618,7 +1618,7 @@ private:
             
             // Trial
             if (*choice) {
-                if (_trialLookup(alert.alert(), alert->trialButton())) {
+                if (_trialLookup(alert.panel(), alert->trialButton())) {
                     return;
                 }
             
@@ -1634,7 +1634,7 @@ private:
     }
     
     auto _registerAlertPresent(std::string_view title, std::string_view message) {
-        auto alert = _alertPresent<UI::RegisterAlert>();
+        auto alert = _panelPresent<UI::RegisterAlert>();
         alert->width            (52);
         alert->color            (colors().menu);
         alert->title()->text    (title);
@@ -1642,16 +1642,16 @@ private:
         return alert;
     }
     
-    bool _registerAlertRun(UI::RegisterAlertPtr panel, std::function<bool()> dismissAction=nullptr) {
+    bool _registerAlertRun(UI::RegisterAlertPtr alert, std::function<bool()> dismissAction=nullptr) {
 //        std::string msg = std::string(message)_showAlert;
 //        msg += " To buy a license, please visit:\n";
         
-        const auto dismissActionPrev = panel->dismissButton()->action();
+        const auto dismissActionPrev = alert->dismissButton()->action();
         std::optional<bool> choice;
         
-        panel->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
+        alert->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
         if (dismissAction) {
-            panel->dismissButton()->action ( [&] (UI::Button& b) {
+            alert->dismissButton()->action ( [&] (UI::Button& b) {
                 if (dismissAction()) {
                     choice = false;
                 }
@@ -1664,10 +1664,10 @@ private:
             
             // Register
             if (*choice) {
-                const std::string email = panel->email()->value();
-                const std::string licenseCode = panel->code()->value();
+                const std::string email = alert->email()->value();
+                const std::string licenseCode = alert->code()->value();
                 const auto cmd = _commandLicenseLookup(email, licenseCode);
-                bool ok = (bool)_licenseLookupRun(panel, panel->okButton(), DebaseLicenseLookupURL, cmd);
+                bool ok = (bool)_licenseLookupRun(alert, alert->okButton(), DebaseLicenseLookupURL, cmd);
                 if (ok) {
                     _trialCountdownAlert = nullptr;
                     _thankYouMessageRun();
@@ -1743,7 +1743,7 @@ private:
         // so that we block the app from being used until the license is valid
         if (!async.done()) {
             panel->visible(true);
-            _waitForAsync(async, Forever, panel.alert(), panel->okButton());
+            _waitForAsync(async, Forever, panel.panel(), panel->okButton());
         }
         
         bool ok = false;
@@ -1771,7 +1771,7 @@ private:
             layoutNeeded(true);
             return _registerAlertRun(panel, [&] {
                 // Dismiss action
-                return _trialLookup(panel.alert(), panel->dismissButton());
+                return _trialLookup(panel.panel(), panel->dismissButton());
             });
         }
         
@@ -1802,17 +1802,17 @@ private:
         
         const License::Context& ctx = _licenseCtxGet();
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
-        UI::TrialCountdownAlertPtr p = subviewCreate<UI::TrialCountdownAlert>(rem);
-        p->registerButton()->action([&] (UI::Button&) {
+        UI::TrialCountdownAlertPtr alert = subviewCreate<UI::TrialCountdownAlert>(rem);
+        alert->registerButton()->action([&] (UI::Button&) {
             _registerAlertRun();
         });
-        return p;
+        return alert;
     }
     
     void _thankYouMessageRun() {
         bool done = false;
         
-        auto alert = _alertPresent<UI::Alert>();
+        auto alert = _panelPresent<UI::Alert>();
         alert->width                (42);
         alert->color                (colors().menu);
         alert->title()->text        ("Thank You!");
@@ -1834,7 +1834,7 @@ private:
     void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
         bool done = false;
         
-        auto alert = _alertPresent<UI::ErrorAlert>();
+        auto alert = _panelPresent<UI::ErrorAlert>();
         alert->width                (40);
         alert->message()->text      (msg);
         alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
@@ -1993,7 +1993,7 @@ private:
         }
         
         std::optional<bool> moveChoice;
-        auto alert = _alertPresent<UI::Alert>();
+        auto alert = _panelPresent<UI::Alert>();
         alert->width                            (50);
         alert->color                            (colors().menu);
         alert->title()->text                    (Title);
@@ -2260,5 +2260,5 @@ private:
     
     UI::TrialCountdownAlertPtr _trialCountdownAlert;
     UI::AlertPtr _updateAvailableAlert;
-    std::deque<UI::AlertPtr> _alerts;
+    std::deque<UI::PanelPtr> _panels;
 };
