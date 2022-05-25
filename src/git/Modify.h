@@ -12,9 +12,9 @@ class Modify {
 public:
     struct Ctx {
         Repo repo;
-        std::function<bool(const Git::Index&)> conflictResolve;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
+        std::function<bool(const Index&)> conflictResolve;
     };
     
     struct Op {
@@ -73,6 +73,25 @@ private:
             head = head.parent();
         }
         return *rem.begin();
+    }
+    
+    static void _ConflictsHandle(const Ctx& ctx, const Index& index) {
+        if (index.conflicts()) {
+            bool cont = ctx.conflictResolve(index);
+            if (!cont) throw std::runtime_error("conflict resolution cancelled");
+        }
+    }
+    
+    static Commit _CommitParentSet(const Ctx& ctx, const Commit& commit, const Commit& parent) {
+        Index index = ctx.repo.commitParentSet(commit, parent);
+        _ConflictsHandle(ctx, index);
+        return ctx.repo.commitParentSetFinish(commit, parent, index);
+    }
+    
+    static Commit _CommitIntegrate(const Ctx& ctx, const Commit& dst, const Commit& src) {
+        Index index = ctx.repo.commitIntegrate(dst, src);
+        _ConflictsHandle(ctx, index);
+        return ctx.repo.commitIntegrateFinish(dst, src, index);
     }
     
     struct _AddRemoveResult {
@@ -141,7 +160,7 @@ private:
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
             // TODO:MERGE
-            head = ctx.repo.commitParentSet(commit.commit, head);
+            head = _CommitParentSet(ctx, commit.commit, head);
             
             if (commit.added) {
                 added.insert(head);
@@ -229,8 +248,8 @@ private:
             // OpResult.src.rev and OpResult.dst.rev.
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Git::Rev&)srcRev = ctx.repo.revReload(srcRev);
-            (Git::Rev&)dstRev = ctx.repo.revReload(dstRev);
+            (Rev&)srcRev = ctx.repo.revReload(srcRev);
+            (Rev&)dstRev = ctx.repo.revReload(dstRev);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -269,8 +288,8 @@ private:
             // Replace the source and destination branches/tags
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
-            (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+            (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+            (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -301,7 +320,7 @@ private:
         
         // Replace the destination branch/tag
         T_Rev dstRev = op.dst.rev;
-        (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+        (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
         return OpResult{
             .src = {
                 .rev = op.src.rev,
@@ -334,7 +353,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -367,7 +386,7 @@ private:
         
         // Combine `head` with all the commits in `integrate`
         for (const Commit& commit : integrate) {
-            head = ctx.repo.commitIntegrate(head, commit);
+            head = _CommitIntegrate(ctx, head, commit);
         }
         
         // Remember the final commit containing all the integrated commits
@@ -376,12 +395,12 @@ private:
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
             // TODO:MERGE
-            head = ctx.repo.commitParentSet(commit, head);
+            head = _CommitParentSet(ctx, commit, head);
         }
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, head);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, head);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -614,7 +633,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,

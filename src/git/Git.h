@@ -675,49 +675,45 @@ public:
     }
     
     // commitParentSet(): commit.parent[0] = parent
-    template <typename T_ConflictResolve>
-    Commit commitParentSet(T_ConflictResolve resolve, const Commit& commit, const Commit& parent) const {
+    Index commitParentSet(const Commit& commit, const Commit& parent) const {
         assert(commit);
         
-        Index index;
         if (parent) {
-            index = _cherryPick(parent, commit);
+            unsigned int mainline = (commit.isMerge() ? 1 : 0);
+            git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+            git_index* x = nullptr;
+            int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*parent, mainline, &opts);
+            if (ir) throw Error(ir, "git_cherrypick_commit failed");
+            return x;
+        
         } else {
             Commit oldParent = commit.parent();
             Tree oldParentTree = (oldParent ? oldParent.tree() : nullptr);
-            index = treesMerge(oldParentTree, nullptr, commit.tree());
+            return treesMerge(oldParentTree, nullptr, commit.tree());
         }
-        
-        // Let the caller resolve the conflicts, if there are any
-        if (index.conflicts()) {
-            const bool cont = resolve(index);
-            if (!cont) throw std::runtime_error("conflict resolution cancelled");
-        }
+    }
+    
+    Commit commitParentSetFinish(const Commit& commit, const Commit& parent, const Index& index) const {
+        assert(commit);
         
         Tree tree = indexWrite(index);
-        
         std::vector<Commit> parents = commit.parents();
         if (!parents.empty()) parents.erase(parents.begin());
         if (parent) parents.insert(parents.begin(), parent);
-        
         return commitAmend(commit, parents, tree);
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    template <typename T_ConflictResolve>
-    Commit commitIntegrate(T_ConflictResolve resolve, const Commit& dst, const Commit& src) const {
+    Index commitIntegrate(const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree(); // TODO:MERGE
-        Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
-        
-        // Let the caller resolve the conflicts, if there are any
-        if (index.conflicts()) {
-            const bool cont = resolve(index);
-            if (!cont) throw std::runtime_error("conflict resolution cancelled");
-        }
-        
-        Tree newTree = indexWrite(mergedTreesIndex);
+        return treesMerge(ancestorTree, dstTree, srcTree);
+    }
+    
+    // commitIntegrate: adds the content of `src` into `dst` and returns the result
+    Commit commitIntegrateFinish(const Commit& dst, const Commit& src, const Index& index) const {
+        Tree newTree = indexWrite(index);
         
         // Combine the commit messages
         std::stringstream msg;

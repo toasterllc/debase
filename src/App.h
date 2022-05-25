@@ -1160,7 +1160,7 @@ private:
             if (commitNew != commitCur) {
                 Git::Commit commit = State::Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
-                _refReplace(ref, commit);
+                _gitRefReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1183,7 +1183,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _refReplace(rev.ref, commit);
+            (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -1203,8 +1203,9 @@ private:
     void _gitOpExec(const _GitOp& gitOp) {
         const _GitModify::Ctx ctx = {
             .repo = _repo,
-            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _refReplace(ref, commit); },
-            .spawn = [&] (const char*const* argv) { _spawn(argv); },
+            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
+            .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
+            .conflictResolve = [&] (const Git::Index& index) { return _gitConflictResolve(index); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1308,7 +1309,7 @@ private:
     //    sleep(1);
     }
     
-    Git::Ref _refReplace(const Git::Ref& ref, const Git::Commit& commit) {
+    Git::Ref _gitRefReplace(const Git::Ref& ref, const Git::Commit& commit) {
         // Detach HEAD if it's attached to the ref that we're modifying, otherwise
         // we'll get an error when we try to replace that ref.
         if (!_headReattach && ref==_head.ref) {
@@ -1318,7 +1319,7 @@ private:
         return _repo.refReplace(ref, commit);
     }
     
-    void _spawn(const char*const* argv) {
+    void _gitSpawn(const char*const* argv) {
         // preserveTerminalCmds: these commands don't modify the terminal, and therefore
         // we don't want to deinit/reinit curses when calling them.
         // When invoking commands such as vi/pico, we need to deinit/reinit curses
@@ -1345,6 +1346,10 @@ private:
         }
         
         if (!preserveTerminal) _cursesInit();
+    }
+    
+    bool _gitConflictResolve(const Git::Index& index) {
+        throw std::runtime_error("meowmix");
     }
     
     static License::Context _LicenseContext(const _Path& dir) {
