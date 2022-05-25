@@ -164,9 +164,20 @@ public:
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 
+static void _MergeFileResultFree(git_merge_file_result& x) {
+    git_merge_file_result_free(&x);
+}
+
+using MergeFileResult = RefCounted<git_merge_file_result, _MergeFileResultFree>;
+
 struct Index : RefCounted<git_index*, git_index_free> {
     using RefCounted::RefCounted;
+    
     bool conflicts() const { return git_index_has_conflicts(*get()); }
+    
+    const git_index_entry* operator [](size_t i) const {
+        return git_index_get_byindex(*get(), i);
+    }
 };
 
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
@@ -982,14 +993,23 @@ public:
         return x;
     }
     
-private:
-    Index _cherryPick(const Commit& dst, const Commit& commit) const {
-        unsigned int mainline = (commit.isMerge() ? 1 : 0);
-        git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+    MergeFileResult merge(
+        const git_index_entry* ancestor,
+        const git_index_entry* ours,
+        const git_index_entry* theirs
+    ) {
+        git_merge_file_options opts = GIT_MERGE_FILE_OPTIONS_INIT;
+        // Using the 'patience' algorithm because it seems to remove conflicts
+        // where both sides contain the exact same code
+        opts.flags = GIT_MERGE_FILE_DIFF_PATIENCE;
         
-        git_index* x = nullptr;
-        int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*dst, mainline, &opts);
-        if (ir) throw Error(ir, "git_cherrypick_commit failed");
+        opts.ancestor_label = "MeowmixAncestor";
+        opts.our_label = "MeowmixOur";
+        opts.their_label = "MeowmixTheir";
+        
+        git_merge_file_result x;
+        int ir = git_merge_file_from_index(&x, *get(), ancestor, ours, theirs, &opts);
+        if (ir) throw Error(ir, "git_merge_file_from_index failed");
         return x;
     }
 };

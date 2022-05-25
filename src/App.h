@@ -34,6 +34,7 @@
 #include "UserBinRelativePath.h"
 #include "Syscall.h"
 #include "Rev.h"
+#include <os/log.h>
 
 extern "C" {
     extern char** environ;
@@ -1348,7 +1349,57 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
+    struct _FileConflict {
+        const git_index_entry* ancestor = nullptr;
+        const git_index_entry* ours = nullptr;
+        const git_index_entry* theirs = nullptr;
+    };
+    
     bool _gitConflictResolve(const Git::Index& index) {
+        std::map<_Path,_FileConflict> conflicts;
+        
+        for (size_t i=0;; i++) {
+            const git_index_entry*const entry = index[i];
+            // End of index
+            if (!entry) break;
+            // We only care about conflicts
+            if (!git_index_entry_is_conflict(entry)) continue;
+            
+//            git_object* obj = nullptr;
+//            int ir = git_object_lookup(&obj, *_repo, &entry->id, GIT_OBJECT_ANY);
+//            assert(!ir);
+//            const char* typeStr = git_object_type2string(git_object_type(obj));
+//            
+//            os_log(OS_LOG_DEFAULT, "%{public}s id:%{public}s type:%{public}s flags:%jx flags_extended:%jx",
+//                entry->path,
+//                Git::StringForId(entry->id).c_str(),
+//                typeStr,
+//                (uintmax_t)entry->flags,
+//                (uintmax_t)entry->flags_extended
+//            );
+            
+            const git_index_stage_t stage = (git_index_stage_t)GIT_INDEX_ENTRY_STAGE(entry);
+            _FileConflict& conflict = conflicts[entry->path];
+            if (stage == GIT_INDEX_STAGE_ANCESTOR) {
+                conflict.ancestor = entry;
+            
+            } else if (stage == GIT_INDEX_STAGE_OURS) {
+                conflict.ours = entry;
+            
+            } else if (stage == GIT_INDEX_STAGE_THEIRS) {
+                conflict.theirs = entry;
+            }
+        }
+        
+        // Iterate over conflicts
+        for (auto const& [path, conflict] : conflicts) {
+            const Git::MergeFileResult mergeResult = _repo.merge(conflict.ancestor,
+                conflict.ours, conflict.theirs);
+            
+            os_log(OS_LOG_DEFAULT, "%{public}s", mergeResult->ptr);
+        }
+        
+        return false;
         throw std::runtime_error("meowmix");
     }
     
@@ -1553,13 +1604,13 @@ private:
     void _welcomeAlertRun() {
         std::optional<bool> choice;
         
-        auto panel = _alertPresent<UI::WelcomeAlert>();
-        panel->width                    (40);
-        panel->color                    (colors().menu);
-        panel->title()->text            ("");
-        panel->message()->text          ("Welcome to debase!");
-        panel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
-        panel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
+        auto alert = _alertPresent<UI::WelcomeAlert>();
+        alert->width                    (40);
+        alert->color                    (colors().menu);
+        alert->title()->text            ("");
+        alert->message()->text          ("Welcome to debase!");
+        alert->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
+        alert->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
         
         for (;;) {
             // Wait until the user clicks a button
@@ -1567,7 +1618,7 @@ private:
             
             // Trial
             if (*choice) {
-                if (_trialLookup(panel.alert(), panel->trialButton())) {
+                if (_trialLookup(alert.alert(), alert->trialButton())) {
                     return;
                 }
             
@@ -1942,15 +1993,15 @@ private:
         }
         
         std::optional<bool> moveChoice;
-        auto panel = _alertPresent<UI::Alert>();
-        panel->width                            (50);
-        panel->color                            (colors().menu);
-        panel->title()->text                    (Title);
-        panel->message()->text                  (message);
-        panel->okButton()->label()->text        ("Move");
-        panel->dismissButton()->label()->text   ("Don't Move");
-        panel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
-        panel->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
+        auto alert = _alertPresent<UI::Alert>();
+        alert->width                            (50);
+        alert->color                            (colors().menu);
+        alert->title()->text                    (Title);
+        alert->message()->text                  (message);
+        alert->okButton()->label()->text        ("Move");
+        alert->dismissButton()->label()->text   ("Don't Move");
+        alert->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
+        alert->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
         
         // Wait until the user clicks a button
         while (!moveChoice) track({}, Once);

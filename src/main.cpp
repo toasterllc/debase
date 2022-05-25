@@ -299,7 +299,7 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add 'create branch from commit'
     #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
     
-    #warning TODO: add branch name editing by clicking on the name of the branch
+    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
     
     #warning TODO: license text field: option-left/option-right closes window
     
