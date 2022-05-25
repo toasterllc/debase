@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 #include <cassert>
+#include "Debase.h"
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/Defer.h"
@@ -163,7 +164,41 @@ public:
 
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
-using Index = RefCounted<git_index*, git_index_free>;
+
+static void _MergeFileResultFree(git_merge_file_result& x) {
+    git_merge_file_result_free(&x);
+}
+
+using MergeFileResult = RefCounted<git_merge_file_result, _MergeFileResultFree>;
+
+struct Index : RefCounted<git_index*, git_index_free> {
+    using RefCounted::RefCounted;
+    
+    bool conflicts() const { return git_index_has_conflicts(*get()); }
+    
+    const git_index_entry* operator [](size_t i) const {
+        return git_index_get_byindex(*get(), i);
+    }
+    
+    const git_index_entry* find(const std::filesystem::path& path, git_index_stage_t stage=GIT_INDEX_STAGE_ANY) const {
+        return git_index_get_bypath(*get(), path.c_str(), stage);
+    }
+    
+    void add(const git_index_entry& entry) const {
+        int ir = git_index_add(*get(), &entry);
+        if (ir) throw Error(ir, "git_index_add failed");
+    }
+    
+    void remove(const std::filesystem::path& path, git_index_stage_t stage=GIT_INDEX_STAGE_ANY) const {
+        int ir = git_index_remove(*get(), path.c_str(), stage);
+        if (ir) throw Error(ir, "git_index_remove failed");
+    }
+    
+    void conflictClear(const std::filesystem::path& path) const {
+        int ir = git_index_conflict_remove(*get(), path.c_str());
+        if (ir) throw Error(ir, "git_index_conflict_remove failed");
+    }
+};
 
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
     using RefCounted::RefCounted;
@@ -259,12 +294,10 @@ struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
 struct Commit : Object {
     using Object::Object;
     Commit(const git_commit* x) : Object((git_object*)x) {}
-    
-    git_commit** get() { return (git_commit**)Object::get(); }
-    git_commit*& operator *() { return *get(); }
-    
     const git_commit** get() const { return (const git_commit**)Object::get(); }
     const git_commit*& operator *() const { return *get(); }
+//    git_commit** get() { return (git_commit**)Object::get(); }
+//    git_commit*& operator *() { return *get(); }
     
     static Commit ForObject(Object obj) {
         git_commit* x = nullptr;
@@ -320,6 +353,16 @@ struct Commit : Object {
     operator std::string() const {
         return idStr();
     }
+};
+
+struct Blob : Object {
+    using Object::Object;
+    Blob(const git_blob* x) : Object((git_object*)x) {}
+    const git_blob** get() const { return (const git_blob**)Object::get(); }
+    const git_blob*& operator *() const { return *get(); }
+    
+    const void* data() const { return git_blob_rawcontent(*get()); }
+    size_t size() const { return git_blob_rawsize(*get()); }
 };
 
 struct TagAnnotation : Object {
@@ -644,8 +687,10 @@ public:
         reflog.drop(0);
     }
     
-    Index treesMerge(const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
-        git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+    Index treesMerge(git_merge_file_favor_t fileFavor, const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
+        git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+        opts.file_favor = fileFavor;
+        
         git_index* x = nullptr;
         int ir = git_merge_trees(
             &x,
@@ -653,7 +698,7 @@ public:
             (ancestorTree ? *ancestorTree : nullptr),
             (dstTree ? *dstTree : nullptr),
             (srcTree ? *srcTree : nullptr),
-            &mergeOpts
+            &opts
         );
         if (ir) throw Error(ir, "git_merge_trees failed");
         return x;
@@ -671,34 +716,47 @@ public:
     }
     
     // commitParentSet(): commit.parent[0] = parent
-    Commit commitParentSet(const Commit& commit, const Commit& parent) const {
+    Index commitParentSet(git_merge_file_favor_t fileFavor, const Commit& commit, const Commit& parent) const {
         assert(commit);
         
-        Index index;
         if (parent) {
-            index = _cherryPick(parent, commit);
+            git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+            opts.file_favor = fileFavor;
+            
+            const unsigned int mainline = (commit.isMerge() ? 1 : 0);
+            git_index* x = nullptr;
+            int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*parent, mainline, &opts);
+            if (ir) throw Error(ir, "git_cherrypick_commit failed");
+            return x;
+        
         } else {
             Commit oldParent = commit.parent();
             Tree oldParentTree = (oldParent ? oldParent.tree() : nullptr);
-            index = treesMerge(oldParentTree, nullptr, commit.tree());
+            return treesMerge(fileFavor, oldParentTree, nullptr, commit.tree());
         }
+    }
+    
+    Commit commitParentSetFinish(const Index& index, const Commit& commit, const Commit& parent) const {
+        assert(commit);
         
         Tree tree = indexWrite(index);
-        
         std::vector<Commit> parents = commit.parents();
         if (!parents.empty()) parents.erase(parents.begin());
         if (parent) parents.insert(parents.begin(), parent);
-        
         return commitAmend(commit, parents, tree);
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    Commit commitIntegrate(const Commit& dst, const Commit& src) const {
+    Index commitIntegrate(git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree(); // TODO:MERGE
-        Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
-        Tree newTree = indexWrite(mergedTreesIndex);
+        return treesMerge(fileFavor, ancestorTree, dstTree, srcTree);
+    }
+    
+    // commitIntegrate: adds the content of `src` into `dst` and returns the result
+    Commit commitIntegrateFinish(const Index& index, const Commit& dst, const Commit& src) const {
+        Tree newTree = indexWrite(index);
         
         // Combine the commit messages
         std::stringstream msg;
@@ -901,8 +959,18 @@ public:
         for (size_t i=0;; i++) {
             const git_status_entry* e = s[i];
             if (!e) break;
-            if (e->status==GIT_STATUS_WT_MODIFIED ||    // Tracked filed, not added (red in `git status`)
-                e->status==GIT_STATUS_INDEX_MODIFIED) { // Tracked filed, added but not committed (green in `git status`)
+            
+            constexpr int Dirty =
+                GIT_STATUS_INDEX_MODIFIED   |
+                GIT_STATUS_INDEX_DELETED    |
+                GIT_STATUS_INDEX_RENAMED    |
+                GIT_STATUS_INDEX_TYPECHANGE |
+                GIT_STATUS_WT_MODIFIED      |
+                GIT_STATUS_WT_DELETED       |
+                GIT_STATUS_WT_RENAMED       |
+                GIT_STATUS_WT_TYPECHANGE    ;
+            
+            if (Dirty & e->status) {
                 return true;
             }
         }
@@ -967,15 +1035,46 @@ public:
         return x;
     }
     
-private:
-    Index _cherryPick(const Commit& dst, const Commit& commit) const {
-        unsigned int mainline = (commit.isMerge() ? 1 : 0);
-        git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+    static constexpr const char MergeMarkerBareStart[]      = "<<<<<<<";
+    static constexpr const char MergeMarkerBareSeparator[]  = "=======";
+    static constexpr const char MergeMarkerBareEnd[]        = ">>>>>>>";
+    
+    static constexpr const char MergeMarkerStart[]          = "<<<<<<< " _DebaseProductId;
+    static constexpr const char MergeMarkerSeparator[]      = "=======";
+    static constexpr const char MergeMarkerEnd[]            = ">>>>>>> " _DebaseProductId;
+    
+    MergeFileResult merge(
+        const git_index_entry* ancestor,
+        const git_index_entry* ours,
+        const git_index_entry* theirs
+    ) const {
+        git_merge_file_options opts = {
+            .version = GIT_MERGE_FILE_OPTIONS_VERSION,
+            // Using the 'patience' algorithm because it seems to remove conflicts
+            // where both sides contain the exact same code
+            .flags = GIT_MERGE_FILE_DIFF_PATIENCE,
+            .our_label = _DebaseProductId,
+            .their_label = _DebaseProductId,
+        };
         
-        git_index* x = nullptr;
-        int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*dst, mainline, &opts);
-        if (ir) throw Error(ir, "git_cherrypick_commit failed");
+        git_merge_file_result x;
+        int ir = git_merge_file_from_index(&x, *get(), ancestor, ours, theirs, &opts);
+        if (ir) throw Error(ir, "git_merge_file_from_index failed");
         return x;
+    }
+    
+    Blob blobLookup(const Id& id) const {
+        git_blob* x = nullptr;
+        int ir = git_blob_lookup(&x, *get(), &id);
+        if (ir) throw Error(ir, "git_blob_lookup failed");
+        return x;
+    }
+    
+    Blob blobCreate(const void* data, size_t len) const {
+        git_oid id;
+        int ir = git_blob_create_from_buffer(&id, *get(), data, len);
+        if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
+        return blobLookup(id);
     }
 };
 

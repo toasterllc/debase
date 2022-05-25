@@ -25,7 +25,7 @@ public:
         if (!_focusAndEnabled()) color = attr(colors().dimmed);
         drawLineHoriz({}, size().x, ' ');
         
-        // Print as many runes as will fit our width
+        // Print as many codepoints as will fit our width
         const int width = size().x;
         auto left = _left();
         auto right = UTF8::NextN(left, _value.end(), width);

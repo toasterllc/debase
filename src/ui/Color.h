@@ -30,23 +30,44 @@ public:
     ColorPair menu;
     ColorPair error;
     
-    // add(): create a new color pair with a given color index as the foreground color
-    ColorPair add(ColorIdx colorIdx) {
-        _colorPairSwappers.emplace_back(_colorPairIdx, colorIdx, -1);
-        return _colorPairIdx++;
-    }
+    ColorPair conflictTextMain;
+    ColorPair conflictTextDim;
     
-    // add(): create a new color (specified in the range [0,255])
-    // with the given RGB components, and assign it to a new color
-    // pair as the foreground color
-    ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
+//    // add(): create a new color pair with a given color index as the foreground color
+//    ColorPair add(ColorIdx colorIdx) {
+//        _colorPairSwappers.emplace_back(_colorPairIdx, colorIdx, _ColorIdxNone);
+//        return _colorPairIdx++;
+//    }
+//    
+//    // add(): create a new color (specified in the range [0,255])
+//    // with the given RGB components, and assign it to a new color
+//    // pair as the foreground color
+//    ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
+//        _colorIdxSwappers.emplace_back(_colorIdx,
+//            ((_ColorComponent)r*1000)/255,
+//            ((_ColorComponent)g*1000)/255,
+//            ((_ColorComponent)b*1000)/255
+//        );
+//        return add(_colorIdx++);
+//    }
+    
+    ColorIdx colorNew(uint8_t r, uint8_t g, uint8_t b) {
         _colorIdxSwappers.emplace_back(_colorIdx,
             ((_ColorComponent)r*1000)/255,
             ((_ColorComponent)g*1000)/255,
             ((_ColorComponent)b*1000)/255
         );
-        return add(_colorIdx++);
+        return _colorIdx++;
     }
+    
+    ColorPair pairNew(ColorIdx fg, ColorIdx bg=_ColorIdxNone) {
+        _colorPairSwappers.emplace_back(_colorPairIdx, fg, bg);
+        return _colorPairIdx++;
+    }
+    
+//    ColorPair add(uint8_t r, uint8_t g, uint8_t b) {
+//        return pairNew(colorNew(r,g,b));
+//    }
     
 private:
     // _ColorComponent: represents a single r/g/b component of a color.
@@ -140,10 +161,12 @@ private:
     private:
         struct {
             std::optional<ColorPair> pair;
-            ColorIdx fg = -1;
-            ColorIdx bg = -1;
+            ColorIdx fg = _ColorIdxNone;
+            ColorIdx bg = _ColorIdxNone;
         } _s;
     };
+    
+    static constexpr ColorIdx _ColorIdxNone = -1;
     
     // _ColorIdxInit: start outside the standard 0-7 range because we don't want
     // to clobber the standard terminal colors. This is because reading the current

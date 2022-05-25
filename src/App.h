@@ -18,13 +18,16 @@
 #include "ui/TrialCountdownAlert.h"
 #include "ui/ErrorAlert.h"
 #include "ui/UpdateAvailableAlert.h"
+#include "ui/ConflictPanel.h"
 //#include "ui/TabPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
 #include "license/License.h"
 #include "license/Server.h"
+#include "git/Conflict.h"
 #include "network/Network.h"
+#include "lib/toastbox/String.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Async.h"
@@ -34,6 +37,8 @@
 #include "UserBinRelativePath.h"
 #include "Syscall.h"
 #include "Rev.h"
+#include "ConflictText.h"
+#include <os/log.h>
 
 extern "C" {
     extern char** environ;
@@ -110,8 +115,8 @@ public:
             p->origin({(b.w()-p->frame().w())/2, b.h()-p->frame().h()});
         }
         
-        for (UI::AlertPtr alert : _alerts) {
-            _layoutAlert(alert);
+        for (UI::PanelPtr panel : _panels) {
+            _layoutPanel(panel);
         }
     }
     
@@ -379,6 +384,9 @@ public:
             Window::operator =(Window(::stdscr));
             
             _reload();
+            
+//            _conflictRun();
+            
             _moveOffer();
             _licenseCheck();
             _updateCheck();
@@ -460,49 +468,49 @@ private:
         }
     };
     
-    // _AlertPresenter(): RAII class to handle pushing/popping an alert from our _alerts deque
+    // _PanelPresenter(): RAII class to handle pushing/popping an panel from our _panels deque
     template <typename T>
-    class _AlertPresenter {
+    class _PanelPresenter {
     public:
-        _AlertPresenter(std::deque<UI::AlertPtr>& alerts, T alert) : _s{.alerts=&alerts, .alert=alert} {
-            assert(alert);
-            _s.alerts->push_back(alert);
+        _PanelPresenter(std::deque<UI::PanelPtr>& panels, T panel) : _s{.panels=&panels, .panel=panel} {
+            assert(panel);
+            _s.panels->push_back(panel);
         }
         
-        ~_AlertPresenter() {
-            if (_s.alert) {
-                assert(!_s.alerts->empty());
-                assert(_s.alerts->back() == _s.alert);
-                _s.alerts->pop_back();
+        ~_PanelPresenter() {
+            if (_s.panel) {
+                assert(!_s.panels->empty());
+                assert(_s.panels->back() == _s.panel);
+                _s.panels->pop_back();
             }
         }
         
-        _AlertPresenter(const _AlertPresenter& x) = delete;
+        _PanelPresenter(const _PanelPresenter& x) = delete;
         
-        _AlertPresenter(_AlertPresenter&& x) {
+        _PanelPresenter(_PanelPresenter&& x) {
             swap(x);
         }
         
-        void swap(_AlertPresenter& x) {
+        void swap(_PanelPresenter& x) {
             std::swap(_s, x._s);
         }
         
-        operator T&() { return _s.alert; }
-        T operator ->() { return _s.alert; }
+        operator T&() { return _s.panel; }
+        T operator ->() { return _s.panel; }
         
-        T& alert() { return _s.alert; }
+        T& panel() { return _s.panel; }
     
     private:
         struct {
-            std::deque<UI::AlertPtr>* alerts = nullptr;
-            T alert;
+            std::deque<UI::PanelPtr>* panels = nullptr;
+            T panel;
         } _s;
     };
     
-    template <typename T>
-    _AlertPresenter<std::shared_ptr<T>> _alertPresent() {
-        std::shared_ptr<T> alert = subviewCreate<T>();
-        return _AlertPresenter(_alerts, alert);
+    template <typename T, typename ...T_Args>
+    _PanelPresenter<std::shared_ptr<T>> _panelPresent(T_Args&&... args) {
+        std::shared_ptr<T> panel = subviewCreate<T>(std::forward<T_Args>(args)...);
+        return _PanelPresenter(_panels, panel);
     }
     
     static constexpr int _ColumnInsetX = 3;
@@ -535,21 +543,26 @@ private:
             // manually chosen based on their appearance.
             if (themeDark) {
                 colors.normal           = UI::Color();
-                colors.dimmed           = colors.add( 77,  77,  77);
-                colors.selection        = colors.add(  0,   2, 255);
-                colors.selectionSimilar = colors.add(140, 140, 255);
-                colors.selectionCopy    = colors.add(  0, 229, 130);
+                colors.dimmed           = colors.pairNew(colors.colorNew( 77,  77,  77));
+                colors.selection        = colors.pairNew(colors.colorNew(  0,   2, 255));
+                colors.selectionSimilar = colors.pairNew(colors.colorNew(140, 140, 255));
+                colors.selectionCopy    = colors.pairNew(colors.colorNew(  0, 229, 130));
                 colors.menu             = colors.selectionCopy;
-                colors.error            = colors.add(194,   0,  71);
+                colors.error            = colors.pairNew(colors.colorNew(194,   0,  71));
+                
+                colors.conflictTextMain = colors.pairNew(colors.colorNew(255, 255, 255), colors.colorNew( 40,  40,  40));
+                colors.conflictTextDim  = colors.pairNew(colors.colorNew( 35,  35,  35));
             
             } else {
                 colors.normal           = UI::Color();
-                colors.dimmed           = colors.add(128, 128, 128);
-                colors.selection        = colors.add(  0,   2, 255);
-                colors.selectionSimilar = colors.add(140, 140, 255);
-                colors.selectionCopy    = colors.add( 52, 167,   0);
-                colors.menu             = colors.add(194,   0,  71);
+                colors.dimmed           = colors.pairNew(colors.colorNew(128, 128, 128));
+                colors.selection        = colors.pairNew(colors.colorNew(  0,   2, 255));
+                colors.selectionSimilar = colors.pairNew(colors.colorNew(140, 140, 255));
+                colors.selectionCopy    = colors.pairNew(colors.colorNew( 52, 167,   0));
+                colors.menu             = colors.pairNew(colors.colorNew(194,   0,  71));
                 colors.error            = colors.menu;
+                
+                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
             }
         
         } else {
@@ -558,21 +571,28 @@ private:
             
             if (themeDark) {
                 colors.normal           = UI::Color();
-                colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
-                colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
-                colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
-                colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
+                colors.dimmed           = colors.pairNew(colors.colorNew(.486*255, .486*255, .486*255));
+                colors.selection        = colors.pairNew(colors.colorNew(.463*255, .275*255, 1.00*255));
+                colors.selectionSimilar = colors.pairNew(colors.colorNew(.663*255, .663*255, 1.00*255));
+                colors.selectionCopy    = colors.pairNew(colors.colorNew(.204*255, .965*255, .569*255));
                 colors.menu             = colors.selectionCopy;
-                colors.error            = colors.add(.969*255, .298*255, .435*255);
+                colors.error            = colors.pairNew(colors.colorNew(.969*255, .298*255, .435*255));
+                
+                colors.conflictTextMain = colors.pairNew(colors.colorNew(255, 255, 255), colors.colorNew( 20,  20,  20));
+                colors.conflictTextDim  = colors.pairNew(colors.colorNew( 70,  70,  70));
+                
+                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
             
             } else {
                 colors.normal           = UI::Color();
-                colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
-                colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
-                colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
-                colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
-                colors.menu             = colors.add(.969*255, .298*255, .435*255);
+                colors.dimmed           = colors.pairNew(colors.colorNew(.592*255, .592*255, .592*255));
+                colors.selection        = colors.pairNew(colors.colorNew(.369*255, .208*255, 1.00*255));
+                colors.selectionSimilar = colors.pairNew(colors.colorNew(.627*255, .627*255, 1.00*255));
+                colors.selectionCopy    = colors.pairNew(colors.colorNew(.306*255, .737*255, .153*255));
+                colors.menu             = colors.pairNew(colors.colorNew(.969*255, .298*255, .435*255));
                 colors.error            = colors.menu;
+                
+                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
             }
         }
         
@@ -583,11 +603,11 @@ private:
         UI::ColorPalette colors;
         colors.normal           = UI::Color();
         colors.dimmed           = UI::Color();
-        colors.selection        = colors.add(COLOR_BLUE);
+        colors.selection        = colors.pairNew(COLOR_BLUE);
         colors.selectionSimilar = UI::Color();
-        colors.selectionCopy    = colors.add(COLOR_GREEN);
-        colors.menu             = colors.add(COLOR_RED);
-        colors.error            = colors.add(COLOR_RED);
+        colors.selectionCopy    = colors.pairNew(COLOR_GREEN);
+        colors.menu             = colors.pairNew(COLOR_RED);
+        colors.error            = colors.pairNew(COLOR_RED);
         return colors;
     }
     
@@ -789,8 +809,8 @@ private:
         if (_trialCountdownAlert) sv.push_back(_trialCountdownAlert);
         if (_updateAvailableAlert) sv.push_back(_updateAvailableAlert);
         
-        for (UI::AlertPtr alert : _alerts) {
-            sv.push_back(alert);
+        for (UI::PanelPtr panel : _panels) {
+            sv.push_back(panel);
         }
         
         subviews(sv);
@@ -1160,7 +1180,7 @@ private:
             if (commitNew != commitCur) {
                 Git::Commit commit = State::Convert(_repo, commitNew);
                 h.push(State::RefState{.head = commitNew});
-                _refReplace(ref, commit);
+                _gitRefReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1183,7 +1203,7 @@ private:
             }
             
             std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _refReplace(rev.ref, commit);
+            (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
             _selection = {
                 .rev = rev,
                 .commits = selection,
@@ -1203,8 +1223,9 @@ private:
     void _gitOpExec(const _GitOp& gitOp) {
         const _GitModify::Ctx ctx = {
             .repo = _repo,
-            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _refReplace(ref, commit); },
-            .spawn = [&] (const char*const* argv) { _spawn(argv); },
+            .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
+            .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
+            .conflictsResolve = [&] (const Git::Index& index, const std::vector<Git::FileConflict>& fcs) { _gitConflictsResolve(gitOp, index, fcs); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1308,7 +1329,7 @@ private:
     //    sleep(1);
     }
     
-    Git::Ref _refReplace(const Git::Ref& ref, const Git::Commit& commit) {
+    Git::Ref _gitRefReplace(const Git::Ref& ref, const Git::Commit& commit) {
         // Detach HEAD if it's attached to the ref that we're modifying, otherwise
         // we'll get an error when we try to replace that ref.
         if (!_headReattach && ref==_head.ref) {
@@ -1318,7 +1339,7 @@ private:
         return _repo.refReplace(ref, commit);
     }
     
-    void _spawn(const char*const* argv) {
+    void _gitSpawn(const char*const* argv) {
         // preserveTerminalCmds: these commands don't modify the terminal, and therefore
         // we don't want to deinit/reinit curses when calling them.
         // When invoking commands such as vi/pico, we need to deinit/reinit curses
@@ -1345,6 +1366,154 @@ private:
         }
         
         if (!preserveTerminal) _cursesInit();
+    }
+    
+    std::string _gitConflictResolveInEditor(const Git::FileConflict& fc) {
+        const Git::ConflictMarkers markers = Git::ConflictMarkers{
+            .start      = Git::Repo::MergeMarkerBareStart,
+            .separator  = Git::Repo::MergeMarkerBareSeparator,
+            .end        = Git::Repo::MergeMarkerBareEnd,
+        };
+        std::string conflictStr = Git::ConflictStringFromHunks(markers, fc.hunks);
+        
+        auto spawn = [&] (const char*const* argv) { _gitSpawn(argv); };
+        for (;;) {
+            conflictStr = Git::EditorRun(_repo, spawn, conflictStr);
+            
+            // Verify that there are no conflict markers
+            if (!Git::ConflictStringContainsConflictMarkers(markers, conflictStr)) break;
+            
+            std::optional<bool> clicked;
+            auto alert = _panelPresent<UI::ErrorAlert>();
+            alert->width                        (50);
+            alert->message()->text              ("The file still contains conflict markers. Continue editing?");
+            alert->okButton()->label()->text    ("Continue Editing");
+            alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
+            alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+            
+            // Wait until the user clicks a button
+            while (!clicked) track({}, Once);
+            
+            // If the user canceled, let the caller know
+            if (!*clicked) throw _GitModify::ConflictResolveCanceled();
+        }
+        return conflictStr;
+    }
+    
+    std::optional<std::string> _gitRunConflictPanel(
+        UI::ConflictPanel::Layout layout,
+        size_t conflictIdx, size_t conflictCount,
+        const Rev& revOurs, const Rev& revTheirs,
+        const Git::FileConflict& fc) {
+        
+        std::vector<std::string> lines;
+        for (size_t i=0; i<fc.hunks.size(); i++) {
+            const Git::FileConflict::Hunk& hunk = fc.hunks[i];
+            
+            // If it's a normal hunk (ie not a conflict), just append the lines
+            if (hunk.type == Git::FileConflict::Hunk::Type::Normal) {
+                lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
+                continue;
+            }
+            
+            const auto& linesOurs = hunk.conflict.linesOurs;
+            const auto& linesTheirs = hunk.conflict.linesTheirs;
+            const std::string title = "Conflict [" + std::to_string(conflictIdx+1) + "/" + std::to_string(conflictCount) + "]";
+            auto panel = _panelPresent<UI::ConflictPanel>(
+                layout, title,
+                revOurs.displayName(), revTheirs.displayName(),
+                fc, i
+            );
+            
+            std::optional<UI::ConflictPanel::Result> panelResult;
+            panel->doneAction() = [&] (UI::ConflictPanel::Result r) {
+                panelResult = r;
+            };
+            
+            // The following loop only exists for the case where the user: chooses 'Open in Editor',
+            // then leaves conflict markers in the file, and then hits 'Cancel' in the ensuring
+            // error window.
+            // In that case: keep showing the conflict panel (see 'continue', below).
+            // In all other cases: break after first iteration.
+            for (;;) {
+                panelResult = std::nullopt;
+                
+                // Wait until the user clicks a button
+                while (!panelResult) track({}, Once);
+                
+                switch (*panelResult) {
+                case UI::ConflictPanel::Result::ChooseOurs:
+                    lines.insert(lines.end(), linesOurs.begin(), linesOurs.end());
+                    break;
+                case UI::ConflictPanel::Result::ChooseTheirs:
+                    lines.insert(lines.end(), linesTheirs.begin(), linesTheirs.end());
+                    break;
+                case UI::ConflictPanel::Result::OpenInEditor:
+                    try {
+                        const std::string editorContent = _gitConflictResolveInEditor(fc);
+                        // If the user cleared the conflict file, and there's a branch of the
+                        // conflict that represents a non-existent file, then consider the
+                        // file as non-existent, rather than an empty file.
+                        const bool noFile = fc.noFile(Git::FileConflict::Side::Ours) || fc.noFile(Git::FileConflict::Side::Theirs);
+                        if (editorContent.empty() && noFile) {
+                            return std::nullopt;
+                        }
+                        return editorContent;
+                    } catch (const _GitModify::ConflictResolveCanceled&) {
+                        // User canceled editing; keep displaying conflict panel
+                        continue;
+                    } catch (...) {
+                        throw;
+                    }
+                    break;
+                case UI::ConflictPanel::Result::Cancel:
+                    throw _GitModify::ConflictResolveCanceled();
+                default:
+                    abort();
+                }
+                break;
+            }
+            
+            conflictIdx++;
+        }
+        
+        if (lines.empty()) return std::nullopt;
+        return Toastbox::String::Join(lines, "\n");
+    }
+    
+    void _gitConflictsResolve(const _GitOp& op, const Git::Index& index, const std::vector<Git::FileConflict>& fcs) {
+        // op.dst.rev is optional (depending on the git operation), so if it doesn't exist,
+        // fallback to op.src.rev (which is required)
+        const Rev revOurs = (op.dst.rev ? op.dst.rev : op.src.rev);
+        const Rev revTheirs = op.src.rev;
+//        std::string refNameOurs = op.dst.rev.displayName();
+//        std::string refNameTheirs = op.src.rev.displayName();
+        
+        // Determine the conflict panel layout (ie which rev is on the left vs right)
+        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
+        for (Rev& rev : _revs) {
+            if (rev == revOurs) {
+                layout = UI::ConflictPanel::Layout::LeftOurs;
+                break;
+            } else if (rev == revTheirs) {
+                layout = UI::ConflictPanel::Layout::RightOurs;
+                break;
+            }
+        }
+        
+        // Count the total number of conflict
+        size_t conflictCount = 0;
+        for (const Git::FileConflict& fc : fcs) {
+            conflictCount += fc.conflictCount();
+        }
+        
+        // Show the conflict panel for each hunk within each FileConflict
+        size_t conflictIdx = 0;
+        for (const Git::FileConflict& fc : fcs) {
+            const std::optional<std::string> content = _gitRunConflictPanel(layout, conflictIdx, conflictCount, revOurs, revTheirs, fc);
+            Git::ConflictResolve(_repo, index, fc, content);
+            conflictIdx += fc.conflictCount();
+        }
     }
     
     static License::Context _LicenseContext(const _Path& dir) {
@@ -1401,8 +1570,8 @@ private:
         return License::Validate(_licenseCtxGet(), license);
     }
     
-    void _layoutAlert(UI::AlertPtr panel) {
-        panel->size(panel->sizeIntrinsic({bounds().w(), ConstraintNone}));
+    void _layoutPanel(UI::PanelPtr panel) {
+        panel->size(panel->sizeIntrinsic(bounds().size));
         
         UI::Size ps = panel->size();
         UI::Size rs = size();
@@ -1414,7 +1583,7 @@ private:
     }
     
     template <typename T_Async>
-    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::AlertPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
+    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::PanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
         
         if (panel) panel->enabled(false);
         Defer( if (panel) panel->enabled(true); );
@@ -1439,7 +1608,7 @@ private:
     }
     
     template <typename T>
-    std::optional<License::License> _licenseLookupRun(UI::AlertPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
+    std::optional<License::License> _licenseLookupRun(UI::PanelPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
         
 //        // Disable interaction while we wait for the license request
 //        assert(interaction());
@@ -1495,7 +1664,7 @@ private:
         return license;
     }
     
-    bool _trialLookup(UI::AlertPtr panel, UI::ButtonPtr animateButton) {
+    bool _trialLookup(UI::PanelPtr panel, UI::ButtonPtr animateButton) {
         const auto cmd = _commandTrialLookup();
         std::optional<License::License> license = _licenseLookupRun(panel, animateButton, DebaseTrialLookupURL, cmd);
         if (!license) return false;
@@ -1548,13 +1717,13 @@ private:
     void _welcomeAlertRun() {
         std::optional<bool> choice;
         
-        auto panel = _alertPresent<UI::WelcomeAlert>();
-        panel->width                    (40);
-        panel->color                    (colors().menu);
-        panel->title()->text            ("");
-        panel->message()->text          ("Welcome to debase!");
-        panel->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
-        panel->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
+        auto alert = _panelPresent<UI::WelcomeAlert>();
+        alert->width                    (40);
+        alert->color                    (colors().menu);
+        alert->title()->text            ("");
+        alert->message()->text          ("Welcome to debase!");
+        alert->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
+        alert->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
         
         for (;;) {
             // Wait until the user clicks a button
@@ -1562,7 +1731,7 @@ private:
             
             // Trial
             if (*choice) {
-                if (_trialLookup(panel.alert(), panel->trialButton())) {
+                if (_trialLookup(alert.panel(), alert->trialButton())) {
                     return;
                 }
             
@@ -1578,7 +1747,7 @@ private:
     }
     
     auto _registerAlertPresent(std::string_view title, std::string_view message) {
-        auto alert = _alertPresent<UI::RegisterAlert>();
+        auto alert = _panelPresent<UI::RegisterAlert>();
         alert->width            (52);
         alert->color            (colors().menu);
         alert->title()->text    (title);
@@ -1586,16 +1755,16 @@ private:
         return alert;
     }
     
-    bool _registerAlertRun(UI::RegisterAlertPtr panel, std::function<bool()> dismissAction=nullptr) {
+    bool _registerAlertRun(UI::RegisterAlertPtr alert, std::function<bool()> dismissAction=nullptr) {
 //        std::string msg = std::string(message)_showAlert;
 //        msg += " To buy a license, please visit:\n";
         
-        const auto dismissActionPrev = panel->dismissButton()->action();
+        const auto dismissActionPrev = alert->dismissButton()->action();
         std::optional<bool> choice;
         
-        panel->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
+        alert->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
         if (dismissAction) {
-            panel->dismissButton()->action ( [&] (UI::Button& b) {
+            alert->dismissButton()->action ( [&] (UI::Button& b) {
                 if (dismissAction()) {
                     choice = false;
                 }
@@ -1608,10 +1777,10 @@ private:
             
             // Register
             if (*choice) {
-                const std::string email = panel->email()->value();
-                const std::string licenseCode = panel->code()->value();
+                const std::string email = alert->email()->value();
+                const std::string licenseCode = alert->code()->value();
                 const auto cmd = _commandLicenseLookup(email, licenseCode);
-                bool ok = (bool)_licenseLookupRun(panel, panel->okButton(), DebaseLicenseLookupURL, cmd);
+                bool ok = (bool)_licenseLookupRun(alert, alert->okButton(), DebaseLicenseLookupURL, cmd);
                 if (ok) {
                     _trialCountdownAlert = nullptr;
                     _thankYouMessageRun();
@@ -1687,7 +1856,7 @@ private:
         // so that we block the app from being used until the license is valid
         if (!async.done()) {
             panel->visible(true);
-            _waitForAsync(async, Forever, panel.alert(), panel->okButton());
+            _waitForAsync(async, Forever, panel.panel(), panel->okButton());
         }
         
         bool ok = false;
@@ -1715,7 +1884,7 @@ private:
             layoutNeeded(true);
             return _registerAlertRun(panel, [&] {
                 // Dismiss action
-                return _trialLookup(panel.alert(), panel->dismissButton());
+                return _trialLookup(panel.panel(), panel->dismissButton());
             });
         }
         
@@ -1746,24 +1915,23 @@ private:
         
         const License::Context& ctx = _licenseCtxGet();
         const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
-        UI::TrialCountdownAlertPtr p = subviewCreate<UI::TrialCountdownAlert>(rem);
-        p->registerButton()->action([&] (UI::Button&) {
+        UI::TrialCountdownAlertPtr alert = subviewCreate<UI::TrialCountdownAlert>(rem);
+        alert->registerButton()->action([&] (UI::Button&) {
             _registerAlertRun();
         });
-        return p;
+        return alert;
     }
     
     void _thankYouMessageRun() {
         bool done = false;
         
-        auto alert = _alertPresent<UI::Alert>();
+        auto alert = _panelPresent<UI::Alert>();
         alert->width                (42);
         alert->color                (colors().menu);
         alert->title()->text        ("Thank You!");
         alert->message()->text      ("Thank you for supporting debase!");
         alert->message()->align     (UI::Align::Center);
         alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
-        alert->escapeTriggersOK     (true);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
@@ -1778,7 +1946,7 @@ private:
     void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
         bool done = false;
         
-        auto alert = _alertPresent<UI::ErrorAlert>();
+        auto alert = _panelPresent<UI::ErrorAlert>();
         alert->width                (40);
         alert->message()->text      (msg);
         alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
@@ -1793,6 +1961,161 @@ private:
         // Wait until the user clicks a button
         while (!done) track({}, Once);
     }
+    
+//    void _conflictRun() {
+//        
+//        Git::FileConflict fc = {
+//            .path = "/Some/Really/Long/Path/That/We/Want/To/Truncate/FDStream.h",
+//            .hunks = {
+//                Git::FileConflict::Hunk{
+//                    .type = Git::FileConflict::Hunk::Type::Normal,
+//                    .normal = {
+//                        .lines = {
+//                            "#pragma once",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                            "#include <fstream>",
+//                        },
+//                    },
+//                },
+//                
+//                Git::FileConflict::Hunk{
+//                    .type = Git::FileConflict::Hunk::Type::Conflict,
+//                    .conflict = {
+//                        .linesOurs = {
+//                            "#include <memory>",
+//                            "#include <cassert>",
+//                            "",
+//                            "#ifdef __GLIBCXX__",
+//                            "#include <ext/stdio_filebuf.h>",
+//                            "#endif",
+//                        },
+//                        
+//                        .linesTheirs = {
+////                            "hello",
+//                        },
+//                    },
+//                },
+//                
+//                Git::FileConflict::Hunk{
+//                    .type = Git::FileConflict::Hunk::Type::Normal,
+//                    .normal = {
+//                        .lines = {
+//                            "",
+//                            "namespace Toastbox {",
+//                            "",
+//                            "// FDStream allows an istream/ostream/iostream to be created from a file descriptor.",
+//                            "// The FDStream object takes ownership of the file descriptor (actually, the",
+//                            "// underlying platform-specific filebuf object) and closes it when FDStream is",
+//                            "// destroyed.",
+//                            "",
+//                            "class FDStream {",
+//                            "protected:",
+//                            "#ifdef __GLIBCXX__",
+//                            "    // GCC (libstdc++)",
+//                            "    using _Filebuf = __gnu_cxx::stdio_filebuf<char>;",
+//                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
+//                            "//        if (fd >= 0) {",
+//                            "//            _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+//                            "//        } else {",
+//                            "//            _filebuf = std::make_unique<_Filebuf>();",
+//                            "//        }",
+//                            "//        return _filebuf.get();",
+//                            "        ",
+//                            "//        if (fd < 0) return nullptr;",
+//                            "//        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+//                            "//        return _filebuf.get();",
+//                            "        ",
+//                            "        assert(fd >= 0);",
+//                            "        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+//                            "        return _filebuf.get();",
+//                            "    }",
+//                            "#else",
+//                            "    // Clang (libc++)",
+//                            "    using _Filebuf = std::basic_filebuf<char>;",
+//                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
+//                            "//        _filebuf = std::make_unique<_Filebuf>();",
+//                            "//        if (fd >= 0) {",
+//                            "//            _filebuf->__open(fd, mode);",
+//                            "//        }",
+//                            "//        return _filebuf.get();",
+//                            "        ",
+//                            "//        if (fd < 0) return nullptr;",
+//                            "//        _filebuf = std::make_unique<_Filebuf>();",
+//                            "//        _filebuf->__open(fd, mode);",
+//                            "//        return _filebuf.get();",
+//                            "        ",
+//                            "        assert(fd >= 0);",
+//                            "        _filebuf = std::make_unique<_Filebuf>();",
+//                            "        _filebuf->__open(fd, mode);",
+//                            "        return _filebuf.get();",
+//                            "    }",
+//                            "#endif",
+//                            "    ",
+//                            "    void _swap(FDStream& x) {",
+//                            "        std::swap(_filebuf, x._filebuf);",
+//                            "    }",
+//                            "    ",
+//                            "    // _Filebuf needs to be a unique_ptr so that the pointer returned by",
+//                            "    // _initFilebuf() stays valid after swap() is called. Otherwise, if",
+//                            "    // _filebuf was an inline ivar, the pointer given to the iostream",
+//                            "    // constructor would reference a different object after swap() was",
+//                            "    // called.",
+//                            "    std::unique_ptr<_Filebuf> _filebuf;",
+//                            "};",
+//                            "",
+//                            "//class FDStreamIn : public FDStream, public std::istream {",
+//                            "//public:",
+//                            "//    FDStreamIn(int fd=-1) : std::istream(_initFilebuf(fd, std::ios::in)) {}",
+//                            "//};",
+//                            "//",
+//                            "//class FDStreamOut : public FDStream, public std::ostream {",
+//                            "//public:",
+//                            "//    FDStreamOut(int fd=-1) : std::ostream(_initFilebuf(fd, std::ios::out)) {}",
+//                            "//};",
+//                            "",
+//                            "class FDStreamInOut : public FDStream, public std::iostream {",
+//                            "public:",
+//                            "    FDStreamInOut() : std::iostream(nullptr) {}",
+//                            "    FDStreamInOut(int fd) : std::iostream(_initFilebuf(fd, std::ios::in|std::ios::out)) {}",
+//                            "    FDStreamInOut(FDStreamInOut&& x) : FDStreamInOut() {",
+//                            "        swap(x);",
+//                            "    }",
+//                            "    ",
+//                            "    // Move assignment operator",
+//                            "    FDStreamInOut& operator=(FDStreamInOut&& x) {",
+//                            "        swap(x);",
+//                            "        return *this;",
+//                            "    }",
+//                            "    ",
+//                            "    void swap(FDStreamInOut& x) {",
+//                            "        FDStreamInOut::_swap(x);",
+//                            "        std::iostream::swap(x);",
+//                            "        rdbuf(_filebuf.get());",
+//                            "        x.rdbuf(x._filebuf.get());",
+//                            "    }",
+//                            "};",
+//                            "",
+//                            "}",
+//                            "",
+//                        },
+//                    },
+//                },
+//            },
+//        };
+//        
+//        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
+//        auto panel = _panelPresent<UI::ConflictPanel>(layout, "master", "SomeBranch", fc, 1);
+//        track({});
+//    }
     
     void _updateAvailableAlertShow(Version version) {
         _updateAvailableAlert = subviewCreate<UI::UpdateAvailableAlert>(version);
@@ -1937,15 +2260,15 @@ private:
         }
         
         std::optional<bool> moveChoice;
-        auto panel = _alertPresent<UI::Alert>();
-        panel->width                            (50);
-        panel->color                            (colors().menu);
-        panel->title()->text                    (Title);
-        panel->message()->text                  (message);
-        panel->okButton()->label()->text        ("Move");
-        panel->dismissButton()->label()->text   ("Don't Move");
-        panel->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
-        panel->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
+        auto alert = _panelPresent<UI::Alert>();
+        alert->width                            (50);
+        alert->color                            (colors().menu);
+        alert->title()->text                    (Title);
+        alert->message()->text                  (message);
+        alert->okButton()->label()->text        ("Move");
+        alert->dismissButton()->label()->text   ("Don't Move");
+        alert->okButton()->action               ( [&] (UI::Button& b) { moveChoice = true; } );
+        alert->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
         
         // Wait until the user clicks a button
         while (!moveChoice) track({}, Once);
@@ -2204,5 +2527,5 @@ private:
     
     UI::TrialCountdownAlertPtr _trialCountdownAlert;
     UI::AlertPtr _updateAvailableAlert;
-    std::deque<UI::AlertPtr> _alerts;
+    std::deque<UI::PanelPtr> _panels;
 };

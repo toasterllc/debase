@@ -278,14 +278,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: linux:       run through TestChecklist.txt
-    #warning TODO: macos-x86:   run through TestChecklist.txt
-    #warning TODO: macos-arm64: run through TestChecklist.txt
-    
-//  Future:
-    
-    #warning TODO: add scrolling
-    
     #warning TODO: add branch copying; action menu? drag branch name? both?
     #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
     #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
@@ -299,7 +291,19 @@ int main(int argc, const char* argv[]) {
     #warning TODO: add 'create branch from commit'
     #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
     
-    #warning TODO: add branch name editing by clicking on the name of the branch
+    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+    
+    #warning TODO: linux:       run through TestChecklist.txt
+    #warning TODO: macos-x86:   run through TestChecklist.txt
+    #warning TODO: macos-arm64: run through TestChecklist.txt
+    
+//  Future:
+    
+    #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
+    #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
+    #warning TODO:   tabs with spaces)
+    
+    #warning TODO: add scrolling
     
     #warning TODO: license text field: option-left/option-right closes window
     
@@ -326,6 +330,35 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
+//
+//    #warning TODO: ConflictPanel: fix text overflow: yosys repo: copy 55eed8d from gatecat/timing-derive-fix to master
+//
+//    #warning TODO: ConflictPanel: make escape key work to cancel
+//
+//    #warning TODO: ConflictPanel: show progress in titlebar
+//
+//    #warning TODO: implement proper memory management in Git::ConflictResolve()
+//
+//    #warning TODO: ConflictPanel: make 'Open in Editor' button work
+//
+//    #warning TODO: ConflictPanel: make cancel button work
+//
+//    #warning TODO: ConflictPanel: make filename title non-bold
+//    
+//    #warning TODO: ConflictPanel: truncate the beginning of the filename, not the end
+//    
+//    #warning TODO: ConflictPanel: draw '---- empty ----' placeholder when conflict region is empty
+//    
+//    #warning TODO: ConflictPanel: don't center conflict text vertically if there isn't enough content to fill the top.
+//    #warning       ConflictPanel: shift both the left/right up by the same amount, so that their centers are aligned,
+//    #warning       ConflictPanel: and text starts at the top (at least on one side)
+//    
+//    #warning TODO: ConflictPanel: improve conflict window sizing -- have some padding when large, fill window when small
+//    
+//    #warning TODO: ConflictPanel: highlight conflict region text
+//    
+//    #warning TODO: ConflictPanel: make conflict window fill the window size
 //
 //    #warning TODO: 5 recent branches behavior: when composing the rev list, if the current reflog entry has a ref, but it has the same commit as a previous reflog entry that doesn't have a ref, replace the previous entry
 //    #warning TODO:                             similarly, if the current reflog entry doesn't have a ref, and matches a previous reflog entry that does have a ref, ignore the current entry

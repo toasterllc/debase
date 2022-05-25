@@ -2,6 +2,8 @@
 #include <fstream>
 #include <deque>
 #include "Git.h"
+#include "Conflict.h"
+#include "Editor.h"
 #include "lib/toastbox/Defer.h"
 #include "lib/toastbox/String.h"
 
@@ -14,6 +16,7 @@ public:
         Repo repo;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
+        std::function<void(const Index&, const std::vector<FileConflict>&)> conflictsResolve;
     };
     
     struct Op {
@@ -50,6 +53,8 @@ public:
         Res dst;
     };
     
+    class ConflictResolveCanceled : public std::exception {};
+    
 private:
     // _Sorted: sorts a set of commits according to the order that they appear via `c`
     static std::vector<Commit> _Sorted(Commit head, const std::set<Commit>& commits) {
@@ -74,13 +79,51 @@ private:
         return *rem.begin();
     }
     
+    static void _ConflictsHandle(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Index& index) {
+        if (!index.conflicts()) return;
+        
+        // We explicitly handle merge conflicts here.
+        // Conflicts can still occur even when fileFavor==GIT_MERGE_FILE_FAVOR_THEIRS and we've provided
+        // that to, eg, commitParentSet().
+        // In that case, we want to iterate over all the conflicts and choose the 'theirs' side.
+        // If fileFavor==GIT_MERGE_FILE_FAVOR_NORMAL, we need to let the user decide how to solve the
+        // merge conflict.
+        const std::vector<FileConflict> fcs = ConflictsGet(ctx.repo, index);
+        switch (fileFavor) {
+        case GIT_MERGE_FILE_FAVOR_NORMAL:
+            ctx.conflictsResolve(index, fcs);
+            return;
+        case GIT_MERGE_FILE_FAVOR_THEIRS:
+            for (const FileConflict& fc : fcs) {
+                ConflictResolve(ctx.repo, index, fc, fc.content(FileConflict::Side::Theirs));
+            }
+            return;
+        // Unsupported git_merge_file_favor_t
+        default:
+            abort();
+        }
+    }
+    
+    static Commit _CommitParentSet(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& commit, const Commit& parent) {
+        Index index = ctx.repo.commitParentSet(fileFavor, commit, parent);
+        _ConflictsHandle(ctx, fileFavor, index);
+        return ctx.repo.commitParentSetFinish(index, commit, parent);
+    }
+    
+    static Commit _CommitIntegrate(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) {
+        Index index = ctx.repo.commitIntegrate(fileFavor, dst, src);
+        _ConflictsHandle(ctx, fileFavor, index);
+        return ctx.repo.commitIntegrateFinish(index, dst, src);
+    }
+    
     struct _AddRemoveResult {
         Commit commit;
         std::set<Commit> added;
     };
     
     static _AddRemoveResult _AddRemoveCommits(
-        const Repo& repo,
+        const Ctx& ctx,
+        git_merge_file_favor_t fileFavor,
         const Commit& dst,
         const std::set<Commit>& add,
         const Commit& addSrc, // Source of `add` commits (to derive their order)
@@ -140,7 +183,7 @@ private:
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
             // TODO:MERGE
-            head = repo.commitParentSet(commit.commit, head);
+            head = _CommitParentSet(ctx, fileFavor, commit.commit, head);
             
             if (commit.added) {
                 added.insert(head);
@@ -196,8 +239,23 @@ private:
         return _InsertionIsNop(op.src.rev.commit, op.dst.position, op.src.commits);
     }
     
+    static git_merge_file_favor_t _FileFavor(const T_Rev& src, const T_Rev& dst) {
+        // Required arguments:
+        assert(src);
+        // If there's only one rev, then use _THEIRS (conflicts not allowed)
+        if (!dst) return GIT_MERGE_FILE_FAVOR_THEIRS;
+        // If the two revs have refs and they're the same ref, use _THEIRS (conflicts not allowed)
+        if (src.ref && dst.ref && dst.ref==src.ref) return GIT_MERGE_FILE_FAVOR_THEIRS;
+        // Otherwise, use _NORMAL (conflicts allowed)
+        return GIT_MERGE_FILE_FAVOR_NORMAL;
+    }
+    
     static std::optional<OpResult> _MoveCommits(const Ctx& ctx, const Op& op) {
-        // When moving commits, the source and destination must be references (branches
+        // Required arguments:
+        assert(op.src.rev);
+        assert(op.dst.rev);
+        
+        // When moving commits, the source and destination must be refs (branches
         // or tags) since we're modifying both
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
@@ -211,7 +269,8 @@ private:
             
             // Add and remove commits
             _AddRemoveResult srcDstResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -228,8 +287,8 @@ private:
             // OpResult.src.rev and OpResult.dst.rev.
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Git::Rev&)srcRev = ctx.repo.revReload(srcRev);
-            (Git::Rev&)dstRev = ctx.repo.revReload(dstRev);
+            (Rev&)srcRev = ctx.repo.revReload(srcRev);
+            (Rev&)dstRev = ctx.repo.revReload(dstRev);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -247,7 +306,8 @@ private:
         } else {
             // Remove commits from `op.src`
             _AddRemoveResult srcResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.src.rev.commit,  // dst:         Commit
                 {},                 // add:         std::set<Commit>
                 nullptr,            // addSrc:      Commit
@@ -257,7 +317,8 @@ private:
             
             // Add commits to `op.dst`
             _AddRemoveResult dstResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -268,8 +329,8 @@ private:
             // Replace the source and destination branches/tags
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
-            (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+            (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+            (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -286,11 +347,16 @@ private:
     }
     
     static std::optional<OpResult> _CopyCommits(const Ctx& ctx, const Op& op) {
+        // Required arguments:
+        assert(op.src.rev);
+        assert(op.dst.rev);
+        
         if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
         
         // Add commits to `op.dst`
         _AddRemoveResult dstResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
             op.src.rev.commit,  // addSrc:      Commit
@@ -300,7 +366,7 @@ private:
         
         // Replace the destination branch/tag
         T_Rev dstRev = op.dst.rev;
-        (Git::Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+        (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
         return OpResult{
             .src = {
                 .rev = op.src.rev,
@@ -314,12 +380,17 @@ private:
     }
     
     static std::optional<OpResult> _DeleteCommits(const Ctx& ctx, const Op& op) {
-    //    throw RuntimeError("source must be a reference (branch or tag)");
+        // Required arguments:
+        assert(op.src.rev);
+        // Illegal arguments:
+        assert(!op.dst.rev);
+        
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Remove commits from `op.src`
         _AddRemoveResult srcResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
             nullptr,            // addSrc:      Commit
@@ -333,7 +404,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -344,6 +415,11 @@ private:
     }
     
     static std::optional<OpResult> _CombineCommits(const Ctx& ctx, const Op& op) {
+        // Required arguments:
+        assert(op.src.rev);
+        // Illegal arguments:
+        assert(!op.dst.rev);
+        
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
         if (_CommitsHasMerge(op.src.commits)) throw RuntimeError("can't combine with merge commit");
@@ -366,7 +442,7 @@ private:
         
         // Combine `head` with all the commits in `integrate`
         for (const Commit& commit : integrate) {
-            head = ctx.repo.commitIntegrate(head, commit);
+            head = _CommitIntegrate(ctx, _FileFavor(op.src.rev, op.dst.rev), head, commit);
         }
         
         // Remember the final commit containing all the integrated commits
@@ -375,12 +451,12 @@ private:
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
             // TODO:MERGE
-            head = ctx.repo.commitParentSet(commit, head);
+            head = _CommitParentSet(ctx, _FileFavor(op.src.rev, op.dst.rev), commit, head);
         }
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, head);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, head);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -388,14 +464,6 @@ private:
                 .selectionPrev = op.src.commits,
             },
         };
-    }
-    
-    static std::string _EditorCommand(const Repo& repo) {
-        const std::optional<std::string> editorCmd = repo.config().stringGet("core.editor");
-        if (editorCmd) return *editorCmd;
-        if (const char* x = getenv("VISUAL")) return x;
-        if (const char* x = getenv("EDITOR")) return x;
-        return "vi";
     }
     
     static std::string _Trim(std::string_view str) {
@@ -464,35 +532,21 @@ private:
         };
     }
     
-    static void _CommitMessageWrite(_CommitMessage msg, const std::filesystem::path& path) {
+    static std::string _StringFromCommitMessage(const _CommitMessage& msg) {
         assert(msg.author);
         assert(msg.time);
         
-        std::ofstream f;
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        f.open(path);
-        
-        f << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
-        f << _TimePrefix << "   " << StringFromTime(*msg.time) << '\n';
-        f << '\n';
-        f << msg.message;
+        std::stringstream ss;
+        ss << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
+        ss << _TimePrefix << "   " << StringFromTime(*msg.time) << '\n';
+        ss << '\n';
+        ss << msg.message;
+        return ss.str();
     }
     
-    static _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
+    static _CommitMessage _CommitMessageFromString(std::string_view str) {
         // Read back the file
-        std::vector<std::string> lines;
-        {
-            std::ifstream f;
-            f.exceptions(std::ifstream::badbit);
-            f.open(path);
-            
-            std::string line;
-            do {
-                std::getline(f, line);
-                lines.push_back(line);
-            } while (!f.eof());
-        }
-        
+        const std::vector<std::string> lines = String::Split(str, "\n");
         auto iter = lines.begin();
         
         // Find author string
@@ -540,54 +594,28 @@ private:
         };
     }
     
-    struct _Argv {
-        std::vector<std::string> args;
-        std::vector<const char*> argv;
-    };
-    
-    static _Argv _CreateArgv(const Repo& repo, std::string_view filePath) {
-        const std::string editorCmd = _EditorCommand(repo);
-        std::vector<std::string> args;
-        std::vector<const char*> argv;
-        std::istringstream ss(editorCmd);
-        std::string arg;
-        while (ss >> arg) args.push_back(arg);
-        args.push_back(std::string(filePath));
-        // Constructing `argv` must be a separate loop from constructing `args`,
-        // because modifying `args` can invalidate all its elements, including
-        // the c_str's that we'd get from each element
-        for (const std::string& a : args) {
-            argv.push_back(a.c_str());
-        }
-        argv.push_back(nullptr);
-        return _Argv{std::move(args), std::move(argv)};
-    }
-    
     static std::optional<OpResult> _EditCommit(const Ctx& ctx, const Op& op) {
-        using File = RefCounted<int, close>;
-        
+        // Required arguments:
+        assert(op.src.rev);
         assert(op.src.commits.size() == 1); // Programmer error
-        if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
+        // Illegal arguments:
+        assert(!op.dst.rev);
         
-        // Write the commit message to `tmpFilePath`
-        char tmpFilePath[] = "/tmp/debase.XXXXXX";
-        int ir = mkstemp(tmpFilePath);
-        if (ir < 0) throw RuntimeError("mkstemp failed: %s", strerror(errno));
-        File fd(ir); // Handles closing the file descriptor upon return
-        Defer(unlink(tmpFilePath)); // Delete the temporary file upon return
+        if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Write the commit message to the file
         const Commit origCommit = *op.src.commits.begin();
         const git_signature* origAuthor = git_commit_author(*origCommit);
-        _CommitMessage origMsg = _CommitMessageForCommit(origCommit);
-        _CommitMessageWrite(origMsg, tmpFilePath);
+        const _CommitMessage origMsg = _CommitMessageForCommit(origCommit);
         
-        // Spawn text editor
-        _Argv argv = _CreateArgv(ctx.repo, tmpFilePath);
-        ctx.spawn(argv.argv.data());
+        // _CommitMessage -> String
+        const std::string origMsgStr = _StringFromCommitMessage(origMsg);
         
-        // Read back the edited commit message
-        _CommitMessage newMsg = _CommitMessageRead(tmpFilePath);
+        // Execute the editor and read back the result
+        const std::string newMsgStr = EditorRun(ctx.repo, ctx.spawn, origMsgStr);
+        
+        // String -> _CommitMessage
+        const _CommitMessage newMsg = _CommitMessageFromString(newMsgStr);
         
         // Nop if the message wasn't changed
         if (origMsg == newMsg) return std::nullopt;
@@ -603,7 +631,8 @@ private:
         // Rewrite the rev
         // Add and remove commits
         _AddRemoveResult srcResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.src.rev.commit,  // dst:         Commit
             {newCommit},        // add:         std::set<Commit>
             newCommit,          // addSrc:      Commit
@@ -613,7 +642,7 @@ private:
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Git::Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -625,15 +654,24 @@ private:
     
 public:
     static std::optional<OpResult> Exec(const Ctx& ctx, const Op& op) {
-        switch (op.type) {
-        case Op::Type::None:    return std::nullopt;
-        case Op::Type::Move:    return _MoveCommits(ctx, op);
-        case Op::Type::Copy:    return _CopyCommits(ctx, op);
-        case Op::Type::Delete:  return _DeleteCommits(ctx, op);
-        case Op::Type::Combine: return _CombineCommits(ctx, op);
-        case Op::Type::Edit:    return _EditCommit(ctx, op);
+        try {
+            switch (op.type) {
+            case Op::Type::None:    return std::nullopt;
+            case Op::Type::Move:    return _MoveCommits(ctx, op);
+            case Op::Type::Copy:    return _CopyCommits(ctx, op);
+            case Op::Type::Delete:  return _DeleteCommits(ctx, op);
+            case Op::Type::Combine: return _CombineCommits(ctx, op);
+            case Op::Type::Edit:    return _EditCommit(ctx, op);
+            }
+            abort();
+        
+        } catch (const ConflictResolveCanceled&) {
+            // Conflict resolution was canceled
+            return std::nullopt;
+        
+        } catch (...) {
+            throw;
         }
-        abort();
     }
 
 }; // class Modify

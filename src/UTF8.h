@@ -30,24 +30,6 @@ inline size_t Len(T_Iter start, T_Iter end) {
     return r;
 }
 
-inline std::string Truncated(std::string_view str, size_t len) {
-    if (!len) return {};
-    // If the string byte length is already less than `len` runes, then it's already truncated
-    if (str.size() <= len) return std::string(str);
-    
-    std::string r;
-    r.reserve(len); // Approximate space, assuming `str` is ASCII
-    for (uint8_t b : str) {
-        if (CodepointStart(b)) {
-            if (!len) break;
-            len--;
-        }
-        
-        r.push_back(b);
-    }
-    return r;
-}
-
 template <typename T_Iter>
 inline T_Iter NextN(T_Iter it, T_Iter end, ssize_t n) {
     if (n > 0) {
@@ -75,6 +57,36 @@ inline T_Iter Next(T_Iter it, T_Iter end) {
 template <typename T_Iter>
 inline T_Iter Prev(T_Iter it, T_Iter end) {
     return NextN(it, end, -1);
+}
+
+inline std::string TruncateHead(std::string_view str, size_t len) {
+    if (!len) return {};
+    // If the string _byte_ length is already less than `len` codepoints, then it's already truncated
+    if (str.size() <= len) return std::string(str);
+    
+    const size_t strLen = Len(str);
+    // If the string _codepoint_ length is already less than `len` codepoints, then it's already truncated
+    if (strLen <= len) return std::string(str);
+    
+    std::string r;
+    r.reserve(len); // Approximate space, assuming `str` is ASCII
+    
+    auto it = NextN(str.begin(), str.end(), strLen-len);
+    std::copy(it, str.end(), std::back_inserter(r));
+    return r;
+}
+
+inline std::string TruncateTail(std::string_view str, size_t len) {
+    if (!len) return {};
+    // If the string _byte_ length is already less than `len` codepoints, then it's already truncated
+    if (str.size() <= len) return std::string(str);
+    
+    std::string r;
+    r.reserve(len); // Approximate space, assuming `str` is ASCII
+    
+    auto it = NextN(str.begin(), str.end(), len);
+    std::copy(str.begin(), it, std::back_inserter(r));
+    return r;
 }
 
 } // namespace UTF8
