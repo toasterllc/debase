@@ -18,6 +18,7 @@
 #include "ui/TrialCountdownAlert.h"
 #include "ui/ErrorAlert.h"
 #include "ui/UpdateAvailableAlert.h"
+#include "ui/ConflictPanel.h"
 //#include "ui/TabPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
@@ -380,9 +381,12 @@ public:
             Window::operator =(Window(::stdscr));
             
             _reload();
-            _moveOffer();
-            _licenseCheck();
-            _updateCheck();
+            
+            _conflictRun();
+            
+//            _moveOffer();
+//            _licenseCheck();
+//            _updateCheck();
             track({});
             
         } catch (const UI::ExitRequest&) {
@@ -1848,6 +1852,12 @@ private:
         
         // Wait until the user clicks a button
         while (!done) track({}, Once);
+    }
+    
+    void _conflictRun() {
+        auto panel = _panelPresent<UI::ConflictPanel>();
+        panel->filePath("meowmix.c");
+        track({});
     }
     
     void _updateAvailableAlertShow(Version version) {
