@@ -163,7 +163,11 @@ public:
 
 using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
-using Index = RefCounted<git_index*, git_index_free>;
+
+struct Index : RefCounted<git_index*, git_index_free> {
+    using RefCounted::RefCounted;
+    bool conflicts() const { return git_index_has_conflicts(*get()); }
+};
 
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
     using RefCounted::RefCounted;
@@ -671,7 +675,8 @@ public:
     }
     
     // commitParentSet(): commit.parent[0] = parent
-    Commit commitParentSet(const Commit& commit, const Commit& parent) const {
+    template <typename T_ConflictResolve>
+    Commit commitParentSet(T_ConflictResolve resolve, const Commit& commit, const Commit& parent) const {
         assert(commit);
         
         Index index;
@@ -681,6 +686,12 @@ public:
             Commit oldParent = commit.parent();
             Tree oldParentTree = (oldParent ? oldParent.tree() : nullptr);
             index = treesMerge(oldParentTree, nullptr, commit.tree());
+        }
+        
+        // Let the caller resolve the conflicts, if there are any
+        if (index.conflicts()) {
+            const bool cont = resolve(index);
+            if (!cont) throw std::runtime_error("conflict resolution cancelled");
         }
         
         Tree tree = indexWrite(index);
@@ -693,11 +704,19 @@ public:
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    Commit commitIntegrate(const Commit& dst, const Commit& src) const {
+    template <typename T_ConflictResolve>
+    Commit commitIntegrate(T_ConflictResolve resolve, const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree(); // TODO:MERGE
         Index mergedTreesIndex = treesMerge(ancestorTree, dstTree, srcTree);
+        
+        // Let the caller resolve the conflicts, if there are any
+        if (index.conflicts()) {
+            const bool cont = resolve(index);
+            if (!cont) throw std::runtime_error("conflict resolution cancelled");
+        }
+        
         Tree newTree = indexWrite(mergedTreesIndex);
         
         // Combine the commit messages

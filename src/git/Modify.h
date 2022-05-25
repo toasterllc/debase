@@ -12,6 +12,7 @@ class Modify {
 public:
     struct Ctx {
         Repo repo;
+        std::function<bool(const Git::Index&)> conflictResolve;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
     };
@@ -80,7 +81,7 @@ private:
     };
     
     static _AddRemoveResult _AddRemoveCommits(
-        const Repo& repo,
+        const Ctx& ctx,
         const Commit& dst,
         const std::set<Commit>& add,
         const Commit& addSrc, // Source of `add` commits (to derive their order)
@@ -140,7 +141,7 @@ private:
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
             // TODO:MERGE
-            head = repo.commitParentSet(commit.commit, head);
+            head = ctx.repo.commitParentSet(commit.commit, head);
             
             if (commit.added) {
                 added.insert(head);
@@ -211,7 +212,7 @@ private:
             
             // Add and remove commits
             _AddRemoveResult srcDstResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -247,7 +248,7 @@ private:
         } else {
             // Remove commits from `op.src`
             _AddRemoveResult srcResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
                 op.src.rev.commit,  // dst:         Commit
                 {},                 // add:         std::set<Commit>
                 nullptr,            // addSrc:      Commit
@@ -257,7 +258,7 @@ private:
             
             // Add commits to `op.dst`
             _AddRemoveResult dstResult = _AddRemoveCommits(
-                ctx.repo,           // repo:        Repo
+                ctx,
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -290,7 +291,7 @@ private:
         
         // Add commits to `op.dst`
         _AddRemoveResult dstResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
             op.src.rev.commit,  // addSrc:      Commit
@@ -319,7 +320,7 @@ private:
         
         // Remove commits from `op.src`
         _AddRemoveResult srcResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
             nullptr,            // addSrc:      Commit
@@ -603,7 +604,7 @@ private:
         // Rewrite the rev
         // Add and remove commits
         _AddRemoveResult srcResult = _AddRemoveCommits(
-            ctx.repo,           // repo:        Repo
+            ctx,
             op.src.rev.commit,  // dst:         Commit
             {newCommit},        // add:         std::set<Commit>
             newCommit,          // addSrc:      Commit
