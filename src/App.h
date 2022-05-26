@@ -1360,9 +1360,9 @@ private:
         const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
         
         for (const Git::FileConflict& fc : fileConflicts) {
-            for (const Git::FileConflict::Hunk& hunk : fc.hunks) {
+            for (size_t i=0; i<fc.hunks.size(); i++) {
                 UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-                auto panel = _panelPresent<UI::ConflictPanel>(fc.path, layout, hunk);
+                auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, i);
                 track({});
             }
         }
@@ -1955,7 +1955,7 @@ private:
         };
         
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-        auto panel = _panelPresent<UI::ConflictPanel>(fc.path, layout, fc.hunks[0]);
+        auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, 0);
         track({});
     }
     

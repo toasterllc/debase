@@ -48,8 +48,8 @@ public:
         RightOurs,
     };
     
-    ConflictPanel(const std::filesystem::path& path, Layout layout,
-        const Git::FileConflict::Hunk& hunk) : _layout(layout), _hunk(hunk) {
+    ConflictPanel(Layout layout, const Git::FileConflict& fc, size_t hunkIdx) :
+    _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
         
         borderColor(colors().error);
         
@@ -57,7 +57,7 @@ public:
         _title->textAttr(colors().error|WA_BOLD);
         _title->prefix(" ");
         _title->suffix(" ");
-        _title->text("Conflict: " + path.string());
+        _title->text("Conflict: " + fc.path.string());
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -85,7 +85,8 @@ private:
     static constexpr int _TitleInset = 2;
     
     const Layout _layout = Layout::LeftOurs;
-    const Git::FileConflict::Hunk& _hunk;
+    const Git::FileConflict& _fileConflict;
+    const size_t _hunkIdx = 0;
     
     LabelPtr _title = subviewCreate<Label>();
     ButtonPtr _chooseLeftButton = subviewCreate<Button>();
