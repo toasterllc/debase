@@ -26,6 +26,8 @@
 #include "license/License.h"
 #include "license/Server.h"
 #include "network/Network.h"
+#include "lib/toastbox/String.h"
+#include "FileConflict.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Async.h"
@@ -35,6 +37,7 @@
 #include "UserBinRelativePath.h"
 #include "Syscall.h"
 #include "Rev.h"
+#include "ConflictText.h"
 #include <os/log.h>
 
 extern "C" {
@@ -382,11 +385,11 @@ public:
             
             _reload();
             
-            _conflictRun();
+//            _conflictRun();
             
-//            _moveOffer();
-//            _licenseCheck();
-//            _updateCheck();
+            _moveOffer();
+            _licenseCheck();
+            _updateCheck();
             track({});
             
         } catch (const UI::ExitRequest&) {
@@ -1353,14 +1356,14 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    struct _FileConflict {
+    struct _IndexConflict {
         const git_index_entry* ancestor = nullptr;
         const git_index_entry* ours = nullptr;
         const git_index_entry* theirs = nullptr;
     };
     
     bool _gitConflictResolve(const Git::Index& index) {
-        std::map<_Path,_FileConflict> conflicts;
+        std::map<_Path,_IndexConflict> conflicts;
         
         for (size_t i=0;; i++) {
             const git_index_entry*const entry = index[i];
@@ -1383,7 +1386,7 @@ private:
 //            );
             
             const git_index_stage_t stage = (git_index_stage_t)GIT_INDEX_ENTRY_STAGE(entry);
-            _FileConflict& conflict = conflicts[entry->path];
+            _IndexConflict& conflict = conflicts[entry->path];
             if (stage == GIT_INDEX_STAGE_ANCESTOR) {
                 conflict.ancestor = entry;
             
@@ -1396,9 +1399,14 @@ private:
         }
         
         // Iterate over conflicts
+        FileConflict left;
+        FileConflict right;
+        
         for (auto const& [path, conflict] : conflicts) {
-            const Git::MergeFileResult mergeResult = _repo.merge(conflict.ancestor,
-                conflict.ours, conflict.theirs);
+            const Git::MergeFileResult mergeResult = _repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
+            
+            std::string content(mergeResult.ptr, mergeResult.len);
+            std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
             
             os_log(OS_LOG_DEFAULT, "%{public}s", mergeResult->ptr);
         }

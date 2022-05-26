@@ -993,19 +993,23 @@ public:
         return x;
     }
     
+    static constexpr const char MergeMarkerOurs[]       = "<<<<<<< " _DebaseProductId;
+    static constexpr const char MergeMarkerTheirs[]     = ">>>>>>> " _DebaseProductId;
+    static constexpr const char MergeMarkerSeparator[]  = "=======";
+    
     MergeFileResult merge(
         const git_index_entry* ancestor,
         const git_index_entry* ours,
         const git_index_entry* theirs
     ) {
-        git_merge_file_options opts = GIT_MERGE_FILE_OPTIONS_INIT;
-        // Using the 'patience' algorithm because it seems to remove conflicts
-        // where both sides contain the exact same code
-        opts.flags = GIT_MERGE_FILE_DIFF_PATIENCE;
-        
-        opts.ancestor_label = "MeowmixAncestor";
-        opts.our_label = "MeowmixOur";
-        opts.their_label = "MeowmixTheir";
+        git_merge_file_options opts = {
+            .version = GIT_MERGE_FILE_OPTIONS_VERSION,
+            // Using the 'patience' algorithm because it seems to remove conflicts
+            // where both sides contain the exact same code
+            .flags = GIT_MERGE_FILE_DIFF_PATIENCE,
+            .our_label = _DebaseProductId,
+            .their_label = _DebaseProductId,
+        };
         
         git_merge_file_result x;
         int ir = git_merge_file_from_index(&x, *get(), ancestor, ours, theirs, &opts);

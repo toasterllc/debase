@@ -1,11 +1,12 @@
 #pragma once
 #include <string>
+#include "FileConflict.h"
 
 namespace UI {
 
 class ConflictPanel : public Panel {
 public:
-    ConflictPanel() {
+    ConflictPanel(const std::string& filePath, const FileConflict& cl, const FileConflict& cr) : _conflictLeft(cl), _conflictRight(cr) {
         borderColor(colors().error);
         
         _title->inhibitErase(true); // Title overlaps border, so don't erase
@@ -39,9 +40,35 @@ public:
         _title->text("Conflict: " + p);
     }
     
+    auto& nameLeft() { return _nameLeft; }
+    auto& nameRight() { return _nameRight; }
+    
+    void contentLeft(const std::vector<std::string>& lines) {
+        
+    }
+    
+    void contentRight(const std::vector<std::string>& lines) {
+        
+    }
+    
+    void highlightLeft(size_t lineIdx, size_t lineCount) {
+        
+    }
+    
+    void highlightRight(size_t lineIdx, size_t lineCount) {
+        
+    }
+    
 private:
     static constexpr int _TitleInset = 2;
     LabelPtr _title = subviewCreate<Label>();
+    ButtonPtr _chooseLeftButton = subviewCreate<Button>();
+    ButtonPtr _chooseRightButton = subviewCreate<Button>();
+    ButtonPtr _openInEditorButton = subviewCreate<Button>();
+    ButtonPtr _cancelButton = subviewCreate<Button>();
+    
+    FileConflict& _conflictLeft;
+    FileConflict& _conflictRight;
 };
 
 using ConflictPanelPtr = std::shared_ptr<ConflictPanel>;

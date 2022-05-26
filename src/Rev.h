@@ -1,6 +1,10 @@
 #pragma once
 #include "git/Git.h"
 
+// Rev: wraps a Git::Rev to add additional functionality needed by debase:
+//   - skip: the number of commits to skip
+//   - mutability: whether the rev is mutable, and if not, an explanation why
+
 class Rev : public Git::Rev {
 public:
     using Git::Rev::Rev;
