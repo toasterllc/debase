@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 #include <cassert>
+#include "Debase.h"
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/Defer.h"
@@ -1001,7 +1002,7 @@ public:
         const git_index_entry* ancestor,
         const git_index_entry* ours,
         const git_index_entry* theirs
-    ) {
+    ) const {
         git_merge_file_options opts = {
             .version = GIT_MERGE_FILE_OPTIONS_VERSION,
             // Using the 'patience' algorithm because it seems to remove conflicts

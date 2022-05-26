@@ -25,9 +25,9 @@
 #include "state/State.h"
 #include "license/License.h"
 #include "license/Server.h"
+#include "git/Conflict.h"
 #include "network/Network.h"
 #include "lib/toastbox/String.h"
-#include "FileConflict.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
 #include "Async.h"
@@ -385,7 +385,7 @@ public:
             
             _reload();
             
-//            _conflictRun();
+            _conflictRun();
             
             _moveOffer();
             _licenseCheck();
@@ -507,9 +507,9 @@ private:
         } _s;
     };
     
-    template <typename T>
-    _PanelPresenter<std::shared_ptr<T>> _panelPresent() {
-        std::shared_ptr<T> panel = subviewCreate<T>();
+    template <typename T, typename ...T_Args>
+    _PanelPresenter<std::shared_ptr<T>> _panelPresent(T_Args&&... args) {
+        std::shared_ptr<T> panel = subviewCreate<T>(std::forward<T_Args>(args)...);
         return _PanelPresenter(_panels, panel);
     }
     
@@ -1356,59 +1356,13 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    struct _IndexConflict {
-        const git_index_entry* ancestor = nullptr;
-        const git_index_entry* ours = nullptr;
-        const git_index_entry* theirs = nullptr;
-    };
-    
     bool _gitConflictResolve(const Git::Index& index) {
-        std::map<_Path,_IndexConflict> conflicts;
+        const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
         
-        for (size_t i=0;; i++) {
-            const git_index_entry*const entry = index[i];
-            // End of index
-            if (!entry) break;
-            // We only care about conflicts
-            if (!git_index_entry_is_conflict(entry)) continue;
-            
-//            git_object* obj = nullptr;
-//            int ir = git_object_lookup(&obj, *_repo, &entry->id, GIT_OBJECT_ANY);
-//            assert(!ir);
-//            const char* typeStr = git_object_type2string(git_object_type(obj));
-//            
-//            os_log(OS_LOG_DEFAULT, "%{public}s id:%{public}s type:%{public}s flags:%jx flags_extended:%jx",
-//                entry->path,
-//                Git::StringForId(entry->id).c_str(),
-//                typeStr,
-//                (uintmax_t)entry->flags,
-//                (uintmax_t)entry->flags_extended
-//            );
-            
-            const git_index_stage_t stage = (git_index_stage_t)GIT_INDEX_ENTRY_STAGE(entry);
-            _IndexConflict& conflict = conflicts[entry->path];
-            if (stage == GIT_INDEX_STAGE_ANCESTOR) {
-                conflict.ancestor = entry;
-            
-            } else if (stage == GIT_INDEX_STAGE_OURS) {
-                conflict.ours = entry;
-            
-            } else if (stage == GIT_INDEX_STAGE_THEIRS) {
-                conflict.theirs = entry;
-            }
-        }
-        
-        // Iterate over conflicts
-        FileConflict left;
-        FileConflict right;
-        
-        for (auto const& [path, conflict] : conflicts) {
-            const Git::MergeFileResult mergeResult = _repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
-            
-            std::string content(mergeResult.ptr, mergeResult.len);
-            std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
-            
-            os_log(OS_LOG_DEFAULT, "%{public}s", mergeResult->ptr);
+        for (const Git::FileConflict& fc : fileConflicts) {
+            UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
+            auto panel = _panelPresent<UI::ConflictPanel>(layout, fc);
+            track({});
         }
         
         return false;
@@ -1863,8 +1817,143 @@ private:
     }
     
     void _conflictRun() {
-        auto panel = _panelPresent<UI::ConflictPanel>();
-        panel->filePath("meowmix.c");
+        
+        Git::FileConflict fc = {
+            .path = "FDStream.h",
+            .hunks = {
+                Git::FileConflict::Hunk{
+                    .type = Git::FileConflict::Hunk::Type::Normal,
+                    .normal = {
+                        .lines = {
+                            "#pragma once",
+                            "#include <fstream>",
+                        },
+                    },
+                },
+                
+                Git::FileConflict::Hunk{
+                    .type = Git::FileConflict::Hunk::Type::Conflict,
+                    .conflict = {
+                        .linesOurs = {
+                            "#include <memory>",
+                            "#include <cassert>",
+                            "",
+                            "#ifdef __GLIBCXX__",
+                            "#include <ext/stdio_filebuf.h>",
+                            "#endif",
+                        },
+                    },
+                },
+                
+                Git::FileConflict::Hunk{
+                    .type = Git::FileConflict::Hunk::Type::Normal,
+                    .normal = {
+                        .lines = {
+                            "",
+                            "namespace Toastbox {",
+                            "",
+                            "// FDStream allows an istream/ostream/iostream to be created from a file descriptor.",
+                            "// The FDStream object takes ownership of the file descriptor (actually, the",
+                            "// underlying platform-specific filebuf object) and closes it when FDStream is",
+                            "// destroyed.",
+                            "",
+                            "class FDStream {",
+                            "protected:",
+                            "#ifdef __GLIBCXX__",
+                            "    // GCC (libstdc++)",
+                            "    using _Filebuf = __gnu_cxx::stdio_filebuf<char>;",
+                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
+                            "//        if (fd >= 0) {",
+                            "//            _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+                            "//        } else {",
+                            "//            _filebuf = std::make_unique<_Filebuf>();",
+                            "//        }",
+                            "//        return _filebuf.get();",
+                            "        ",
+                            "//        if (fd < 0) return nullptr;",
+                            "//        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+                            "//        return _filebuf.get();",
+                            "        ",
+                            "        assert(fd >= 0);",
+                            "        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
+                            "        return _filebuf.get();",
+                            "    }",
+                            "#else",
+                            "    // Clang (libc++)",
+                            "    using _Filebuf = std::basic_filebuf<char>;",
+                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
+                            "//        _filebuf = std::make_unique<_Filebuf>();",
+                            "//        if (fd >= 0) {",
+                            "//            _filebuf->__open(fd, mode);",
+                            "//        }",
+                            "//        return _filebuf.get();",
+                            "        ",
+                            "//        if (fd < 0) return nullptr;",
+                            "//        _filebuf = std::make_unique<_Filebuf>();",
+                            "//        _filebuf->__open(fd, mode);",
+                            "//        return _filebuf.get();",
+                            "        ",
+                            "        assert(fd >= 0);",
+                            "        _filebuf = std::make_unique<_Filebuf>();",
+                            "        _filebuf->__open(fd, mode);",
+                            "        return _filebuf.get();",
+                            "    }",
+                            "#endif",
+                            "    ",
+                            "    void _swap(FDStream& x) {",
+                            "        std::swap(_filebuf, x._filebuf);",
+                            "    }",
+                            "    ",
+                            "    // _Filebuf needs to be a unique_ptr so that the pointer returned by",
+                            "    // _initFilebuf() stays valid after swap() is called. Otherwise, if",
+                            "    // _filebuf was an inline ivar, the pointer given to the iostream",
+                            "    // constructor would reference a different object after swap() was",
+                            "    // called.",
+                            "    std::unique_ptr<_Filebuf> _filebuf;",
+                            "};",
+                            "",
+                            "//class FDStreamIn : public FDStream, public std::istream {",
+                            "//public:",
+                            "//    FDStreamIn(int fd=-1) : std::istream(_initFilebuf(fd, std::ios::in)) {}",
+                            "//};",
+                            "//",
+                            "//class FDStreamOut : public FDStream, public std::ostream {",
+                            "//public:",
+                            "//    FDStreamOut(int fd=-1) : std::ostream(_initFilebuf(fd, std::ios::out)) {}",
+                            "//};",
+                            "",
+                            "class FDStreamInOut : public FDStream, public std::iostream {",
+                            "public:",
+                            "    FDStreamInOut() : std::iostream(nullptr) {}",
+                            "    FDStreamInOut(int fd) : std::iostream(_initFilebuf(fd, std::ios::in|std::ios::out)) {}",
+                            "    FDStreamInOut(FDStreamInOut&& x) : FDStreamInOut() {",
+                            "        swap(x);",
+                            "    }",
+                            "    ",
+                            "    // Move assignment operator",
+                            "    FDStreamInOut& operator=(FDStreamInOut&& x) {",
+                            "        swap(x);",
+                            "        return *this;",
+                            "    }",
+                            "    ",
+                            "    void swap(FDStreamInOut& x) {",
+                            "        FDStreamInOut::_swap(x);",
+                            "        std::iostream::swap(x);",
+                            "        rdbuf(_filebuf.get());",
+                            "        x.rdbuf(x._filebuf.get());",
+                            "    }",
+                            "};",
+                            "",
+                            "}",
+                            "",
+                        },
+                    },
+                },
+            },
+        };
+        
+        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
+        auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, 0);
         track({});
     }
     

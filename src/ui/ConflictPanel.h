@@ -1,18 +1,63 @@
 #pragma once
 #include <string>
-#include "FileConflict.h"
+#include "git/Conflict.h"
+
+
+
+//struct FileConflict {
+//    struct Hunk {
+//        enum class Type {
+//            Normal,
+//            Conflict,
+//        };
+//        
+//        Type type = Type::Normal;
+//        
+//        struct {
+//            std::vector<std::string> lines;
+//        } normal;
+//        
+//        struct {
+//            std::vector<std::string> linesOurs;
+//            std::vector<std::string> linesTheirs;
+//        } conflict;
+//        
+//        bool empty() const {
+//            switch (type) {
+//            case Type::Normal:      return normal.lines.empty();
+//            case Type::Conflict:    return conflict.linesOurs.empty() && conflict.linesTheirs.empty();
+//            default: abort();
+//            }
+//        }
+//    };
+//    
+//    std::filesystem::path path;
+//    std::vector<Hunk> hunks;
+//};
+
+
+
+
 
 namespace UI {
 
 class ConflictPanel : public Panel {
 public:
-    ConflictPanel(const std::string& filePath, const FileConflict& cl, const FileConflict& cr) : _conflictLeft(cl), _conflictRight(cr) {
+    enum class Layout {
+        LeftOurs,
+        RightOurs,
+    };
+    
+    ConflictPanel(Layout layout, const Git::FileConflict& fc, size_t hunkIdx) :
+        _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
+        
         borderColor(colors().error);
         
         _title->inhibitErase(true); // Title overlaps border, so don't erase
         _title->textAttr(colors().error|WA_BOLD);
         _title->prefix(" ");
         _title->suffix(" ");
+        _title->text("Conflict: " + fc.path.string());
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -34,41 +79,26 @@ public:
         
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
-    }
-    
-    void filePath(const std::string& p) {
-        _title->text("Conflict: " + p);
-    }
-    
-    auto& nameLeft() { return _nameLeft; }
-    auto& nameRight() { return _nameRight; }
-    
-    void contentLeft(const std::vector<std::string>& lines) {
         
-    }
-    
-    void contentRight(const std::vector<std::string>& lines) {
+        auto& hunk = _fileConflict[_hunkIdx];
         
-    }
-    
-    void highlightLeft(size_t lineIdx, size_t lineCount) {
         
-    }
-    
-    void highlightRight(size_t lineIdx, size_t lineCount) {
+        _fileConflict.hunks;
         
     }
     
 private:
     static constexpr int _TitleInset = 2;
+    
+    const Layout _layout = Layout::LeftOurs;
+    const Git::FileConflict& _fileConflict;
+    const size_t _hunkIdx = 0;
+    
     LabelPtr _title = subviewCreate<Label>();
     ButtonPtr _chooseLeftButton = subviewCreate<Button>();
     ButtonPtr _chooseRightButton = subviewCreate<Button>();
     ButtonPtr _openInEditorButton = subviewCreate<Button>();
     ButtonPtr _cancelButton = subviewCreate<Button>();
-    
-    FileConflict& _conflictLeft;
-    FileConflict& _conflictRight;
 };
 
 using ConflictPanelPtr = std::shared_ptr<ConflictPanel>;
