@@ -147,30 +147,33 @@ private:
         auto hunkEnd = std::end(hunks);
         auto hunkRend = std::rend(hunks);
         
-        auto& mainConflictLines = _hunkLinesGet(hunks[_hunkIdx], _layout, left, true);
+        auto& mainConflictLines = _hunkLinesGet(hunks[_hunkIdx], left, true);
         const int mainConflictStartY = rect.t() + std::max(0, (rect.h()-(int)mainConflictLines.size())/2);
 //        const int mainConflictStartY = Inset.y + std::max(0, (h-(int)mainConflictLines.size())/2);
         
+        // Draw main conflict section, and lines beneath it
         {
             bool main = true;
             int offY = mainConflictStartY;
             for (auto hunkIter=std::begin(hunks)+_hunkIdx; hunkIter!=hunkEnd && offY<rect.b(); hunkIter++) {
-                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, _layout, left, main);
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, main);
                 const Attr color = (main ? Attr() : attr(colors().dimmedMore));
                 for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
                     const std::string& line = *it;
                     drawText({rect.l(), offY}, rect.w(), line.c_str());
+                    if (main) drawLineVert({rect.l()-1, offY}, 1);
                     offY++;
                 }
                 main = false;
             }
         }
         
+        // Draw lines above the main conflict section
         {
             const Attr color = attr(colors().dimmedMore);
             int offY = mainConflictStartY-1;
             for (auto hunkIter=std::make_reverse_iterator(std::begin(hunks)+_hunkIdx); hunkIter!=hunkRend && offY>=rect.t(); hunkIter++) {
-                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, _layout, left);
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, false);
                 for (auto it=lines.rbegin(); it!=lines.rend() && offY>=rect.t(); it++) {
                     const std::string& line = *it;
                     drawText({rect.l(), offY}, rect.w(), line.c_str());
