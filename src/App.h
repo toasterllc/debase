@@ -1955,7 +1955,7 @@ private:
         };
         
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-        auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, 0);
+        auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, 1);
         track({});
     }
     

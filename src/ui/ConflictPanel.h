@@ -79,6 +79,31 @@ public:
         
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
+        
+        constexpr Size Inset = {2,1};
+        const Rect b = bounds();
+        const int w = (b.w()-2*Inset.x)/2;
+        const int h = b.h()-2*Inset.y;
+        const Rect leftRect = {
+            .origin = Inset,
+            .size = {w,h},
+        };
+        
+        const Rect rightRect = {
+            .origin = b.tr()+Size{0,Inset.y}-Size{Inset.x+w,0},
+            .size = {w,h},
+        };
+        
+        drawRect(leftRect);
+        drawRect(rightRect);
+        
+//        auto& hunk = _fileConflict.hunks[_hunkIdx];
+//        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
+//        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
+//        for (size_t i=0; i<lines.size(); i++) {
+//            const std::string& line = lines[i];
+//            drawText({2, 2+(int)i}, line.c_str());
+//        }
     }
     
 private:
