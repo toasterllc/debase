@@ -84,26 +84,36 @@ public:
         const Rect b = bounds();
         const int w = (b.w()-2*Inset.x)/2;
         const int h = b.h()-2*Inset.y;
+        
+        const int separatorX = b.w()/2;
+        
         const Rect leftRect = {
             .origin = Inset,
-            .size = {w,h},
+            .size = {separatorX-Inset.x, h},
         };
         
         const Rect rightRect = {
-            .origin = b.tr()+Size{0,Inset.y}-Size{Inset.x+w,0},
-            .size = {w,h},
+            .origin = {separatorX+1, Inset.y},
+            .size = {b.w()-(separatorX+1)-Inset.x, h},
         };
+        
+        {
+            Attr color = attr(colors().error);
+            drawLineVert({separatorX, 1}, b.h()-2);
+        }
         
         drawRect(leftRect);
         drawRect(rightRect);
         
-//        auto& hunk = _fileConflict.hunks[_hunkIdx];
-//        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
-//        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
-//        for (size_t i=0; i<lines.size(); i++) {
-//            const std::string& line = lines[i];
-//            drawText({2, 2+(int)i}, line.c_str());
-//        }
+        auto& hunk = _fileConflict.hunks[_hunkIdx];
+        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
+        
+        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
+        int offY = Inset.y+std::max(0, (h-(int)lines.size())/2);
+        for (size_t i=0; i<lines.size(); i++) {
+            const std::string& line = lines[i];
+            drawText({2, offY+(int)i}, line.c_str());
+        }
     }
     
 private:
