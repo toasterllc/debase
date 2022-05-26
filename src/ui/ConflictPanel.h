@@ -2,7 +2,10 @@
 #include <string>
 #include "git/Conflict.h"
 
-
+// TODO: draw veritcal lines to the left of the conflict region
+// TODO: draw '---- empty ----' placeholder when conflict region is empty
+// TODO: make filename title non-bold
+// TODO: truncate the beginning of the filename, not the end
 
 //struct FileConflict {
 //    struct Hunk {
@@ -82,19 +85,17 @@ public:
         
         constexpr Size Inset = {2,1};
         const Rect b = bounds();
-        const int w = (b.w()-2*Inset.x)/2;
         const int h = b.h()-2*Inset.y;
-        
         const int separatorX = b.w()/2;
         
         const Rect leftRect = {
             .origin = Inset,
-            .size = {separatorX-Inset.x, h},
+            .size = {separatorX-Inset.x-1, h},
         };
         
         const Rect rightRect = {
-            .origin = {separatorX+1, Inset.y},
-            .size = {b.w()-(separatorX+1)-Inset.x, h},
+            .origin = {separatorX+2, Inset.y},
+            .size = {b.w()-(separatorX+2)-Inset.x, h},
         };
         
         {
@@ -102,22 +103,82 @@ public:
             drawLineVert({separatorX, 1}, b.h()-2);
         }
         
-        drawRect(leftRect);
-        drawRect(rightRect);
+        _drawText(leftRect, true);
+        _drawText(rightRect, false);
         
-        auto& hunk = _fileConflict.hunks[_hunkIdx];
-        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
+//        drawRect(leftRect);
+//        drawRect(rightRect);
         
-        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
-        int offY = Inset.y+std::max(0, (h-(int)lines.size())/2);
-        for (size_t i=0; i<lines.size(); i++) {
-            const std::string& line = lines[i];
-            drawText({2, offY+(int)i}, line.c_str());
-        }
+//        auto& hunk = _fileConflict.hunks[_hunkIdx];
+//        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
+//        
+//        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
+//        int offY = Inset.y+std::max(0, (h-(int)lines.size())/2);
+//        for (size_t i=0; i<lines.size(); i++) {
+//            const std::string& line = lines[i];
+//            drawText({2, offY+(int)i}, line.c_str());
+//        }
+        
+
     }
     
 private:
     static constexpr int _TitleInset = 2;
+    
+    const std::vector<std::string>& _hunkLinesGet(const Git::FileConflict::Hunk& hunk, bool left, bool main) {
+        switch (hunk.type) {
+        case Git::FileConflict::Hunk::Type::Normal:
+            return hunk.normal.lines;
+        case Git::FileConflict::Hunk::Type::Conflict:
+            switch (_layout) {
+            case Layout::LeftOurs:
+                return (left ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
+            case Layout::RightOurs:
+                return (left ? hunk.conflict.linesTheirs : hunk.conflict.linesOurs);
+            default: abort();
+            }
+        default: abort();
+        }
+    }
+    
+    void _drawText(const Rect& rect, bool left) {
+        const auto& hunks = _fileConflict.hunks;
+        auto hunkBegin = std::begin(hunks);
+        auto hunkEnd = std::end(hunks);
+        auto hunkRend = std::rend(hunks);
+        
+        auto& mainConflictLines = _hunkLinesGet(hunks[_hunkIdx], _layout, left, true);
+        const int mainConflictStartY = rect.t() + std::max(0, (rect.h()-(int)mainConflictLines.size())/2);
+//        const int mainConflictStartY = Inset.y + std::max(0, (h-(int)mainConflictLines.size())/2);
+        
+        {
+            bool main = true;
+            int offY = mainConflictStartY;
+            for (auto hunkIter=std::begin(hunks)+_hunkIdx; hunkIter!=hunkEnd && offY<rect.b(); hunkIter++) {
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, _layout, left, main);
+                const Attr color = (main ? Attr() : attr(colors().dimmedMore));
+                for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
+                    const std::string& line = *it;
+                    drawText({rect.l(), offY}, rect.w(), line.c_str());
+                    offY++;
+                }
+                main = false;
+            }
+        }
+        
+        {
+            const Attr color = attr(colors().dimmedMore);
+            int offY = mainConflictStartY-1;
+            for (auto hunkIter=std::make_reverse_iterator(std::begin(hunks)+_hunkIdx); hunkIter!=hunkRend && offY>=rect.t(); hunkIter++) {
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, _layout, left);
+                for (auto it=lines.rbegin(); it!=lines.rend() && offY>=rect.t(); it++) {
+                    const std::string& line = *it;
+                    drawText({rect.l(), offY}, rect.w(), line.c_str());
+                    offY--;
+                }
+            }
+        }
+    }
     
     const Layout _layout = Layout::LeftOurs;
     const Git::FileConflict& _fileConflict;

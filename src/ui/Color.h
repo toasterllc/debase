@@ -24,6 +24,7 @@ class ColorPalette {
 public:
     ColorPair normal;
     ColorPair dimmed;
+    ColorPair dimmedMore;
     ColorPair selection;
     ColorPair selectionSimilar;
     ColorPair selectionCopy;

@@ -544,6 +544,7 @@ private:
             if (themeDark) {
                 colors.normal           = UI::Color();
                 colors.dimmed           = colors.add( 77,  77,  77);
+                colors.dimmedMore       = colors.add( 50,  50,  50);
                 colors.selection        = colors.add(  0,   2, 255);
                 colors.selectionSimilar = colors.add(140, 140, 255);
                 colors.selectionCopy    = colors.add(  0, 229, 130);
@@ -553,6 +554,8 @@ private:
             } else {
                 colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(128, 128, 128);
+                #warning TODO: determine color for dimmedMore
+                colors.dimmedMore       = colors.add(  0,   0,   0);
                 colors.selection        = colors.add(  0,   2, 255);
                 colors.selectionSimilar = colors.add(140, 140, 255);
                 colors.selectionCopy    = colors.add( 52, 167,   0);
@@ -567,6 +570,8 @@ private:
             if (themeDark) {
                 colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(.486*255, .486*255, .486*255);
+                #warning TODO: determine color for dimmedMore
+                colors.dimmedMore       = colors.add(  0,   0,   0);
                 colors.selection        = colors.add(.463*255, .275*255, 1.00*255);
                 colors.selectionSimilar = colors.add(.663*255, .663*255, 1.00*255);
                 colors.selectionCopy    = colors.add(.204*255, .965*255, .569*255);
@@ -576,6 +581,8 @@ private:
             } else {
                 colors.normal           = UI::Color();
                 colors.dimmed           = colors.add(.592*255, .592*255, .592*255);
+                #warning TODO: determine color for dimmedMore
+                colors.dimmedMore       = colors.add(  0,   0,   0);
                 colors.selection        = colors.add(.369*255, .208*255, 1.00*255);
                 colors.selectionSimilar = colors.add(.627*255, .627*255, 1.00*255);
                 colors.selectionCopy    = colors.add(.306*255, .737*255, .153*255);
