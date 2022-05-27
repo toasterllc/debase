@@ -157,11 +157,11 @@ private:
             int offY = mainConflictStartY;
             for (auto hunkIter=std::begin(hunks)+_hunkIdx; hunkIter!=hunkEnd && offY<rect.b(); hunkIter++) {
                 const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, main);
-                const Attr color = (main ? Attr() : attr(colors().dimmedMore));
+                const Attr color = attr(main ? colors().conflictTextMain : colors().conflictTextDim);
                 for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
                     const std::string& line = *it;
+                    if (main) drawLineHoriz({rect.l()-1, offY}, rect.w()+2, ' ');
                     drawText({rect.l(), offY}, rect.w(), line.c_str());
-                    if (main) drawLineVert({rect.l()-1, offY}, 1);
                     offY++;
                 }
                 main = false;
@@ -170,7 +170,7 @@ private:
         
         // Draw lines above the main conflict section
         {
-            const Attr color = attr(colors().dimmedMore);
+            const Attr color = attr(colors().conflictTextDim);
             int offY = mainConflictStartY-1;
             for (auto hunkIter=std::make_reverse_iterator(std::begin(hunks)+_hunkIdx); hunkIter!=hunkRend && offY>=rect.t(); hunkIter++) {
                 const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, false);
