@@ -578,7 +578,7 @@ private:
                 colors.menu             = colors.selectionCopy;
                 colors.error            = colors.pairNew(colors.colorNew(.969*255, .298*255, .435*255));
                 
-                colors.conflictTextMain = colors.pairNew(colors.colorNew(255, 255, 255), colors.colorNew( 40,  40,  40));
+                colors.conflictTextMain = colors.pairNew(colors.colorNew(255, 255, 255), colors.colorNew( 20,  20,  20));
                 colors.conflictTextDim  = colors.pairNew(colors.colorNew( 70,  70,  70));
                 
                 #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
