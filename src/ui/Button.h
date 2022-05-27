@@ -40,6 +40,9 @@ public:
     const auto& highlightColor() const { return _highlightColor; }
     template <typename T> bool highlightColor(const T& x) { return _set(_highlightColor, x); }
     
+//    const auto& insetX() const { return _insetX; }
+//    template <typename T> bool insetX(const T& x) { return _set(_insetX, x); }
+    
     const auto& action() const { return _action; }
     template <typename T> bool action(const T& x) { return _setForce(_action, x); }
     
@@ -58,7 +61,7 @@ public:
     }
     
     void layout() override {
-        const Rect r = Inset(bounds(), Size{(bordered() ? 1 : 0), 0});
+        const Rect r = Inset(bounds(), Size{(bordered() ? 2 : 0), 0});
         _key->sizeToFit(ConstraintNoneSize);
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
@@ -231,6 +234,7 @@ private:
     bool _mouseActive = false;
     bool _bordered = false;
     Color _highlightColor;
+//    int _insetX = 0;
     std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;

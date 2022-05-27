@@ -2,10 +2,15 @@
 #include <string>
 #include "git/Conflict.h"
 
-// TODO: draw veritcal lines to the left of the conflict region
+// TODO: don't center conflict text vertically if there isn't enough content to fill the top.
+//       shift both the left/right up by the same amount, so that their centers are aligned,
+//       and text starts at the top (at least on one side)
 // TODO: draw '---- empty ----' placeholder when conflict region is empty
 // TODO: make filename title non-bold
 // TODO: truncate the beginning of the filename, not the end
+// TODO: handle indentation -- if the conflicted block is indented a lot, unindent the text
+
+// TODO: √ highlight conflict region text
 
 namespace UI {
 
@@ -27,6 +32,22 @@ public:
         _title->prefix(" ");
         _title->suffix(" ");
         _title->text("Conflict: " + fc.path.string());
+        
+        _refNameLeft->align(Align::Center);
+        _refNameRight->align(Align::Center);
+        
+        _refNameLeft->text(_layout==Layout::LeftOurs ? refNameOurs : refNameTheirs);
+        _refNameRight->text(_layout==Layout::LeftOurs ? refNameTheirs : refNameOurs);
+        
+        _chooseButtonLeft->bordered(true);
+        _chooseButtonLeft->label()->text("Choose");
+        _chooseButtonLeft->label()->align(UI::Align::Left);
+        _chooseButtonLeft->key()->text("◀");
+        
+        _chooseButtonRight->bordered(true);
+        _chooseButtonRight->label()->text("Choose");
+        _chooseButtonRight->label()->align(UI::Align::Left);
+        _chooseButtonRight->key()->text("▶");
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -41,7 +62,22 @@ public:
         const Point titleOrigin = {_TitleInsetX,0};
         _title->frame({titleOrigin, {b.w()-2*_TitleInsetX, 1}});
         
-//        _refNameLeft->frame({1});
+        const Rect contentRectLeft = _ContentRectLeft(b);
+        const Rect contentRectRight = _ContentRectRight(b);
+        _refNameLeft->frame({contentRectLeft.tl()-Size{0,1}, {contentRectLeft.w(), 1}});
+        _refNameRight->frame({contentRectRight.tl()-Size{0,1}, {contentRectRight.w(), 1}});
+        
+        _chooseButtonLeft->sizeToFit(ConstraintNoneSize);
+        _chooseButtonLeft->origin({
+            contentRectLeft.l() + (contentRectLeft.w()-_chooseButtonLeft->frame().w())/2,
+            contentRectLeft.b()+1,
+        });
+        
+        _chooseButtonRight->sizeToFit(ConstraintNoneSize);
+        _chooseButtonRight->origin({
+            contentRectRight.l() + (contentRectRight.w()-_chooseButtonRight->frame().w())/2,
+            contentRectRight.b()+1,
+        });
     }
     
     using View::draw;
@@ -53,19 +89,19 @@ public:
         
         const Rect b = bounds();
         const int separatorX = _SeparatorX(b);
-        const Rect leftRect = _LeftRect(b);
-        const Rect rightRect = _RightRect(b);
+        const Rect contentRectLeft = _ContentRectLeft(b);
+        const Rect contentRectRight = _ContentRectRight(b);
         
         {
             Attr color = attr(colors().error);
             drawLineVert({separatorX, 1}, b.h()-2);
         }
         
-        _drawText(leftRect, true);
-        _drawText(rightRect, false);
+        _contentTextDraw(contentRectLeft, true);
+        _contentTextDraw(contentRectRight, false);
         
-//        drawRect(leftRect);
-//        drawRect(rightRect);
+//        drawRect(contentRectLeft);
+//        drawRect(contentRectRight);
         
 //        auto& hunk = _fileConflict.hunks[_hunkIdx];
 //        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
@@ -83,25 +119,27 @@ public:
 private:
     static constexpr int _TitleInsetX = 2;
     static constexpr Size _Inset = {2,1};
+    static constexpr int _ContentInsetTop = 1;
+    static constexpr int _ContentInsetBottom = 4;
     
     static int _SeparatorX(const Rect& bounds) {
         return bounds.w()/2;
     }
     
-    static Rect _LeftRect(const Rect& bounds) {
+    static Rect _ContentRectLeft(const Rect& bounds) {
         const int w = _SeparatorX(bounds)-_Inset.x-1;
-        const int h = bounds.h()-2*_Inset.y;
+        const int h = bounds.h()-2*_Inset.y-_ContentInsetTop-_ContentInsetBottom;
         return {
-            .origin = _Inset,
+            .origin = _Inset+Size{0,_ContentInsetTop},
             .size = {w, h},
         };
     }
     
-    static Rect _RightRect(const Rect& bounds) {
+    static Rect _ContentRectRight(const Rect& bounds) {
         const int w = bounds.w()-(_SeparatorX(bounds)+2)-_Inset.x;
-        const int h = bounds.h()-2*_Inset.y;
+        const int h = bounds.h()-2*_Inset.y-_ContentInsetTop-_ContentInsetBottom;
         return {
-            .origin = {_SeparatorX(bounds)+2, _Inset.y},
+            .origin = {_SeparatorX(bounds)+2, _Inset.y+_ContentInsetTop},
             .size = {w, h},
         };
     }
@@ -122,7 +160,7 @@ private:
         }
     }
     
-    void _drawText(const Rect& rect, bool left) {
+    void _contentTextDraw(const Rect& rect, bool left) {
         const auto& hunks = _fileConflict.hunks;
         auto hunkBegin = std::begin(hunks);
         auto hunkEnd = std::end(hunks);
@@ -141,6 +179,7 @@ private:
                 const Attr color = attr(main ? colors().conflictTextMain : colors().conflictTextDim);
                 for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
                     const std::string& line = *it;
+                    // Draw highlighted-text background
                     if (main) drawLineHoriz({rect.l()-1, offY}, rect.w()+2, ' ');
                     drawText({rect.l(), offY}, rect.w(), line.c_str());
                     offY++;
@@ -171,8 +210,8 @@ private:
     LabelPtr _title = subviewCreate<Label>();
     LabelPtr _refNameLeft = subviewCreate<Label>();
     LabelPtr _refNameRight = subviewCreate<Label>();
-    ButtonPtr _chooseLeftButton = subviewCreate<Button>();
-    ButtonPtr _chooseRightButton = subviewCreate<Button>();
+    ButtonPtr _chooseButtonLeft = subviewCreate<Button>();
+    ButtonPtr _chooseButtonRight = subviewCreate<Button>();
     ButtonPtr _openInEditorButton = subviewCreate<Button>();
     ButtonPtr _cancelButton = subviewCreate<Button>();
 };
