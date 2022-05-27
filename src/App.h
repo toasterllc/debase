@@ -1374,7 +1374,7 @@ private:
         for (const Git::FileConflict& fc : fileConflicts) {
             for (size_t i=0; i<fc.hunks.size(); i++) {
                 UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-                auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, i);
+                auto panel = _panelPresent<UI::ConflictPanel>(layout, "Branch1", "Branch2", fc, i);
                 track({});
             }
         }
@@ -1971,7 +1971,7 @@ private:
         };
         
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-        auto panel = _panelPresent<UI::ConflictPanel>(layout, fc, 1);
+        auto panel = _panelPresent<UI::ConflictPanel>(layout, "master", "SomeBranch", fc, 1);
         track({});
     }
     

@@ -7,41 +7,6 @@
 // TODO: make filename title non-bold
 // TODO: truncate the beginning of the filename, not the end
 
-//struct FileConflict {
-//    struct Hunk {
-//        enum class Type {
-//            Normal,
-//            Conflict,
-//        };
-//        
-//        Type type = Type::Normal;
-//        
-//        struct {
-//            std::vector<std::string> lines;
-//        } normal;
-//        
-//        struct {
-//            std::vector<std::string> linesOurs;
-//            std::vector<std::string> linesTheirs;
-//        } conflict;
-//        
-//        bool empty() const {
-//            switch (type) {
-//            case Type::Normal:      return normal.lines.empty();
-//            case Type::Conflict:    return conflict.linesOurs.empty() && conflict.linesTheirs.empty();
-//            default: abort();
-//            }
-//        }
-//    };
-//    
-//    std::filesystem::path path;
-//    std::vector<Hunk> hunks;
-//};
-
-
-
-
-
 namespace UI {
 
 class ConflictPanel : public Panel {
@@ -51,7 +16,8 @@ public:
         RightOurs,
     };
     
-    ConflictPanel(Layout layout, const Git::FileConflict& fc, size_t hunkIdx) :
+    ConflictPanel(Layout layout, std::string_view refNameOurs, std::string_view refNameTheirs,
+    const Git::FileConflict& fc, size_t hunkIdx) :
     _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
         
         borderColor(colors().error);
@@ -72,8 +38,10 @@ public:
         View::layout();
         
         const Rect b = bounds();
-        const Point titleOrigin = {_TitleInset,0};
-        _title->frame({titleOrigin, {b.w()-2*_TitleInset, 1}});
+        const Point titleOrigin = {_TitleInsetX,0};
+        _title->frame({titleOrigin, {b.w()-2*_TitleInsetX, 1}});
+        
+//        _refNameLeft->frame({1});
     }
     
     using View::draw;
@@ -83,20 +51,10 @@ public:
         // Always redraw _title because our border may have clobbered it
         _title->drawNeeded(true);
         
-        constexpr Size Inset = {2,1};
         const Rect b = bounds();
-        const int h = b.h()-2*Inset.y;
-        const int separatorX = b.w()/2;
-        
-        const Rect leftRect = {
-            .origin = Inset,
-            .size = {separatorX-Inset.x-1, h},
-        };
-        
-        const Rect rightRect = {
-            .origin = {separatorX+2, Inset.y},
-            .size = {b.w()-(separatorX+2)-Inset.x, h},
-        };
+        const int separatorX = _SeparatorX(b);
+        const Rect leftRect = _LeftRect(b);
+        const Rect rightRect = _RightRect(b);
         
         {
             Attr color = attr(colors().error);
@@ -123,7 +81,30 @@ public:
     }
     
 private:
-    static constexpr int _TitleInset = 2;
+    static constexpr int _TitleInsetX = 2;
+    static constexpr Size _Inset = {2,1};
+    
+    static int _SeparatorX(const Rect& bounds) {
+        return bounds.w()/2;
+    }
+    
+    static Rect _LeftRect(const Rect& bounds) {
+        const int w = _SeparatorX(bounds)-_Inset.x-1;
+        const int h = bounds.h()-2*_Inset.y;
+        return {
+            .origin = _Inset,
+            .size = {w, h},
+        };
+    }
+    
+    static Rect _RightRect(const Rect& bounds) {
+        const int w = bounds.w()-(_SeparatorX(bounds)+2)-_Inset.x;
+        const int h = bounds.h()-2*_Inset.y;
+        return {
+            .origin = {_SeparatorX(bounds)+2, _Inset.y},
+            .size = {w, h},
+        };
+    }
     
     const std::vector<std::string>& _hunkLinesGet(const Git::FileConflict::Hunk& hunk, bool left, bool main) {
         switch (hunk.type) {
@@ -188,6 +169,8 @@ private:
     const size_t _hunkIdx = 0;
     
     LabelPtr _title = subviewCreate<Label>();
+    LabelPtr _refNameLeft = subviewCreate<Label>();
+    LabelPtr _refNameRight = subviewCreate<Label>();
     ButtonPtr _chooseLeftButton = subviewCreate<Button>();
     ButtonPtr _chooseRightButton = subviewCreate<Button>();
     ButtonPtr _openInEditorButton = subviewCreate<Button>();
