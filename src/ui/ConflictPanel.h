@@ -40,14 +40,22 @@ public:
         _refNameRight->text(_layout==Layout::LeftOurs ? refNameTheirs : refNameOurs);
         
         _chooseButtonLeft->bordered(true);
+        _chooseButtonLeft->highlightColor(colors().error);
         _chooseButtonLeft->label()->text("Choose");
         _chooseButtonLeft->label()->align(UI::Align::Left);
         _chooseButtonLeft->key()->text("◀");
         
         _chooseButtonRight->bordered(true);
+        _chooseButtonRight->highlightColor(colors().error);
         _chooseButtonRight->label()->text("Choose");
         _chooseButtonRight->label()->align(UI::Align::Left);
         _chooseButtonRight->key()->text("▶");
+        
+        _openInEditorButton->bordered(true);
+        _openInEditorButton->label()->text("Open in Editor");
+        
+        _cancelButton->bordered(true);
+        _cancelButton->label()->text("Cancel");
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -91,15 +99,22 @@ public:
         const int separatorX = _SeparatorX(b);
         const Rect contentRectLeft = _ContentRectLeft(b);
         const Rect contentRectRight = _ContentRectRight(b);
-        
-        {
-            Attr color = attr(colors().error);
-            drawLineVert({separatorX, 1}, b.h()-2);
-        }
+        const int conflictBottomY = _chooseButtonLeft->frame().b();
         
         _contentTextDraw(contentRectLeft, true);
         _contentTextDraw(contentRectRight, false);
         
+        {
+//            Attr color = attr(colors().error);
+            Attr color = attr(colors().conflictTextDim);
+            drawLineVert({separatorX, _Inset.y}, conflictBottomY-_Inset.y);
+        }
+        
+        {
+            Attr color = attr(colors().conflictTextDim);
+            drawLineHoriz({1, conflictBottomY}, b.w()-2);
+        }
+//        
 //        drawRect(contentRectLeft);
 //        drawRect(contentRectRight);
         
@@ -118,16 +133,16 @@ public:
     
 private:
     static constexpr int _TitleInsetX = 2;
-    static constexpr Size _Inset = {2,1};
-    static constexpr int _ContentInsetTop = 1;
-    static constexpr int _ContentInsetBottom = 4;
+    static constexpr Size _Inset = {3,1};
+    static constexpr int _ContentInsetTop = 2;
+    static constexpr int _ContentInsetBottom = 8;
     
     static int _SeparatorX(const Rect& bounds) {
         return bounds.w()/2;
     }
     
     static Rect _ContentRectLeft(const Rect& bounds) {
-        const int w = _SeparatorX(bounds)-_Inset.x-1;
+        const int w = _SeparatorX(bounds)-_Inset.x-2;
         const int h = bounds.h()-2*_Inset.y-_ContentInsetTop-_ContentInsetBottom;
         return {
             .origin = _Inset+Size{0,_ContentInsetTop},
@@ -136,10 +151,10 @@ private:
     }
     
     static Rect _ContentRectRight(const Rect& bounds) {
-        const int w = bounds.w()-(_SeparatorX(bounds)+2)-_Inset.x;
+        const int w = bounds.w()-(_SeparatorX(bounds)+3)-_Inset.x;
         const int h = bounds.h()-2*_Inset.y-_ContentInsetTop-_ContentInsetBottom;
         return {
-            .origin = {_SeparatorX(bounds)+2, _Inset.y+_ContentInsetTop},
+            .origin = {_SeparatorX(bounds)+3, _Inset.y+_ContentInsetTop},
             .size = {w, h},
         };
     }
