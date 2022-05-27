@@ -43,18 +43,20 @@ public:
         _chooseButtonLeft->highlightColor(colors().error);
         _chooseButtonLeft->label()->text("Choose");
         _chooseButtonLeft->label()->align(UI::Align::Left);
-        _chooseButtonLeft->key()->text("◀");
+//        _chooseButtonLeft->key()->text("◀");
         
         _chooseButtonRight->bordered(true);
         _chooseButtonRight->highlightColor(colors().error);
         _chooseButtonRight->label()->text("Choose");
         _chooseButtonRight->label()->align(UI::Align::Left);
-        _chooseButtonRight->key()->text("▶");
+//        _chooseButtonRight->key()->text("▶");
         
         _openInEditorButton->bordered(true);
+        _openInEditorButton->highlightColor(colors().error);
         _openInEditorButton->label()->text("Open in Editor");
         
         _cancelButton->bordered(true);
+        _cancelButton->highlightColor(colors().error);
         _cancelButton->label()->text("Cancel");
     }
     
@@ -86,6 +88,14 @@ public:
             contentRectRight.l() + (contentRectRight.w()-_chooseButtonRight->frame().w())/2,
             contentRectRight.b()+1,
         });
+        
+        _openInEditorButton->sizeToFit(ConstraintNoneSize);
+        _openInEditorButton->origin({b.r()-_openInEditorButton->size().x-2, _chooseButtonRight->frame().b()+1});
+        
+        _cancelButton->sizeToFit(ConstraintNoneSize);
+        _cancelButton->origin({_openInEditorButton->frame().l()-_cancelButton->size().x-1, _openInEditorButton->frame().t()});
+        
+//        _cancelButton->sizeToFit(ConstraintNoneSize);
     }
     
     using View::draw;
@@ -104,11 +114,11 @@ public:
         _contentTextDraw(contentRectLeft, true);
         _contentTextDraw(contentRectRight, false);
         
-        {
-//            Attr color = attr(colors().error);
-            Attr color = attr(colors().conflictTextDim);
-            drawLineVert({separatorX, _Inset.y}, conflictBottomY-_Inset.y);
-        }
+//        {
+////            Attr color = attr(colors().error);
+//            Attr color = attr(colors().conflictTextDim);
+//            drawLineVert({separatorX, _Inset.y}, conflictBottomY-_Inset.y);
+//        }
         
         {
             Attr color = attr(colors().conflictTextDim);
