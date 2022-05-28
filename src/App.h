@@ -1225,7 +1225,7 @@ private:
             .repo = _repo,
             .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
-            .conflictResolve = [&] (const Git::Index& index) { return _gitConflictResolve(index); },
+            .conflictResolve = [&] (const Git::Index& index) { return _gitConflictResolve(gitOp, index); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1368,13 +1368,31 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    bool _gitConflictResolve(const Git::Index& index) {
+    bool _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
         const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
+        
+        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
+        Rev revOurs = op.dst.rev;
+        Rev revTheirs = op.src.rev;
+//        std::string refNameOurs = op.dst.rev.displayName();
+//        std::string refNameTheirs = op.src.rev.displayName();
+        
+        // Determine which rev is on the left
+        for (Rev& rev : _revs) {
+            if (rev == revOurs) {
+                layout = UI::ConflictPanel::Layout::LeftOurs;
+                break;
+            } else if (rev == revTheirs) {
+                layout = UI::ConflictPanel::Layout::RightOurs;
+                break;
+            }
+        }
         
         for (const Git::FileConflict& fc : fileConflicts) {
             for (size_t i=0; i<fc.hunks.size(); i++) {
-                UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-                auto panel = _panelPresent<UI::ConflictPanel>(layout, "Branch1", "Branch2", fc, i);
+                auto panel = _panelPresent<UI::ConflictPanel>(layout,
+                    revOurs.displayName(), revTheirs.displayName(), fc, i);
+                
                 track({});
             }
         }

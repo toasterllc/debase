@@ -9,6 +9,7 @@
 // TODO: make filename title non-bold
 // TODO: truncate the beginning of the filename, not the end
 // TODO: handle indentation -- if the conflicted block is indented a lot, unindent the text
+// TODO: make conflict window fill the window size
 
 // TODO: √ highlight conflict region text
 
@@ -114,11 +115,18 @@ public:
         _contentTextDraw(contentRectLeft, true);
         _contentTextDraw(contentRectRight, false);
         
-//        {
-////            Attr color = attr(colors().error);
+        {
+            Attr color = attr(colors().error);
 //            Attr color = attr(colors().conflictTextDim);
-//            drawLineVert({separatorX, _Inset.y}, conflictBottomY-_Inset.y);
-//        }
+            
+            
+//            constexpr cchar_t Chars = { 0, L"│" };
+//            int len = conflictBottomY-_Inset.y;
+//            mvwvline_set(*this, _Inset.y, separatorX, &Chars, len);
+            
+            
+            drawLineVert({separatorX, _Inset.y}, conflictBottomY-_Inset.y);
+        }
         
         {
             Attr color = attr(colors().conflictTextDim);
