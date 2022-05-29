@@ -65,9 +65,9 @@ public:
             // Printed line = prefix + base + suffix
             const int availBaseWidth = std::max(0, s.x-prefixWidth-suffixWidth);
             // Truncate `base` to `availBaseWidth`
-            const std::string base = UTF8::Truncated(l, availBaseWidth);
+            const std::string base = (_truncate==Truncate::Tail ? UTF8::TruncateTail(l, availBaseWidth) : UTF8::TruncateHead(l, availBaseWidth));
             // Truncate `line` to our frame width
-            const std::string line = UTF8::Truncated(prefix+base+suffix, s.x);
+            const std::string line = UTF8::TruncateTail(prefix+base+suffix, s.x);
             const int lineWidth = (int)UTF8::Len(line);
             
             // Draw line
@@ -104,6 +104,9 @@ public:
     const auto& align() const { return _align; }
     template <typename T> bool align(const T& x) { return _set(_align, x); }
     
+    const auto& truncate() const { return _truncate; }
+    template <typename T> bool truncate(const T& x) { return _set(_truncate, x); }
+    
     const auto& centerSingleLine() const { return _centerSingleLine; }
     template <typename T> bool centerSingleLine(const T& x) { return _set(_centerSingleLine, x); }
     
@@ -128,6 +131,8 @@ private:
     std::string _suffix;
     attr_t _textAttr = 0;
     Align _align = Align::Left;
+    Truncate _truncate = Truncate::Tail;
+    
     bool _centerSingleLine = false;
     bool _wrap = false;
     bool _allowEmptyLines = false;

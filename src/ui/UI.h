@@ -177,6 +177,11 @@ enum class Align {
     Right,
 };
 
+enum class Truncate {
+    Head,
+    Tail,
+};
+
 inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
     const int minX = std::max(a.origin.x, b.origin.x);
     const int maxX = std::min(a.origin.x+a.size.x, b.origin.x+b.size.x);
