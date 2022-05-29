@@ -14,7 +14,7 @@ public:
         Repo repo;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
-        std::function<bool(const Index&)> conflictResolve;
+        std::function<void(const Index&)> conflictResolve;
     };
     
     struct Op {
@@ -51,6 +51,8 @@ public:
         Res dst;
     };
     
+    class ConflictResolveCanceled : public std::exception {};
+    
 private:
     // _Sorted: sorts a set of commits according to the order that they appear via `c`
     static std::vector<Commit> _Sorted(Commit head, const std::set<Commit>& commits) {
@@ -77,8 +79,7 @@ private:
     
     static void _ConflictsHandle(const Ctx& ctx, const Index& index) {
         if (index.conflicts()) {
-            bool cont = ctx.conflictResolve(index);
-            if (!cont) throw std::runtime_error("conflict resolution cancelled");
+            ctx.conflictResolve(index);
         }
     }
     

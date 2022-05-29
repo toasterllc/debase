@@ -33,6 +33,7 @@ struct FileConflict {
         }
     };
     
+    const git_index_entry* entry = nullptr;
     std::filesystem::path path;
     std::vector<Hunk> hunks;
 };
@@ -81,6 +82,7 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
         const std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
         
         FileConflict fc = {
+            .entry = conflict.ours,
             .path = path,
         };
         
@@ -135,6 +137,11 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     }
     
     return fileConflicts;
+}
+
+void ConflictResolve(const FileConflict& conflict, const Index& index, const std::string& content) {
+    int ir = git_index_add_from_buffer(*index, conflict.entry, content.data(), content.size());
+    if (ir) throw Error(ir, "git_index_add_from_buffer failed");
 }
 
 } // namespace Git

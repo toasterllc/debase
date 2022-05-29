@@ -385,7 +385,7 @@ public:
             
             _reload();
             
-            _conflictRun();
+//            _conflictRun();
             
             _moveOffer();
             _licenseCheck();
@@ -1225,7 +1225,7 @@ private:
             .repo = _repo,
             .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
-            .conflictResolve = [&] (const Git::Index& index) { return _gitConflictResolve(gitOp, index); },
+            .conflictResolve = [&] (const Git::Index& index) { _gitConflictResolve(gitOp, index); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1368,7 +1368,7 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    bool _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
+    void _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
         const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
         
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
@@ -1377,7 +1377,7 @@ private:
 //        std::string refNameOurs = op.dst.rev.displayName();
 //        std::string refNameTheirs = op.src.rev.displayName();
         
-        // Determine which rev is on the left
+        // Determine the conflict panel layout (ie which rev is on the left vs right)
         for (Rev& rev : _revs) {
             if (rev == revOurs) {
                 layout = UI::ConflictPanel::Layout::LeftOurs;
@@ -1389,16 +1389,53 @@ private:
         }
         
         for (const Git::FileConflict& fc : fileConflicts) {
+            std::vector<std::string> lines;
+            std::optional<std::string> content;
             for (size_t i=0; i<fc.hunks.size(); i++) {
+                const Git::FileConflict::Hunk& hunk = fc.hunks[i];
+                
+                // If it's a normal hunk (ie not a conflict), just append the lines
+                if (hunk.type == Git::FileConflict::Hunk::Type::Normal) {
+                    lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
+                    continue;
+                }
+                
                 auto panel = _panelPresent<UI::ConflictPanel>(layout,
                     revOurs.displayName(), revTheirs.displayName(), fc, i);
                 
-                track({});
+                std::optional<UI::ConflictPanel::Result> conflictResult;
+                panel->doneAction() = [&] (UI::ConflictPanel::Result r) {
+                    conflictResult = r;
+                };
+                
+                // Wait until the user clicks a button
+                while (!conflictResult) track({}, Once);
+                
+                const auto& linesOurs = hunk.conflict.linesOurs;
+                const auto& linesTheirs = hunk.conflict.linesTheirs;
+                switch (*conflictResult) {
+                case UI::ConflictPanel::Result::ChooseOurs:
+                    lines.insert(lines.end(), linesOurs.begin(), linesOurs.end());
+                    break;
+                case UI::ConflictPanel::Result::ChooseTheirs:
+                    lines.insert(lines.end(), linesTheirs.begin(), linesTheirs.end());
+                    break;
+                case UI::ConflictPanel::Result::OpenInEditor:
+                    throw std::runtime_error("OpenInEditor");
+                    break;
+                case UI::ConflictPanel::Result::Cancel:
+                    throw _GitModify::ConflictResolveCanceled();
+                default:
+                    abort();
+                }
             }
+            
+            if (!content) {
+                content = Toastbox::String::Join(lines, "\n");
+            }
+            
+            Git::ConflictResolve(fc, index, *content);
         }
-        
-        return false;
-        throw std::runtime_error("meowmix");
     }
     
     static License::Context _LicenseContext(const _Path& dir) {

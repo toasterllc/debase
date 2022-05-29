@@ -23,6 +23,13 @@ public:
         RightOurs,
     };
     
+    enum class Result {
+        ChooseOurs,
+        ChooseTheirs,
+        OpenInEditor,
+        Cancel,
+    };
+    
     ConflictPanel(Layout layout, std::string_view refNameOurs, std::string_view refNameTheirs,
     const Git::FileConflict& fc, size_t hunkIdx) :
     _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
@@ -52,22 +59,26 @@ public:
         _chooseButtonLeft->bordered(true);
         _chooseButtonLeft->highlightColor(colors().error);
         _chooseButtonLeft->label()->text("Choose");
-        _chooseButtonLeft->label()->align(UI::Align::Left);
+        _chooseButtonLeft->action( [&] (UI::Button& b) { _done(b); } );
+//        _chooseButtonLeft->label()->align(UI::Align::Left);
 //        _chooseButtonLeft->key()->text("◀");
         
         _chooseButtonRight->bordered(true);
         _chooseButtonRight->highlightColor(colors().error);
         _chooseButtonRight->label()->text("Choose");
-        _chooseButtonRight->label()->align(UI::Align::Left);
+        _chooseButtonRight->action( [&] (UI::Button& b) { _done(b); } );
+//        _chooseButtonRight->label()->align(UI::Align::Left);
 //        _chooseButtonRight->key()->text("▶");
         
         _openInEditorButton->bordered(true);
         _openInEditorButton->highlightColor(colors().error);
         _openInEditorButton->label()->text("Open in Editor");
+        _openInEditorButton->action( [&] (UI::Button& b) { _done(b); } );
         
         _cancelButton->bordered(true);
         _cancelButton->highlightColor(colors().error);
         _cancelButton->label()->text("Cancel");
+        _cancelButton->action( [&] (UI::Button& b) { _done(b); } );
     }
     
     Size sizeIntrinsic(Size constraint) override {
@@ -92,7 +103,6 @@ public:
         View::layout();
         
         const Rect b = bounds();
-        const Point titleOrigin = {_TitleInsetX,0};
         _titleConflict->sizeToFit(ConstraintNoneSize);
         _titleConflict->origin({_TitleInsetX,0});
         _titleFilePath->frame({_titleConflict->frame().tr(), {b.w()-_titleConflict->frame().r()-_TitleInsetX, 1}});
@@ -170,8 +180,15 @@ public:
 //            drawText({2, offY+(int)i}, line.c_str());
 //        }
         
-
     }
+    
+//    auto& refNameOurs() { return (_layout==Layout::LeftOurs ? refNameOurs : refNameTheirs); }
+//    auto& refNameTheirs() { return (_layout==Layout::LeftOurs ? refNameTheirs : refNameOurs); }
+    
+    auto& doneAction() { return _doneAction; }
+    
+//    const auto& doneAction() const { return _doneAction; }
+//    template <typename T> bool doneAction(const T& x) { return _setForce(_doneAction, x); }
     
 private:
     static constexpr int _TitleInsetX = 2;
@@ -233,7 +250,6 @@ private:
     
     void _contentTextDraw(const Rect& rect, bool left) {
         const auto& hunks = _fileConflict.hunks;
-        auto hunkBegin = std::begin(hunks);
         auto hunkEnd = std::end(hunks);
         auto hunkRend = std::rend(hunks);
         
@@ -286,6 +302,22 @@ private:
         }
     }
     
+    void _done(UI::Button& b) {
+        if (&b == &*_chooseButtonLeft) {
+            _doneAction(_layout==Layout::LeftOurs ? Result::ChooseOurs : Result::ChooseTheirs);
+        
+        } else if (&b == &*_chooseButtonRight) {
+            _doneAction(_layout==Layout::LeftOurs ? Result::ChooseTheirs : Result::ChooseOurs);
+        
+        } else if (&b == &*_openInEditorButton) {
+            _doneAction(Result::OpenInEditor);
+        
+        } else if (&b == &*_cancelButton) {
+            _doneAction(Result::Cancel);
+        
+        } else abort(); // UnknownButton
+    }
+    
     const Layout _layout = Layout::LeftOurs;
     const Git::FileConflict& _fileConflict;
     const size_t _hunkIdx = 0;
@@ -298,6 +330,8 @@ private:
     ButtonPtr _chooseButtonRight = subviewCreate<Button>();
     ButtonPtr _openInEditorButton = subviewCreate<Button>();
     ButtonPtr _cancelButton = subviewCreate<Button>();
+    
+    std::function<void(Result)> _doneAction;
 };
 
 using ConflictPanelPtr = std::shared_ptr<ConflictPanel>;
