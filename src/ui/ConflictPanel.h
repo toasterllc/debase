@@ -2,14 +2,14 @@
 #include <string>
 #include "git/Conflict.h"
 
-// TODO: don't center conflict text vertically if there isn't enough content to fill the top.
-//       shift both the left/right up by the same amount, so that their centers are aligned,
-//       and text starts at the top (at least on one side)
-// TODO: draw '---- empty ----' placeholder when conflict region is empty
 // TODO: make filename title non-bold
 // TODO: truncate the beginning of the filename, not the end
 // TODO: handle indentation -- if the conflicted block is indented a lot, unindent the text
 
+// √ TODO: draw '---- empty ----' placeholder when conflict region is empty
+// √ TODO: don't center conflict text vertically if there isn't enough content to fill the top.
+// √       shift both the left/right up by the same amount, so that their centers are aligned,
+// √       and text starts at the top (at least on one side)
 // √ TODO: improve conflict window sizing -- have some padding when large, fill window when small
 // √ TODO: highlight conflict region text
 // √ TODO: make conflict window fill the window size
@@ -241,13 +241,24 @@ private:
             for (auto hunkIter=std::begin(hunks)+_hunkIdx; hunkIter!=hunkEnd && offY<rect.b(); hunkIter++) {
                 const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left);
                 const Attr color = attr(main ? colors().conflictTextMain : colors().conflictTextDim);
-                for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
-                    const std::string& line = *it;
-                    // Draw highlighted-text background
-                    if (main) drawLineHoriz({rect.l()-1, offY}, rect.w()+2, ' ');
-                    drawText({rect.l(), offY}, rect.w(), line.c_str());
+                if (!main || !lines.empty()) {
+                    for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
+                        const std::string& line = *it;
+                        // Draw highlighted-text background
+                        if (main) drawLineHoriz({rect.l()-1, offY}, rect.w()+2, ' ');
+                        drawText({rect.l(), offY}, rect.w(), line.c_str());
+                        offY++;
+                    }
+                
+                } else {
+                    // This is the main conflict region, and it's empty
+                    // Draw placeholder 'empty' text
+                    drawLineHoriz({rect.l(), offY}, rect.w());
+                    constexpr const char Empty[] = " empty ";
+                    drawText({rect.l()+(rect.w()-((int)std::size(Empty)-1))/2, offY}, Empty);
                     offY++;
                 }
+                
                 main = false;
             }
         }
