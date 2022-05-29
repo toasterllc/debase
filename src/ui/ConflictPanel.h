@@ -2,10 +2,10 @@
 #include <string>
 #include "git/Conflict.h"
 
-// TODO: make filename title non-bold
-// TODO: truncate the beginning of the filename, not the end
 // TODO: handle indentation -- if the conflicted block is indented a lot, unindent the text
 
+// √ TODO: make filename title non-bold
+// √ TODO: truncate the beginning of the filename, not the end
 // √ TODO: draw '---- empty ----' placeholder when conflict region is empty
 // √ TODO: don't center conflict text vertically if there isn't enough content to fill the top.
 // √       shift both the left/right up by the same amount, so that their centers are aligned,
