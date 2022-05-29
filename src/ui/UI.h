@@ -178,8 +178,8 @@ enum class Align {
 };
 
 enum class Truncate {
-    Head,
     Tail,
+    Head,
 };
 
 inline constexpr Rect Intersection(const Rect& a, const Rect& b) {
