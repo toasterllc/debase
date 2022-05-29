@@ -193,7 +193,7 @@ private:
         };
     }
     
-    const std::vector<std::string>& _hunkLinesGet(const Git::FileConflict::Hunk& hunk, bool left, bool main) {
+    const std::vector<std::string>& _hunkLinesGet(const Git::FileConflict::Hunk& hunk, bool left) const {
         switch (hunk.type) {
         case Git::FileConflict::Hunk::Type::Normal:
             return hunk.normal.lines;
@@ -209,14 +209,29 @@ private:
         }
     }
     
+    int _maxLinesAboveConflict(bool left) const {
+        const int h = bounds().h(); // No need to return values over our height
+        const auto& hunks = _fileConflict.hunks;
+        auto hunkRend = std::rend(hunks);
+        int count = 0;
+        for (auto hunkIter=std::make_reverse_iterator(std::begin(hunks)+_hunkIdx); hunkIter!=hunkRend && count<h; hunkIter++) {
+            const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left);
+            for (auto it=lines.rbegin(); it!=lines.rend() && count<h; it++) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
     void _contentTextDraw(const Rect& rect, bool left) {
         const auto& hunks = _fileConflict.hunks;
         auto hunkBegin = std::begin(hunks);
         auto hunkEnd = std::end(hunks);
         auto hunkRend = std::rend(hunks);
         
-        auto& mainConflictLines = _hunkLinesGet(hunks[_hunkIdx], left, true);
-        const int mainConflictStartY = rect.t() + std::max(0, (rect.h()-(int)mainConflictLines.size())/2);
+        auto& mainConflictLines = _hunkLinesGet(hunks[_hunkIdx], left);
+        const int maxLinesAboveConflict = std::min(_maxLinesAboveConflict(true), _maxLinesAboveConflict(false));
+        const int mainConflictStartY = rect.t() + std::min(maxLinesAboveConflict, std::max(0, (rect.h()-(int)mainConflictLines.size())/2));
 //        const int mainConflictStartY = Inset.y + std::max(0, (h-(int)mainConflictLines.size())/2);
         
         // Draw main conflict section, and lines beneath it
@@ -224,7 +239,7 @@ private:
             bool main = true;
             int offY = mainConflictStartY;
             for (auto hunkIter=std::begin(hunks)+_hunkIdx; hunkIter!=hunkEnd && offY<rect.b(); hunkIter++) {
-                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, main);
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left);
                 const Attr color = attr(main ? colors().conflictTextMain : colors().conflictTextDim);
                 for (auto it=lines.begin(); it!=lines.end() && offY<rect.b(); it++) {
                     const std::string& line = *it;
@@ -242,7 +257,7 @@ private:
             const Attr color = attr(colors().conflictTextDim);
             int offY = mainConflictStartY-1;
             for (auto hunkIter=std::make_reverse_iterator(std::begin(hunks)+_hunkIdx); hunkIter!=hunkRend && offY>=rect.t(); hunkIter++) {
-                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left, false);
+                const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left);
                 for (auto it=lines.rbegin(); it!=lines.rend() && offY>=rect.t(); it++) {
                     const std::string& line = *it;
                     drawText({rect.l(), offY}, rect.w(), line.c_str());
