@@ -9,9 +9,10 @@
 // TODO: make filename title non-bold
 // TODO: truncate the beginning of the filename, not the end
 // TODO: handle indentation -- if the conflicted block is indented a lot, unindent the text
-// TODO: make conflict window fill the window size
 
-// TODO: √ highlight conflict region text
+// √ TODO: improve conflict window sizing -- have some padding when large, fill window when small
+// √ TODO: highlight conflict region text
+// √ TODO: make conflict window fill the window size
 
 namespace UI {
 
@@ -35,9 +36,11 @@ public:
         _title->text("Conflict: " + fc.path.string());
         
         _refNameLeft->align(Align::Center);
-        _refNameRight->align(Align::Center);
-        
+        _refNameLeft->textAttr(colors().error|WA_BOLD);
         _refNameLeft->text(_layout==Layout::LeftOurs ? refNameOurs : refNameTheirs);
+        
+        _refNameRight->align(Align::Center);
+        _refNameRight->textAttr(colors().error|WA_BOLD);
         _refNameRight->text(_layout==Layout::LeftOurs ? refNameTheirs : refNameOurs);
         
         _chooseButtonLeft->bordered(true);
@@ -62,7 +65,20 @@ public:
     }
     
     Size sizeIntrinsic(Size constraint) override {
-        return {std::min(75,constraint.x), std::min(25,constraint.y)};
+        Size s = constraint;
+        const int paddingX = std::min(10, constraint.x/10);
+        const int paddingY = std::min(6, constraint.y/10);
+        s.x -= paddingX;
+        s.y -= paddingY;
+        
+//        if (s.x >= 75) {
+//            s.x -= 10;
+//        }
+//        if (s.y >= 25) {
+//            s.y -= 5;
+//        }
+        return s;
+//        return {std::min(75,constraint.x), std::min(25,constraint.y)};
     }
     
     using View::layout;

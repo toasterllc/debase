@@ -1456,7 +1456,7 @@ private:
     }
     
     void _layoutPanel(UI::PanelPtr panel) {
-        panel->size(panel->sizeIntrinsic({bounds().w(), ConstraintNone}));
+        panel->size(panel->sizeIntrinsic(bounds().size));
         
         UI::Size ps = panel->size();
         UI::Size rs = size();
