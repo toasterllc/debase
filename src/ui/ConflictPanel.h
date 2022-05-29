@@ -66,8 +66,8 @@ public:
     
     Size sizeIntrinsic(Size constraint) override {
         Size s = constraint;
-        const int paddingX = std::min(10, constraint.x/10);
-        const int paddingY = std::min(6, constraint.y/10);
+        const int paddingX = std::min(10, constraint.x/5);
+        const int paddingY = std::min(6, constraint.y/5);
         s.x -= paddingX;
         s.y -= paddingY;
         
@@ -168,7 +168,7 @@ public:
 private:
     static constexpr int _TitleInsetX = 2;
     static constexpr Size _Inset = {3,1};
-    static constexpr int _ContentInsetTop = 2;
+    static constexpr int _ContentInsetTop = 1;
     static constexpr int _ContentInsetBottom = 8;
     
     static int _SeparatorX(const Rect& bounds) {
