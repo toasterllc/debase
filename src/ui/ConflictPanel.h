@@ -29,11 +29,17 @@ public:
         
         borderColor(colors().error);
         
-        _title->inhibitErase(true); // Title overlaps border, so don't erase
-        _title->textAttr(colors().error|WA_BOLD);
-        _title->prefix(" ");
-        _title->suffix(" ");
-        _title->text("Conflict: " + fc.path.string());
+        _titleConflict->inhibitErase(true); // Title overlaps border, so don't erase
+        _titleConflict->textAttr(colors().error|WA_BOLD);
+        _titleConflict->prefix(" ");
+        _titleConflict->suffix(" ");
+        _titleConflict->text("Conflict:");
+        
+        _titleFilePath->inhibitErase(true); // Title overlaps border, so don't erase
+        _titleFilePath->textAttr(colors().error);
+        _titleFilePath->suffix(" ");
+        _titleFilePath->truncate(Truncate::Head);
+        _titleFilePath->text(fc.path.string());
         
         _refNameLeft->align(Align::Center);
         _refNameLeft->textAttr(colors().error|WA_BOLD);
@@ -87,7 +93,9 @@ public:
         
         const Rect b = bounds();
         const Point titleOrigin = {_TitleInsetX,0};
-        _title->frame({titleOrigin, {b.w()-2*_TitleInsetX, 1}});
+        _titleConflict->sizeToFit(ConstraintNoneSize);
+        _titleConflict->origin({_TitleInsetX,0});
+        _titleFilePath->frame({_titleConflict->frame().tr(), {b.w()-_titleConflict->frame().r()-_TitleInsetX, 1}});
         
         const Rect contentRectLeft = _ContentRectLeft(b);
         const Rect contentRectRight = _ContentRectRight(b);
@@ -120,7 +128,7 @@ public:
         View::draw();
         
         // Always redraw _title because our border may have clobbered it
-        _title->drawNeeded(true);
+        _titleConflict->drawNeeded(true);
         
         const Rect b = bounds();
         const int separatorX = _SeparatorX(b);
@@ -282,7 +290,8 @@ private:
     const Git::FileConflict& _fileConflict;
     const size_t _hunkIdx = 0;
     
-    LabelPtr _title = subviewCreate<Label>();
+    LabelPtr _titleConflict = subviewCreate<Label>();
+    LabelPtr _titleFilePath = subviewCreate<Label>();
     LabelPtr _refNameLeft = subviewCreate<Label>();
     LabelPtr _refNameRight = subviewCreate<Label>();
     ButtonPtr _chooseButtonLeft = subviewCreate<Button>();

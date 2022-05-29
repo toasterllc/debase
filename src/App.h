@@ -1851,7 +1851,7 @@ private:
     void _conflictRun() {
         
         Git::FileConflict fc = {
-            .path = "FDStream.h",
+            .path = "/Some/Really/Long/Path/That/We/Want/To/Truncate/FDStream.h",
             .hunks = {
                 Git::FileConflict::Hunk{
                     .type = Git::FileConflict::Hunk::Type::Normal,
