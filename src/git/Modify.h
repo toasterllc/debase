@@ -646,15 +646,24 @@ private:
     
 public:
     static std::optional<OpResult> Exec(const Ctx& ctx, const Op& op) {
-        switch (op.type) {
-        case Op::Type::None:    return std::nullopt;
-        case Op::Type::Move:    return _MoveCommits(ctx, op);
-        case Op::Type::Copy:    return _CopyCommits(ctx, op);
-        case Op::Type::Delete:  return _DeleteCommits(ctx, op);
-        case Op::Type::Combine: return _CombineCommits(ctx, op);
-        case Op::Type::Edit:    return _EditCommit(ctx, op);
+        try {
+            switch (op.type) {
+            case Op::Type::None:    return std::nullopt;
+            case Op::Type::Move:    return _MoveCommits(ctx, op);
+            case Op::Type::Copy:    return _CopyCommits(ctx, op);
+            case Op::Type::Delete:  return _DeleteCommits(ctx, op);
+            case Op::Type::Combine: return _CombineCommits(ctx, op);
+            case Op::Type::Edit:    return _EditCommit(ctx, op);
+            }
+            abort();
+        
+        } catch (const ConflictResolveCanceled&) {
+            // Conflict resolution was canceled
+            return std::nullopt;
+        
+        } catch (...) {
+            throw;
         }
-        abort();
     }
 
 }; // class Modify
