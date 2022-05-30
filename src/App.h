@@ -1434,7 +1434,7 @@ private:
                 content = Toastbox::String::Join(lines, "\n");
             }
             
-            Git::ConflictResolve(fc, index, *content);
+            Git::ConflictResolve(_repo, index, fc, *content);
         }
     }
     

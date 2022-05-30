@@ -139,9 +139,34 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     return fileConflicts;
 }
 
-void ConflictResolve(const FileConflict& conflict, const Index& index, const std::string& content) {
-    int ir = git_index_add_from_buffer(*index, conflict.entry, content.data(), content.size());
-    if (ir) throw Error(ir, "git_index_add_from_buffer failed");
+void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict, const std::string& content) {
+    git_oid id;
+    int ir = git_blob_create_from_buffer(&id, *repo, content.data(), content.size());
+    if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
+    
+    const git_index_entry* entryPrev = git_index_get_bypath(*index, conflict.entry->path, GIT_INDEX_STAGE_THEIRS);
+    
+    git_index_entry entry = {
+        .mode = entryPrev->mode,
+        .file_size = (uint32_t)content.size(),
+        .id = id,
+        .path = entryPrev->path,
+    };
+//    memcpy(&entry, entryPrev, sizeof(entry));
+//    entry.file_size = content.size();
+//    entry.id = id;
+    
+    ir = git_index_add(*index, &entry);
+    if (ir) throw Error(ir, "git_index_add failed");
+    
+    ir = git_index_conflict_remove(*index, entry.path);
+    if (ir) throw Error(ir, "git_index_conflict_remove failed");
+    
+//    ir = git_index_write(*index);
+//    if (ir) throw Error(ir, "git_index_write failed");
+    
+//    int ir = git_index_add_from_buffer(*index, conflict.entry, content.data(), content.size());
+//    if (ir) throw Error(ir, "git_index_add_from_buffer failed");
 }
 
 } // namespace Git
