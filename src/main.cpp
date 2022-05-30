@@ -278,6 +278,14 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: ConflictPanel: show progress in titlebar
+    
+    #warning TODO: ConflictPanel: make cancel button work
+    
+    #warning TODO: ConflictPanel: make 'Open in Editor' button work
+    
+    #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
+    
     #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
     
     #warning TODO: linux:       run through TestChecklist.txt
@@ -328,6 +336,22 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: ConflictPanel: make filename title non-bold
+//    
+//    #warning TODO: ConflictPanel: truncate the beginning of the filename, not the end
+//    
+//    #warning TODO: ConflictPanel: draw '---- empty ----' placeholder when conflict region is empty
+//    
+//    #warning TODO: ConflictPanel: don't center conflict text vertically if there isn't enough content to fill the top.
+//    #warning       ConflictPanel: shift both the left/right up by the same amount, so that their centers are aligned,
+//    #warning       ConflictPanel: and text starts at the top (at least on one side)
+//    
+//    #warning TODO: ConflictPanel: improve conflict window sizing -- have some padding when large, fill window when small
+//    
+//    #warning TODO: ConflictPanel: highlight conflict region text
+//    
+//    #warning TODO: ConflictPanel: make conflict window fill the window size
 //
 //    #warning TODO: 5 recent branches behavior: when composing the rev list, if the current reflog entry has a ref, but it has the same commit as a previous reflog entry that doesn't have a ref, replace the previous entry
 //    #warning TODO:                             similarly, if the current reflog entry doesn't have a ref, and matches a previous reflog entry that does have a ref, ignore the current entry
