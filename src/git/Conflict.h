@@ -98,7 +98,7 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
         for (const std::string& line : lines) {
             switch (parseState) {
             case _ParseState::Normal:
-                if (String::StartsWith(Repo::MergeMarkerOurs, line)) {
+                if (String::StartsWith(Repo::MergeMarkerStart, line)) {
                     if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
                     parseState = _ParseState::ConflictOurs;
                     hunk.type = FileConflict::Hunk::Type::Conflict;
@@ -109,7 +109,6 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
             
             case _ParseState::ConflictOurs:
                 if (String::StartsWith(Repo::MergeMarkerSeparator, line)) {
-                    if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
                     parseState = _ParseState::ConflictTheirs;
                     hunk.type = FileConflict::Hunk::Type::Conflict;
                 } else {
@@ -118,7 +117,7 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
                 break;
             
             case _ParseState::ConflictTheirs:
-                if (String::StartsWith(Repo::MergeMarkerTheirs, line)) {
+                if (String::StartsWith(Repo::MergeMarkerEnd, line)) {
                     if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
                     parseState = _ParseState::Normal;
                     hunk.type = FileConflict::Hunk::Type::Normal;

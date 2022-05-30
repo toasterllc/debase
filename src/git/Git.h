@@ -994,9 +994,9 @@ public:
         return x;
     }
     
-    static constexpr const char MergeMarkerOurs[]       = "<<<<<<< " _DebaseProductId;
-    static constexpr const char MergeMarkerTheirs[]     = ">>>>>>> " _DebaseProductId;
+    static constexpr const char MergeMarkerStart[]      = "<<<<<<< " _DebaseProductId;
     static constexpr const char MergeMarkerSeparator[]  = "=======";
+    static constexpr const char MergeMarkerEnd[]        = ">>>>>>> " _DebaseProductId;
     
     MergeFileResult merge(
         const git_index_entry* ancestor,
