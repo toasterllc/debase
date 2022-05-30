@@ -33,7 +33,6 @@ struct FileConflict {
         }
     };
     
-    const git_index_entry* entry = nullptr;
     std::filesystem::path path;
     std::vector<Hunk> hunks;
 };
@@ -76,62 +75,91 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     
     std::vector<FileConflict> fileConflicts;
     for (auto const& [path, conflict] : conflicts) {
-        #warning TODO: we have to handle cases where conflict.ours/conflict.theirs are null
-        const Git::MergeFileResult mergeResult = repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
-        const std::string content(mergeResult->ptr, mergeResult->len);
-        const std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
-        
         FileConflict fc = {
-            .entry = conflict.ours,
             .path = path,
         };
         
-        FileConflict::Hunk hunk;
-        
-        enum class _ParseState {
-            Normal,
-            ConflictOurs,
-            ConflictTheirs,
-        };
-        
-        _ParseState parseState = _ParseState::Normal;
-        for (const std::string& line : lines) {
-            switch (parseState) {
-            case _ParseState::Normal:
-                if (String::StartsWith(Repo::MergeMarkerStart, line)) {
-                    if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
-                    parseState = _ParseState::ConflictOurs;
-                    hunk.type = FileConflict::Hunk::Type::Conflict;
-                } else {
-                    hunk.normal.lines.push_back(line);
-                }
-                break;
+        if (conflict.ours && conflict.theirs) {
+            #warning TODO: we have to handle cases where conflict.ours/conflict.theirs are null
+            const Git::MergeFileResult mergeResult = repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
+            const std::string content(mergeResult->ptr, mergeResult->len);
+            const std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
             
-            case _ParseState::ConflictOurs:
-                if (String::StartsWith(Repo::MergeMarkerSeparator, line)) {
-                    parseState = _ParseState::ConflictTheirs;
-                    hunk.type = FileConflict::Hunk::Type::Conflict;
-                } else {
-                    hunk.conflict.linesOurs.push_back(line);
-                }
-                break;
+            enum class _ParseState {
+                Normal,
+                ConflictOurs,
+                ConflictTheirs,
+            };
             
-            case _ParseState::ConflictTheirs:
-                if (String::StartsWith(Repo::MergeMarkerEnd, line)) {
-                    if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
-                    parseState = _ParseState::Normal;
-                    hunk.type = FileConflict::Hunk::Type::Normal;
-                } else {
-                    hunk.conflict.linesTheirs.push_back(line);
+            FileConflict::Hunk hunk;
+            _ParseState parseState = _ParseState::Normal;
+            for (const std::string& line : lines) {
+                switch (parseState) {
+                case _ParseState::Normal:
+                    if (String::StartsWith(Repo::MergeMarkerStart, line)) {
+                        if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
+                        parseState = _ParseState::ConflictOurs;
+                        hunk.type = FileConflict::Hunk::Type::Conflict;
+                    } else {
+                        hunk.normal.lines.push_back(line);
+                    }
+                    break;
+                
+                case _ParseState::ConflictOurs:
+                    if (String::StartsWith(Repo::MergeMarkerSeparator, line)) {
+                        parseState = _ParseState::ConflictTheirs;
+                        hunk.type = FileConflict::Hunk::Type::Conflict;
+                    } else {
+                        hunk.conflict.linesOurs.push_back(line);
+                    }
+                    break;
+                
+                case _ParseState::ConflictTheirs:
+                    if (String::StartsWith(Repo::MergeMarkerEnd, line)) {
+                        if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
+                        parseState = _ParseState::Normal;
+                        hunk.type = FileConflict::Hunk::Type::Normal;
+                    } else {
+                        hunk.conflict.linesTheirs.push_back(line);
+                    }
+                    break;
+                
+                default:
+                    abort(); // Invalid state
                 }
-                break;
-            
-            default:
-                abort(); // Invalid state
             }
+            
+            if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
+        
+        } else if ((conflict.ours && !conflict.theirs) || (!conflict.ours && conflict.theirs)) {
+            std::vector<std::string> linesOurs;
+            std::vector<std::string> linesTheirs;
+            
+            if (conflict.ours) {
+                Blob blob = repo.blobLookup(conflict.ours->id);
+                std::string content((const char*)blob.data(), blob.size());
+                linesOurs = Toastbox::String::Split(content, "\n");
+            }
+            
+            if (conflict.theirs) {
+                Blob blob = repo.blobLookup(conflict.theirs->id);
+                std::string content((const char*)blob.data(), blob.size());
+                linesTheirs = Toastbox::String::Split(content, "\n");
+            }
+            
+            fc.hunks.push_back({
+                .type = FileConflict::Hunk::Type::Conflict,
+                .conflict = {
+                    .linesOurs = linesOurs,
+                    .linesTheirs = linesTheirs,
+                },
+            });
+        
+        } else {
+            // Is this possible? Ie, conflict.ours==conflict.theirs==null but we still have a conflict?
+            abort();
         }
         
-        if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
         fileConflicts.push_back(std::move(fc));
     }
     
@@ -143,7 +171,8 @@ void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& c
     int ir = git_blob_create_from_buffer(&id, *repo, content.data(), content.size());
     if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
     
-    const git_index_entry* entryPrev = git_index_get_bypath(*index, conflict.entry->path, GIT_INDEX_STAGE_THEIRS);
+    #warning TODO: entryPrev might be null, look at _OURS too?
+    const git_index_entry* entryPrev = git_index_get_bypath(*index, conflict.path.c_str(), GIT_INDEX_STAGE_THEIRS);
     
     git_index_entry entry = {
         .mode = entryPrev->mode,

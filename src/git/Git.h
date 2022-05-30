@@ -181,6 +181,12 @@ struct Index : RefCounted<git_index*, git_index_free> {
     }
 };
 
+struct Blob : RefCounted<git_blob*, git_blob_free> {
+    using RefCounted::RefCounted;
+    const void* data() const { return git_blob_rawcontent(*get()); }
+    size_t size() const { return git_blob_rawsize(*get()); }
+};
+
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
     using RefCounted::RefCounted;
     
@@ -928,8 +934,18 @@ public:
         for (size_t i=0;; i++) {
             const git_status_entry* e = s[i];
             if (!e) break;
-            if (e->status==GIT_STATUS_WT_MODIFIED ||    // Tracked filed, not added (red in `git status`)
-                e->status==GIT_STATUS_INDEX_MODIFIED) { // Tracked filed, added but not committed (green in `git status`)
+            
+            constexpr int Dirty =
+                GIT_STATUS_INDEX_MODIFIED   |
+                GIT_STATUS_INDEX_DELETED    |
+                GIT_STATUS_INDEX_RENAMED    |
+                GIT_STATUS_INDEX_TYPECHANGE |
+                GIT_STATUS_WT_MODIFIED      |
+                GIT_STATUS_WT_DELETED       |
+                GIT_STATUS_WT_RENAMED       |
+                GIT_STATUS_WT_TYPECHANGE    ;
+            
+            if (Dirty & e->status) {
                 return true;
             }
         }
@@ -1015,6 +1031,13 @@ public:
         git_merge_file_result x;
         int ir = git_merge_file_from_index(&x, *get(), ancestor, ours, theirs, &opts);
         if (ir) throw Error(ir, "git_merge_file_from_index failed");
+        return x;
+    }
+    
+    Blob blobLookup(const Id& id) const {
+        git_blob* x = nullptr;
+        int ir = git_blob_lookup(&x, *get(), &id);
+        if (ir) throw Error(ir, "git_blob_lookup failed");
         return x;
     }
 };
