@@ -288,14 +288,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
     
-    #warning TODO: linux:       run through TestChecklist.txt
-    #warning TODO: macos-x86:   run through TestChecklist.txt
-    #warning TODO: macos-arm64: run through TestChecklist.txt
-    
-//  Future:
-    
-    #warning TODO: add scrolling
-    
     #warning TODO: add branch copying; action menu? drag branch name? both?
     #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
     #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
@@ -310,6 +302,14 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
     
     #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+    
+    #warning TODO: linux:       run through TestChecklist.txt
+    #warning TODO: macos-x86:   run through TestChecklist.txt
+    #warning TODO: macos-arm64: run through TestChecklist.txt
+    
+//  Future:
+    
+    #warning TODO: add scrolling
     
     #warning TODO: license text field: option-left/option-right closes window
     
