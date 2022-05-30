@@ -1422,6 +1422,7 @@ private:
                     break;
                 case UI::ConflictPanel::Result::OpenInEditor:
                     throw std::runtime_error("OpenInEditor");
+                    // TODO: if resulting text is empty, and (linesOurs.empty() || linesTheirs.empty()), treat it as a deleted file, not an empty file
                     break;
                 case UI::ConflictPanel::Result::Cancel:
                     throw _GitModify::ConflictResolveCanceled();
@@ -1430,7 +1431,7 @@ private:
                 }
             }
             
-            if (!content) {
+            if (!content && !lines.empty()) {
                 content = Toastbox::String::Join(lines, "\n");
             }
             

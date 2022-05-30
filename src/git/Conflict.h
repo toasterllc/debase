@@ -80,7 +80,6 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
         };
         
         if (conflict.ours && conflict.theirs) {
-            #warning TODO: we have to handle cases where conflict.ours/conflict.theirs are null
             const Git::MergeFileResult mergeResult = repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
             const std::string content(mergeResult->ptr, mergeResult->len);
             const std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
