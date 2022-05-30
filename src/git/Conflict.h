@@ -166,28 +166,37 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     return fileConflicts;
 }
 
-void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict, const std::string& content) {
-    git_oid id;
-    int ir = git_blob_create_from_buffer(&id, *repo, content.data(), content.size());
-    if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
+void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
+const std::optional<std::string>& content) {
     
-    #warning TODO: entryPrev might be null, look at _OURS too?
-    const git_index_entry* entryPrev = git_index_get_bypath(*index, conflict.path.c_str(), GIT_INDEX_STAGE_THEIRS);
+    const char* path = conflict.path.c_str();
+    if (content) {
+        git_oid id;
+        int ir = git_blob_create_from_buffer(&id, *repo, content->data(), content->size());
+        if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
+        
+        const git_index_entry* entryPrev = git_index_get_bypath(*index, path, GIT_INDEX_STAGE_THEIRS);
+        if (!entryPrev) {
+            entryPrev = git_index_get_bypath(*index, path, GIT_INDEX_STAGE_OURS);
+        }
+        assert(entryPrev);
+        
+        const git_index_entry entry = {
+            .mode = entryPrev->mode,
+            .file_size = (uint32_t)content->size(),
+            .id = id,
+            .path = path,
+        };
+        
+        ir = git_index_add(*index, &entry);
+        if (ir) throw Error(ir, "git_index_add failed");
     
-    git_index_entry entry = {
-        .mode = entryPrev->mode,
-        .file_size = (uint32_t)content.size(),
-        .id = id,
-        .path = entryPrev->path,
-    };
-//    memcpy(&entry, entryPrev, sizeof(entry));
-//    entry.file_size = content.size();
-//    entry.id = id;
+    } else {
+        int ir = git_index_remove(*index, path, GIT_INDEX_STAGE_ANY);
+        if (ir) throw Error(ir, "git_index_remove failed");
+    }
     
-    ir = git_index_add(*index, &entry);
-    if (ir) throw Error(ir, "git_index_add failed");
-    
-    ir = git_index_conflict_remove(*index, entry.path);
+    int ir = git_index_conflict_remove(*index, path);
     if (ir) throw Error(ir, "git_index_conflict_remove failed");
     
 //    ir = git_index_write(*index);
