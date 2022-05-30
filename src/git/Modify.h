@@ -14,7 +14,7 @@ public:
         Repo repo;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
-        std::function<void(const Index&)> conflictResolve;
+        std::function<bool(const Index&)> conflictResolve;
     };
     
     struct Op {
@@ -51,8 +51,6 @@ public:
         Res dst;
     };
     
-    class ConflictResolveCanceled : public std::exception {};
-    
 private:
     // _Sorted: sorts a set of commits according to the order that they appear via `c`
     static std::vector<Commit> _Sorted(Commit head, const std::set<Commit>& commits) {
@@ -77,21 +75,25 @@ private:
         return *rem.begin();
     }
     
-    static void _ConflictsHandle(const Ctx& ctx, const Index& index) {
+    static bool _ConflictsHandle(const Ctx& ctx, const Index& index) {
         if (index.conflicts()) {
-            ctx.conflictResolve(index);
+            bool ok = ctx.conflictResolve(index);
+            if (!ok) return false;
         }
+        return true;
     }
     
-    static Commit _CommitParentSet(const Ctx& ctx, const Commit& commit, const Commit& parent) {
+    static std::optional<Commit> _CommitParentSet(const Ctx& ctx, const Commit& commit, const Commit& parent) {
         Index index = ctx.repo.commitParentSet(commit, parent);
-        _ConflictsHandle(ctx, index);
+        const bool ok = _ConflictsHandle(ctx, index);
+        if (!ok) return std::nullopt;
         return ctx.repo.commitParentSetFinish(commit, parent, index);
     }
     
-    static Commit _CommitIntegrate(const Ctx& ctx, const Commit& dst, const Commit& src) {
+    static std::optional<Commit> _CommitIntegrate(const Ctx& ctx, const Commit& dst, const Commit& src) {
         Index index = ctx.repo.commitIntegrate(dst, src);
-        _ConflictsHandle(ctx, index);
+        const bool ok = _ConflictsHandle(ctx, index);
+        if (ok) return std::nullopt;
         return ctx.repo.commitIntegrateFinish(dst, src, index);
     }
     
@@ -100,7 +102,7 @@ private:
         std::set<Commit> added;
     };
     
-    static _AddRemoveResult _AddRemoveCommits(
+    static std::optional<_AddRemoveResult> _AddRemoveCommits(
         const Ctx& ctx,
         const Commit& dst,
         const std::set<Commit>& add,
@@ -161,14 +163,16 @@ private:
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
             // TODO:MERGE
-            head = _CommitParentSet(ctx, commit.commit, head);
+            const std::optional<Commit> headOpt = _CommitParentSet(ctx, commit.commit, head);
+            if (!headOpt) return std::nullopt;
+            head = *headOpt;
             
             if (commit.added) {
                 added.insert(head);
             }
         }
         
-        return {
+        return _AddRemoveResult{
             .commit = head,
             .added = added,
         };
@@ -231,7 +235,7 @@ private:
             assert(op.src.rev.commit == op.dst.rev.commit);
             
             // Add and remove commits
-            _AddRemoveResult srcDstResult = _AddRemoveCommits(
+            std::optional<_AddRemoveResult> srcDstResult = _AddRemoveCommits(
                 ctx,
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
@@ -239,9 +243,10 @@ private:
                 op.dst.position,    // addPosition: Commit
                 op.src.commits      // remove:      std::set<Commit>
             );
+            if (!srcDstResult) return std::nullopt;
             
             // Replace the source branch/tag
-            ctx.refReplace(op.src.rev.ref, srcDstResult.commit);
+            ctx.refReplace(op.src.rev.ref, srcDstResult->commit);
             // srcRev/dstRev: we're not using the result from revReplace() as the OpResult src/dst revs,
             // and instead use repo.revReload() to get the new revs. This is to handle the case where
             // we're moving commits between eg master and master~4. In this case, the revs are different
@@ -254,12 +259,12 @@ private:
             return OpResult{
                 .src = {
                     .rev = srcRev,
-                    .selection = srcDstResult.added,
+                    .selection = srcDstResult->added,
                     .selectionPrev = op.src.commits,
                 },
                 .dst = {
                     .rev = dstRev,
-                    .selection = srcDstResult.added,
+                    .selection = srcDstResult->added,
                     .selectionPrev = op.src.commits,
                 },
             };
@@ -267,7 +272,7 @@ private:
         // Move commits between different refs (branches/tags)
         } else {
             // Remove commits from `op.src`
-            _AddRemoveResult srcResult = _AddRemoveCommits(
+            std::optional<_AddRemoveResult> srcResult = _AddRemoveCommits(
                 ctx,
                 op.src.rev.commit,  // dst:         Commit
                 {},                 // add:         std::set<Commit>
@@ -275,9 +280,10 @@ private:
                 nullptr,            // addPosition: Commit
                 op.src.commits      // remove:      std::set<Commit>
             );
+            if (!srcResult) return std::nullopt;
             
             // Add commits to `op.dst`
-            _AddRemoveResult dstResult = _AddRemoveCommits(
+            std::optional<_AddRemoveResult> dstResult = _AddRemoveCommits(
                 ctx,
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
@@ -285,12 +291,13 @@ private:
                 op.dst.position,    // addPosition: Commit
                 {}                  // remove:      std::set<Commit>
             );
+            if (!dstResult) return std::nullopt;
             
             // Replace the source and destination branches/tags
             T_Rev srcRev = op.src.rev;
             T_Rev dstRev = op.dst.rev;
-            (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
-            (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+            (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult->commit);
+            (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult->commit);
             return OpResult{
                 .src = {
                     .rev = srcRev,
@@ -299,7 +306,7 @@ private:
                 },
                 .dst = {
                     .rev = dstRev,
-                    .selection = dstResult.added,
+                    .selection = dstResult->added,
                     .selectionPrev = {},
                 },
             };
@@ -310,7 +317,7 @@ private:
         if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
         
         // Add commits to `op.dst`
-        _AddRemoveResult dstResult = _AddRemoveCommits(
+        std::optional<_AddRemoveResult> dstResult = _AddRemoveCommits(
             ctx,
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
@@ -318,17 +325,18 @@ private:
             op.dst.position,    // addPosition: Commit
             {}                  // remove:      std::set<Commit>
         );
+        if (!dstResult) return std::nullopt;
         
         // Replace the destination branch/tag
         T_Rev dstRev = op.dst.rev;
-        (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult.commit);
+        (Rev&)dstRev = ctx.refReplace(dstRev.ref, dstResult->commit);
         return OpResult{
             .src = {
                 .rev = op.src.rev,
             },
             .dst = {
                 .rev = dstRev,
-                .selection = dstResult.added,
+                .selection = dstResult->added,
                 .selectionPrev = {},
             },
         };
@@ -339,7 +347,7 @@ private:
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Remove commits from `op.src`
-        _AddRemoveResult srcResult = _AddRemoveCommits(
+        std::optional<_AddRemoveResult> srcResult = _AddRemoveCommits(
             ctx,
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
@@ -347,14 +355,15 @@ private:
             nullptr,            // addPosition: Commit
             op.src.commits      // remove:      std::set<Commit>
         );
+        if (!srcResult) return std::nullopt;
         
-        if (!srcResult.commit) {
+        if (!srcResult->commit) {
             throw RuntimeError("can't delete last commit");
         }
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult->commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
@@ -387,7 +396,9 @@ private:
         
         // Combine `head` with all the commits in `integrate`
         for (const Commit& commit : integrate) {
-            head = _CommitIntegrate(ctx, head, commit);
+            const std::optional<Commit> headOpt = _CommitIntegrate(ctx, head, commit);
+            if (!headOpt) return std::nullopt;
+            head = *headOpt;
         }
         
         // Remember the final commit containing all the integrated commits
@@ -396,7 +407,9 @@ private:
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
             // TODO:MERGE
-            head = _CommitParentSet(ctx, commit, head);
+            const std::optional<Commit> headOpt = _CommitParentSet(ctx, commit, head);
+            if (!headOpt) return std::nullopt;
+            head = *headOpt;
         }
         
         // Replace the source branch/tag
@@ -623,7 +636,7 @@ private:
         
         // Rewrite the rev
         // Add and remove commits
-        _AddRemoveResult srcResult = _AddRemoveCommits(
+        std::optional<_AddRemoveResult> srcResult = _AddRemoveCommits(
             ctx,
             op.src.rev.commit,  // dst:         Commit
             {newCommit},        // add:         std::set<Commit>
@@ -631,14 +644,15 @@ private:
             origCommit,         // addPosition: Commit
             {origCommit}        // remove:      std::set<Commit>
         );
+        if (!srcResult) return std::nullopt;
         
         // Replace the source branch/tag
         T_Rev srcRev = op.src.rev;
-        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult.commit);
+        (Rev&)srcRev = ctx.refReplace(srcRev.ref, srcResult->commit);
         return OpResult{
             .src = {
                 .rev = srcRev,
-                .selection = srcResult.added,
+                .selection = srcResult->added,
                 .selectionPrev = op.src.commits,
             },
         };

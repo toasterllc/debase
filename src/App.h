@@ -428,6 +428,9 @@ public:
                     break;
                 }
             
+//            } catch (const _GitModify::ConflictResolveCanceled&) {
+//                // Do nothing
+            
             } catch (const std::exception& e) {
                 errorMsg = e.what();
             }
@@ -1225,10 +1228,10 @@ private:
             .repo = _repo,
             .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
-            .conflictResolve = [&] (const Git::Index& index) { _gitConflictResolve(gitOp, index); },
+            .conflictResolve = [&] (const Git::Index& index) { return _gitConflictResolve(gitOp, index); },
         };
         
-        auto opResult = _GitModify::Exec(ctx, gitOp);
+        std::optional<_GitModify::OpResult> opResult = _GitModify::Exec(ctx, gitOp);
         if (!opResult) return;
         
         Rev srcRevPrev = gitOp.src.rev;
@@ -1368,7 +1371,7 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    void _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
+    bool _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
         const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
         
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
@@ -1425,7 +1428,8 @@ private:
                     // TODO: if resulting text is empty, and (linesOurs.empty() || linesTheirs.empty()), treat it as a deleted file, not an empty file
                     break;
                 case UI::ConflictPanel::Result::Cancel:
-                    throw _GitModify::ConflictResolveCanceled();
+                    return false;
+//                    throw _GitModify::ConflictResolveCanceled();
                 default:
                     abort();
                 }
@@ -1437,6 +1441,8 @@ private:
             
             Git::ConflictResolve(_repo, index, fc, content);
         }
+        
+        return true;
     }
     
     static License::Context _LicenseContext(const _Path& dir) {
