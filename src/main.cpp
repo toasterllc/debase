@@ -278,11 +278,11 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: ConflictPanel: fix text overflow: yosys repo: copy 55eed8d from gatecat/timing-derive-fix to master
-    
     #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
     
     #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
+    #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
+    #warning TODO:   tabs with spaces)
     
     #warning TODO: add branch copying; action menu? drag branch name? both?
     #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
@@ -332,6 +332,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: ConflictPanel: fix text overflow: yosys repo: copy 55eed8d from gatecat/timing-derive-fix to master
+//
 //    #warning TODO: ConflictPanel: make escape key work to cancel
 //
 //    #warning TODO: ConflictPanel: show progress in titlebar

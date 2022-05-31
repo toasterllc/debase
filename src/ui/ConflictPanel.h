@@ -248,6 +248,110 @@ private:
         return count;
     }
     
+    // _ContentTextFilter(): filters non-printable ascii characters, and replaces tabs with spaces
+    // so we can easily limit the horizontal width of the printed text
+    static std::string _ContentTextFilter(size_t len, std::string_view str) {
+        constexpr size_t TabSize = 8;
+        
+        std::string buf;
+        buf.reserve(len); // Guesstimated size; will be larger if we have multi-byte UTF8 codepoints
+        
+        size_t i = 0;
+        for (auto it=str.begin(); it!=str.end() && i<len;) {
+            auto itNext = UTF8::Next(it, str.end());
+            
+            if (isascii(*it)) {
+                // Handle printable ascii chars
+                if (isprint(*it)) {
+                    buf += *it;
+                    i++;
+                
+                // Handle tab characters
+                // Replace tabs with spaces, where the current column (i) determines the
+                // number of spaces (emulating standard tab behavior)
+                } else if (*it == '\t') {
+                    const size_t spaceCount = TabSize - (i % TabSize);
+                    // Limit the number of spaces so that we don't exceed `len` characters
+                    const size_t spaceCountLimited = std::min(len-i, spaceCount);
+                    buf += std::string(spaceCountLimited, ' ');
+                    i += spaceCountLimited;
+                }
+            
+            // Handle non-ascii UTF8 codepoints
+            } else {
+                buf.insert(buf.end(), it, itNext);
+                i++;
+            }
+            
+            it = itNext;
+        }
+        
+        return buf;
+    }
+    
+    void _contentTextDraw(const Point& origin, int width, std::string_view str) {
+        const std::string strFiltered = _ContentTextFilter((size_t)width, str);
+        drawText(origin, strFiltered.c_str());
+        
+//        std::vector<uint8_t> buf;
+//        buf.reserve(width);
+//        
+//        size_t i = 0;
+//        for (auto it=str.begin(); it!=str.end() && i<width;) {
+//            auto itNext = UTF8::Next(it);
+//            
+//            if (isascii(*it)) {
+//                if (isprint(*it)) {
+//                    buf.push_back(*it);
+//                    i++;
+//                
+//                // Specially handle tab characters
+//                } else if (*it == '\t') {
+//                    
+//                }
+//            } else {
+//                buf.insert(buf.end(), it, itNext);
+//                i++;
+//            }
+//            
+//            it = itNext;
+//        }
+//        
+//        auto it = str.begin();
+//        auto itPrev = str.begin();
+//        size_t i = 0;
+//        while (it!=str.end() && i<width) {
+//            if (isascii(*it)) {
+//                if (isprint(*it)) {
+//                    buf.push_back(*it);
+//                    i++;
+//                }
+//            } else {
+//                buf.insert(buf.end(), itPrev, it);
+//                i++;
+//            }
+//            
+//            itPrev = it;
+//            it = UTF8::Next(it);
+//        }
+//        
+//        for (; it!=str.end() && ; it=UTF8::Next(it)) {
+//            if (isascii(*it)) {
+//                if (isprint(*it)) {
+//                    buf.push_back(*it);
+//                }
+//            } else {
+//                buf.insert(buf.end(), itPrev, it);
+//            }
+//            itPrev = it;
+//        }
+//        
+//        for (uint8_t ch : str) {
+////            extern NCURSES_EXPORT(int) mvadd_wch (int, int, const cchar_t *);	/* generated:WIDEC */
+////            mvwaddch
+//        }
+    }
+    
     void _contentTextDraw(const Rect& rect, bool left) {
         const auto& hunks = _fileConflict.hunks;
         auto hunkEnd = std::end(hunks);
@@ -270,7 +374,7 @@ private:
                         const std::string& line = *it;
                         // Draw highlighted-text background
                         if (main) drawLineHoriz({rect.l()-1, offY}, rect.w()+2, ' ');
-                        drawText({rect.l(), offY}, rect.w(), line.c_str());
+                        _contentTextDraw({rect.l(), offY}, rect.w(), line.c_str());
                         offY++;
                     }
                 
@@ -312,7 +416,7 @@ private:
                 const std::vector<std::string>& lines = _hunkLinesGet(*hunkIter, left);
                 for (auto it=lines.rbegin(); it!=lines.rend() && offY>=rect.t(); it++) {
                     const std::string& line = *it;
-                    drawText({rect.l(), offY}, rect.w(), line.c_str());
+                    _contentTextDraw({rect.l(), offY}, rect.w(), line.c_str());
                     offY--;
                 }
             }

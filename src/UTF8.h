@@ -61,11 +61,11 @@ inline T_Iter Prev(T_Iter it, T_Iter end) {
 
 inline std::string TruncateHead(std::string_view str, size_t len) {
     if (!len) return {};
-    // If the string _byte_ length is already less than `len` runes, then it's already truncated
+    // If the string _byte_ length is already less than `len` codepoints, then it's already truncated
     if (str.size() <= len) return std::string(str);
     
     const size_t strLen = Len(str);
-    // If the string _rune_ length is already less than `len` runes, then it's already truncated
+    // If the string _codepoint_ length is already less than `len` codepoints, then it's already truncated
     if (strLen <= len) return std::string(str);
     
     std::string r;
@@ -78,7 +78,7 @@ inline std::string TruncateHead(std::string_view str, size_t len) {
 
 inline std::string TruncateTail(std::string_view str, size_t len) {
     if (!len) return {};
-    // If the string _byte_ length is already less than `len` runes, then it's already truncated
+    // If the string _byte_ length is already less than `len` codepoints, then it's already truncated
     if (str.size() <= len) return std::string(str);
     
     std::string r;
