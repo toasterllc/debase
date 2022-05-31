@@ -52,6 +52,16 @@ struct FileConflict {
                 hunks[0].type==Hunk::Type::Conflict &&
                 hunks[0].conflict.linesTheirs.empty();
     }
+    
+    size_t conflictCount() const {
+        size_t x = 0;
+        for (const Hunk& hunk : hunks) {
+            if (hunk.type == Hunk::Type::Conflict) {
+                x++;
+            }
+        }
+        return x;
+    }
 };
 
 struct ConflictMarkers {

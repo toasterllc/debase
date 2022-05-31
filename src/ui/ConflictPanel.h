@@ -18,17 +18,19 @@ public:
         Cancel,
     };
     
-    ConflictPanel(Layout layout, std::string_view refNameOurs, std::string_view refNameTheirs,
-    const Git::FileConflict& fc, size_t hunkIdx) :
-    _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
+    ConflictPanel(
+        Layout layout, std::string_view title,
+        std::string_view refNameOurs, std::string_view refNameTheirs,
+        const Git::FileConflict& fc, size_t hunkIdx) :
+        _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
         
         borderColor(colors().error);
         
-        _titleConflict->inhibitErase(true); // Title overlaps border, so don't erase
-        _titleConflict->textAttr(colors().error|WA_BOLD);
-        _titleConflict->prefix(" ");
-        _titleConflict->suffix(" ");
-        _titleConflict->text("Conflict:");
+        _title->inhibitErase(true); // Title overlaps border, so don't erase
+        _title->textAttr(colors().error|WA_BOLD);
+        _title->prefix(" ");
+        _title->suffix(": ");
+        _title->text(title);
         
         _titleFilePath->inhibitErase(true); // Title overlaps border, so don't erase
         _titleFilePath->textAttr(colors().error);
@@ -91,9 +93,9 @@ public:
         View::layout();
         
         const Rect b = bounds();
-        _titleConflict->sizeToFit(ConstraintNoneSize);
-        _titleConflict->origin({_TitleInsetX,0});
-        _titleFilePath->frame({_titleConflict->frame().tr(), {b.w()-_titleConflict->frame().r()-_TitleInsetX, 1}});
+        _title->sizeToFit(ConstraintNoneSize);
+        _title->origin({_TitleInsetX,0});
+        _titleFilePath->frame({_title->frame().tr(), {b.w()-_title->frame().r()-_TitleInsetX, 1}});
         
         const Rect contentRectLeft = _ContentRectLeft(b);
         const Rect contentRectRight = _ContentRectRight(b);
@@ -126,7 +128,7 @@ public:
         View::draw();
         
         // Always redraw _title because our border may have clobbered it
-        _titleConflict->drawNeeded(true);
+        _title->drawNeeded(true);
         
         const Rect b = bounds();
         const int separatorX = _SeparatorX(b);
@@ -327,7 +329,7 @@ private:
     const Git::FileConflict& _fileConflict;
     const size_t _hunkIdx = 0;
     
-    LabelPtr _titleConflict = subviewCreate<Label>();
+    LabelPtr _title = subviewCreate<Label>();
     LabelPtr _titleFilePath = subviewCreate<Label>();
     LabelPtr _refNameLeft = subviewCreate<Label>();
     LabelPtr _refNameRight = subviewCreate<Label>();
