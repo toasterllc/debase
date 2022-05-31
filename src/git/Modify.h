@@ -84,16 +84,16 @@ private:
         }
     }
     
-    static Commit _CommitParentSet(const Ctx& ctx, const Commit& commit, const Commit& parent) {
-        Index index = ctx.repo.commitParentSet(commit, parent);
+    static Commit _CommitParentSet(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& commit, const Commit& parent) {
+        Index index = ctx.repo.commitParentSet(fileFavor, commit, parent);
         _ConflictsHandle(ctx, index);
-        return ctx.repo.commitParentSetFinish(commit, parent, index);
+        return ctx.repo.commitParentSetFinish(index, commit, parent);
     }
     
-    static Commit _CommitIntegrate(const Ctx& ctx, const Commit& dst, const Commit& src) {
-        Index index = ctx.repo.commitIntegrate(dst, src);
+    static Commit _CommitIntegrate(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) {
+        Index index = ctx.repo.commitIntegrate(fileFavor, dst, src);
         _ConflictsHandle(ctx, index);
-        return ctx.repo.commitIntegrateFinish(dst, src, index);
+        return ctx.repo.commitIntegrateFinish(index, dst, src);
     }
     
     struct _AddRemoveResult {
@@ -103,6 +103,7 @@ private:
     
     static _AddRemoveResult _AddRemoveCommits(
         const Ctx& ctx,
+        git_merge_file_favor_t fileFavor,
         const Commit& dst,
         const std::set<Commit>& add,
         const Commit& addSrc, // Source of `add` commits (to derive their order)
@@ -162,7 +163,7 @@ private:
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
             // TODO:MERGE
-            head = _CommitParentSet(ctx, commit.commit, head);
+            head = _CommitParentSet(ctx, fileFavor, commit.commit, head);
             
             if (commit.added) {
                 added.insert(head);
@@ -218,6 +219,17 @@ private:
         return _InsertionIsNop(op.src.rev.commit, op.dst.position, op.src.commits);
     }
     
+    static git_merge_file_favor_t _FileFavor(const T_Rev& src, const T_Rev& dst) {
+        // Required arguments:
+        assert(src);
+        // If there's only one rev, then use _THEIRS (conflicts not allowed)
+        if (!dst) return GIT_MERGE_FILE_FAVOR_THEIRS;
+        // If the two revs have refs and they're the same ref, use _THEIRS (conflicts not allowed)
+        if (src.ref && dst.ref && dst.ref==src.ref) return GIT_MERGE_FILE_FAVOR_THEIRS;
+        // Otherwise, use _NORMAL (conflicts allowed)
+        return GIT_MERGE_FILE_FAVOR_NORMAL;
+    }
+    
     static std::optional<OpResult> _MoveCommits(const Ctx& ctx, const Op& op) {
         // Required arguments:
         assert(op.src.rev);
@@ -238,6 +250,7 @@ private:
             // Add and remove commits
             _AddRemoveResult srcDstResult = _AddRemoveCommits(
                 ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -274,6 +287,7 @@ private:
             // Remove commits from `op.src`
             _AddRemoveResult srcResult = _AddRemoveCommits(
                 ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.src.rev.commit,  // dst:         Commit
                 {},                 // add:         std::set<Commit>
                 nullptr,            // addSrc:      Commit
@@ -284,6 +298,7 @@ private:
             // Add commits to `op.dst`
             _AddRemoveResult dstResult = _AddRemoveCommits(
                 ctx,
+                _FileFavor(op.src.rev, op.dst.rev),
                 op.dst.rev.commit,  // dst:         Commit
                 op.src.commits,     // add:         std::set<Commit>
                 op.src.rev.commit,  // addSrc:      Commit
@@ -321,6 +336,7 @@ private:
         // Add commits to `op.dst`
         _AddRemoveResult dstResult = _AddRemoveCommits(
             ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.dst.rev.commit,  // dst:         Commit
             op.src.commits,     // add:         std::set<Commit>
             op.src.rev.commit,  // addSrc:      Commit
@@ -346,12 +362,15 @@ private:
     static std::optional<OpResult> _DeleteCommits(const Ctx& ctx, const Op& op) {
         // Required arguments:
         assert(op.src.rev);
+        // Illegal arguments:
+        assert(!op.dst.rev);
         
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Remove commits from `op.src`
         _AddRemoveResult srcResult = _AddRemoveCommits(
             ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
             nullptr,            // addSrc:      Commit
@@ -378,6 +397,8 @@ private:
     static std::optional<OpResult> _CombineCommits(const Ctx& ctx, const Op& op) {
         // Required arguments:
         assert(op.src.rev);
+        // Illegal arguments:
+        assert(!op.dst.rev);
         
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
@@ -401,7 +422,7 @@ private:
         
         // Combine `head` with all the commits in `integrate`
         for (const Commit& commit : integrate) {
-            head = _CommitIntegrate(ctx, head, commit);
+            head = _CommitIntegrate(ctx, _FileFavor(op.src.rev, op.dst.rev), head, commit);
         }
         
         // Remember the final commit containing all the integrated commits
@@ -410,7 +431,7 @@ private:
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
             // TODO:MERGE
-            head = _CommitParentSet(ctx, commit, head);
+            head = _CommitParentSet(ctx, _FileFavor(op.src.rev, op.dst.rev), commit, head);
         }
         
         // Replace the source branch/tag
@@ -557,6 +578,8 @@ private:
         // Required arguments:
         assert(op.src.rev);
         assert(op.src.commits.size() == 1); // Programmer error
+        // Illegal arguments:
+        assert(!op.dst.rev);
         
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
@@ -589,6 +612,7 @@ private:
         // Add and remove commits
         _AddRemoveResult srcResult = _AddRemoveCommits(
             ctx,
+            _FileFavor(op.src.rev, op.dst.rev),
             op.src.rev.commit,  // dst:         Commit
             {newCommit},        // add:         std::set<Commit>
             newCommit,          // addSrc:      Commit

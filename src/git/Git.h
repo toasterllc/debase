@@ -687,8 +687,10 @@ public:
         reflog.drop(0);
     }
     
-    Index treesMerge(const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
-        git_merge_options mergeOpts = GIT_MERGE_OPTIONS_INIT;
+    Index treesMerge(git_merge_file_favor_t fileFavor, const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
+        git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+        opts.file_favor = fileFavor;
+        
         git_index* x = nullptr;
         int ir = git_merge_trees(
             &x,
@@ -696,7 +698,7 @@ public:
             (ancestorTree ? *ancestorTree : nullptr),
             (dstTree ? *dstTree : nullptr),
             (srcTree ? *srcTree : nullptr),
-            &mergeOpts
+            &opts
         );
         if (ir) throw Error(ir, "git_merge_trees failed");
         return x;
@@ -714,12 +716,14 @@ public:
     }
     
     // commitParentSet(): commit.parent[0] = parent
-    Index commitParentSet(const Commit& commit, const Commit& parent) const {
+    Index commitParentSet(git_merge_file_favor_t fileFavor, const Commit& commit, const Commit& parent) const {
         assert(commit);
         
         if (parent) {
-            unsigned int mainline = (commit.isMerge() ? 1 : 0);
             git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
+            opts.file_favor = fileFavor;
+            
+            const unsigned int mainline = (commit.isMerge() ? 1 : 0);
             git_index* x = nullptr;
             int ir = git_cherrypick_commit(&x, *get(), (git_commit*)*commit, (git_commit*)*parent, mainline, &opts);
             if (ir) throw Error(ir, "git_cherrypick_commit failed");
@@ -728,11 +732,11 @@ public:
         } else {
             Commit oldParent = commit.parent();
             Tree oldParentTree = (oldParent ? oldParent.tree() : nullptr);
-            return treesMerge(oldParentTree, nullptr, commit.tree());
+            return treesMerge(fileFavor, oldParentTree, nullptr, commit.tree());
         }
     }
     
-    Commit commitParentSetFinish(const Commit& commit, const Commit& parent, const Index& index) const {
+    Commit commitParentSetFinish(const Index& index, const Commit& commit, const Commit& parent) const {
         assert(commit);
         
         Tree tree = indexWrite(index);
@@ -743,15 +747,15 @@ public:
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    Index commitIntegrate(const Commit& dst, const Commit& src) const {
+    Index commitIntegrate(git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
         Tree ancestorTree = src.parent().tree(); // TODO:MERGE
-        return treesMerge(ancestorTree, dstTree, srcTree);
+        return treesMerge(fileFavor, ancestorTree, dstTree, srcTree);
     }
     
     // commitIntegrate: adds the content of `src` into `dst` and returns the result
-    Commit commitIntegrateFinish(const Commit& dst, const Commit& src, const Index& index) const {
+    Commit commitIntegrateFinish(const Index& index, const Commit& dst, const Commit& src) const {
         Tree newTree = indexWrite(index);
         
         // Combine the commit messages
