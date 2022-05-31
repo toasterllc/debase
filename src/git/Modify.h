@@ -219,7 +219,11 @@ private:
     }
     
     static std::optional<OpResult> _MoveCommits(const Ctx& ctx, const Op& op) {
-        // When moving commits, the source and destination must be references (branches
+        // Required arguments:
+        assert(op.src.rev);
+        assert(op.dst.rev);
+        
+        // When moving commits, the source and destination must be refs (branches
         // or tags) since we're modifying both
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
@@ -308,6 +312,10 @@ private:
     }
     
     static std::optional<OpResult> _CopyCommits(const Ctx& ctx, const Op& op) {
+        // Required arguments:
+        assert(op.src.rev);
+        assert(op.dst.rev);
+        
         if (!op.dst.rev.ref) throw RuntimeError("destination must be a reference (branch or tag)");
         
         // Add commits to `op.dst`
@@ -336,7 +344,9 @@ private:
     }
     
     static std::optional<OpResult> _DeleteCommits(const Ctx& ctx, const Op& op) {
-    //    throw RuntimeError("source must be a reference (branch or tag)");
+        // Required arguments:
+        assert(op.src.rev);
+        
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Remove commits from `op.src`
@@ -366,6 +376,9 @@ private:
     }
     
     static std::optional<OpResult> _CombineCommits(const Ctx& ctx, const Op& op) {
+        // Required arguments:
+        assert(op.src.rev);
+        
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         if (op.src.commits.size() < 2) throw RuntimeError("at least 2 commits are required to combine");
         if (_CommitsHasMerge(op.src.commits)) throw RuntimeError("can't combine with merge commit");
@@ -541,7 +554,10 @@ private:
     }
     
     static std::optional<OpResult> _EditCommit(const Ctx& ctx, const Op& op) {
+        // Required arguments:
+        assert(op.src.rev);
         assert(op.src.commits.size() == 1); // Programmer error
+        
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
         
         // Write the commit message to the file
