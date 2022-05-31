@@ -37,8 +37,8 @@ inline _Argv _ArgvCreate(const Repo& repo, std::string_view filePath) {
     return _Argv{std::move(args), std::move(argv)};
 }
 
-template <typename T_Spawn>
-inline std::string EditorRun(const Repo& repo, T_Spawn spawnFn, std::string_view content) {
+using EditorSpawnFn = std::function<void(const char*const*)>;
+inline std::string EditorRun(const Repo& repo, EditorSpawnFn spawnFn, std::string_view content) {
     // Write the commit message to `tmpFilePath`
     char tmpFilePath[] = "/tmp/debase.XXXXXX";
     int ir = mkstemp(tmpFilePath);

@@ -232,12 +232,17 @@ public:
 //        truncateEdges(edges);
 //        eraseNeeded(true);
         
-        if (ev.type == Event::Type::KeyEscape){
-            if (_escapeTriggersOK) ok();
-            else                   dismiss();
-        
-        } else if (ev.type == Event::Type::KeyReturn) {
-            ok();
+        // Whether window is enabled
+        if (enabled()) {
+            if (ev.type == Event::Type::KeyEscape) {
+                if (dismissButtonVisible()) dismiss();
+                else if (okButtonVisible()) ok();
+            
+            } else if (ev.type == Event::Type::KeyReturn) {
+                if (okButtonVisible()) {
+                    ok();
+                }
+            }
         }
         return true;
     }
@@ -269,27 +274,19 @@ public:
         return changed;
     }
     
-    const auto& escapeTriggersOK() const { return _escapeTriggersOK; }
-    template <typename T> bool escapeTriggersOK(const T& x) { return _set(_escapeTriggersOK, x); }
+//    const auto& escapeTriggersOK() const { return _escapeTriggersOK; }
+//    template <typename T> bool escapeTriggersOK(const T& x) { return _set(_escapeTriggersOK, x); }
     
     // MARK: - Methods
     virtual void ok() {
-        if (okButtonVisible()) {
-            if (enabled()) { // Whether window is enabled
-                if (okButtonEnabled() && _okButton->action()) {
-                    _okButton->action()(*_okButton);
-                }
-            }
+        if (okButtonEnabled() && _okButton->action()) {
+            _okButton->action()(*_okButton);
         }
     }
     
     virtual void dismiss() {
-        if (dismissButtonVisible()) {
-            if (enabled()) { // Whether window is enabled
-                if (dismissButtonEnabled() && _dismissButton->action()) {
-                    _dismissButton->action()(*_dismissButton);
-                }
-            }
+        if (dismissButtonEnabled() && _dismissButton->action()) {
+            _dismissButton->action()(*_dismissButton);
         }
     }
     
@@ -348,7 +345,7 @@ private:
     
     Edges _truncateEdges;
     bool _condensed             = false;
-    bool _escapeTriggersOK      = false;
+//    bool _escapeTriggersOK      = false;
     
     Rect _contentFrameCached;
 };

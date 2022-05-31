@@ -38,7 +38,99 @@ struct FileConflict {
     std::vector<Hunk> hunks;
 };
 
-std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
+struct ConflictMarkers {
+    const char* start     = nullptr;
+    const char* separator = nullptr;
+    const char* end       = nullptr;
+};
+
+inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMarkers& markers, std::string_view str) {
+    const std::vector<std::string> lines = Toastbox::String::Split(str, "\n");
+    
+    enum class _ParseState {
+        Normal,
+        ConflictOurs,
+        ConflictTheirs,
+    };
+    
+    std::vector<FileConflict::Hunk> hunks;
+    FileConflict::Hunk hunk;
+    _ParseState parseState = _ParseState::Normal;
+    for (const std::string& line : lines) {
+        switch (parseState) {
+        case _ParseState::Normal:
+            if (String::StartsWith(markers.start, line)) {
+                if (!hunk.empty()) hunks.push_back(std::move(hunk));
+                parseState = _ParseState::ConflictOurs;
+                hunk.type = FileConflict::Hunk::Type::Conflict;
+            } else {
+                hunk.normal.lines.push_back(line);
+            }
+            break;
+        
+        case _ParseState::ConflictOurs:
+            if (String::StartsWith(markers.separator, line)) {
+                parseState = _ParseState::ConflictTheirs;
+                hunk.type = FileConflict::Hunk::Type::Conflict;
+            } else {
+                hunk.conflict.linesOurs.push_back(line);
+            }
+            break;
+        
+        case _ParseState::ConflictTheirs:
+            if (String::StartsWith(markers.end, line)) {
+                if (!hunk.empty()) hunks.push_back(std::move(hunk));
+                parseState = _ParseState::Normal;
+                hunk.type = FileConflict::Hunk::Type::Normal;
+            } else {
+                hunk.conflict.linesTheirs.push_back(line);
+            }
+            break;
+        
+        default:
+            abort(); // Invalid state
+        }
+    }
+    
+    if (!hunk.empty()) hunks.push_back(std::move(hunk));
+    return hunks;
+}
+
+inline std::string ConflictStringFromHunks(const ConflictMarkers& markers, const std::vector<FileConflict::Hunk>& hunks) {
+    std::vector<std::string> lines;
+    for (const Git::FileConflict::Hunk& hunk : hunks) {
+        switch (hunk.type) {
+        case FileConflict::Hunk::Type::Normal:
+            lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
+            break;
+        
+        case FileConflict::Hunk::Type::Conflict:
+            lines.push_back(markers.start);
+            lines.insert(lines.end(), hunk.conflict.linesOurs.begin(), hunk.conflict.linesOurs.end());
+            lines.push_back(markers.separator);
+            lines.insert(lines.end(), hunk.conflict.linesTheirs.begin(), hunk.conflict.linesTheirs.end());
+            lines.push_back(markers.end);
+            break;
+        
+        default:
+            abort();
+        }
+    }
+    return Toastbox::String::Join(lines, "\n");
+}
+
+inline bool ConflictStringContainsConflictMarkers(const ConflictMarkers& markers, std::string_view str) {
+    const std::vector<std::string> lines = Toastbox::String::Split(str, "\n");
+    for (const std::string& line : lines) {
+        if (String::StartsWith(markers.start, line)     ||
+            String::StartsWith(markers.separator, line) ||
+            String::StartsWith(markers.end, line))
+            return true;
+    }
+    return false;
+}
+
+inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     using namespace Toastbox;
     using _Path = std::filesystem::path;
     
@@ -83,53 +175,11 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
         if (conflict.ours && conflict.theirs) {
             const Git::MergeFileResult mergeResult = repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
             const std::string content(mergeResult->ptr, mergeResult->len);
-            const std::vector<std::string> lines = Toastbox::String::Split(content, "\n");
-            
-            enum class _ParseState {
-                Normal,
-                ConflictOurs,
-                ConflictTheirs,
-            };
-            
-            FileConflict::Hunk hunk;
-            _ParseState parseState = _ParseState::Normal;
-            for (const std::string& line : lines) {
-                switch (parseState) {
-                case _ParseState::Normal:
-                    if (String::StartsWith(Repo::MergeMarkerStart, line)) {
-                        if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
-                        parseState = _ParseState::ConflictOurs;
-                        hunk.type = FileConflict::Hunk::Type::Conflict;
-                    } else {
-                        hunk.normal.lines.push_back(line);
-                    }
-                    break;
-                
-                case _ParseState::ConflictOurs:
-                    if (String::StartsWith(Repo::MergeMarkerSeparator, line)) {
-                        parseState = _ParseState::ConflictTheirs;
-                        hunk.type = FileConflict::Hunk::Type::Conflict;
-                    } else {
-                        hunk.conflict.linesOurs.push_back(line);
-                    }
-                    break;
-                
-                case _ParseState::ConflictTheirs:
-                    if (String::StartsWith(Repo::MergeMarkerEnd, line)) {
-                        if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
-                        parseState = _ParseState::Normal;
-                        hunk.type = FileConflict::Hunk::Type::Normal;
-                    } else {
-                        hunk.conflict.linesTheirs.push_back(line);
-                    }
-                    break;
-                
-                default:
-                    abort(); // Invalid state
-                }
-            }
-            
-            if (!hunk.empty()) fc.hunks.push_back(std::move(hunk));
+            fc.hunks = HunksFromConflictString({
+                .start      = Repo::MergeMarkerStart,
+                .separator  = Repo::MergeMarkerSeparator,
+                .end        = Repo::MergeMarkerEnd,
+            }, content);
         
         } else if ((conflict.ours && !conflict.theirs) || (!conflict.ours && conflict.theirs)) {
             std::vector<std::string> linesOurs;
@@ -166,7 +216,7 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
     return fileConflicts;
 }
 
-void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
+inline void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
     const std::optional<std::string>& content) {
     
     const char* path = conflict.path.c_str();
@@ -204,29 +254,6 @@ void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& c
     
 //    int ir = git_index_add_from_buffer(*index, conflict.entry, content.data(), content.size());
 //    if (ir) throw Error(ir, "git_index_add_from_buffer failed");
-}
-
-std::string StringFromFileConflict(const FileConflict& fc) {
-    std::vector<std::string> lines;
-    for (const Git::FileConflict::Hunk& hunk : fc.hunks) {
-        switch (hunk.type) {
-        case FileConflict::Hunk::Type::Normal:
-            lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
-            break;
-        
-        case FileConflict::Hunk::Type::Conflict:
-            lines.push_back(Repo::MergeMarkerBareStart);
-            lines.insert(lines.end(), hunk.conflict.linesOurs.begin(), hunk.conflict.linesOurs.end());
-            lines.push_back(Repo::MergeMarkerBareSeparator);
-            lines.insert(lines.end(), hunk.conflict.linesTheirs.begin(), hunk.conflict.linesTheirs.end());
-            lines.push_back(Repo::MergeMarkerBareEnd);
-            break;
-        
-        default:
-            abort();
-        }
-    }
-    return Toastbox::String::Join(lines, "\n");
 }
 
 } // namespace Git

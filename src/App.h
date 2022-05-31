@@ -1368,9 +1368,38 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    void _gitConflictResolveInEditor(const Git::FileConflict& fc) {
-        std::string content = StringFromFileConflict(fc);
+    std::optional<std::string> _gitConflictResolveInEditor(const Git::FileConflict& fc) {
+        const Git::ConflictMarkers markers = Git::ConflictMarkers{
+            .start      = Git::Repo::MergeMarkerBareStart,
+            .separator  = Git::Repo::MergeMarkerBareSeparator,
+            .end        = Git::Repo::MergeMarkerBareEnd,
+        };
+        std::string conflictStr = Git::ConflictStringFromHunks(markers, fc.hunks);
         
+        // TODO: if resulting text is empty, and (linesOurs.empty() || linesTheirs.empty()), treat it as a deleted file, not an empty file
+        
+        auto spawn = [&] (const char*const* argv) { _gitSpawn(argv); };
+        for (;;) {
+            conflictStr = Git::EditorRun(_repo, spawn, conflictStr);
+            
+            // Verify that there are no conflict markers
+            if (!Git::ConflictStringContainsConflictMarkers(markers, conflictStr)) break;
+            
+            std::optional<bool> clicked;
+            auto alert = _panelPresent<UI::ErrorAlert>();
+            alert->width                        (50);
+            alert->message()->text              ("The file still contains conflict markers. Continue editing?");
+            alert->okButton()->label()->text    ("Continue Editing");
+            alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
+            alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+            
+            // Wait until the user clicks a button
+            while (!clicked) track({}, Once);
+            
+            // If the user canceled, let the caller know
+            if (!*clicked) return std::nullopt;
+        }
+        return conflictStr;
     }
     
     void _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
@@ -1396,7 +1425,7 @@ private:
         for (const Git::FileConflict& fc : fileConflicts) {
             std::vector<std::string> lines;
             std::optional<std::string> content;
-            for (size_t i=0; i<fc.hunks.size(); i++) {
+            for (size_t i=0; i<fc.hunks.size() && !content; i++) {
                 const Git::FileConflict::Hunk& hunk = fc.hunks[i];
                 
                 // If it's a normal hunk (ie not a conflict), just append the lines
@@ -1413,26 +1442,38 @@ private:
                     conflictResult = r;
                 };
                 
-                // Wait until the user clicks a button
-                while (!conflictResult) track({}, Once);
-                
-                const auto& linesOurs = hunk.conflict.linesOurs;
-                const auto& linesTheirs = hunk.conflict.linesTheirs;
-                switch (*conflictResult) {
-                case UI::ConflictPanel::Result::ChooseOurs:
-                    lines.insert(lines.end(), linesOurs.begin(), linesOurs.end());
+                for (;;) {
+                    // Wait until the user clicks a button
+                    while (!conflictResult) track({}, Once);
+                    
+                    const auto& linesOurs = hunk.conflict.linesOurs;
+                    const auto& linesTheirs = hunk.conflict.linesTheirs;
+                    switch (*conflictResult) {
+                    case UI::ConflictPanel::Result::ChooseOurs:
+                        lines.insert(lines.end(), linesOurs.begin(), linesOurs.end());
+                        break;
+                    case UI::ConflictPanel::Result::ChooseTheirs:
+                        lines.insert(lines.end(), linesTheirs.begin(), linesTheirs.end());
+                        break;
+                    case UI::ConflictPanel::Result::OpenInEditor:
+                        content = _gitConflictResolveInEditor(fc);
+                        // User canceled editing; keep displaying conflict panel
+                        if (!content) {
+                            conflictResult = std::nullopt;
+                            continue;
+                        }
+                        
+                        break;
+                    case UI::ConflictPanel::Result::Cancel:
+                        throw _GitModify::ConflictResolveCanceled();
+                    default:
+                        abort();
+                    }
+                    // This loop only exists for the case where the user: chooses 'Open in Editor', then leaves
+                    // conflict markers in the file, and then hits 'Cancel' in the ensuring error window.
+                    // In that case: keep showing the conflict panel (see 'continue', above).
+                    // In all other cases: break after first iteration.
                     break;
-                case UI::ConflictPanel::Result::ChooseTheirs:
-                    lines.insert(lines.end(), linesTheirs.begin(), linesTheirs.end());
-                    break;
-                case UI::ConflictPanel::Result::OpenInEditor:
-                    throw std::runtime_error("OpenInEditor");
-                    // TODO: if resulting text is empty, and (linesOurs.empty() || linesTheirs.empty()), treat it as a deleted file, not an empty file
-                    break;
-                case UI::ConflictPanel::Result::Cancel:
-                    throw _GitModify::ConflictResolveCanceled();
-                default:
-                    abort();
                 }
             }
             
@@ -1860,7 +1901,6 @@ private:
         alert->message()->text      ("Thank you for supporting debase!");
         alert->message()->align     (UI::Align::Center);
         alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
-        alert->escapeTriggersOK     (true);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
