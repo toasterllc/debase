@@ -239,33 +239,25 @@ inline void ConflictResolve(const Repo& repo, const Index& index, const FileConf
     
     const char* path = conflict.path.c_str();
     if (content) {
-        git_oid id;
-        int ir = git_blob_create_from_buffer(&id, *repo, content->data(), content->size());
-        if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
-        
-        const git_index_entry* entryPrev = git_index_get_bypath(*index, path, GIT_INDEX_STAGE_THEIRS);
-        if (!entryPrev) {
-            entryPrev = git_index_get_bypath(*index, path, GIT_INDEX_STAGE_OURS);
-        }
+        const Blob blob = repo.blobCreate(content->data(), content->size());
+        const git_index_entry* entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_THEIRS);
+        if (!entryPrev) entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_OURS);
         assert(entryPrev);
         
         const git_index_entry entry = {
             .mode = entryPrev->mode,
             .file_size = (uint32_t)content->size(),
-            .id = id,
+            .id = blob.id(),
             .path = path,
         };
         
-        ir = git_index_add(*index, &entry);
-        if (ir) throw Error(ir, "git_index_add failed");
+        index.add(entry);
     
     } else {
-        int ir = git_index_remove(*index, path, GIT_INDEX_STAGE_ANY);
-        if (ir) throw Error(ir, "git_index_remove failed");
+        index.remove(path);
     }
     
-    int ir = git_index_conflict_remove(*index, path);
-    if (ir) throw Error(ir, "git_index_conflict_remove failed");
+    index.conflictClear(path);
     
 //    ir = git_index_write(*index);
 //    if (ir) throw Error(ir, "git_index_write failed");

@@ -179,12 +179,25 @@ struct Index : RefCounted<git_index*, git_index_free> {
     const git_index_entry* operator [](size_t i) const {
         return git_index_get_byindex(*get(), i);
     }
-};
-
-struct Blob : RefCounted<git_blob*, git_blob_free> {
-    using RefCounted::RefCounted;
-    const void* data() const { return git_blob_rawcontent(*get()); }
-    size_t size() const { return git_blob_rawsize(*get()); }
+    
+    const git_index_entry* find(const std::filesystem::path& path, git_index_stage_t stage=GIT_INDEX_STAGE_ANY) const {
+        return git_index_get_bypath(*get(), path.c_str(), stage);
+    }
+    
+    void add(const git_index_entry& entry) const {
+        int ir = git_index_add(*get(), &entry);
+        if (ir) throw Error(ir, "git_index_add failed");
+    }
+    
+    void remove(const std::filesystem::path& path, git_index_stage_t stage=GIT_INDEX_STAGE_ANY) const {
+        int ir = git_index_remove(*get(), path.c_str(), stage);
+        if (ir) throw Error(ir, "git_index_remove failed");
+    }
+    
+    void conflictClear(const std::filesystem::path& path) const {
+        int ir = git_index_conflict_remove(*get(), path.c_str());
+        if (ir) throw Error(ir, "git_index_conflict_remove failed");
+    }
 };
 
 struct StatusList : RefCounted<git_status_list*, git_status_list_free> {
@@ -281,12 +294,10 @@ struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
 struct Commit : Object {
     using Object::Object;
     Commit(const git_commit* x) : Object((git_object*)x) {}
-    
-    git_commit** get() { return (git_commit**)Object::get(); }
-    git_commit*& operator *() { return *get(); }
-    
     const git_commit** get() const { return (const git_commit**)Object::get(); }
     const git_commit*& operator *() const { return *get(); }
+//    git_commit** get() { return (git_commit**)Object::get(); }
+//    git_commit*& operator *() { return *get(); }
     
     static Commit ForObject(Object obj) {
         git_commit* x = nullptr;
@@ -342,6 +353,16 @@ struct Commit : Object {
     operator std::string() const {
         return idStr();
     }
+};
+
+struct Blob : Object {
+    using Object::Object;
+    Blob(const git_blob* x) : Object((git_object*)x) {}
+    const git_blob** get() const { return (const git_blob**)Object::get(); }
+    const git_blob*& operator *() const { return *get(); }
+    
+    const void* data() const { return git_blob_rawcontent(*get()); }
+    size_t size() const { return git_blob_rawsize(*get()); }
 };
 
 struct TagAnnotation : Object {
@@ -1043,6 +1064,13 @@ public:
         int ir = git_blob_lookup(&x, *get(), &id);
         if (ir) throw Error(ir, "git_blob_lookup failed");
         return x;
+    }
+    
+    Blob blobCreate(const void* data, size_t len) const {
+        git_oid id;
+        int ir = git_blob_create_from_buffer(&id, *get(), data, len);
+        if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
+        return blobLookup(id);
     }
 };
 
