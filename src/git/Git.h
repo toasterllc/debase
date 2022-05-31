@@ -1010,9 +1010,13 @@ public:
         return x;
     }
     
-    static constexpr const char MergeMarkerStart[]      = "<<<<<<< " _DebaseProductId;
-    static constexpr const char MergeMarkerSeparator[]  = "=======";
-    static constexpr const char MergeMarkerEnd[]        = ">>>>>>> " _DebaseProductId;
+    static constexpr const char MergeMarkerBareStart[]      = "<<<<<<<";
+    static constexpr const char MergeMarkerBareSeparator[]  = "=======";
+    static constexpr const char MergeMarkerBareEnd[]        = ">>>>>>>";
+    
+    static constexpr const char MergeMarkerStart[]          = "<<<<<<< " _DebaseProductId;
+    static constexpr const char MergeMarkerSeparator[]      = "=======";
+    static constexpr const char MergeMarkerEnd[]            = ">>>>>>> " _DebaseProductId;
     
     MergeFileResult merge(
         const git_index_entry* ancestor,

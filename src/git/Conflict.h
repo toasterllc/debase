@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include "Git.h"
 #include "lib/toastbox/String.h"
 
 namespace Git {
@@ -166,7 +167,7 @@ std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
 }
 
 void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
-const std::optional<std::string>& content) {
+    const std::optional<std::string>& content) {
     
     const char* path = conflict.path.c_str();
     if (content) {
@@ -203,6 +204,29 @@ const std::optional<std::string>& content) {
     
 //    int ir = git_index_add_from_buffer(*index, conflict.entry, content.data(), content.size());
 //    if (ir) throw Error(ir, "git_index_add_from_buffer failed");
+}
+
+std::string StringFromFileConflict(const FileConflict& fc) {
+    std::vector<std::string> lines;
+    for (const Git::FileConflict::Hunk& hunk : fc.hunks) {
+        switch (hunk.type) {
+        case FileConflict::Hunk::Type::Normal:
+            lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
+            break;
+        
+        case FileConflict::Hunk::Type::Conflict:
+            lines.push_back(Repo::MergeMarkerBareStart);
+            lines.insert(lines.end(), hunk.conflict.linesOurs.begin(), hunk.conflict.linesOurs.end());
+            lines.push_back(Repo::MergeMarkerBareSeparator);
+            lines.insert(lines.end(), hunk.conflict.linesTheirs.begin(), hunk.conflict.linesTheirs.end());
+            lines.push_back(Repo::MergeMarkerBareEnd);
+            break;
+        
+        default:
+            abort();
+        }
+    }
+    return Toastbox::String::Join(lines, "\n");
 }
 
 } // namespace Git

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <deque>
 #include "Git.h"
+#include "Editor.h"
 #include "lib/toastbox/Defer.h"
 #include "lib/toastbox/String.h"
 
@@ -411,14 +412,6 @@ private:
         };
     }
     
-    static std::string _EditorCommand(const Repo& repo) {
-        const std::optional<std::string> editorCmd = repo.config().stringGet("core.editor");
-        if (editorCmd) return *editorCmd;
-        if (const char* x = getenv("VISUAL")) return x;
-        if (const char* x = getenv("EDITOR")) return x;
-        return "vi";
-    }
-    
     static std::string _Trim(std::string_view str) {
         std::string x(str);
         x.erase(x.find_last_not_of(' ')+1);
@@ -485,35 +478,21 @@ private:
         };
     }
     
-    static void _CommitMessageWrite(_CommitMessage msg, const std::filesystem::path& path) {
+    static std::string _StringFromCommitMessage(const _CommitMessage& msg) {
         assert(msg.author);
         assert(msg.time);
         
-        std::ofstream f;
-        f.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-        f.open(path);
-        
-        f << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
-        f << _TimePrefix << "   " << StringFromTime(*msg.time) << '\n';
-        f << '\n';
-        f << msg.message;
+        std::stringstream ss;
+        ss << _AuthorPrefix << " " << msg.author->name << " <" << msg.author->email << ">" << '\n';
+        ss << _TimePrefix << "   " << StringFromTime(*msg.time) << '\n';
+        ss << '\n';
+        ss << msg.message;
+        return ss.str();
     }
     
-    static _CommitMessage _CommitMessageRead(const std::filesystem::path& path) {
+    static _CommitMessage _CommitMessageFromString(std::string_view str) {
         // Read back the file
-        std::vector<std::string> lines;
-        {
-            std::ifstream f;
-            f.exceptions(std::ifstream::badbit);
-            f.open(path);
-            
-            std::string line;
-            do {
-                std::getline(f, line);
-                lines.push_back(line);
-            } while (!f.eof());
-        }
-        
+        const std::vector<std::string> lines = String::Split(str, "\n");
         auto iter = lines.begin();
         
         // Find author string
@@ -561,54 +540,23 @@ private:
         };
     }
     
-    struct _Argv {
-        std::vector<std::string> args;
-        std::vector<const char*> argv;
-    };
-    
-    static _Argv _CreateArgv(const Repo& repo, std::string_view filePath) {
-        const std::string editorCmd = _EditorCommand(repo);
-        std::vector<std::string> args;
-        std::vector<const char*> argv;
-        std::istringstream ss(editorCmd);
-        std::string arg;
-        while (ss >> arg) args.push_back(arg);
-        args.push_back(std::string(filePath));
-        // Constructing `argv` must be a separate loop from constructing `args`,
-        // because modifying `args` can invalidate all its elements, including
-        // the c_str's that we'd get from each element
-        for (const std::string& a : args) {
-            argv.push_back(a.c_str());
-        }
-        argv.push_back(nullptr);
-        return _Argv{std::move(args), std::move(argv)};
-    }
-    
     static std::optional<OpResult> _EditCommit(const Ctx& ctx, const Op& op) {
-        using File = RefCounted<int, close>;
-        
         assert(op.src.commits.size() == 1); // Programmer error
         if (!op.src.rev.ref) throw RuntimeError("source must be a reference (branch or tag)");
-        
-        // Write the commit message to `tmpFilePath`
-        char tmpFilePath[] = "/tmp/debase.XXXXXX";
-        int ir = mkstemp(tmpFilePath);
-        if (ir < 0) throw RuntimeError("mkstemp failed: %s", strerror(errno));
-        File fd(ir); // Handles closing the file descriptor upon return
-        Defer(unlink(tmpFilePath)); // Delete the temporary file upon return
         
         // Write the commit message to the file
         const Commit origCommit = *op.src.commits.begin();
         const git_signature* origAuthor = git_commit_author(*origCommit);
-        _CommitMessage origMsg = _CommitMessageForCommit(origCommit);
-        _CommitMessageWrite(origMsg, tmpFilePath);
+        const _CommitMessage origMsg = _CommitMessageForCommit(origCommit);
         
-        // Spawn text editor
-        _Argv argv = _CreateArgv(ctx.repo, tmpFilePath);
-        ctx.spawn(argv.argv.data());
+        // _CommitMessage -> String
+        const std::string origMsgStr = _StringFromCommitMessage(origMsg);
         
-        // Read back the edited commit message
-        _CommitMessage newMsg = _CommitMessageRead(tmpFilePath);
+        // Execute the editor and read back the result
+        const std::string newMsgStr = EditorRun(ctx.repo, ctx.spawn, origMsgStr);
+        
+        // String -> _CommitMessage
+        const _CommitMessage newMsg = _CommitMessageFromString(newMsgStr);
         
         // Nop if the message wasn't changed
         if (origMsg == newMsg) return std::nullopt;

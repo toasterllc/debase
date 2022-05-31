@@ -280,8 +280,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: ConflictPanel: show progress in titlebar
     
-    #warning TODO: ConflictPanel: make cancel button work
-    
     #warning TODO: ConflictPanel: make 'Open in Editor' button work
     
     #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
@@ -336,6 +334,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: ConflictPanel: make cancel button work
 //
 //    #warning TODO: ConflictPanel: make filename title non-bold
 //    

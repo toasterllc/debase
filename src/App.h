@@ -1368,6 +1368,11 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
+    void _gitConflictResolveInEditor(const Git::FileConflict& fc) {
+        std::string content = StringFromFileConflict(fc);
+        
+    }
+    
     void _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
         const std::vector<Git::FileConflict> fileConflicts = Git::ConflictsGet(_repo, index);
         
