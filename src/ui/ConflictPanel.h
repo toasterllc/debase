@@ -177,6 +177,16 @@ public:
     
     auto& doneAction() { return _doneAction; }
     
+    bool handleEvent(const Event& ev) override {
+        // Whether window is enabled
+        if (enabled()) {
+            if (ev.type == Event::Type::KeyEscape) {
+                _doneAction(Result::Cancel);
+            }
+        }
+        return true;
+    }
+    
 //    const auto& doneAction() const { return _doneAction; }
 //    template <typename T> bool doneAction(const T& x) { return _setForce(_doneAction, x); }
     

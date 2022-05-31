@@ -278,8 +278,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: ConflictPanel: show progress in titlebar
-    
     #warning TODO: ConflictPanel: make escape key work to cancel
     
     #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
@@ -334,6 +332,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: ConflictPanel: show progress in titlebar
 //
 //    #warning TODO: implement proper memory management in Git::ConflictResolve()
 //
