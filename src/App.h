@@ -1368,7 +1368,7 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    std::optional<std::string> _gitConflictResolveInEditor(const Git::FileConflict& fc) {
+    std::string _gitConflictResolveInEditor(const Git::FileConflict& fc) {
         const Git::ConflictMarkers markers = Git::ConflictMarkers{
             .start      = Git::Repo::MergeMarkerBareStart,
             .separator  = Git::Repo::MergeMarkerBareSeparator,
@@ -1397,7 +1397,7 @@ private:
             while (!clicked) track({}, Once);
             
             // If the user canceled, let the caller know
-            if (!*clicked) return std::nullopt;
+            if (!*clicked) throw Git::ConflictResolveCanceled();
         }
         return conflictStr;
     }
@@ -1434,21 +1434,28 @@ private:
                     continue;
                 }
                 
+                const auto& linesOurs = hunk.conflict.linesOurs;
+                const auto& linesTheirs = hunk.conflict.linesTheirs;
                 auto panel = _panelPresent<UI::ConflictPanel>(layout,
                     revOurs.displayName(), revTheirs.displayName(), fc, i);
                 
-                std::optional<UI::ConflictPanel::Result> conflictResult;
+                std::optional<UI::ConflictPanel::Result> panelResult;
                 panel->doneAction() = [&] (UI::ConflictPanel::Result r) {
-                    conflictResult = r;
+                    panelResult = r;
                 };
                 
+                // The following loop only exists for the case where the user: chooses 'Open in Editor',
+                // then leaves conflict markers in the file, and then hits 'Cancel' in the ensuring
+                // error window.
+                // In that case: keep showing the conflict panel (see 'continue', below).
+                // In all other cases: break after first iteration.
                 for (;;) {
-                    // Wait until the user clicks a button
-                    while (!conflictResult) track({}, Once);
+                    panelResult = std::nullopt;
                     
-                    const auto& linesOurs = hunk.conflict.linesOurs;
-                    const auto& linesTheirs = hunk.conflict.linesTheirs;
-                    switch (*conflictResult) {
+                    // Wait until the user clicks a button
+                    while (!panelResult) track({}, Once);
+                    
+                    switch (*panelResult) {
                     case UI::ConflictPanel::Result::ChooseOurs:
                         lines.insert(lines.end(), linesOurs.begin(), linesOurs.end());
                         break;
@@ -1456,23 +1463,26 @@ private:
                         lines.insert(lines.end(), linesTheirs.begin(), linesTheirs.end());
                         break;
                     case UI::ConflictPanel::Result::OpenInEditor:
-                        content = _gitConflictResolveInEditor(fc);
-                        // User canceled editing; keep displaying conflict panel
-                        if (!content) {
-                            conflictResult = std::nullopt;
+                        try {
+                            const std::string editorContent = _gitConflictResolveInEditor(fc);
+                            // If the user cleared the conflict file, and there's a branch of the
+                            // conflict that represents a non-existent file, then consider the
+                            // file as non-existent, rather than an empty file.
+                            if (editorContent.empty() && (fc.noFileOurs() || fc.noFileTheirs())) {
+                                content = std::nullopt;
+                            }
+                        } catch (const _GitModify::ConflictResolveCanceled&) {
+                            // User canceled editing; keep displaying conflict panel
                             continue;
+                        } catch (...) {
+                            throw;
                         }
-                        
                         break;
                     case UI::ConflictPanel::Result::Cancel:
                         throw _GitModify::ConflictResolveCanceled();
                     default:
                         abort();
                     }
-                    // This loop only exists for the case where the user: chooses 'Open in Editor', then leaves
-                    // conflict markers in the file, and then hits 'Cancel' in the ensuring error window.
-                    // In that case: keep showing the conflict panel (see 'continue', above).
-                    // In all other cases: break after first iteration.
                     break;
                 }
             }

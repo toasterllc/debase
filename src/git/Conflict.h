@@ -36,6 +36,22 @@ struct FileConflict {
     
     std::filesystem::path path;
     std::vector<Hunk> hunks;
+    
+    // noFileOurs(): returns whether the 'ours' branch of the conflict
+    // represents a non-existent file
+    bool noFileOurs() const {
+        return  hunks.size()==1                     &&
+                hunks[0].type==Hunk::Type::Conflict &&
+                hunks[0].conflict.linesOurs.empty();
+    }
+    
+    // noFileTheirs(): returns whether the 'theirs' branch of the conflict
+    // represents a non-existent file
+    bool noFileTheirs() const {
+        return  hunks.size()==1                     &&
+                hunks[0].type==Hunk::Type::Conflict &&
+                hunks[0].conflict.linesTheirs.empty();
+    }
 };
 
 struct ConflictMarkers {
@@ -216,6 +232,8 @@ inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& ind
     return fileConflicts;
 }
 
+// ConflictResolve(): resolve a conflict for a particular file, using the supplied file content `content`.
+// content == nullopt means that the file shouldn't exist.
 inline void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
     const std::optional<std::string>& content) {
     

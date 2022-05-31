@@ -266,8 +266,8 @@ private:
                     // This is the main conflict region, and it's empty.
                     // Draw placeholder text
                     drawLineHoriz({rect.l(), offY}, rect.w());
-                    constexpr const char Empty[]    = " empty ";
                     constexpr const char NoFile[]   = " no file ";
+                    constexpr const char Empty[]    = " empty ";
                     
                     // The file is considered deleted if the total number of lines==0. (Therefore
                     // an empty but existing file would have 1 line containing an empty string.)
@@ -275,12 +275,13 @@ private:
                     // a non-existent file.
                     const char* text = nullptr;
                     size_t textLen = 0;
-                    if (_fileConflict.hunks.size() > 1) {
-                        text = Empty;
-                        textLen = std::size(Empty)-1;
-                    } else {
+                    
+                    if (_fileConflict.noFileOurs() || _fileConflict.noFileTheirs()) {
                         text = NoFile;
                         textLen = std::size(NoFile)-1;
+                    } else {
+                        text = Empty;
+                        textLen = std::size(Empty)-1;
                     }
                     
                     drawText({rect.l()+(rect.w()-((int)textLen))/2, offY}, text);
