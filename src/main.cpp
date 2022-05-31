@@ -280,10 +280,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
     
-    #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
-    #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
-    #warning TODO:   tabs with spaces)
-    
     #warning TODO: add branch copying; action menu? drag branch name? both?
     #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
     #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
@@ -304,6 +300,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: macos-arm64: run through TestChecklist.txt
     
 //  Future:
+    
+    #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
+    #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
+    #warning TODO:   tabs with spaces)
     
     #warning TODO: add scrolling
     
