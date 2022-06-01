@@ -392,7 +392,8 @@ private:
                     const char* text = nullptr;
                     size_t textLen = 0;
                     
-                    if (_fileConflict.noFileOurs() || _fileConflict.noFileTheirs()) {
+                    const bool noFile = _fileConflict.noFile(Git::FileConflict::Side::Ours) || _fileConflict.noFile(Git::FileConflict::Side::Theirs);
+                    if (noFile) {
                         text = NoFile;
                         textLen = std::size(NoFile)-1;
                     } else {

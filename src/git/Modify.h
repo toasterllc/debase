@@ -2,6 +2,7 @@
 #include <fstream>
 #include <deque>
 #include "Git.h"
+#include "Conflict.h"
 #include "Editor.h"
 #include "lib/toastbox/Defer.h"
 #include "lib/toastbox/String.h"
@@ -15,7 +16,7 @@ public:
         Repo repo;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
-        std::function<void(const Index&)> conflictResolve;
+        std::function<void(const Index&, const std::vector<FileConflict>&)> conflictsResolve;
     };
     
     struct Op {
@@ -78,21 +79,40 @@ private:
         return *rem.begin();
     }
     
-    static void _ConflictsHandle(const Ctx& ctx, const Index& index) {
-        if (index.conflicts()) {
-            ctx.conflictResolve(index);
+    static void _ConflictsHandle(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Index& index) {
+        if (!index.conflicts()) return;
+        
+        // We explicitly handle merge conflicts here.
+        // Conflicts can still occur even when fileFavor==GIT_MERGE_FILE_FAVOR_THEIRS and we've provided
+        // that to, eg, commitParentSet().
+        // In that case, we want to iterate over all the conflicts and choose the 'theirs' side.
+        // If fileFavor==GIT_MERGE_FILE_FAVOR_NORMAL, we need to let the user decide how to solve the
+        // merge conflict.
+        const std::vector<FileConflict> fcs = ConflictsGet(ctx.repo, index);
+        switch (fileFavor) {
+        case GIT_MERGE_FILE_FAVOR_NORMAL:
+            ctx.conflictsResolve(index, fcs);
+            return;
+        case GIT_MERGE_FILE_FAVOR_THEIRS:
+            for (const FileConflict& fc : fcs) {
+                ConflictResolve(ctx.repo, index, fc, fc.content(FileConflict::Side::Theirs));
+            }
+            return;
+        // Unsupported git_merge_file_favor_t
+        default:
+            abort();
         }
     }
     
     static Commit _CommitParentSet(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& commit, const Commit& parent) {
         Index index = ctx.repo.commitParentSet(fileFavor, commit, parent);
-        _ConflictsHandle(ctx, index);
+        _ConflictsHandle(ctx, fileFavor, index);
         return ctx.repo.commitParentSetFinish(index, commit, parent);
     }
     
     static Commit _CommitIntegrate(const Ctx& ctx, git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) {
         Index index = ctx.repo.commitIntegrate(fileFavor, dst, src);
-        _ConflictsHandle(ctx, index);
+        _ConflictsHandle(ctx, fileFavor, index);
         return ctx.repo.commitIntegrateFinish(index, dst, src);
     }
     

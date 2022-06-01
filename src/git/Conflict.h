@@ -8,6 +8,11 @@
 namespace Git {
 
 struct FileConflict {
+    enum class Side {
+        Ours,
+        Theirs,
+    };
+    
     struct Hunk {
         enum class Type {
             Normal,
@@ -32,25 +37,41 @@ struct FileConflict {
             default: abort();
             }
         }
+        
+        const std::vector<std::string>& lines(Side side) const {
+            switch (type) {
+            case Type::Normal:      return normal.lines;
+            case Type::Conflict:
+                switch (side) {
+                case Side::Ours:    return conflict.linesOurs;
+                case Side::Theirs:  return conflict.linesTheirs;
+                default:            abort();
+                }
+            default: abort();
+            }
+        }
     };
     
     std::filesystem::path path;
     std::vector<Hunk> hunks;
     
-    // noFileOurs(): returns whether the 'ours' branch of the conflict
+    // noFile(side): returns whether the given `side` of the conflict
     // represents a non-existent file
-    bool noFileOurs() const {
+    bool noFile(Side side) const {
         return  hunks.size()==1                     &&
                 hunks[0].type==Hunk::Type::Conflict &&
-                hunks[0].conflict.linesOurs.empty();
+                hunks[0].lines(side).empty();
     }
     
-    // noFileTheirs(): returns whether the 'theirs' branch of the conflict
-    // represents a non-existent file
-    bool noFileTheirs() const {
-        return  hunks.size()==1                     &&
-                hunks[0].type==Hunk::Type::Conflict &&
-                hunks[0].conflict.linesTheirs.empty();
+    // content(side): returns the content for the given `side` of the conflict
+    std::optional<std::string> content(Side side) const {
+        if (noFile(side)) return std::nullopt;
+        std::vector<std::string> lines;
+        for (const Hunk& hunk : hunks) {
+            const auto& l = hunk.lines(side);
+            lines.insert(lines.end(), l.begin(), l.end());
+        }
+        return Toastbox::String::Join(lines, "\n");
     }
     
     size_t conflictCount() const {

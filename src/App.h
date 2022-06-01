@@ -1225,7 +1225,7 @@ private:
             .repo = _repo,
             .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
-            .conflictResolve = [&] (const Git::Index& index) { _gitConflictResolve(gitOp, index); },
+            .conflictsResolve = [&] (const Git::Index& index, const std::vector<Git::FileConflict>& fcs) { _gitConflictsResolve(gitOp, index, fcs); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1454,7 +1454,8 @@ private:
                         // If the user cleared the conflict file, and there's a branch of the
                         // conflict that represents a non-existent file, then consider the
                         // file as non-existent, rather than an empty file.
-                        if (editorContent.empty() && (fc.noFileOurs() || fc.noFileTheirs())) {
+                        const bool noFile = fc.noFile(Git::FileConflict::Side::Ours) || fc.noFile(Git::FileConflict::Side::Theirs);
+                        if (editorContent.empty() && noFile) {
                             return std::nullopt;
                         }
                         return editorContent;
@@ -1480,7 +1481,7 @@ private:
         return Toastbox::String::Join(lines, "\n");
     }
     
-    void _gitConflictResolve(const _GitOp& op, const Git::Index& index) {
+    void _gitConflictsResolve(const _GitOp& op, const Git::Index& index, const std::vector<Git::FileConflict>& fcs) {
         // op.dst.rev is optional (depending on the git operation), so if it doesn't exist,
         // fallback to op.src.rev (which is required)
         const Rev revOurs = (op.dst.rev ? op.dst.rev : op.src.rev);
@@ -1499,8 +1500,6 @@ private:
                 break;
             }
         }
-        
-        const std::vector<Git::FileConflict> fcs = Git::ConflictsGet(_repo, index);
         
         // Count the total number of conflict
         size_t conflictCount = 0;
