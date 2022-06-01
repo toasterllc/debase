@@ -1087,6 +1087,42 @@ private:
         _selectionRect = std::nullopt;
     }
     
+    void _branchCreateFromRev(const Rev& rev, const Git::Commit& commit) {
+        std::string branchName = "NewBranch";
+        if (rev.ref) {
+            if (rev.ref.isBranch()) {
+                branchName = _repo.branchNameLocal(Git::Branch::ForRef(rev.ref));
+            } else {
+                branchName = rev.ref.name();
+            }
+        }
+        
+        // Keep appending a new suffix until we find an unused branch name
+        Git::Branch branch;
+        for (size_t i=2; i<10; i++) {
+            try {
+                branch = _repo.branchCreate(branchName+"-"+std::to_string(i), commit);
+            } catch (const Git::Error& e) {
+                if (e.error == GIT_EEXISTS) continue;
+                throw;
+            }
+            break;
+        }
+        
+        if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
+        
+        const Git::Signature sig = _repo.signatureDefaultCreate();
+        Git::Reflog reflog = _repo.reflogForRef(_repo.head());
+        reflog.append(sig, _head, branch);
+        reflog.append(sig, branch, _head);
+        
+        auto it = std::find(_revs.begin(), _revs.end(), rev);
+        volatile size_t dist = std::distance(_revs.begin(), it);
+        assert(it != _revs.end());
+        _revs.insert(it+1, branch);
+        _reload();
+    }
+    
     std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
@@ -1120,32 +1156,7 @@ private:
             assert(_selection.commits.size() == 1);
             const Rev& rev = mouseDownColumn->rev();
             const Git::Commit& commit = *_selection.commits.begin();
-            const std::string branchName = (rev.ref ? rev.ref.name() : "NewBranch");
-            Git::Branch branch;
-            
-            // Keep appending a new suffix until we find an unused branch name
-            for (size_t i=2; i<10; i++) {
-                try {
-                    branch = _repo.branchCreate(branchName+"-"+std::to_string(i), commit);
-                } catch (const Git::Error& e) {
-                    if (e.error == GIT_EEXISTS) continue;
-                    throw;
-                }
-                break;
-            }
-            
-            if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
-            
-            const Git::Signature sig = _repo.signatureDefaultCreate();
-            Git::Reflog reflog = _repo.reflogForRef(_repo.head());
-            reflog.append(sig, _head, branch);
-            reflog.append(sig, branch, _head);
-            
-            auto it = std::find(_revs.begin(), _revs.end(), rev);
-            volatile size_t dist = std::distance(_revs.begin(), it);
-            assert(it != _revs.end());
-            _revs.insert(it+1, branch);
-            _reload();
+            _branchCreateFromRev(rev, commit);
         
         } else if (menuButton == combineButton.get()) {
             gitOp = _GitOp{

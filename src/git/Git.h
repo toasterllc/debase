@@ -7,6 +7,7 @@
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
 #include "lib/toastbox/Defer.h"
+#include "lib/toastbox/String.h"
 #include "lib/libgit2/include/git2.h"
 
 namespace Git {
@@ -378,7 +379,15 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
     }
     
     bool isBranch() const {
+        return isLocalBranch() || isRemoteBranch();
+    }
+    
+    bool isLocalBranch() const {
         return git_reference_is_branch(*get());
+    }
+    
+    bool isRemoteBranch() const {
+        return git_reference_is_remote(*get());
     }
     
     bool isTag() const {
@@ -416,12 +425,36 @@ struct Branch : Ref {
         return x;
     }
     
+    // local(): returns true if this is a local branch, false if this a remote tracking branch
+    bool local() const {
+        return git_reference_is_branch(*get());
+    }
+    
     std::string name() const {
         const char* x = nullptr;
         int ir = git_branch_name(&x, *get());
         if (ir) throw Error(ir, "git_branch_name failed");
         return x;
     }
+    
+//    std::string nameLocal() const {
+//        std::string n = name();
+//        if (local()) return n;
+//        
+//        Buf buf;
+//        {
+//            git_buf x = GIT_BUF_INIT;
+//            int ir = git_branch_remote_name(&x, *get(), key.c_str());
+//            if (ir == GIT_ENOTFOUND) return std::nullopt;
+//            if (ir) throw Error(ir, "git_config_get_string_buf failed");
+//            buf = x;
+//        }
+//        
+//        
+//        
+//        n.
+//        git_reference_is_branch(*get()) || git_reference_is_remote(*get())
+//    }
     
     Branch upstream() const {
         git_reference* x = nullptr;
@@ -504,7 +537,7 @@ public:
         assert(*this);
         // Only ref-backed revs are mutable
         if (!ref) return false;
-        return ref.isBranch() || ref.isTag();
+        return ref.isLocalBranch() || ref.isTag();
     }
     
 //    operator bool() const { return (bool)commit; }
@@ -830,7 +863,7 @@ public:
     }
     
     Ref refReplace(const Ref& ref, const Commit& commit) const {
-        if (ref.isBranch()) {
+        if (ref.isLocalBranch()) {
             return branchReplace(Branch::ForRef(ref), commit);
         
         } else if (ref.isTag()) {
@@ -851,18 +884,6 @@ public:
 //        assert(rev.isMutable());
 //        return Rev(refReplace(rev.ref, commit), rev.refSkip);
 //    }
-    
-    Branch branchReplace(const Branch& branch, const Commit& commit) const {
-        Branch upstream = branch.upstream();
-        Branch newBranch = branchCreate(branch.name(), commit, true);
-        Branch newBranchUpstream = newBranch.upstream();
-        
-        if (upstream && !newBranchUpstream) {
-            newBranch.upstreamSet(upstream);
-        }
-        
-        return newBranch;
-    }
     
     Tag tagReplace(const Tag& tag, const Commit& commit) const {
         if (TagAnnotation ann = tag.annotation()) {
@@ -927,6 +948,41 @@ public:
         int ir = git_branch_create(&x, *get(), name.c_str(), (commit ? *commit : nullptr), force);
         if (ir) throw Error(ir, "git_branch_create failed");
         return x;
+    }
+    
+    Branch branchReplace(const Branch& branch, const Commit& commit) const {
+        Branch upstream = branch.upstream();
+        Branch newBranch = branchCreate(branch.name(), commit, true);
+        Branch newBranchUpstream = newBranch.upstream();
+        
+        if (upstream && !newBranchUpstream) {
+            newBranch.upstreamSet(upstream);
+        }
+        
+        return newBranch;
+    }
+    
+    // branchNameLocal(): returns the local branch name for a branch:
+    //   master         -> master
+    //   origin/master  -> master
+    std::string branchNameLocal(const Branch& branch) {
+        std::string n = branch.name();
+        if (branch.local()) return n;
+        
+        Buf buf;
+        {
+            git_buf x = GIT_BUF_INIT;
+            int ir = git_branch_remote_name(&x, *get(), branch.fullName().c_str());
+            if (ir) throw Error(ir, "git_branch_remote_name failed");
+            buf = x;
+        }
+        
+        const std::string prefix = std::string(buf->ptr)+"/";
+        if (!String::StartsWith(prefix, n)) {
+            throw RuntimeError("%s doesn't begin with %s as expected", n.c_str(), prefix.c_str());
+        }
+        
+        return n.substr(prefix.size());
     }
     
     Tag tagLookup(const std::string& name) const {
