@@ -28,6 +28,8 @@ History lost when head commit doesn't match saved commit
 
 Executing debase outside of git repo shows error dialog
 
+Moving/copying commits between branch and branch~4 works as expected, included updating the undo state
+
 
 * General tag editing: same as 'General branch editing'
 
