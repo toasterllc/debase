@@ -278,22 +278,12 @@ private:
                 op.src.commits      // remove:      std::set<Commit>
             );
             
-            // Replace the source branch/tag
-            ctx.refReplace(op.src.rev.ref, srcDstResult.commit);
-            // srcRev/dstRev: we're not using the result from revReplace() as the OpResult src/dst revs,
-            // and instead use repo.revReload() to get the new revs. This is to handle the case where
-            // we're moving commits between eg master and master~4. In this case, the revs are different
-            // even though the underlying refs are the same, so we can't use the same rev for both
-            // OpResult.src.rev and OpResult.dst.rev.
-            T_Rev srcRev = op.src.rev;
+            // Replace the branch/tag
             T_Rev dstRev = op.dst.rev;
-            (Rev&)srcRev = ctx.repo.revReload(srcRev);
-            (Rev&)dstRev = ctx.repo.revReload(dstRev);
+            (Rev&)dstRev = ctx.refReplace(dstRev.ref, srcDstResult.commit);
             return OpResult{
                 .src = {
-                    .rev = srcRev,
-                    .selection = srcDstResult.added,
-                    .selectionPrev = op.src.commits,
+                    .rev = op.src.rev,
                 },
                 .dst = {
                     .rev = dstRev,

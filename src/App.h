@@ -1253,7 +1253,7 @@ private:
         }
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
-        if (dstHistory && dstRev.commit!=dstRevPrev.commit && dstHistory!=srcHistory) {
+        if (dstHistory && dstRev.commit!=dstRevPrev.commit) {
             dstHistory->push({
                 .head = State::Convert(dstRev.commit),
                 .selection = State::Convert(opResult->dst.selection),
