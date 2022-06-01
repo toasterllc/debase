@@ -362,13 +362,19 @@ private:
         std::map<Ref,std::vector<Snapshot>> snapshots;
     };
     
+    struct _LoadedRef {
+        History history;
+        History historyPrev;
+        Snapshot snapshotInitial;
+        std::vector<Snapshot> snapshots;
+    };
+    
     _Path _rootDir;
     _Path _repoStateDir;
     Git::Repo _repo;
     
     _RepoState _repoState;
-    std::map<Ref,History> _historyPrev;
-    std::map<Ref,Snapshot> _initialSnapshot;
+    std::map<Ref,_LoadedRef> _loadedRefs;
     
     static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
         std::string name = std::filesystem::canonical(repo.path());
@@ -418,10 +424,14 @@ private:
         return r;
     }
     
-    void _loadRef(const Git::Ref& ref) {
+    _LoadedRef& _loadRef(const Git::Ref& ref) {
         const Ref cref = Convert(ref);
+        
+        auto [it, inserted] = _loadedRefs.insert({cref, {}});
         // Short-circuit if we've already loaded `ref`
-        if (_historyPrev.find(cref) != _historyPrev.end()) return;
+        if (!inserted) return it->second;
+        
+        _LoadedRef& lref = it->second;
         
         // Ensure that _state.history has an entry for each ref
         // Also ensure that if the stored history head doesn't
@@ -436,22 +446,26 @@ private:
             } catch (...) {}
         }
         
-        // Create a fresh history if the stored head doesn't match the current head
-        if (headStored != headCurrent) {
-            _repoState.history[cref] = History(RefState{.head = Convert(headCurrent)});
+        // Use the existing history if the stored ref head matches the current ref head.
+        // Otherwise, create a fresh (empty) history.
+        if (headStored == headCurrent) {
+            lref.history = find->second;
+        } else {
+            lref.history = History(RefState{.head = Convert(headCurrent)});
         }
         
         // Remember the initial history so we can tell if it changed upon exit,
         // so we know whether to save it. (We don't want to save histories that
         // didn't change to help prevent clobbering changes from another
         // session.)
-        _historyPrev[cref] = _repoState.history.at(cref);
+        lref.historyPrev = lref.history;
         
-        // Ensure that `_snapshots` has an entry for every ref
-        _repoState.snapshots[cref];
+        // Populate .snapshotInitial
+        lref.snapshotInitial = ref.commit();
         
-        // Populate _initialSnapshot
-        _initialSnapshot[cref] = ref.commit();
+        // Populate .snapshots
+        lref.snapshots = _repoState.snapshots[cref];
+        return lref;
     }
     
 public:
@@ -476,16 +490,17 @@ public:
         // We use this strategy so that we don't clobber data written by another debase
         // session, for unrelated refs. If two debase sessions made modifications to the same
         // refs, then the one that write later wins.
-        for (const auto& i : _repoState.history) {
-            Ref ref = i.first;
-            const History& refHistory = i.second;
-            const History& refHistoryPrev = _historyPrev.at(ref);
+        for (const auto& i : _loadedRefs) {
+            const Ref& ref = i.first;
+            const _LoadedRef& lref = i.second;
+            const History& refHistory = lref.history;
+            const History& refHistoryPrev = lref.historyPrev;
             if (refHistory != refHistoryPrev) {
                 repoState.history[ref] = refHistory;
                 
-                std::vector<Snapshot> refSnapshots = _repoState.snapshots.at(ref);
+                std::vector<Snapshot> refSnapshots = lref.snapshots;
                 refSnapshots.push_back(refHistory.get().head);
-                refSnapshots.push_back(_initialSnapshot.at(ref));
+                refSnapshots.push_back(lref.snapshotInitial);
                 // Remove duplicate snapshots and sort them
                 refSnapshots = _CleanSnapshots(refSnapshots);
                 
@@ -498,18 +513,18 @@ public:
     }
     
     Snapshot& initialSnapshot(const Git::Ref& ref) {
-        _loadRef(ref);
-        return _initialSnapshot.at(Convert(ref));
+        _LoadedRef& lref = _loadRef(ref);
+        return lref.snapshotInitial;
     }
     
     History& history(const Git::Ref& ref) {
-        _loadRef(ref);
-        return _repoState.history.at(Convert(ref));
+        _LoadedRef& lref = _loadRef(ref);
+        return lref.history;
     }
     
     const std::vector<Snapshot>& snapshots(const Git::Ref& ref) {
-        _loadRef(ref);
-        return _repoState.snapshots.at(Convert(ref));
+        _LoadedRef& lref = _loadRef(ref);
+        return lref.snapshots;
     }
     
     Git::Repo repo() const {
