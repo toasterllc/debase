@@ -1116,10 +1116,17 @@ private:
         reflog.append(sig, _head, branch);
         reflog.append(sig, branch, _head);
         
+        const Rev branchRev(branch);
         auto it = std::find(_revs.begin(), _revs.end(), rev);
-        volatile size_t dist = std::distance(_revs.begin(), it);
         assert(it != _revs.end());
-        _revs.insert(it+1, branch);
+        _revs.insert(it+1, branchRev);
+        
+        // Set our selection to the first commit of the new branch
+        _selection = {
+            .rev = branchRev,
+            .commits = {commit},
+        };
+        
         _reload();
     }
     
