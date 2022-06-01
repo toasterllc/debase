@@ -305,9 +305,15 @@ public:
 private:
     void _cursorDraw() {
         if (hitTest(_cursorState.origin)) {
-            ::move(_cursorState.origin.y, _cursorState.origin.x);
-            ::curs_set(_cursorState.visible);
-        
+            if (_cursorState.visible) {
+                // Visible: move first, then set visibility
+                ::move(_cursorState.origin.y, _cursorState.origin.x);
+                ::curs_set(true);
+            } else {
+                // Invisible: set visibility, then move
+                ::curs_set(false);
+                ::move(_cursorState.origin.y, _cursorState.origin.x);
+            }
         } else {
             ::curs_set(false);
         }

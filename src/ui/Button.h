@@ -43,9 +43,6 @@ public:
     const auto& highlightColor() const { return _highlightColor; }
     template <typename T> bool highlightColor(const T& x) { return _set(_highlightColor, x); }
     
-//    const auto& insetX() const { return _insetX; }
-//    template <typename T> bool insetX(const T& x) { return _set(_insetX, x); }
-    
     const auto& action() const { return _action; }
     template <typename T> bool action(const T& x) { return _setForce(_action, x); }
     
@@ -69,19 +66,6 @@ public:
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
         _key->origin({r.r()-_key->size().x, r.my()});
-        
-//        _label->frame(f);
-//        _key->frame(f);
-//        
-//        _label->layout(win);
-//        _key->layout(win);
-//        
-//        
-//        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
-//        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
-//        
-//        _label->layout(win);
-//        _textField.layout(win);
     }
     
     void draw() override {
@@ -102,89 +86,7 @@ public:
             if (bordered()) borderColor(colors().normal);
         }
         _label->textAttr(attr);
-        
-//        // Draw labels
-//        _key->draw(win);
-//        _label->draw(win);
     }
-    
-//    void drawBorder() override {
-//        if (bordered()) {
-//            Attr style = attr(enabledWindow() ? _highlightColor() : colors().dimmed);
-//            drawRect();
-//        }
-//    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-//    bool draw() override {
-//        if (!View::draw(win)) return false;
-//        
-//        const Rect f = frame();
-//        const size_t labelLen = UTF8::Len(_label);
-//        const size_t keyLen = UTF8::Len(_key);
-//        const int borderSize = (_bordered ? 1 : 0);
-//        const int insetX = _insetX+borderSize;
-//        const int availWidth = f.size.x-2*insetX;
-//        const int labelWidth = std::min((int)labelLen, availWidth);
-//        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
-//        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
-//        
-//        if (_bordered) {
-//            Attr color = attr(_enabled ? colors().normal : colors().dimmed);
-//            win.drawRect(f);
-//        }
-//        
-//        int offY = (f.size.y-1)/2;
-//        
-//        // Draw label
-//        Point plabel;
-//        Point pkey;
-//        if (_center) {
-//            int leftX = insetX + std::max(0, ((f.size.x-2*insetX)-textWidth)/2);
-//            plabel = f.origin + Size{leftX, offY};
-//            pkey = plabel + Size{labelWidth+KeySpacing, 0};
-//        
-//        } else {
-//            plabel = f.origin + Size{insetX, offY};
-//            pkey = f.origin + Size{f.size.x-keyWidth-insetX, offY};
-//        }
-//        
-//        {
-//            Attr bold;
-//            Attr color;
-//            if (_enabled)                 bold = attr(WA_BOLD);
-//            if (_highlighted && _enabled) color = attr(colors().menu);
-//            else if (!_enabled)           color = attr(colors().dimmed);
-//            drawText(plabel, labelWidth, _label->c_str());
-//        }
-//        
-//        // Draw key
-//        {
-//            Attr color = attr(colors().dimmed);
-//            drawText(pkey, keyWidth, _key->c_str());
-//        }
-//        
-//        return true;
-//    }
     
     bool handleEvent(const Event& ev) override {
         // Only consider mouse events
@@ -224,12 +126,6 @@ public:
 private:
     static constexpr int KeySpacingX = 2;
     
-//    Color _highlightColor() const {
-//        return borderColor() ? *borderColor() : colors().normal;
-//    }
-    
-//    bool _bordered() const { return (bool)borderColor(); }
-    
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
     
@@ -238,7 +134,6 @@ private:
     bool _mouseActive = false;
     bool _bordered = false;
     Color _highlightColor;
-//    int _insetX = 0;
     std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;

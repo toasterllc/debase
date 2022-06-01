@@ -49,6 +49,8 @@ public:
     App(Git::Repo repo, const std::vector<Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
+    bool focusable() const override { return true; }
+    
     using UI::Screen::layout;
     void layout() override {
         
@@ -382,6 +384,26 @@ public:
             _reload();
             
 //            _conflictRun();
+            
+            
+            
+            
+            
+//            {
+//                bool done = false;
+//                auto alert = _panelPresent<UI::Alert>();
+//                alert->width                            (50);
+//                alert->color                            (colors().menu);
+//                alert->title()->text                    ("title");
+//                alert->message()->text                  ("message");
+//                alert->okButton()->label()->text        ("OK");
+//                alert->okButton()->action               ( [&] (UI::Button& b) { done = true; } );
+//                while (!done) track({}, Once);
+//            }
+            
+            
+            
+            
             
             _moveOffer();
             _licenseCheck();
@@ -740,6 +762,17 @@ private:
         return _selection.rev.isMutable();
     }
     
+    void _revColumnNameRequestFocus(UI::RevColumnPtr col) {
+        for (UI::RevColumnPtr col : _columns) {
+            col->name()->focus(false);
+        }
+        col->name()->focus(true);
+    }
+    
+    void _revColumnNameReleaseFocus(UI::RevColumnPtr col) {
+        
+    }
+    
     void _reload() {
         // We allow ourself to be called outside of a git repo, so we need
         // to check _repo for null
@@ -786,6 +819,17 @@ private:
                 col->snapshotsButton()->action([=] (UI::Button&) {
                     auto col = weakCol.lock();
                     if (col) _trackSnapshotsMenu(col);
+                });
+                
+                col->name()->valueChangedAction ([=] (UI::TextField& field) {  });
+                col->name()->requestFocusAction ([=] (UI::TextField& field) {
+                    auto col = weakCol.lock();
+                    if (col) _revColumnNameRequestFocus(col);
+                });
+                
+                col->name()->releaseFocusAction ([=] (UI::TextField& field, UI::TextField::ReleaseFocusReason reason) {
+                    auto col = weakCol.lock();
+                    if (col) _revColumnNameReleaseFocus(col);
                 });
             
             } else {

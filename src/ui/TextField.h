@@ -8,6 +8,12 @@ namespace UI {
 
 class TextField : public View {
 public:
+    enum class ReleaseFocusReason {
+        Tab,
+        Return,
+        Escape,
+    };
+    
     bool layoutNeeded() const override { return true; }
     
     void layout() override {
@@ -54,14 +60,14 @@ public:
     const auto& value() const { return _value; }
     template <typename T> bool value(const T& x) { return _set(_value, x); }
     
-    const auto& valueChanged() const { return _valueChanged; }
-    template <typename T> bool valueChanged(const T& x) { return _setForce(_valueChanged, x); }
+    const auto& valueChangedAction() const { return _valueChangedAction; }
+    template <typename T> bool valueChangedAction(const T& x) { return _setForce(_valueChangedAction, x); }
     
-    const auto& requestFocus() const { return _requestFocus; }
-    template <typename T> bool requestFocus(const T& x) { return _setForce(_requestFocus, x); }
+    const auto& requestFocusAction() const { return _requestFocusAction; }
+    template <typename T> bool requestFocusAction(const T& x) { return _setForce(_requestFocusAction, x); }
     
-    const auto& releaseFocus() const { return _releaseFocus; }
-    template <typename T> bool releaseFocus(const T& x) { return _setForce(_releaseFocus, x); }
+    const auto& releaseFocusAction() const { return _releaseFocusAction; }
+    template <typename T> bool releaseFocusAction(const T& x) { return _setForce(_releaseFocusAction, x); }
     
 private:
     static constexpr int KeySpacing = 2;
@@ -102,7 +108,7 @@ private:
                 const bool hit = hitTest(ev.mouse.origin);
                 
                 if (ev.mouseDown() && hit && !_focus) {
-                    if (_requestFocus) _requestFocus(*this);
+                    if (_requestFocusAction) _requestFocusAction(*this);
                 }
                 
                 if ((ev.mouseDown() && hit) || tracking()) {
@@ -134,7 +140,7 @@ private:
                 _offCursor -= eraseSize;
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyFnDelete) {
@@ -145,7 +151,7 @@ private:
                 _value.erase(cursor, eraseEnd);
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyLeft) {
@@ -189,15 +195,15 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                if (_releaseFocus) _releaseFocus(*this, false);
+                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                if (_releaseFocus) _releaseFocus(*this, false);
+                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                if (_releaseFocus) _releaseFocus(*this, true);
+                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Return);
                 return true;
             
             } else {
@@ -215,7 +221,7 @@ private:
                 _offCursor++;
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             }
         }
@@ -228,9 +234,9 @@ private:
     }
     
     std::string _value;
-    std::function<void(TextField&)> _valueChanged;
-    std::function<void(TextField&)> _requestFocus;
-    std::function<void(TextField&, bool)> _releaseFocus;
+    std::function<void(TextField&)> _valueChangedAction;
+    std::function<void(TextField&)> _requestFocusAction;
+    std::function<void(TextField&, ReleaseFocusReason)> _releaseFocusAction;
     
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
