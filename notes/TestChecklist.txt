@@ -34,6 +34,13 @@ Moving/copying commits between branch and branch~4 works as expected, included u
 * General tag editing: same as 'General branch editing'
 
 
+* Creating branches
+
+Create branch from commit within regular branch
+Create branch from commit within remote-tracking branch
+Create branch from commit within tag
+
+
 * Other features
 
 If the current branch has uncomitted changes, debase considers all instances of that
