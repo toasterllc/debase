@@ -278,8 +278,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: fix: copying a commit within a branch doesn't update undo state
-    
     #warning TODO: add branch copying; action menu? drag branch name? both?
     #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
     #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
@@ -332,6 +330,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: fix: copying a commit within a branch doesn't update undo state
+//
 //    #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
 //
 //    #warning TODO: ConflictPanel: fix text overflow: yosys repo: copy 55eed8d from gatecat/timing-derive-fix to master
