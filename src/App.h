@@ -331,11 +331,7 @@ public:
         _head = _repo.headResolved();
         
         // Create _repoState
-        std::set<Git::Ref> refs;
-        for (const Rev& rev : _revs) {
-            if (rev.ref) refs.insert(rev.ref);
-        }
-        _repoState = State::RepoState(StateDir(), _repo, refs);
+        _repoState = State::RepoState(StateDir(), _repo);
         
         // If the repo has outstanding changes, prevent the currently checked-out
         // branch from being modified, since we can't clobber the uncommitted

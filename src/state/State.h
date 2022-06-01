@@ -418,49 +418,50 @@ private:
         return r;
     }
     
-public:
-    RepoState() {}
-    RepoState(_Path rootDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
-    _rootDir(rootDir), _repoStateDir(_RepoStateDirPath(_rootDir, repo)), _repo(repo) {
-        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, true);
-        
-        // Decode _repoState
-        _RepoStateRead(_RepoStateFilePath(_repoStateDir), _repoState);
+    void _loadRef(const Git::Ref& ref) {
+        const Ref cref = Convert(ref);
+        // Short-circuit if we've already loaded `ref`
+        if (_historyPrev.find(cref) != _historyPrev.end()) return;
         
         // Ensure that _state.history has an entry for each ref
         // Also ensure that if the stored history head doesn't
         // match the current head, we create a fresh history.
-        for (Git::Ref ref : refs) {
-            Git::Commit headCurrent = ref.commit();
-            Git::Commit headStored;
-            auto find = _repoState.history.find(Convert(ref));
-            if (find != _repoState.history.end()) {
-                // Handle the stored commit not existing
-                try {
-                    headStored = Convert(_repo, find->second.get().head);
-                } catch (...) {}
-            }
-            
-            if (headStored != headCurrent) {
-                _repoState.history[Convert(ref)] = History(RefState{.head = Convert(headCurrent)});
-            }
+        Git::Commit headCurrent = ref.commit();
+        Git::Commit headStored;
+        auto find = _repoState.history.find(cref);
+        if (find != _repoState.history.end()) {
+            // Handle the stored commit not existing
+            try {
+                headStored = Convert(_repo, find->second.get().head);
+            } catch (...) {}
+        }
+        
+        // Create a fresh history if the stored head doesn't match the current head
+        if (headStored != headCurrent) {
+            _repoState.history[cref] = History(RefState{.head = Convert(headCurrent)});
         }
         
         // Remember the initial history so we can tell if it changed upon exit,
         // so we know whether to save it. (We don't want to save histories that
         // didn't change to help prevent clobbering changes from another
         // session.)
-        _historyPrev = _repoState.history;
+        _historyPrev[cref] = _repoState.history.at(cref);
         
         // Ensure that `_snapshots` has an entry for every ref
-        for (Git::Ref ref : refs) {
-            _repoState.snapshots[Convert(ref)];
-        }
+        _repoState.snapshots[cref];
         
         // Populate _initialSnapshot
-        for (Git::Ref ref : refs) {
-            _initialSnapshot[Convert(ref)] = ref.commit();
-        }
+        _initialSnapshot[cref] = ref.commit();
+    }
+    
+public:
+    RepoState() {}
+    RepoState(_Path rootDir, Git::Repo repo) :
+    _rootDir(rootDir), _repoStateDir(_RepoStateDirPath(_rootDir, repo)), _repo(repo) {
+        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, true);
+        
+        // Decode _repoState
+        _RepoStateRead(_RepoStateFilePath(_repoStateDir), _repoState);
     }
     
     void write() {
@@ -496,15 +497,18 @@ public:
         _RepoStateWrite(_RepoStateFilePath(_repoStateDir), repoState);
     }
     
-    Snapshot& initialSnapshot(Git::Ref ref) {
+    Snapshot& initialSnapshot(const Git::Ref& ref) {
+        _loadRef(ref);
         return _initialSnapshot.at(Convert(ref));
     }
     
-    History& history(Git::Ref ref) {
+    History& history(const Git::Ref& ref) {
+        _loadRef(ref);
         return _repoState.history.at(Convert(ref));
     }
     
-    const std::vector<Snapshot>& snapshots(Git::Ref ref) const {
+    const std::vector<Snapshot>& snapshots(const Git::Ref& ref) {
+        _loadRef(ref);
         return _repoState.snapshots.at(Convert(ref));
     }
     
