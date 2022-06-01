@@ -28,6 +28,9 @@ public:
     auto& label() { return _label; }
     auto& key() { return _key; }
     
+    const auto& mouseUpTracks() const { return _mouseUpTracks; }
+    template <typename T> bool mouseUpTracks(const T& x) { return _set(_mouseUpTracks, x); }
+    
     const auto& highlighted() const { return _highlighted; }
     template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
     
@@ -209,7 +212,7 @@ public:
         // Mouse-up events are to allow Menu to use this function for context
         // menus: right-mouse-down opens the menu, while the right-mouse-up
         // triggers the Button action via this function.
-        if (hit && (ev.mouseDown(_actionButtons) || ev.mouseUp(_actionButtons))) {
+        if (hit && (ev.mouseDown(_actionButtons) || (_mouseUpTracks && ev.mouseUp(_actionButtons)))) {
             // Track mouse
             track(ev);
             return true;
@@ -230,6 +233,7 @@ private:
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
     
+    bool _mouseUpTracks = false;
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _bordered = false;
