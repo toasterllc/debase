@@ -307,13 +307,21 @@ private:
             // Remove commits from `op.src`
             _AddRemoveResult srcResult = _AddRemoveCommits(
                 ctx,
-                _FileFavor(op.src.rev, op.dst.rev),
+                _FileFavor(op.src.rev, {}), // Second argument empty because deletion happens within
+                                            // the same ref, so there's no 'destination' for the
+                                            // deletion.
+                                            // More concretely, we want to use fileFavor==_THEIRS
+                                            // to avoid conflicts on the deletion side.
                 op.src.rev.commit,  // dst:         Commit
                 {},                 // add:         std::set<Commit>
                 nullptr,            // addSrc:      Commit
                 nullptr,            // addPosition: Commit
                 op.src.commits      // remove:      std::set<Commit>
             );
+            
+            if (!srcResult.commit) {
+                throw RuntimeError("can't move last commit");
+            }
             
             // Add commits to `op.dst`
             _AddRemoveResult dstResult = _AddRemoveCommits(
@@ -390,7 +398,7 @@ private:
         // Remove commits from `op.src`
         _AddRemoveResult srcResult = _AddRemoveCommits(
             ctx,
-            _FileFavor(op.src.rev, op.dst.rev),
+            _FileFavor(op.src.rev, {}),
             op.src.rev.commit,  // dst:         Commit
             {},                 // add:         std::set<Commit>
             nullptr,            // addSrc:      Commit
@@ -442,7 +450,7 @@ private:
         
         // Combine `head` with all the commits in `integrate`
         for (const Commit& commit : integrate) {
-            head = _CommitIntegrate(ctx, _FileFavor(op.src.rev, op.dst.rev), head, commit);
+            head = _CommitIntegrate(ctx, _FileFavor(op.src.rev, {}), head, commit);
         }
         
         // Remember the final commit containing all the integrated commits
@@ -451,7 +459,7 @@ private:
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
             // TODO:MERGE
-            head = _CommitParentSet(ctx, _FileFavor(op.src.rev, op.dst.rev), commit, head);
+            head = _CommitParentSet(ctx, _FileFavor(op.src.rev, {}), commit, head);
         }
         
         // Replace the source branch/tag
@@ -632,7 +640,7 @@ private:
         // Add and remove commits
         _AddRemoveResult srcResult = _AddRemoveCommits(
             ctx,
-            _FileFavor(op.src.rev, op.dst.rev),
+            _FileFavor(op.src.rev, {}),
             op.src.rev.commit,  // dst:         Commit
             {newCommit},        // add:         std::set<Commit>
             newCommit,          // addSrc:      Commit
