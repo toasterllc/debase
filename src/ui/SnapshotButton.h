@@ -14,7 +14,7 @@ public:
     SnapshotButton(Git::Repo repo, const State::Snapshot& snapshot, int width) :
     _repo(repo), _snapshot(snapshot), _width(width) {
         
-        Git::Commit commit = State::Convert(repo, snapshot.head);
+        Git::Commit commit = State::Convert(repo, snapshot.refState.head);
         Git::Signature sig = commit.author();
         
         _time->text(Time::RelativeTimeString({.pastSuffix="ago", .abbreviate=true}, snapshot.creationTime));

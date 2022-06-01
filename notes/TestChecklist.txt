@@ -41,6 +41,22 @@ Create branch from commit within remote-tracking branch
 Create branch from commit within tag
 
 
+* Renaming branches
+
+Rename currently-checked-out branch
+    - snapshots retained
+    - undo history retained
+    - exiting debase
+
+Rename non-currently-checked-out branch
+    - snapshots retained
+    - undo history retained
+
+Rename tag
+    - snapshots retained
+    - undo history retained
+
+
 * Other features
 
 If the current branch has uncomitted changes, debase considers all instances of that

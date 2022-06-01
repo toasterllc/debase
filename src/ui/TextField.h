@@ -8,22 +8,30 @@ namespace UI {
 
 class TextField : public View {
 public:
+    enum class UnfocusReason {
+        Tab,
+        Return,
+        Escape,
+    };
+    
     bool layoutNeeded() const override { return true; }
     
     void layout() override {
         _offUpdate();
         
-        if (_focusAndEnabled()) {
-            const ssize_t cursorOff = UTF8::Len(_left(), _cursor());
-            cursorState({.visible=true, .origin={(int)cursorOff, 0}});
+        if (_focusedAndEnabled()) {
+            const int alignOff = _alignOff();
+            const size_t cursorOff = UTF8::Len(_left(), _cursor());
+            cursorState({.visible=true, .origin={alignOff+(int)cursorOff, 0}});
         }
     }
     
     void draw() override {
-        Attr underline = attr(WA_UNDERLINE);
-        Attr color;
-        if (!_focusAndEnabled()) color = attr(colors().dimmed);
-        drawLineHoriz({}, size().x, ' ');
+        const attr_t styleAttr = _attr();
+        const Attr style = attr(styleAttr);
+        if (styleAttr & WA_UNDERLINE) {
+            drawLineHoriz({}, size().x, ' ');
+        }
         
         // Print as many codepoints as will fit our width
         const int width = size().x;
@@ -31,7 +39,7 @@ public:
         auto right = UTF8::NextN(left, _value.end(), width);
         
         std::string substr(left, right);
-        drawText({}, substr.c_str());
+        drawText({_alignOff(), 0}, substr.c_str());
     }
     
     bool handleEvent(const Event& ev) override {
@@ -48,20 +56,53 @@ public:
 //        return true;
 //    }
     
-    const auto& focus() const { return _focus; }
-    template <typename T> bool focus(const T& x) { return _set(_focus, x); }
+    const bool focused() const { return _focused; }
+    bool focused(bool x, std::optional<Align> align=std::nullopt) {
+        const bool set = _set(_focused, x);
+        if (set) eraseNeeded(true);
+        
+        if (align) {
+            switch (*align) {
+            case Align::Left:
+                _offLeft = std::numeric_limits<ssize_t>::min();
+                _offCursor = std::numeric_limits<ssize_t>::min();
+                break;
+            case Align::Right:
+                _offLeft = std::numeric_limits<ssize_t>::max();
+                _offCursor = std::numeric_limits<ssize_t>::max();
+                break;
+            default:
+                abort();
+            }
+            _offUpdate();
+        }
+        
+        return set;
+    }
     
     const auto& value() const { return _value; }
     template <typename T> bool value(const T& x) { return _set(_value, x); }
     
-    const auto& valueChanged() const { return _valueChanged; }
-    template <typename T> bool valueChanged(const T& x) { return _setForce(_valueChanged, x); }
+    const auto& align() const { return _align; }
+    template <typename T> bool align(const T& x) { return _set(_align, x); }
     
-    const auto& requestFocus() const { return _requestFocus; }
-    template <typename T> bool requestFocus(const T& x) { return _setForce(_requestFocus, x); }
+    const auto& attrFocused() const { return _attrFocused; }
+    template <typename T> bool attrFocused(const T& x) { return _setForce(_attrFocused, x); }
     
-    const auto& releaseFocus() const { return _releaseFocus; }
-    template <typename T> bool releaseFocus(const T& x) { return _setForce(_releaseFocus, x); }
+    const auto& attrUnfocused() const { return _attrUnfocused; }
+    template <typename T> bool attrUnfocused(const T& x) { return _setForce(_attrUnfocused, x); }
+    
+    const auto& trackWhileFocused() const { return _trackWhileFocused; }
+    template <typename T> bool trackWhileFocused(const T& x) { return _set(_trackWhileFocused, x); }
+    
+    const auto& valueChangedAction() const { return _valueChangedAction; }
+    template <typename T> bool valueChangedAction(const T& x) { return _setForce(_valueChangedAction, x); }
+    
+    const auto& focusAction() const { return _focusAction; }
+    template <typename T> bool focusAction(const T& x) { return _setForce(_focusAction, x); }
+    
+    const auto& unfocusAction() const { return _unfocusAction; }
+    template <typename T> bool unfocusAction(const T& x) { return _setForce(_unfocusAction, x); }
     
 private:
     static constexpr int KeySpacing = 2;
@@ -100,30 +141,53 @@ private:
         if (ev.type == Event::Type::Mouse) {
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
+                const bool handled = ((ev.mouseDown() && hit) || (ev.mouseUp() && _dragging));
                 
-                if (ev.mouseDown() && hit && !_focus) {
-                    if (_requestFocus) _requestFocus(*this);
+                if (ev.mouseDown() && hit) {
+                    _dragging = true;
+                } else if (ev.mouseUp()) {
+                    _dragging = false;
                 }
                 
-                if ((ev.mouseDown() && hit) || tracking()) {
+                if ((ev.mouseDown() && hit) || _dragging) {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.origin.x;
+                    int offX = ev.mouse.origin.x-_alignOff();
                     auto offIt = UTF8::NextN(_left(), _value.end(), offX);
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
                 
-                if (ev.mouseDown() && hit && !tracking()) {
-                    // Track mouse
-                    track(ev);
-                    return true;
+                if (_trackWhileFocused) {
+                    if (ev.mouseDown()) {
+                        if (hit && !_focused) {
+                            _focus();
+                        } else if (!hit && _focused) {
+                            _unfocus(UnfocusReason::Return);
+                        }
+                    }
                 
-                } else if (ev.mouseUp() && tracking()) {
-                    trackStop();
-                    return true;
+                } else {
+                    if (ev.mouseDown() && hit && !_focused) {
+                        _focus();
+                    }
+                    
+                    if (ev.mouseDown() && hit && !_dragging) {
+                        // Track mouse
+                        // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+                        // calling track() within its stack frame).
+                        // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+                        // So in that case, just don't track until the next mouse down.
+                        const bool trackAllowed = !screen().eventSince(ev);
+                        if (trackAllowed) track();
+                    
+                    } else if (ev.mouseUp() && _dragging) {
+                        trackStop();
+                    }
                 }
+                
+                return handled;
             }
         
-        } else if (_focusAndEnabled()) {
+        } else if (_focusedAndEnabled()) {
             if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor == _value.begin()) return true;
@@ -134,7 +198,7 @@ private:
                 _offCursor -= eraseSize;
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyFnDelete) {
@@ -145,7 +209,7 @@ private:
                 _value.erase(cursor, eraseEnd);
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             
             } else if (ev.type == Event::Type::KeyLeft) {
@@ -189,15 +253,19 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                if (_releaseFocus) _releaseFocus(*this, false);
+                _unfocus(UnfocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                if (_releaseFocus) _releaseFocus(*this, false);
+                _unfocus(UnfocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                if (_releaseFocus) _releaseFocus(*this, true);
+                _unfocus(UnfocusReason::Return);
+                return true;
+            
+            } else if (ev.type == Event::Type::KeyEscape) {
+                _unfocus(UnfocusReason::Escape);
                 return true;
             
             } else {
@@ -215,7 +283,7 @@ private:
                 _offCursor++;
                 _offUpdate();
                 
-                if (_valueChanged) _valueChanged(*this);
+                if (_valueChangedAction) _valueChangedAction(*this);
                 return true;
             }
         }
@@ -223,18 +291,65 @@ private:
         return false;
     }
     
-    bool _focusAndEnabled() const {
-        return _focus && enabledWindow();
+    bool _focusedAndEnabled() const {
+        return _focused && enabledWindow();
+    }
+    
+    attr_t _attr() const {
+        return (_focusedAndEnabled() ? _attrFocused : _attrUnfocused);
+    }
+    
+    int _alignOff() const {
+        const size_t len = UTF8::Len(_value);
+        const int width = size().x;
+        switch (_align) {
+        case Align::Left:
+            return 0;
+        case Align::Center:
+            if ((int)len < width) return (width-(int)len)/2;
+            return 0;
+        case Align::Right:
+            // Unsupported
+            return 0;
+        default:
+            abort();
+        }
+    }
+    
+    void _focus() {
+        assert(!_focused);
+        
+        if (_focusAction) _focusAction(*this);
+        if (!_focused) return;
+        
+        if (_trackWhileFocused) {
+            track();
+        }
+    }
+    
+    void _unfocus(UnfocusReason reason) {
+        assert(_focused);
+        
+        if (_unfocusAction) _unfocusAction(*this, reason);
+        if (_focused) return;
+        
+        trackStop();
     }
     
     std::string _value;
-    std::function<void(TextField&)> _valueChanged;
-    std::function<void(TextField&)> _requestFocus;
-    std::function<void(TextField&, bool)> _releaseFocus;
+    Align _align = Align::Left;
+    attr_t _attrFocused = WA_UNDERLINE;
+    attr_t _attrUnfocused = WA_UNDERLINE | colors().dimmed;
+    bool _trackWhileFocused = false;
     
+    std::function<void(TextField&)> _valueChangedAction;
+    std::function<void(TextField&)> _focusAction;
+    std::function<void(TextField&, UnfocusReason)> _unfocusAction;
+    
+    bool _dragging = false;
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
-    bool _focus = false;
+    bool _focused = false;
     CursorState _cursorState;
 };
 

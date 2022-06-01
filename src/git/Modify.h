@@ -171,7 +171,7 @@ private:
                 // c==null iteration and have a problem.
                 assert(c);
                 if (!r.erase(c)) combined.push_front(c);
-                c = c.parent(); // TODO:MERGE
+                c = c.parent();
             }
             assert(!adding || foundAddPoint);
             assert(r.empty());
@@ -182,7 +182,6 @@ private:
         // Apply `combined` on top of `head`, and keep track of the added commits
         std::set<Commit> added;
         for (const CommitAdded& commit : combined) {
-            // TODO:MERGE
             head = _CommitParentSet(ctx, fileFavor, commit.commit, head);
             
             if (commit.added) {
@@ -434,7 +433,7 @@ private:
                 if (rem.empty()) break;
                 if (erased) integrate.push_front(head);
                 else        attach.push_front(head);
-                head = head.parent(); // TODO:MERGE
+                head = head.parent();
             }
         }
         
@@ -448,7 +447,6 @@ private:
         
         // Attach every commit in `attach` to `head`
         for (const Commit& commit : attach) {
-            // TODO:MERGE
             head = _CommitParentSet(ctx, _FileFavor(op.src.rev, {}), commit, head);
         }
         

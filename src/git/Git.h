@@ -574,7 +574,7 @@ public:
 struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
     using RefCounted::RefCounted;
     
-    void append(const Signature& sig, const Rev& curr, const Rev& next) {
+    void append(const Signature& sig, const Rev& curr, const Rev& next) const {
         const std::string currName = (curr.ref ? curr.ref.name() : curr.commit.idStr());
         const std::string nextName = (next.ref ? next.ref.name() : next.commit.idStr());
         const std::string msg = "checkout: moving from " + currName + " to " + nextName;
@@ -584,7 +584,7 @@ struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
         if (ir) throw Error(ir, "git_reflog_write failed");
     }
     
-    void drop(size_t idx) {
+    void drop(size_t idx) const {
         int ir = git_reflog_drop(*get(), idx, 1);
         if (ir) throw Error(ir, "git_reflog_drop failed");
         ir = git_reflog_write(*get());
@@ -668,7 +668,25 @@ public:
             if (ir) throw Error(ir, "git_repository_head failed");
             ref = x;
         }
-        if (ref.isBranch()) return revLookup(ref.fullName());
+        
+        if (ref.isBranch()) return ref;
+        if (ref.isTag()) return ref; // HEAD can't point to tags currently, but checking anyway for completeness
+        
+        // The ref isn't a branch or tag, so it's just the detached "HEAD" pointer.
+        // Try to derive the ref by looking at the last reflog entry.
+        // This heuristic allows us to get the ref in the case where the repo has a
+        // tag checked out, in which case the `ref.isTag()` check (above) returns
+        // false (because git doesn't allow HEAD to point to tags currently --
+        // instead it's a detached HEAD).
+        try {
+            Reflog reflog = reflogForRef(head());
+            const git_reflog_entry*const entry = reflog.at(0);
+            const Rev rev = reflogRevForCheckoutEntry(entry);
+            if (rev.ref && rev.commit==ref.commit()) {
+                return rev;
+            }
+        } catch (...) {}
+        
         return ref.commit();
     }
     
@@ -713,22 +731,90 @@ public:
         submodulesUpdate(true);
     }
     
+    
     void headDetach() const {
         int ir = git_repository_detach_head(*get());
         if (ir) throw Error(ir, "git_repository_detach_head failed");
-        
-        // Forget that we detached head
-        Reflog reflog = reflogForRef(head());
-        reflog.drop(0);
     }
     
     void headAttach(const Rev& rev) const {
         checkout(rev);
-        
-        // Forget that we attached head
-        Reflog reflog = reflogForRef(head());
-        reflog.drop(0);
     }
+    
+//    void headDetach() const {
+//        int ir = git_repository_head_detached(*get());
+//        if (ir < 0) throw Error(ir, "git_repository_head_detached failed");
+//        
+//        // Short-circuit if we're already detached
+//        // This is important so that we don't erroneously drop entries from the reflog when
+//        // we didn't actually detach, which we would otherwise do without this check
+//        if (ir == 1) return;
+//        
+//        ir = git_repository_detach_head(*get());
+//        if (ir) throw Error(ir, "git_repository_detach_head failed");
+//        
+//        // Forget that we detached head
+//        const Reflog reflog = reflogForRef(head());
+//        reflog.drop(0);
+//    }
+//    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflogPrev = reflogForRef(head());
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head, if a new reflog entry was created
+//        const Reflog reflog = reflogForRef(head());
+//        if (reflogPrev.len() != reflog.len()) {
+//            reflog.drop(0);
+//        }
+//    }
+    
+    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflogPrev = reflogForRef(head());
+//        const git_reflog_entry* const entryPrev = reflogPrev[0];
+//        const char*const msgPrev = git_reflog_entry_message(entryPrev);
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head, but only if a reflog entry was pushed as a result
+//        // of the checkout.
+//        // This check is necessary because headAttach() could be called twice for the same
+//        // rev, and the second call wouldn't affect the reflog, so we shouldn't drop the
+//        // reflog entry in that case.
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry* const entry = reflog[0];
+//        const char*const msg = git_reflog_entry_message(entry);
+//        if (msgPrev && msg) {
+//            if (strcmp(msgPrev, msg)) {
+//                reflog.drop(0);
+//            }
+//        }
+//    }
+    
+//    void headDetach() const {
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry*const entryPrev = reflog[0];
+//        
+//        int ir = git_repository_detach_head(*get());
+//        if (ir) throw Error(ir, "git_repository_detach_head failed");
+//        
+//        // Forget that we detached head
+//        const git_reflog_entry*const entry = reflog[0];
+//        if (entry != entryPrev) reflog.drop(0);
+//    }
+//    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry*const entryPrev = reflog[0];
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head
+//        const git_reflog_entry*const entry = reflog[0];
+//        if (entry != entryPrev) reflog.drop(0);
+//    }
     
     Index treesMerge(git_merge_file_favor_t fileFavor, const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
@@ -793,7 +879,7 @@ public:
     Index commitIntegrate(git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
-        Tree ancestorTree = src.parent().tree(); // TODO:MERGE
+        Tree ancestorTree = src.parent().tree();
         return treesMerge(fileFavor, ancestorTree, dstTree, srcTree);
     }
     
@@ -908,6 +994,35 @@ public:
     
     Ref refReload(const Ref& ref) const {
         return refFullNameLookup(ref.fullName());
+    }
+    
+    Ref refCopy(const Ref& ref, const std::string& name) const {
+        if (ref.isLocalBranch()) {
+            return branchCreate(name, ref.commit(), false);
+        
+        } else if (ref.isTag()) {
+            const Tag tag = Tag::ForRef(ref);
+            if (const TagAnnotation ann = tag.annotation()) {
+                return tagCreateAnnotated(name, ref.commit(), ann.author(), ann.message());
+            } else {
+                return tagCreate(name, ref.commit());
+            }
+        
+        } else {
+            // Unsupported ref type
+            throw Toastbox::RuntimeError("unsupported ref type");
+        }
+    }
+    
+    void refDelete(const Ref& ref) {
+        if (ref.isLocalBranch() || ref.isTag()) {
+            int ir = git_reference_delete(*ref);
+            if (ir) throw Error(ir, "git_reference_delete failed");
+            
+        } else {
+            // Unsupported ref type
+            throw Toastbox::RuntimeError("unsupported ref type");
+        }
     }
     
 //    Ref revReload(Rev rev) const {
@@ -1143,11 +1258,80 @@ public:
         return blobLookup(id);
     }
     
-    Signature signatureDefaultCreate() {
+    Signature signatureCreateDefault() {
         git_signature* x = nullptr;
         int ir = git_signature_default(&x, *get());
         if (ir) throw Error(ir, "git_signature_default failed");
         return x;
+    }
+    
+    // reflogRevForCheckoutEntry(): parse and lookup the rev from the reflog
+    // message string. For example, a checkout message in the reflog looks
+    // like:
+    //   checkout: moving from master to v1
+    // And we want to extract `v1` and turn it into a Rev.
+    //
+    // This is of course an imperfect heuristic and ideally we wouldn't
+    // be parsing log strings, but there doesn't seem to be a better option,
+    // and this is how libgit2 does it to implement its handling of the
+    // @{N} syntax.
+    // 
+    // We decided to implement this ourself instead of using libgit2's
+    // implementation for 2 reasons:
+    // 
+    //   1. libgit2 parses the first rev in the string but we want the second,
+    //      because git includes the symbolic name of revs in the second, but
+    //      not the first. For example if you checkout a tag (master -> v1),
+    //      the message will say:
+    //      
+    //          checkout: moving from master to v1
+    //      
+    //      but when moving from v1 -> master it'll say:
+    //      
+    //          checkout: moving from a561d03 to master
+    //      
+    //      So if we use libgit2's implementation, we can't get the tag name.
+    //   
+    //   2. We can implement reflog iteration much more efficiently. When
+    //      parsing `@{-3}` for example, libgit2 has to perform a regex match
+    //      on at least 3 reflog entries (to match the 'checkout: moving from
+    //      X to Y' string), and then has to redo that same work when parsing
+    //      `@{-4}`. Whereas with our implementation, we process each reflog
+    //      entry only once.
+    
+    Rev reflogRevForCheckoutEntry(const git_reflog_entry* entry) const {
+        assert(entry);
+        
+        const char* msg = git_reflog_entry_message(entry);
+        if (!msg) throw std::runtime_error("invalid message");
+        if (!Toastbox::String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
+        
+        const std::string_view msgv = msg;
+        const size_t lastSpaceIdx = msgv.find_last_of(' ');
+        // This function should only be called for checkout reflog messages, so there must be a space.
+        // If there's not, it's programmer error.
+        assert(lastSpaceIdx != std::string::npos);
+        std::string_view revName = msgv.substr(lastSpaceIdx+1);
+        
+        const size_t tildeIdx = revName.find_first_of('~');
+        const size_t carrotIdx = revName.find_first_of('^');
+        revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
+        // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
+        if (_HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
+        return revLookup(std::string(revName));
+    }
+    
+    void reflogRememberRef(const Ref& ref) {
+        const Reflog reflog = reflogForRef(head());
+        const Rev headRev = headResolved();
+        const Git::Signature sig = signatureCreateDefault();
+        reflog.append(sig, headRev, ref);
+        reflog.append(sig, ref, headRev);
+    }
+    
+private:
+    static bool _HEADSpecialPointer(std::string_view name) {
+        return Toastbox::String::EndsWith("HEAD", name);
     }
 };
 

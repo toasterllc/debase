@@ -9,9 +9,10 @@ namespace UI {
 
 class Button : public View {
 public:
-    enum ActionTrigger {
-        MouseUp,
-        MouseDown,
+    struct ActionTrigger : Bitfield<uint8_t> {
+        static constexpr Bit MouseDown  = 1<<0;
+        static constexpr Bit MouseUp    = 1<<1;
+        using Bitfield::Bitfield;
     };
     
     // MARK: - Creation
@@ -28,9 +29,6 @@ public:
     auto& label() { return _label; }
     auto& key() { return _key; }
     
-    const auto& mouseUpTracks() const { return _mouseUpTracks; }
-    template <typename T> bool mouseUpTracks(const T& x) { return _set(_mouseUpTracks, x); }
-    
     const auto& highlighted() const { return _highlighted; }
     template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
     
@@ -42,9 +40,6 @@ public:
     
     const auto& highlightColor() const { return _highlightColor; }
     template <typename T> bool highlightColor(const T& x) { return _set(_highlightColor, x); }
-    
-//    const auto& insetX() const { return _insetX; }
-//    template <typename T> bool insetX(const T& x) { return _set(_insetX, x); }
     
     const auto& action() const { return _action; }
     template <typename T> bool action(const T& x) { return _setForce(_action, x); }
@@ -69,19 +64,6 @@ public:
         
         _label->frame({{r.l(), r.my()}, {r.w()-_key->size().x, 1}});
         _key->origin({r.r()-_key->size().x, r.my()});
-        
-//        _label->frame(f);
-//        _key->frame(f);
-//        
-//        _label->layout(win);
-//        _key->layout(win);
-//        
-//        
-//        const Size textFieldSize = {f.size.x-labelSize.x-_spacingX, 1};
-//        _textField.frame({f.origin+Size{labelSize.x+_spacingX, 0}, textFieldSize});
-//        
-//        _label->layout(win);
-//        _textField.layout(win);
     }
     
     void draw() override {
@@ -102,147 +84,84 @@ public:
             if (bordered()) borderColor(colors().normal);
         }
         _label->textAttr(attr);
-        
-//        // Draw labels
-//        _key->draw(win);
-//        _label->draw(win);
     }
-    
-//    void drawBorder() override {
-//        if (bordered()) {
-//            Attr style = attr(enabledWindow() ? _highlightColor() : colors().dimmed);
-//            drawRect();
-//        }
-//    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-//    bool draw() override {
-//        if (!View::draw(win)) return false;
-//        
-//        const Rect f = frame();
-//        const size_t labelLen = UTF8::Len(_label);
-//        const size_t keyLen = UTF8::Len(_key);
-//        const int borderSize = (_bordered ? 1 : 0);
-//        const int insetX = _insetX+borderSize;
-//        const int availWidth = f.size.x-2*insetX;
-//        const int labelWidth = std::min((int)labelLen, availWidth);
-//        const int keyWidth = std::max(0, std::min((int)keyLen, availWidth-labelWidth-KeySpacing));
-//        const int textWidth = labelWidth + (!_key->empty() ? KeySpacing : 0) + keyWidth;
-//        
-//        if (_bordered) {
-//            Attr color = attr(_enabled ? colors().normal : colors().dimmed);
-//            win.drawRect(f);
-//        }
-//        
-//        int offY = (f.size.y-1)/2;
-//        
-//        // Draw label
-//        Point plabel;
-//        Point pkey;
-//        if (_center) {
-//            int leftX = insetX + std::max(0, ((f.size.x-2*insetX)-textWidth)/2);
-//            plabel = f.origin + Size{leftX, offY};
-//            pkey = plabel + Size{labelWidth+KeySpacing, 0};
-//        
-//        } else {
-//            plabel = f.origin + Size{insetX, offY};
-//            pkey = f.origin + Size{f.size.x-keyWidth-insetX, offY};
-//        }
-//        
-//        {
-//            Attr bold;
-//            Attr color;
-//            if (_enabled)                 bold = attr(WA_BOLD);
-//            if (_highlighted && _enabled) color = attr(colors().menu);
-//            else if (!_enabled)           color = attr(colors().dimmed);
-//            drawText(plabel, labelWidth, _label->c_str());
-//        }
-//        
-//        // Draw key
-//        {
-//            Attr color = attr(colors().dimmed);
-//            drawText(pkey, keyWidth, _key->c_str());
-//        }
-//        
-//        return true;
-//    }
     
     bool handleEvent(const Event& ev) override {
         // Only consider mouse events
         if (ev.type != Event::Type::Mouse) return false;
         
+//        if (!ev.mouseDown() && !ev.mouseUp()) return false; // Ignore mouse-moved for debugging
+        
         const bool hit = hitTest(ev.mouse.origin);
-        const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
-        const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
         highlighted(hit);
         
-        // Trigger action
-        if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
-            
-            // Cleanup ourself before calling out
+        if (hit && enabledWindow()) {
+            if (ev.mouseDown(_actionButtons)) {
+                _actionTriggerState = 0;
+                _actionTriggerState |= ActionTrigger::MouseDown;
+            } else if (ev.mouseUp(_actionButtons)) {
+                _actionTriggerState |= ActionTrigger::MouseUp;
+            }
+        }
+        
+//                  ud
+//        trigger = 01
+//        state   = 11
+//        
+//        trigger = 10
+//        state   = 11
+//        
+//        trigger = 11
+//        state   = 10
+        
+//        const bool trigger = (_actionTriggerState == _actionTrigger);
+        const bool trigger = ((_actionTriggerState & _actionTrigger) == _actionTrigger);
+        
+        // Cleanup ourself on mouse-up
+        if (ev.mouseUp(_actionButtons)) {
+            _actionTriggerState = 0;
             trackStop();
-            
-            if (hit && enabledWindow() && _action) {
+        }
+        
+        // Trigger action
+        bool handled = false;
+        if (trigger) {
+            // Reset _actionTriggerState when we trigger to prevent further triggers
+            // until the next mouse-down.
+            // This is necessary in the case where _actionTrigger==MouseDown. If we didn't
+            // clear _actionTriggerState upon triggering, then we'd trigger again on
+            // MouseUp, because _actionTriggerState still had the MouseDown bit set.
+            _actionTriggerState = 0;
+            if (_action) {
                 _action(*this);
             }
-            
-            return true;
+            handled = true;
         }
         
-        // We allow both mouse-down and mouse-up events to trigger tracking.
-        // Mouse-up events are to allow Menu to use this function for context
-        // menus: right-mouse-down opens the menu, while the right-mouse-up
-        // triggers the Button action via this function.
-        if (hit && (ev.mouseDown(_actionButtons) || (_mouseUpTracks && ev.mouseUp(_actionButtons)))) {
+        if (hit && ev.mouseDown(_actionButtons) && !screen().eventSince(ev)) {
             // Track mouse
-            track(ev);
-            return true;
+            track();
+            handled = true;
         }
         
-        return false;
+        return handled;
     }
     
 private:
     static constexpr int KeySpacingX = 2;
     
-//    Color _highlightColor() const {
-//        return borderColor() ? *borderColor() : colors().normal;
-//    }
-    
-//    bool _bordered() const { return (bool)borderColor(); }
-    
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
     
-    bool _mouseUpTracks = false;
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _bordered = false;
     Color _highlightColor;
-//    int _insetX = 0;
     std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
-    ActionTrigger _actionTrigger = ActionTrigger::MouseUp;
+    ActionTrigger _actionTrigger = ActionTrigger::MouseDown | ActionTrigger::MouseUp;
+    ActionTrigger _actionTriggerState = 0;
 };
 
 using ButtonPtr = std::shared_ptr<Button>;

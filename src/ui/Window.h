@@ -53,22 +53,16 @@ public:
         return false;
     }
     
+    // focusable(): whether the window can receive focus, to be overridden by subclasses
+    virtual bool focusable() const { return false; }
+    
     GraphicsState convert(GraphicsState x) override {
         x.window = this;
-//        x.finalWindow = this;
         x.originWindow = {};
-//        x.originScreen = windowOrigin();
         x.originScreen += origin();
         x.erased = false;
         return x;
     }
-    
-//    Size size() const override { return View::size(); }
-//    bool size(const Size& x) override {
-//        const bool changed = View::size(x);
-//        if (changed) eraseNeeded(true);
-//        return changed;
-//    }
     
     virtual Point windowOrigin() const { return { getbegx(_s.win), getbegy(_s.win) }; }
     virtual bool windowOrigin(const Point& p) {
@@ -80,8 +74,6 @@ public:
     virtual Size windowSize() const { return { getmaxx(_s.win), getmaxy(_s.win) }; }
     virtual bool windowSize(const Size& s) {
         if (s == windowSize()) return false;
-//        const Size ss = {std::max(1,s.x), std::max(1,s.y)};
-//        if (ss == windowSize()) return;
         ::wresize(*this, s.y, s.x);
         return true;
     }
@@ -93,34 +85,6 @@ public:
         changed |= windowOrigin(x.origin);
         return changed;
     }
-    
-//    Point origin() const override { return { getbegx(_s.win), getbegy(_s.win) }; }
-//    
-//    Size size() const override { return { getmaxx(_s.win), getmaxy(_s.win) }; }
-//    void size(const Size& s) override {
-//        Size ss = {std::max(1,s.x), std::max(1,s.y)};
-//        // Short-circuit if the size hasn't changed
-//        if (ss == size()) return;
-//        ::wresize(*this, ss.y, ss.x);
-//    }
-    
-//    Point mousePosition(const Event& ev) const {
-//        return ev.mouse.origin-origin();
-//    }
-    
-//    // convert(): convert a point from the coorindate system of the parent window to the coordinate system of `this`
-//    virtual Point convert(const Point& p) const {
-//        return p-origin();
-//    }
-//    
-//    // convert(): convert an event from the coorindate system of the parent window to the coordinate system of `this`
-//    virtual Event convert(const Event& p) const {
-//        Event r = p;
-//        if (r.type == Event::Type::Mouse) {
-//            r.mouse.point = convert(r.mouse.point);
-//        }
-//        return r;
-//    }
     
     void drawRect() const override {
         // For the case where we're drawing the window's border, we attempt
@@ -139,36 +103,6 @@ public:
     
     void layout(GraphicsState gstate) override {
         if (!visible()) return;
-        
-//        // If the frame that we previously set doesn't match our current frame, then ncurses changed
-//        // our frame out from beneath us. In that case, we need to do a full redraw.
-//        // This handles the case where the window is clipped due to going offscreen, in which case
-//        // the offscreen parts are lost (hence the need to redraw).
-//        const Rect frameCur = windowFrame();
-//        if (_s.framePrev && frameCur!=*_s.framePrev) {
-//            eraseNeeded(true);
-//            
-//            size(frameCur.size);
-//            
-//            const Size originDelta = frameCur.origin-gstate.originScreen;
-//            
-//            gstate.originScreen += originDelta;
-//            origin(origin()+originDelta);
-//        }
-        
-//        windowFrame({gstate.originScreen, size()});
-//        _s.framePrev = windowFrame();
-//        
-//        if (fgot != _s.framePrev && frameCur!=*_s.framePrev) {
-//            eraseNeeded(true);
-//            
-//            size(frameCur.size);
-//            
-//            const Size originDelta = frameCur.origin-gstate.originScreen;
-//            
-//            gstate.originScreen += originDelta;
-//            origin(origin()+originDelta);
-//        }
         
         // If our window size that we previously set doesn't match our current window size, then
         // ncurses changed it out from beneath us. In that case, we need to do a full redraw.
@@ -189,154 +123,17 @@ public:
         const Size originDelta = fgot.origin-fwant.origin;
         frame({origin()+originDelta, fgot.size});
         
-//        gstate.originScreen = fgot.origin;
-        
-//        const Size s = windowSize();
-//        if (s != _s.sizePrev) {
-//            eraseNeeded(true);
-//            _s.sizePrev = s;
-//        }
-        
-//        _s.sizePrev = fgot.size;
-//        
-//        // If the window frame that we got isn't equal to the window frame that we wanted,
-//        // then ncurses 'denied' some aspect of our requested frame. We therefore need to
-//        // backport the delta to our view's frame, so that the view's frame reflects the
-//        // real on-screen frame, instead of merely the desired frame.
-//        if (windowFrameGot != windowFrameWant) {
-//            const Size originDelta = windowFrameGot.origin-windowFrameWant.origin;
-//            const Point viewOrigin = origin()+originDelta;
-//            
-//            size(windowFrameGot.size);
-//            origin(viewOrigin);
-//            
-//            gstate.originWindow = viewOrigin;
-//            gstate.originScreen = windowFrameGot.origin;
-//        }
-//        
-//        
-//        
-//        
-//        
-//        windowFrame({gstate.originScreen, size()});
-        
-//        const Rect wf = windowFrame();
-//        if (gstate.originScreen != wf.origin) {
-//            const Size delta = wf.origin-gstate.originScreen;
-////            gstate.originWindow = origin()+delta;
-//            gstate.originScreen = wf.origin;
-//        }
-        
-        
-        
-        
-        
-        
-//        const Rect frameWant = {gstate.originScreen, size()};
-//        windowFrame(frameWant);
-//        const Rect frameGot = windowFrame();
-//        
-////        if (frameGot != frameWant) {
-////            eraseNeeded(true);
-////            
-////            size(frameGot.size);
-////            
-////            const Size originDelta = frameGot.origin-frameWant.origin;
-////            origin(origin()+originDelta);
-////        }
-//        
-//        gstate.originScreen = wf.origin;
-//        _s.framePrev = wf;
-        
-//        const Rect sb = _screenBounds();
-//        const Rect wf = windowFrame();
-//        const bool clipped = Intersection(sb, wf) != wf;
-//        const bool frameChanged = windowFrame({gstate.originScreen, size()});
-//        
-//        os_log(OS_LOG_DEFAULT, "screenBounds={%d %d}, windowFrame={%d %d}", sb.w(), sb.h(), wf.w(), wf.h());
-//        
-//        // If our frame changed, and our window was previously clipped (ie it went offscreen),
-//        // then we need to erase/redraw the whole window
-//        if (frameChanged && clipped) {
-//            eraseNeeded(true);
-//        }
-        
         // Reset the cursor state when a new window is encountered
         // This way, the last window (the one on top) gets to decide the cursor state
-        cursorState({});
-        
-//        os_log(OS_LOG_DEFAULT, "SIZE CHANGED %d", windowSize().y);
-        
-//        os_log(OS_LOG_DEFAULT, "SIZE CHANGED %d", windowSize().y);
-//        
-////        // Detect size changes
-////        // ncurses can change our size out from under us (eg by the
-////        // terminal size changing), so we handle all size changes
-////        // here, instead of in the size() setter
-////        if (_s.sizePrev != size()) {
-////            // We need to erase+redraw after resizing
-////            // (eraseNeeded=true implicity sets drawNeeded=true)
-////            eraseNeeded(true);
-////            _s.sizePrev = size();
-////        }
-////        
-        // Update our size/origin based on ncurses' adjusted size
-//        const Size sizeActual = windowSize();
-//        const Size originScreenActual = windowOrigin();
-//        const Size originScreenDelta = originScreenActual-gstate.originScreen;
-//        if (originScreenDelta.x || originScreenDelta.y) {
-////            layoutNeeded(true);
-//            
-//            os_log(OS_LOG_DEFAULT, "ORIGIN CHANGED");
-//        }
-//        
-////        size(sizeActual);
-////        origin(origin()+originScreenDelta);
-//        
-//        if (sizeActual != sizePrev) {
-//            os_log(OS_LOG_DEFAULT, "SIZE CHANGED");
-//            
-////            abort();
-////            // We need to erase+redraw after resizing
-////            // (eraseNeeded=true implicity triggers a redraw)
-////            eraseNeeded(true);
-//        }
-        
-//        
-//        if (originScreenDelta.x || originScreenDelta.y) {
-//            os_log(OS_LOG_DEFAULT, "origin AFTER: %d %d", origin().x, origin().y);
-//        }
-//        
-//        // Update our gstate based on ncurses' adjusted size
-//        gstate.originWindow += originScreenDelta;
-//        gstate.originScreen += originScreenDelta;
-//        
-//        layoutNeeded(true);
+        // We only want to do this for focusable windows though, because we have
+        // windows (such as CommitPanel) that can't receive focus and therefore
+        // shouldn't affect the cursor state.
+        if (focusable()) {
+            cursorState({});
+        }
         
         View::layout(gstate);
     }
-    
-//    void draw(GraphicsState gstate) override {
-//        const Rect wf = windowFrame();
-//        if (gstate.originScreen != wf.origin) {
-//            const Size delta = wf.origin-gstate.originScreen;
-////            gstate.originWindow = origin()+delta;
-//            gstate.originScreen = wf.origin;
-//        }
-//        
-//        View::draw(gstate);
-//    }
-//    
-//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-//        const Rect wf = windowFrame();
-//        if (gstate.originScreen != wf.origin) {
-//            const Size delta = wf.origin-gstate.originScreen;
-////            gstate.originWindow = origin()+delta;
-//            gstate.originScreen = wf.origin;
-//        }
-//        
-//        return View::handleEvent(gstate, ev);
-//    }
     
     virtual Window& operator =(Window&& x) { std::swap(_s, x._s); return *this; }
     

@@ -49,6 +49,8 @@ public:
     App(Git::Repo repo, const std::vector<Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
+    bool focusable() const override { return true; }
+    
     using UI::Screen::layout;
     void layout() override {
         
@@ -246,17 +248,20 @@ public:
             break;
         }
         
-        case UI::Event::Type::KeyC: {
-//                {
-//                    _registerAlert = std::make_shared<UI::RegisterAlert>(_colors);
-//                    _registerAlert->color           = colors().menu;
-//                    _registerAlert->messageInsetY   = 1;
-//                    _registerAlert->title           = "Register";
-//                    _registerAlert->message         = "Please register debase";
-//                }
-//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//                break;
+        case UI::Event::Type::KeyB: {
+            if (!_selectionCanBranch()) {
+                beep();
+                break;
+            }
             
+            assert(_selection.commits.size() == 1);
+            const Rev& rev = _selection.rev;
+            const Git::Commit& commit = *_selection.commits.begin();
+            _branchCreateFromRev(rev, commit);
+            break;
+        }
+        
+        case UI::Event::Type::KeyC: {
             if (!_selectionCanCombine()) {
                 beep();
                 break;
@@ -331,7 +336,11 @@ public:
         _head = _repo.headResolved();
         
         // Create _repoState
-        _repoState = State::RepoState(StateDir(), _repo);
+        std::set<Git::Ref> refs;
+        for (const Rev& rev : _revs) {
+            if (rev.ref) refs.insert(rev.ref);
+        }
+        _repoState = State::RepoState(StateDir(), _repo, refs);
         
         // If the repo has outstanding changes, prevent the currently checked-out
         // branch from being modified, since we can't clobber the uncommitted
@@ -383,10 +392,30 @@ public:
             
 //            _conflictRun();
             
+            
+            
+            
+            
+//            {
+//                bool done = false;
+//                auto alert = _panelPresent<UI::Alert>();
+//                alert->width                            (50);
+//                alert->color                            (colors().menu);
+//                alert->title()->text                    ("title");
+//                alert->message()->text                  ("message");
+//                alert->okButton()->label()->text        ("OK");
+//                alert->okButton()->action               ( [&] (UI::Button& b) { done = true; } );
+//                while (!done) track(Once);
+//            }
+            
+            
+            
+            
+            
             _moveOffer();
             _licenseCheck();
             _updateCheck();
-            track({});
+            track();
             
         } catch (const UI::ExitRequest&) {
             // Nothing to do
@@ -397,15 +426,16 @@ public:
         _repoState.write();
     }
     
-    void track(const UI::Event& ev, Deadline deadline=Forever) override {
+    void track(Deadline deadline=Forever) override {
         for (;;) {
             std::string errorMsg;
             
             try {
-                Screen::track(ev, deadline);
+                Screen::track(deadline);
                 break; // Deadline passed; break out of loop
             
             } catch (const UI::WindowResize&) {
+                _revColumnNameSetFocused(nullptr, false, false);
                 _reload();
             
             // Bubble up
@@ -691,11 +721,12 @@ private:
         abort();
     }
     
-    UI::ButtonPtr _makeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
-        const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
+    UI::ButtonPtr _makeSnapshotMenuButton(const Git::Ref& ref, const State::Snapshot& snap,
+        bool sessionStart, UI::SnapshotButton*& chosen) {
         
-        bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
-        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
+        const State::History& h = _repoState.history(ref);
+        const bool activeSnapshot = h.get().refState == snap.refState;
+        const UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot(activeSnapshot);
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
         return b;
@@ -739,6 +770,118 @@ private:
         if (_selection.commits.empty()) return false;
         return _selection.rev.isMutable();
     }
+    
+    void _revColumnNameSetFocused(UI::RevColumnPtr fcol, bool commit, bool moveCursor) {
+        bool reload = false;
+        
+        // If the given column isn't mutable, then pretend as if we were given nullptr
+        if (fcol && !fcol->rev().isMutable()) {
+            fcol = nullptr;
+        }
+        
+        // Short-circuit if the column's name is already focused
+        if (_columnNameFocused == fcol) return;
+        
+        // Commit existing name change
+        if (commit) {
+            if (_columnNameFocused) {
+                const std::string name = _columnNameFocused->nameField()->value();
+                const std::string namePrev = _columnNameFocused->name(true);
+                Rev rev = _columnNameFocused->rev();
+                if (name != namePrev) {
+                    // Name changed
+                    try {
+                        rev.ref = _gitRefRename(rev.ref, name);
+                        
+                        State::History& h = _repoState.history(rev.ref);
+                        h.push(State::HistoryRefState(rev.ref));
+                        
+                        reload = true;
+                    } catch (const Git::Error& e) {
+                        std::string errorMsg;
+                        switch (e.error) {
+                        case GIT_EINVALIDSPEC:
+                            errorMsg = "The ref name '" + name + "' contains invalid characters.";
+                            break;
+                        case GIT_EEXISTS:
+                            errorMsg = "A ref named '" + name + "' already exists.";
+                            break;
+                        default:
+                            throw;
+                        }
+                        
+                        std::optional<bool> clicked;
+                        auto alert = _panelPresent<UI::ErrorAlert>();
+                        alert->width                            (45);
+                        alert->message()->text                  (errorMsg);
+                        alert->okButton()->label()->text        ("Edit");
+                        alert->dismissButton()->label()->text   ("Revert");
+                        alert->okButton()->action               ( [&] (UI::Button&) { clicked = true; } );
+                        alert->dismissButton()->action          ( [&] (UI::Button&) { clicked = false; } );
+                        
+                        // Wait until the user clicks a button
+                        while (!clicked) track(Once);
+                        
+                        // If the user chose 'Edit', then act as if this function were
+                        // never called by simply returning.
+                        if (*clicked) return;
+                        
+                        // The user chose 'Cancel': we don't rename the ref,
+                        // but we continue setting the focus.
+                    }
+                }
+            }
+        }
+        
+        for (UI::RevColumnPtr col : _columns) {
+            const bool focused = (col == fcol);
+            col->nameField()->value(col->name(focused));
+            if (moveCursor) {
+                col->nameField()->focused(focused, UI::Align::Right);
+            } else {
+                col->nameField()->focused(focused);
+            }
+        }
+        
+        _columnNameFocused = fcol;
+        
+        if (reload) {
+            _reload();
+        }
+    }
+    
+    void _revColumnNameFocus(UI::RevColumnPtr col) {
+        _revColumnNameSetFocused(col, true, false);
+    }
+    
+    void _revColumnNameUnfocus(UI::RevColumnPtr col, UI::TextField::UnfocusReason reason) {
+        switch (reason) {
+        case UI::TextField::UnfocusReason::Tab:
+            // Ignore tabs
+            break;
+        case UI::TextField::UnfocusReason::Return:
+            _revColumnNameSetFocused(nullptr, true, false);
+            break;
+        case UI::TextField::UnfocusReason::Escape:
+            _revColumnNameSetFocused(nullptr, false, false);
+            break;
+        default:
+            abort();
+        }
+    }
+//    
+//    void _revColumnNameCommit(UI::RevColumnPtr col) {
+//        switch (reason) {
+//        case UnfocusReason::Return:
+//            
+//            return;
+//        
+//        case UnfocusReason::Escape:
+//        default:
+//            // Cancel editing
+//            return;
+//        }
+//    }
     
     void _reload() {
         // We allow ourself to be called outside of a git repo, so we need
@@ -786,6 +929,17 @@ private:
                 col->snapshotsButton()->action([=] (UI::Button&) {
                     auto col = weakCol.lock();
                     if (col) _trackSnapshotsMenu(col);
+                });
+                
+                col->nameField()->valueChangedAction ([=] (UI::TextField& field) {  });
+                col->nameField()->focusAction ([=] (UI::TextField& field) {
+                    auto col = weakCol.lock();
+                    if (col) _revColumnNameFocus(col);
+                });
+                
+                col->nameField()->unfocusAction ([=] (UI::TextField& field, UI::TextField::UnfocusReason reason) {
+                    auto col = weakCol.lock();
+                    if (col) _revColumnNameUnfocus(col, reason);
                 });
             
             } else {
@@ -940,7 +1094,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the insertion marker
-            ev = nextEvent();
+            ev = eventNext();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
             if (abort || ev.mouseUp()) {
@@ -1075,7 +1229,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the selection rect
-            ev = nextEvent();
+            ev = eventNext();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
                 break;
@@ -1100,8 +1254,15 @@ private:
         // Keep appending a new suffix until we find an unused branch name
         Git::Branch branch;
         for (size_t i=2; i<10; i++) {
+            assert(!branchName.empty());
+            std::string name = branchName;
+            if (isdigit(branchName.back())) {
+                name += "-" + std::to_string(i);
+            } else {
+                name += std::to_string(i);
+            }
             try {
-                branch = _repo.branchCreate(branchName+"-"+std::to_string(i), commit);
+                branch = _repo.branchCreate(name, commit);
             } catch (const Git::Error& e) {
                 if (e.error == GIT_EEXISTS) continue;
                 throw;
@@ -1111,10 +1272,8 @@ private:
         
         if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
         
-        const Git::Signature sig = _repo.signatureDefaultCreate();
-        Git::Reflog reflog = _repo.reflogForRef(_repo.head());
-        reflog.append(sig, _head, branch);
-        reflog.append(sig, branch, _head);
+        // Remember the new branch in the reflog, so it's visible in subsequent debase launches
+        _repo.reflogRememberRef(branch);
         
         const Rev branchRev(branch);
         auto it = std::find(_revs.begin(), _revs.end(), rev);
@@ -1128,6 +1287,10 @@ private:
         };
         
         _reload();
+        
+        // It's possible that col==null because the new column is offscreen!
+        const UI::RevColumnPtr branchCol = _columnForRev(branchRev);
+        _revColumnNameSetFocused(branchCol, false, true);
     }
     
     std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
@@ -1154,7 +1317,7 @@ private:
         menu->buttons({ createBranchButton, combineButton, editButton, deleteButton });
         menu->sizeToFit(ConstraintNoneSize);
         menu->origin(mouseDownEvent.mouse.origin);
-        menu->track(mouseDownEvent);
+        menu->track();
         
         // Handle the clicked button
         std::optional<_GitOp> gitOp;
@@ -1196,11 +1359,38 @@ private:
         return gitOp;
     }
     
+    enum class _RefStateRestoreSelection {
+        None,
+        
+    };
+    
+    Git::Ref _refStateRestore(const Git::Ref& refPrev, const State::RefState& refState) {
+        Git::Ref ref = refPrev;
+        Git::Commit commit;
+        try {
+            commit = State::Convert(_repo, refState.head);
+        } catch (...) {
+            throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
+        }
+        
+        // Set the ref's commit if it changed
+        if (ref.commit() != commit) {
+            ref = _gitRefReplace(ref, commit);
+        }
+        
+        // Rename the ref if the name changed
+        if (ref.name() != refState.name) {
+            ref = _gitRefRename(ref, refState.name);
+        }
+        
+        return ref;
+    }
+    
     void _trackSnapshotsMenu(UI::RevColumnPtr col) {
         UI::SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col->rev().ref;
         std::vector<UI::ButtonPtr> buttons = {
-            _makeSnapshotMenuButton(_repo, ref, _repoState.initialSnapshot(ref), true, menuButton),
+            _makeSnapshotMenuButton(ref, _repoState.initialSnapshot(ref), true, menuButton),
         };
         
         const std::vector<State::Snapshot>& snapshots = _repoState.snapshots(ref);
@@ -1208,7 +1398,7 @@ private:
             // Creating the button will throw if we can't get the commit for the snapshot
             // If that happens, just don't shown the button representing the snapshot
             try {
-                buttons.push_back(_makeSnapshotMenuButton(_repo, ref, *it, false, menuButton));
+                buttons.push_back(_makeSnapshotMenuButton(ref, *it, false, menuButton));
             } catch (...) {}
         }
         
@@ -1222,17 +1412,21 @@ private:
         menu->size(menu->sizeIntrinsic({ConstraintNone, heightMax}));
         menu->origin(p);
 //        layout(*this, {});
-        menu->track(eventCurrent());
+        menu->track();
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
-            State::Commit commitNew = menuButton->snapshot().head;
-            State::Commit commitCur = h.get().head;
+            const State::RefState& refState = menuButton->snapshot().refState;
+            const State::RefState& refStatePrev = h.get().refState;
             
-            if (commitNew != commitCur) {
-                Git::Commit commit = State::Convert(_repo, commitNew);
-                h.push(State::RefState{.head = commitNew});
-                _gitRefReplace(ref, commit);
+            if (refState != refStatePrev) {
+                ref = _refStateRestore(ref, refState);
+                
+                // Re-get `h` (the history) here!
+                // This is necessary because _refStateRestore() -> _gitRefRename() -> RepoState::refReplace()
+                // invalidates the existing history, so the pre-existing `h` is no longer valid.
+                State::History& h = _repoState.history(ref);
+                h.push(State::HistoryRefState(ref));
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1242,25 +1436,26 @@ private:
     
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
         Rev rev = col->rev();
-        State::History& h = _repoState.history(col->rev().ref);
-        State::RefState refStatePrev = h.get();
-        State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
+        State::History& h = _repoState.history(rev.ref);
+        const State::HistoryRefState refStatePrev = h.get();
+        const State::HistoryRefState refState = (undo ? h.prevPeek() : h.nextPeek());
         
         try {
-            Git::Commit commit;
-            try {
-                commit = State::Convert(_repo, refState.head);
-            } catch (...) {
-                throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
-            }
+            (Git::Rev&)rev = _refStateRestore(rev.ref, refState.refState);
             
-            std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
+            const std::set<Git::Commit> selection = State::Convert(_repo,
+                (undo ? refStatePrev.selectionPrev : refState.selection));
+            
             _selection = {
                 .rev = rev,
                 .commits = selection,
             };
             
+            // Re-get `h` (the history) here!
+            // This is necessary because _gitRefRename() calls RepoState::refReplace(),
+            // which invalidates the existing history, so the pre-existing `h` is no
+            // longer valid.
+            State::History& h = _repoState.history(rev.ref);
             if (undo) h.prev();
             else      h.next();
         
@@ -1292,20 +1487,18 @@ private:
         
         State::History* srcHistory = (srcRev.ref ? &_repoState.history(srcRev.ref) : nullptr);
         if (srcHistory && srcRev.commit!=srcRevPrev.commit) {
-            srcHistory->push({
-                .head = State::Convert(srcRev.commit),
-                .selection = State::Convert(opResult->src.selection),
-                .selectionPrev = State::Convert(opResult->src.selectionPrev),
-            });
+            State::HistoryRefState refState(srcRev.ref);
+            refState.selection = State::Convert(opResult->src.selection);
+            refState.selectionPrev = State::Convert(opResult->src.selectionPrev);
+            srcHistory->push(refState);
         }
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
         if (dstHistory && dstRev.commit!=dstRevPrev.commit) {
-            dstHistory->push({
-                .head = State::Convert(dstRev.commit),
-                .selection = State::Convert(opResult->dst.selection),
-                .selectionPrev = State::Convert(opResult->dst.selectionPrev),
-            });
+            State::HistoryRefState refState(dstRev.ref);
+            refState.selection = State::Convert(opResult->dst.selection);
+            refState.selectionPrev = State::Convert(opResult->dst.selectionPrev);
+            dstHistory->push(refState);
         }
         
         // Update the selection
@@ -1381,13 +1574,51 @@ private:
     //    sleep(1);
     }
     
+    bool _gitDetachHeadIfEqual(const Git::Ref& ref) {
+        assert(ref);
+        if (_head.ref != ref) return false;
+        if (!_headReattach) {
+            _headReattach = true;
+            _repo.headDetach();
+        }
+        return true;
+    }
+    
+    Git::Ref _gitRefRename(const Git::Ref& refPrev, const std::string& name) {
+        const Git::Ref ref = _repo.refCopy(refPrev, name);
+        
+        // Update all revs in _revs
+        for (Rev& rev : _revs) {
+            if (rev.ref == refPrev) {
+                rev.ref = ref;
+            }
+        }
+        
+        // Update _repoState
+        _repoState.refReplace(refPrev, ref);
+        
+        // Update _head
+        if (_gitDetachHeadIfEqual(refPrev)) {
+            _head.ref = ref;
+        }
+        
+        // Update _selection
+        if (_selection.rev.ref == refPrev) {
+            (Git::Rev&)_selection.rev = ref;
+        }
+        
+        // Remember the new ref so it appears in subsequent debase launches
+        _repo.reflogRememberRef(ref);
+        
+        // Delete the original ref
+        _repo.refDelete(refPrev);
+        return ref;
+    }
+    
     Git::Ref _gitRefReplace(const Git::Ref& ref, const Git::Commit& commit) {
         // Detach HEAD if it's attached to the ref that we're modifying, otherwise
         // we'll get an error when we try to replace that ref.
-        if (!_headReattach && ref==_head.ref) {
-            _repo.headDetach();
-            _headReattach = true;
-        }
+        _gitDetachHeadIfEqual(ref);
         return _repo.refReplace(ref, commit);
     }
     
@@ -1439,12 +1670,12 @@ private:
             auto alert = _panelPresent<UI::ErrorAlert>();
             alert->width                        (50);
             alert->message()->text              ("The file still contains conflict markers. Continue editing?");
-            alert->okButton()->label()->text    ("Continue Editing");
+            alert->okButton()->label()->text    ("Edit");
             alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
             
             // Wait until the user clicks a button
-            while (!clicked) track({}, Once);
+            while (!clicked) track(Once);
             
             // If the user canceled, let the caller know
             if (!*clicked) throw _GitModify::ConflictResolveCanceled();
@@ -1491,7 +1722,7 @@ private:
                 panelResult = std::nullopt;
                 
                 // Wait until the user clicks a button
-                while (!panelResult) track({}, Once);
+                while (!panelResult) track(Once);
                 
                 switch (*panelResult) {
                 case UI::ConflictPanel::Result::ChooseOurs:
@@ -1655,7 +1886,7 @@ private:
                 nextDeadline = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
             }
             
-            track({}, nextDeadline);
+            track(nextDeadline);
         }
     }
     
@@ -1779,7 +2010,7 @@ private:
         
         for (;;) {
             // Wait until the user clicks a button
-            while (!choice) track({}, Once);
+            while (!choice) track(Once);
             
             // Trial
             if (*choice) {
@@ -1825,7 +2056,7 @@ private:
         
         for (;;) {
             // Wait until the user clicks a button
-            while (!choice) track({}, Once);
+            while (!choice) track(Once);
             
             // Register
             if (*choice) {
@@ -1992,7 +2223,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         
         // Wait until the user clicks a button
-        while (!done) track({}, Once);
+        while (!done) track(Once);
     }
     
     void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
@@ -2011,7 +2242,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         
         // Wait until the user clicks a button
-        while (!done) track({}, Once);
+        while (!done) track(Once);
     }
     
 //    void _conflictRun() {
@@ -2166,7 +2397,7 @@ private:
 //        
 //        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
 //        auto panel = _panelPresent<UI::ConflictPanel>(layout, "master", "SomeBranch", fc, 1);
-//        track({});
+//        track();
 //    }
     
     void _updateAvailableAlertShow(Version version) {
@@ -2323,7 +2554,7 @@ private:
         alert->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
         
         // Wait until the user clicks a button
-        while (!moveChoice) track({}, Once);
+        while (!moveChoice) track(Once);
         
         // We offerred to move debase; update State so we remember that we did so
         {
@@ -2555,6 +2786,7 @@ private:
     Git::Rev _head;
     bool _headReattach = false;
     std::vector<UI::RevColumnPtr> _columns;
+    UI::RevColumnPtr _columnNameFocused;
 //    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
     

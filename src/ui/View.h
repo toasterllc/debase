@@ -322,9 +322,8 @@ public:
     
     // MARK: - Events
     virtual bool handleEvent(const Event& ev) { return false; }
-    virtual const Event& eventCurrent() const { return _eventCurrent; }
     
-    virtual void track(const Event& ev, Deadline deadline=Forever);
+    virtual void track(Deadline deadline=Forever);
     
     virtual void trackStop() {
         _trackStop = true;
@@ -341,7 +340,7 @@ public:
     // MARK: - Tree Traversal
     virtual void layout(GraphicsState gstate) {
         if (!visible()) return;
-//        
+        
 //        // When we hit a window, set the window's size/origin according to the gstate, and reset gstate
 //        // to reference the new window, and the origin to {0,0}
 //        if (Window* win = dynamic_cast<Window*>(&view)) {
@@ -362,8 +361,12 @@ public:
             layoutNeeded(false);
         }
         
+        auto subviewsId = _subviewsId;
         auto it = subviewsBegin();
         for (;;) {
+            // Detect _subviews being modified while we're iterating
+            assert(_subviewsId == subviewsId);
+            
             Ptr subview = subviewsNext(it);
             if (!subview) break;
             subview->layout(subview->convert(gstate));
@@ -420,8 +423,12 @@ public:
             drawNeeded(false);
         }
         
+        auto subviewsId = _subviewsId;
         auto it = subviewsBegin();
         for (;;) {
+            // Detect _subviews being modified while we're iterating
+            assert(_subviewsId == subviewsId);
+            
             Ptr subview = subviewsNext(it);
             if (!subview) break;
             subview->draw(subview->convert(gstate));
@@ -434,10 +441,13 @@ public:
         
         auto gpushed = View::GStatePush(gstate);
         
-        auto it = subviewsEnd();
-        for (;;) {
-            Ptr subview = subviewsPrev(it);
-            if (!subview) break;
+        // We have to copy _subviews since we allow it to be modified while we're iterating over it
+        // within our handleEvent() callout
+        // TODO: optimize copying _subviews by using a stack array
+        Views subviews = _subviews;
+        for (auto it=subviews.rbegin(); it!=subviews.rend(); it++) {
+            Ptr subview = (*it).lock();
+            if (!subview) continue;
             if (subview->handleEvent(subview->convert(gstate), ev)) return true;
         }
         
@@ -471,6 +481,7 @@ public:
         
         _subviews = {};
         for (Ptr sv : x) subviewAdd(sv);
+        _subviewsId++;
     }
     
     virtual ViewsIter subviewsBegin() {
@@ -518,6 +529,7 @@ public:
     virtual void subviewAdd(Ptr view) {
         assert(view);
         _subviews.push_back(view);
+        _subviewsId++;
         view->addedToSuperview(*this);
         layoutNeeded(true);
     }
@@ -609,6 +621,7 @@ private:
     static inline GraphicsState _GState;
     
     Views _subviews;
+    uint32_t _subviewsId = 0;
     Point _origin;
     Size _size;
     bool _visible = true;
@@ -620,7 +633,6 @@ private:
     bool _tracking = false;
     bool _trackStop = false;
     bool _inhibitErase = false;
-    Event _eventCurrent;
     Edges _hitTestInset;
     std::optional<Color> _borderColor;
 };

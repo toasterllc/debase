@@ -188,67 +188,6 @@ Rev _RevLookup(const Git::Repo& repo, const std::string& str) {
     return rev;
 }
 
-namespace _ReflogCheckoutEntry {
-    bool HEADSpecialPointer(std::string_view name) {
-        return Toastbox::String::EndsWith("HEAD", name);
-    }
-    
-    // RevGet(): parse and lookup the rev from the reflog message string
-    // For example, a checkout message in the reflog looks like:
-    //   checkout: moving from master to v1
-    // And we want to extract `v1` and turn it into a Rev.
-    //
-    // This is of course an imperfect heuristic and ideally we wouldn't
-    // be parsing log strings, but there doesn't seem to be a better option,
-    // and this is how libgit2 does it to implement its handling of the
-    // @{N} syntax.
-    // 
-    // We decided to implement this ourself instead of using libgit2's
-    // implementation for 2 reasons:
-    // 
-    //   1. libgit2 parses the first rev in the string but we want the second,
-    //      because git includes the symbolic name of revs in the second, but
-    //      not the first. For example if you checkout a tag (master -> v1),
-    //      the message will say:
-    //      
-    //          checkout: moving from master to v1
-    //      
-    //      but when moving from v1 -> master it'll say:
-    //      
-    //          checkout: moving from a561d03 to master
-    //      
-    //      So if we use libgit2's implementation, we can't get the tag name.
-    //   
-    //   2. We can implement reflog iteration much more efficiently. When
-    //      parsing `@{-3}` for example, libgit2 has to perform a regex match
-    //      on at least 3 reflog entries (to match the 'checkout: moving from
-    //      X to Y' string), and then has to redo that same work when parsing
-    //      `@{-4}`. Whereas with our implementation, we process each reflog
-    //      entry only once.
-    
-    Git::Rev RevGet(const Git::Repo& repo, const git_reflog_entry* entry) {
-        assert(entry);
-        
-        const char* msg = git_reflog_entry_message(entry);
-        if (!msg) throw std::runtime_error("invalid message");
-        if (!Toastbox::String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
-        
-        const std::string_view msgv = msg;
-        const size_t lastSpaceIdx = msgv.find_last_of(' ');
-        // This function should only be called for checkout reflog messages, so there must be a space.
-        // If there's not, it's programmer error.
-        assert(lastSpaceIdx != std::string::npos);
-        std::string_view revName = msgv.substr(lastSpaceIdx+1);
-        
-        const size_t tildeIdx = revName.find_first_of('~');
-        const size_t carrotIdx = revName.find_first_of('^');
-        revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
-        // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
-        if (HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
-        return repo.revLookup(std::string(revName));
-    }
-}
-
 int main(int argc, const char* argv[]) {
 //    std::string str = "{\"error\":\"The existing trial has already expired.\"}\n";
 //    License::Server::ReplyLicenseLookup resp;
@@ -278,26 +217,18 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: add branch copying; action menu? drag branch name? both?
-    #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
-    #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
-    #warning TODO:        branch might be readonly, so we might not be able to checkout.
-    #warning TODO:     2. manually update the reflog. we'll need to generate a signature for the current user,
-    #warning TODO:        but that should be doable?
-    #warning TODO:     3. add new schema to State to track additional refs that should be considered in addition
-    #warning TODO:        to the reflog. the new state will need to track the date so that we can sort the refs
-    #warning TODO:        relative to the reflog. (the reflog appears to track dates too.)
+    #warning TODO: add branch/tag deleting by right-clicking branch name
     
-    #warning TODO: add 'create branch from commit'
-    #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
-    
-    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+    #warning TODO: add branch/tag renaming by right-clicking branch name
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
     
 //  Future:
+    
+    #warning TODO: add branch duplication; action menu? drag branch name? both?
+    #warning TODO:   add branch to reflog so that it appears in subsequent launches
     
     #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
     #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
@@ -330,6 +261,50 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: why do we give an event to track()? whatever needs that event,
+//    #warning TODO:   can it get the event via eventCurrent(), or can we add a
+//    #warning TODO:   function to Screen to keep the last event returned by eventNext()?
+//
+//    #warning TODO: fix: press escape while "No matching license was found" window is open; cursor flashes at bottom left of window
+//
+//    #warning TODO: fix: if you rename a RevColumn that has a selection, the selection becomes pale purple after the rename
+//
+//    #warning TODO: when a RevColumn's name has focus, resize window -> abort rename
+//
+//    #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
+//
+//    #warning TODO: implement Git::Repo::refCopy() for tags
+//
+//    #warning TODO: when creating a new branch from a commit, give the new revcolumn focus
+//
+//    #warning TODO: fix: snapshots don't restore branch name
+//    #warning TODO:   make restoring a RefState a function, so it can be used by both _undoRedo and restoring a snapshot
+//
+//    #warning TODO: fix: prevent loading stale State for renamed refs that share the name of an old ref
+//    #warning TODO:   - State: switch back to old model where we load the refs in the constructor. that way, it's impossible to load old state for a new ref that shares a name with an old ref.
+//    #warning TODO:   - State: cleanup state -- have root data structure be a map<Ref,_RefState>,
+//    #warning TODO:     instead of separate maps for `history` and `snapshots`
+//    #warning TODO:   - State: add a `created` flag to _LoadedRef, and when writing:
+//    #warning TODO:       write = created || history!=historyPrev // write history if we created the entry during this session, or if its history changed
+//    #warning TODO:       addSnapshot = history!=*historyPrev // add snapshot only if we modified the branch during this session
+//
+//    #warning TODO: ref rename: implement proper error if the ref name is invalid
+//
+//    #warning TODO: fix: rename branch, exit debase. undo history is lost.
+//    #warning TODO:   this is because the State history hasn't changed. if we implement undo for changing a branch name, it should be fixed automatically
+//
+//    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+//
+//    #warning TODO: add 'create branch from commit'
+//    #warning TODO:   add branch to reflog so that it appears in subsequent launches
+//
+//    #warning TODO: ref rename: implement proper error if a ref already exists with the same name
+//
+//    #warning TODO: ref rename: add new ref name to reflog so it appears in subsequent launches
+//
+//    #warning TODO: fix: checkout tag, launch debase. col0 doesn't reflect name of tag.
+//    #warning TODO:   fix in Git::Repo::headResolved() with heuristic: look at first reflog entry; if the commit matches between the first reflog entry and HEAD, and the reflog entry is a ref, use that ref.
+//
 //    #warning TODO: fix: copying a commit within a branch doesn't update undo state
 //
 //    #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
@@ -720,6 +695,8 @@ int main(int argc, const char* argv[]) {
 //        while (!a);
 //    }
     
+//    sleep(5);
+    
     try {
         _Args args = _ParseArgs(argc-1, argv+1);
         
@@ -790,6 +767,14 @@ int main(int argc, const char* argv[]) {
             repo = Git::Repo::Open(".");
         } catch (...) {}
         
+//        repo.headDetach();
+//        repo.headAttach(repo.revLookup("master"));
+//        repo.headAttach(repo.revLookup("master"));
+//        repo.headAttach(repo.revLookup("v1"));
+//        repo.headAttach(repo.revLookup("v1"));
+//        repo.headDetach();
+//        exit(0);
+        
         if (repo) {
             if (args.run.revs.empty()) {
                 constexpr size_t RevCountDefault = 5;
@@ -811,7 +796,7 @@ int main(int argc, const char* argv[]) {
                     
                     try {
                         Rev rev;
-                        (Git::Rev&)rev = _ReflogCheckoutEntry::RevGet(repo, entry);
+                        (Git::Rev&)rev = repo.reflogRevForCheckoutEntry(entry);
                         // Ignore non-ref reflog entries
                         if (!rev.ref) continue;
                         const auto [_, inserted] = unique.insert(rev);

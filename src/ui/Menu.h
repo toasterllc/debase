@@ -146,9 +146,9 @@ public:
         return false;
     }
     
-    void track(const Event& ev, Deadline deadline=Forever) override {
+    void track(Deadline deadline=Forever) override {
         _trackState = {};
-        _trackState.startEvent = ev;
+        _trackState.startEvent = screen().eventCurrent();
         
         // Disable button interaction at the very beginning, to prevent accidental clicks
         for (UI::ButtonPtr button : _buttons) {
@@ -156,7 +156,7 @@ public:
             button->interaction(false);
         }
         
-        Panel::track(ev, deadline);
+        Panel::track(deadline);
     }
     
     const auto& title() const { return _title; }
@@ -166,11 +166,13 @@ public:
     bool buttons(const std::vector<UI::ButtonPtr>& x) {
         _setForce(_buttons, x);
         
-        // Enable 'mouseUpTracks' for our buttons, which makes sure every button starts tracking on mouse-up.
-        // This allows for the behavior where mouse-down on a button opens the menu, and mouse-up inside the
-        // menu dismisses the menu.
+        // Set actionTrigger for our buttons to only require a MouseUp (not MouseDown+MouseUp)
+        // to trigger their action.
+        // This allows for the behavior where mouse-down on a button opens the menu, and
+        // mouse-up inside a button within the menu triggers the button (and dismisses
+        // the menu.)
         for (UI::ButtonPtr button : _buttons) {
-            button->mouseUpTracks(true);
+            button->actionTrigger(Button::ActionTrigger::MouseUp);
         }
         
         // Update every button action to invoke dismiss(), and then call the original action

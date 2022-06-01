@@ -179,14 +179,14 @@ public:
         }
         
         draw(gstate);
-        _cursorDraw();
         ::update_panels();
         ::refresh();
+        _cursorDraw();
         
         _orderPanelsNeeded = false;
     }
     
-    virtual Event nextEvent(Deadline deadline=Forever) {
+    virtual Event eventNext(Deadline deadline=Forever) {
         using namespace std::chrono;
         
         refresh();
@@ -216,6 +216,7 @@ public:
             }
             
             Event ev = {
+                .id = _eventCurrent.id+1,
                 .type = (Event::Type)ch,
                 .time = steady_clock::now(),
             };
@@ -244,60 +245,28 @@ public:
                 break;
             }}
             
+            // Only set _eventCurrent once we're sure that we're returning the event
+            _eventCurrent = ev;
             return ev;
         }
     }
     
-    virtual Event nextEvent(std::chrono::milliseconds timeout) {
-        return nextEvent(std::chrono::steady_clock::now()+timeout);
+    virtual Event eventNext(std::chrono::milliseconds timeout) {
+        return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
-//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-//        // Intercept and drop events before subviews get a chance
-//        if (_suppressEvents) return true;
-//        return Window::handleEvent(gstate, ev);
-//    }
+    virtual const Event& eventCurrent() const {
+        return _eventCurrent;
+    }
     
-//    virtual bool dispatchEvent(const Event& ev) {
-//        const GraphicsState gstate = graphicsStateCalc(*this);
-//        return View::handleEvent(gstate, ev);
-//    }
+    // eventSince() returns whether events have occurred since the given event
+    virtual bool eventSince(const Event& ev) {
+        return _eventCurrent.id != ev.id;
+    }
     
     virtual GraphicsState graphicsStateCalc(View& target) {
         return _graphicsStateCalc(target, {.screen=this}, *this);
     }
-    
-//    void track(View& target, const Event& ev) {
-//        _track(target, ev);
-//    }
-    
-//    // Signal track() to return
-//    void trackStop() {
-//        _trackStop = true;
-//    }
-    
-    
-    
-//    virtual void track(const Window& win, const Event& ev) {
-////        _TreeState treeState(_TState, win, {});
-//        
-//        _tracking = true;
-//        Defer(_tracking = false); // Exception safety
-//        Defer(_trackStop = false); // Exception safety
-//        
-//        do {
-//            refresh();
-//            
-//            _eventCurrent = UI::NextEvent();
-//            Defer(_eventCurrent = {}); // Exception safety
-//            
-//            handleEvent(*this, {}, _eventCurrent);
-//        } while (!_trackStop);
-//    }
-    
-//    virtual bool tracking() const { return _tracking; }
-    
-//    const Event& eventCurrent() const { return _eventCurrent; }
     
     virtual bool orderPanelsNeeded() { return _orderPanelsNeeded; }
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
@@ -305,9 +274,9 @@ public:
 private:
     void _cursorDraw() {
         if (hitTest(_cursorState.origin)) {
-            ::move(_cursorState.origin.y, _cursorState.origin.x);
             ::curs_set(_cursorState.visible);
-        
+            ::move(_cursorState.origin.y, _cursorState.origin.x);
+            
         } else {
             ::curs_set(false);
         }
@@ -327,14 +296,10 @@ private:
     }
     
     _GraphicsStateSwapper _gstate = View::GStatePush({.screen=this});
+    Event _eventCurrent;
     ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
-//    bool _suppressEvents = false;
-//    
-//    bool _tracking = false;
-//    bool _trackStop = false;
-//    Event _eventCurrent;
 };
 
 using ScreenPtr = std::shared_ptr<Screen>;

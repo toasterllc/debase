@@ -21,24 +21,24 @@ public:
         _buyLink->label()->text(ToasterDisplayURL);
         _buyLink->link(DebaseBuyURL);
         
-        auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
-        auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
-        auto releaseFocus = [&] (TextField& field, bool done) { _fieldReleaseFocus(field, done); };
+        auto valueChangedAction = [&] (TextField& field) { _fieldValueChanged(field); };
+        auto focusAction        = [&] (TextField& field) { _fieldFocus(field); };
+        auto unfocusAction      = [&] (TextField& field, TextField::UnfocusReason reason) { _fieldUnfocus(field, reason); };
         
-        _email->label()->text               ("       Email: ");
-        _email->label()->textAttr           (colors().menu|WA_BOLD);
-        _email->spacingX                    (3);
-        _email->textField()->valueChanged   (valueChanged);
-        _email->textField()->requestFocus   (requestFocus);
-        _email->textField()->releaseFocus   (releaseFocus);
-        _email->textField()->focus          (true);
+        _email->label()->text                   ("       Email: ");
+        _email->label()->textAttr               (colors().menu|WA_BOLD);
+        _email->spacingX                        (3);
+        _email->textField()->valueChangedAction (valueChangedAction);
+        _email->textField()->focusAction        (focusAction);
+        _email->textField()->unfocusAction      (unfocusAction);
+        _email->textField()->focused            (true);
         
-        _code->label()->text                ("License Code: ");
-        _code->label()->textAttr            (colors().menu|WA_BOLD);
-        _code->spacingX                     (3);
-        _code->textField()->valueChanged    (valueChanged);
-        _code->textField()->requestFocus    (requestFocus);
-        _code->textField()->releaseFocus    (releaseFocus);
+        _code->label()->text                    ("License Code: ");
+        _code->label()->textAttr                (colors().menu|WA_BOLD);
+        _code->spacingX                         (3);
+        _code->textField()->valueChangedAction  (valueChangedAction);
+        _code->textField()->focusAction         (focusAction);
+        _code->textField()->unfocusAction       (unfocusAction);
     }
     
     // MARK: - Alert Overrides
@@ -60,15 +60,15 @@ public:
 //    }
     
     LabelTextFieldPtr focus() const {
-        if (_email->textField()->focus()) return _email;
-        else if (_code->textField()->focus()) return _code;
+        if (_email->textField()->focused()) return _email;
+        else if (_code->textField()->focused()) return _code;
         return nullptr;
     }
     
     bool focus(LabelTextFieldPtr field) {
-        _email->textField()->focus(false);
-        _code->textField()->focus(false);
-        if (field) field->textField()->focus(true);
+        _email->textField()->focused(false);
+        _code->textField()->focused(false);
+        if (field) field->textField()->focused(true);
         return true;
     }
     
@@ -137,15 +137,27 @@ private:
         layoutNeeded(true);
     }
     
-    void _fieldRequestFocus(TextField& field) {
-        _email->textField()->focus(false);
-        _code->textField()->focus(false);
-        field.focus(true);
+    void _fieldFocus(TextField& field) {
+        _email->textField()->focused(false);
+        _code->textField()->focused(false);
+        field.focused(true);
     }
     
-    void _fieldReleaseFocus(TextField& field, bool done) {
-        // Return behavior
-        if (done) {
+    void _fieldUnfocus(TextField& field, TextField::UnfocusReason reason) {
+        switch (reason) {
+        case TextField::UnfocusReason::Tab: {
+            _email->textField()->focused(false);
+            _code->textField()->focused(false);
+            
+            if (&field == _email->textField().get()) {
+                _code->textField()->focused(true);
+            } else if (&field == _code->textField().get()) {
+                _email->textField()->focused(true);
+            }
+            break;
+        }
+        
+        case TextField::UnfocusReason::Return: {
             const bool fieldsFilled = !_email->textField()->value().empty() && !_code->textField()->value().empty();
             if (fieldsFilled) {
                 if (okButton()->action()) {
@@ -153,29 +165,24 @@ private:
                 }
             
             } else {
-                _email->textField()->focus(false);
-                _code->textField()->focus(false);
+                _email->textField()->focused(false);
+                _code->textField()->focused(false);
                 
                 if (field.value().empty()) {
-                    field.focus(true);
+                    field.focused(true);
                 
                 } else {
-                    if (_email->textField()->value().empty())     _email->textField()->focus(true);
-                    else if (_code->textField()->value().empty()) _code->textField()->focus(true);
+                    if (_email->textField()->value().empty())     _email->textField()->focused(true);
+                    else if (_code->textField()->value().empty()) _code->textField()->focused(true);
                 }
             }
-        
-        // Tab behavior
-        } else {
-            _email->textField()->focus(false);
-            _code->textField()->focus(false);
-            
-            if (&field == _email->textField().get()) {
-                _code->textField()->focus(true);
-            } else if (&field == _code->textField().get()) {
-                _email->textField()->focus(true);
-            }
+            break;
         }
+        
+        case TextField::UnfocusReason::Escape: {
+            dismiss();
+            break;
+        }}
     }
     
     virtual bool okButtonEnabled() const override {

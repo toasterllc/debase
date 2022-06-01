@@ -7,6 +7,7 @@
 #include "Button.h"
 #include "View.h"
 #include "Rev.h"
+#include "TextField.h"
 
 namespace UI {
 
@@ -26,8 +27,16 @@ public:
         _snapshotsButton->bordered(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
-        _name->textAttr(colors().menu | WA_BOLD);
-        _name->align(Align::Center);
+        _nameField->align(Align::Center);
+        _nameField->attrFocused(colors().menu | WA_UNDERLINE | WA_BOLD);
+        _nameField->attrUnfocused(colors().menu | WA_BOLD);
+        _nameField->trackWhileFocused(true);
+        
+//        _nameField->textAttr(colors().menu | WA_BOLD);
+        
+//        _nameField->valueChangedAction ([&] (TextField& field) { _nameFieldChanged(field); });
+//        _nameField->focusAction ([&] (TextField& field) { _nameFieldFocus(field); });
+//        _nameField->unfocusAction ([&] (TextField& field, bool done) { _nameFieldUnfocus(field, done); });
         
         _statusLine1->align(Align::Center);
         _statusLine1->textAttr(colors().error);
@@ -38,13 +47,7 @@ public:
     
     void reload(Size size) {
         // Set our column name
-        _name->text(_rev.displayName());
-        
-        if (_head && _rev.displayName()!="HEAD") {
-            _name->suffix(" (HEAD)");
-        } else {
-            _name->suffix("");
-        }
+        _nameField->value(name(false));
         
         const bool readOnly = !_rev.isMutable();
         const char* readOnlyReason = _ReadOnlyReason(_rev.mutability);
@@ -116,7 +119,7 @@ public:
             
         const Size s = size();
         
-        _name->frame({{0,_NameInsetY}, {s.x, 1}});
+        _nameField->frame({{0,_NameInsetY}, {s.x, 1}});
         _statusLine1->frame({{0,_StatusLine1InsetY}, {s.x, 1}});
         _statusLine2->frame({{0,_StatusLine2InsetY}, {s.x, 1}});
         
@@ -170,6 +173,19 @@ public:
 //        drawRect();
 //    }
     
+    std::string name(bool editing) const {
+        if (editing && _rev.ref) {
+            return _rev.ref.name();
+        
+        } else {
+            std::string x = _rev.displayName();
+            if (_head && x!="HEAD") {
+                x += " (HEAD)";
+            }
+            return x;
+        }
+    }
+    
     CommitPanelPtr hitTestCommit(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
             if (HitTest(panel->frame(), p)) return panel;
@@ -198,6 +214,8 @@ public:
     const auto& snapshotsButton() const { return _snapshotsButton; }
     template <typename T> bool snapshotsButton(const T& x) { return _set(_snapshotsButton, x); }
     
+    const auto& nameField() const { return _nameField; }
+    
 private:
     static constexpr int _NameInsetY            = 0;
     static constexpr int _StatusLine1InsetY     = 1;
@@ -215,12 +233,24 @@ private:
         abort();
     }
     
+//    void _nameChanged(TextField& field) {
+//        throw std::runtime_error("_nameChanged");
+//    }
+//    
+//    void _nameFocus(TextField& field) {
+//        throw std::runtime_error("_nameFocus");
+//    }
+//    
+//    void _nameUnfocus(TextField& field, bool done) {
+//        throw std::runtime_error("_nameUnfocus");
+//    }
+    
     Git::Repo _repo;
     Rev _rev;
     bool _head = false;
     CommitPanelVec _panels;
     
-    LabelPtr _name              = subviewCreate<Label>();
+    TextFieldPtr _nameField     = subviewCreate<TextField>();
     LabelPtr _statusLine1       = subviewCreate<Label>();
     LabelPtr _statusLine2       = subviewCreate<Label>();
     

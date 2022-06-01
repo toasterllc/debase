@@ -26,6 +26,8 @@ public:
 //        _dismissButton->action              (std::bind(&Alert::dismiss, this));
     }
     
+    bool focusable() const override { return true; }
+    
     virtual int contentHeight(int width) const { return 0; }
     
     Rect contentFrame() const {
