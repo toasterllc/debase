@@ -434,6 +434,7 @@ public:
             
             if (!errorMsg.empty()) {
                 errorMsg[0] = toupper(errorMsg[0]);
+                if (errorMsg.back() != '.') errorMsg += '.';
                 _errorMessageRun(errorMsg, false);
             }
         }
@@ -714,6 +715,10 @@ private:
         b->enabled(enabled);
         b->size({ContextMenuWidth, 1});
         return b;
+    }
+    
+    bool _selectionCanBranch() {
+        return _selection.commits.size() == 1;
     }
     
     bool _selectionCanCombine() {
@@ -1101,7 +1106,7 @@ private:
         drawNeeded(true);
         
         UI::Button* menuButton = nullptr;
-        UI::ButtonPtr createBranchButton    = _makeContextMenuButton("Branch",  "b",    true,                   menuButton);
+        UI::ButtonPtr createBranchButton    = _makeContextMenuButton("Branch",  "b",    _selectionCanBranch(),  menuButton);
         UI::ButtonPtr combineButton         = _makeContextMenuButton("Combine", "c",    _selectionCanCombine(), menuButton);
         UI::ButtonPtr editButton            = _makeContextMenuButton("Edit",    "ret",  _selectionCanEdit(),    menuButton);
         UI::ButtonPtr deleteButton          = _makeContextMenuButton("Delete",  "del",  _selectionCanDelete(),  menuButton);
@@ -1116,7 +1121,28 @@ private:
         std::optional<_GitOp> gitOp;
         
         if (menuButton == createBranchButton.get()) {
-            throw std::runtime_error("create branch");
+            assert(_selection.commits.size() == 1);
+            const Git::Rev& rev = mouseDownColumn->rev();
+            const Git::Commit& commit = *_selection.commits.begin();
+            const std::string branchName = (rev.ref ? rev.ref.name() : "NewBranch");
+            Git::Branch branch;
+            // Keep appending a new suffix until we find an unused branch name
+            for (size_t i=2; i<10; i++) {
+                try {
+                    branch = _repo.branchCreate(branchName+"-"+std::to_string(i), commit);
+                } catch (const Git::Error& e) {
+                    if (e.error == GIT_EEXISTS) continue;
+                    throw;
+                }
+                break;
+            }
+            
+            if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
+            
+            auto it = std::find(_revs.begin(), _revs.end(), rev);
+            assert(it != _revs.end());
+            _revs.insert(it+1, branch);
+            _reload();
         
         } else if (menuButton == combineButton.get()) {
             gitOp = _GitOp{
@@ -1496,7 +1522,7 @@ private:
         
         // Determine the conflict panel layout (ie which rev is on the left vs right)
         UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-        for (Rev& rev : _revs) {
+        for (const Rev& rev : _revs) {
             if (rev == revOurs) {
                 layout = UI::ConflictPanel::Layout::LeftOurs;
                 break;
