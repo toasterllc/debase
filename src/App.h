@@ -1101,19 +1101,24 @@ private:
         drawNeeded(true);
         
         UI::Button* menuButton = nullptr;
-        UI::ButtonPtr combineButton = _makeContextMenuButton("Combine", "c", _selectionCanCombine(), menuButton);
-        UI::ButtonPtr editButton    = _makeContextMenuButton("Edit", "ret", _selectionCanEdit(), menuButton);
-        UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete", "del", _selectionCanDelete(), menuButton);
+        UI::ButtonPtr createBranchButton    = _makeContextMenuButton("Branch",  "b",    true,                   menuButton);
+        UI::ButtonPtr combineButton         = _makeContextMenuButton("Combine", "c",    _selectionCanCombine(), menuButton);
+        UI::ButtonPtr editButton            = _makeContextMenuButton("Edit",    "ret",  _selectionCanEdit(),    menuButton);
+        UI::ButtonPtr deleteButton          = _makeContextMenuButton("Delete",  "del",  _selectionCanDelete(),  menuButton);
         
         UI::MenuPtr menu = subviewCreate<UI::Menu>();
-        menu->buttons({ combineButton, editButton, deleteButton });
+        menu->buttons({ createBranchButton, combineButton, editButton, deleteButton });
         menu->sizeToFit(ConstraintNoneSize);
         menu->origin(mouseDownEvent.mouse.origin);
         menu->track(mouseDownEvent);
         
         // Handle the clicked button
         std::optional<_GitOp> gitOp;
-        if (menuButton == combineButton.get()) {
+        
+        if (menuButton == createBranchButton.get()) {
+            throw std::runtime_error("create branch");
+        
+        } else if (menuButton == combineButton.get()) {
             gitOp = _GitOp{
                 .type = _GitOp::Type::Combine,
                 .src = {
