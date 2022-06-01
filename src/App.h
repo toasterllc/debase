@@ -771,7 +771,6 @@ private:
                 _columns.push_back(col);
                 
                 col->repo(_repo);
-                col->head((rev.displayHead() == _head.commit));
                 
                 std::weak_ptr<UI::RevColumn> weakCol = col;
                 col->undoButton()->action([=] (UI::Button&) {
@@ -794,6 +793,7 @@ private:
             }
             
             col->rev(rev); // Ensure all columns' revs are up to date (since refs become stale if they're modified)
+            col->head(rev.displayHead() == _head.commit);
             col->undoButton()->enabled(h && !h->begin());
             col->redoButton()->enabled(h && !h->end());
             col->reload({_ColumnWidth, size().y});
@@ -1118,10 +1118,11 @@ private:
         
         if (menuButton == createBranchButton.get()) {
             assert(_selection.commits.size() == 1);
-            const Git::Rev& rev = mouseDownColumn->rev();
+            const Rev& rev = mouseDownColumn->rev();
             const Git::Commit& commit = *_selection.commits.begin();
             const std::string branchName = (rev.ref ? rev.ref.name() : "NewBranch");
             Git::Branch branch;
+            
             // Keep appending a new suffix until we find an unused branch name
             for (size_t i=2; i<10; i++) {
                 try {
@@ -1135,7 +1136,13 @@ private:
             
             if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
             
+            const Git::Signature sig = _repo.signatureDefaultCreate();
+            Git::Reflog reflog = _repo.reflogForRef(_repo.head());
+            reflog.append(sig, _head, branch);
+            reflog.append(sig, branch, _head);
+            
             auto it = std::find(_revs.begin(), _revs.end(), rev);
+            volatile size_t dist = std::distance(_revs.begin(), it);
             assert(it != _revs.end());
             _revs.insert(it+1, branch);
             _reload();

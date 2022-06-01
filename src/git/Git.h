@@ -248,32 +248,6 @@ struct Config : RefCounted<git_config*, git_config_free> {
     }
 };
 
-struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
-    using RefCounted::RefCounted;
-    
-    void drop(size_t idx) {
-        int ir = git_reflog_drop(*get(), idx, 1);
-        if (ir) throw Error(ir, "git_reflog_drop failed");
-        ir = git_reflog_write(*get());
-        if (ir) throw Error(ir, "git_reflog_write failed");
-    }
-    
-    const git_reflog_entry* operator [](size_t idx) const {
-        return git_reflog_entry_byindex(*get(), idx);
-    }
-    
-    const git_reflog_entry* at(size_t idx) const {
-        if (idx >= git_reflog_entrycount(*get())) {
-            throw std::out_of_range("index out of range");
-        }
-        return git_reflog_entry_byindex(*get(), idx);
-    }
-    
-    size_t len() const {
-        return git_reflog_entrycount(*get());
-    }
-};
-
 struct Submodule : RefCounted<git_submodule*, git_submodule_free> {
     using RefCounted::RefCounted;
     
@@ -562,6 +536,42 @@ public:
     
     Commit commit;  // Mandatory
     Ref ref;        // Optional
+};
+
+struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
+    using RefCounted::RefCounted;
+    
+    void append(const Signature& sig, const Rev& curr, const Rev& next) {
+        const std::string currName = (curr.ref ? curr.ref.name() : curr.commit.idStr());
+        const std::string nextName = (next.ref ? next.ref.name() : next.commit.idStr());
+        const std::string msg = "checkout: moving from " + currName + " to " + nextName;
+        int ir = git_reflog_append(*get(), &next.commit.id(), *sig, msg.c_str());
+        if (ir) throw Error(ir, "git_reflog_append failed");
+        ir = git_reflog_write(*get());
+        if (ir) throw Error(ir, "git_reflog_write failed");
+    }
+    
+    void drop(size_t idx) {
+        int ir = git_reflog_drop(*get(), idx, 1);
+        if (ir) throw Error(ir, "git_reflog_drop failed");
+        ir = git_reflog_write(*get());
+        if (ir) throw Error(ir, "git_reflog_write failed");
+    }
+    
+    const git_reflog_entry* operator [](size_t idx) const {
+        return git_reflog_entry_byindex(*get(), idx);
+    }
+    
+    const git_reflog_entry* at(size_t idx) const {
+        if (idx >= git_reflog_entrycount(*get())) {
+            throw std::out_of_range("index out of range");
+        }
+        return git_reflog_entry_byindex(*get(), idx);
+    }
+    
+    size_t len() const {
+        return git_reflog_entrycount(*get());
+    }
 };
 
 inline void _RepoFree(git_repository* repo) {
@@ -1075,6 +1085,13 @@ public:
         int ir = git_blob_create_from_buffer(&id, *get(), data, len);
         if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
         return blobLookup(id);
+    }
+    
+    Signature signatureDefaultCreate() {
+        git_signature* x = nullptr;
+        int ir = git_signature_default(&x, *get());
+        if (ir) throw Error(ir, "git_signature_default failed");
+        return x;
     }
 };
 
