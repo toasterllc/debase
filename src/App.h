@@ -762,18 +762,66 @@ private:
         return _selection.rev.isMutable();
     }
     
-    void _revColumnNameFocus(UI::RevColumnPtr col) {
-        if (!col->rev().isMutable()) return;
+    void _columnNameFocusedSet(UI::RevColumnPtr fcol) {
+        // If the given column isn't mutable, then pretend as if we were given nullptr
+        if (fcol && !fcol->rev().isMutable()) {
+            fcol = nullptr;
+        }
+        
+        // Short-circuit if the column's name is already focused
+        if (_columnNameFocused == fcol) return;
+        
+        // Commit existing name change
+        if (_columnNameFocused) {
+            if (_columnNameFocused->nameField()->value() != _columnNameFocused->name(true)) {
+                // Name changed
+                throw Toastbox::RuntimeError("branch name changed");
+            }
+        }
         
         for (UI::RevColumnPtr col : _columns) {
-            col->name()->focused(false);
+            const bool focused = (col == fcol);
+            col->nameField()->value(col->name(focused));
+            col->nameField()->focused(focused);
         }
-        col->name()->focused(true);
+        
+        _columnNameFocused = fcol;
     }
     
-    void _revColumnNameUnfocus(UI::RevColumnPtr col) {
-        
-    }
+//    void _revColumnNameFocus(UI::RevColumnPtr col) {
+//        if (!col->rev().isMutable()) return;
+//        
+//        for (UI::RevColumnPtr col : _columns) {
+//            col->name()->focused(false);
+//        }
+//        col->name()->focused(true);
+//    }
+//    
+//    void _revColumnNameUnfocus(UI::RevColumnPtr col, UI::TextField::UnfocusReason reason) {
+//        switch (reason) {
+//        case UnfocusReason::Return:
+//            _revColumnNameCommit(col);
+//            return;
+//        
+//        case UnfocusReason::Escape:
+//        default:
+//            // Cancel editing
+//            return;
+//        }
+//    }
+//    
+//    void _revColumnNameCommit(UI::RevColumnPtr col) {
+//        switch (reason) {
+//        case UnfocusReason::Return:
+//            
+//            return;
+//        
+//        case UnfocusReason::Escape:
+//        default:
+//            // Cancel editing
+//            return;
+//        }
+//    }
     
     void _reload() {
         // We allow ourself to be called outside of a git repo, so we need
@@ -823,15 +871,15 @@ private:
                     if (col) _trackSnapshotsMenu(col);
                 });
                 
-                col->name()->valueChangedAction ([=] (UI::TextField& field) {  });
-                col->name()->focusAction ([=] (UI::TextField& field) {
+                col->nameField()->valueChangedAction ([=] (UI::TextField& field) {  });
+                col->nameField()->focusAction ([=] (UI::TextField& field) {
                     auto col = weakCol.lock();
-                    if (col) _revColumnNameFocus(col);
+                    if (col) _columnNameFocusedSet(col);
                 });
                 
-                col->name()->unfocusAction ([=] (UI::TextField& field, UI::TextField::UnfocusReason reason) {
+                col->nameField()->unfocusAction ([=] (UI::TextField& field, UI::TextField::UnfocusReason reason) {
                     auto col = weakCol.lock();
-                    if (col) _revColumnNameUnfocus(col);
+                    if (col) _columnNameFocusedSet(nullptr);
                 });
             
             } else {
@@ -2601,6 +2649,7 @@ private:
     Git::Rev _head;
     bool _headReattach = false;
     std::vector<UI::RevColumnPtr> _columns;
+    UI::RevColumnPtr _columnNameFocused;
 //    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
     
