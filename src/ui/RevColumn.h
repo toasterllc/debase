@@ -40,8 +40,8 @@ public:
 //        _name->textAttr(colors().menu | WA_BOLD);
         
 //        _name->valueChangedAction ([&] (TextField& field) { _nameChanged(field); });
-//        _name->focusAction ([&] (TextField& field) { _nameRequestFocus(field); });
-//        _name->unfocusAction ([&] (TextField& field, bool done) { _nameReleaseFocus(field, done); });
+//        _name->focusAction ([&] (TextField& field) { _nameFocus(field); });
+//        _name->unfocusAction ([&] (TextField& field, bool done) { _nameUnfocus(field, done); });
         
         _statusLine1->align(Align::Center);
         _statusLine1->textAttr(colors().error);
@@ -235,12 +235,12 @@ public:
 //        throw std::runtime_error("_nameChanged");
 //    }
 //    
-//    void _nameRequestFocus(TextField& field) {
-//        throw std::runtime_error("_nameRequestFocus");
+//    void _nameFocus(TextField& field) {
+//        throw std::runtime_error("_nameFocus");
 //    }
 //    
-//    void _nameReleaseFocus(TextField& field, bool done) {
-//        throw std::runtime_error("_nameReleaseFocus");
+//    void _nameUnfocus(TextField& field, bool done) {
+//        throw std::runtime_error("_nameUnfocus");
 //    }
     
     Git::Repo _repo;

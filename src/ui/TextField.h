@@ -8,7 +8,7 @@ namespace UI {
 
 class TextField : public View {
 public:
-    enum class ReleaseFocusReason {
+    enum class UnfocusReason {
         Tab,
         Return,
         Escape,
@@ -214,15 +214,15 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Tab);
+                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Tab);
+                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Return);
+                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
                 return true;
             
             } else {
@@ -284,7 +284,7 @@ private:
     
     std::function<void(TextField&)> _valueChangedAction;
     std::function<void(TextField&)> _focusAction;
-    std::function<void(TextField&, ReleaseFocusReason)> _unfocusAction;
+    std::function<void(TextField&, UnfocusReason)> _unfocusAction;
     
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;

@@ -21,24 +21,24 @@ public:
         _buyLink->label()->text(ToasterDisplayURL);
         _buyLink->link(DebaseBuyURL);
         
-        auto valueChanged = [&] (TextField& field) { _fieldValueChanged(field); };
-        auto requestFocus = [&] (TextField& field) { _fieldRequestFocus(field); };
-        auto releaseFocus = [&] (TextField& field, TextField::ReleaseFocusReason reason) { _fieldReleaseFocus(field, reason); };
+        auto valueChangedAction = [&] (TextField& field) { _fieldValueChanged(field); };
+        auto focusAction        = [&] (TextField& field) { _fieldFocus(field); };
+        auto unfocusAction      = [&] (TextField& field, TextField::UnfocusReason reason) { _fieldUnfocus(field, reason); };
         
         _email->label()->text                   ("       Email: ");
         _email->label()->textAttr               (colors().menu|WA_BOLD);
         _email->spacingX                        (3);
-        _email->textField()->valueChangedAction (valueChanged);
-        _email->textField()->focusAction (requestFocus);
-        _email->textField()->unfocusAction (releaseFocus);
+        _email->textField()->valueChangedAction (valueChangedAction);
+        _email->textField()->focusAction        (focusAction);
+        _email->textField()->unfocusAction      (unfocusAction);
         _email->textField()->focused            (true);
         
         _code->label()->text                    ("License Code: ");
         _code->label()->textAttr                (colors().menu|WA_BOLD);
         _code->spacingX                         (3);
-        _code->textField()->valueChangedAction  (valueChanged);
-        _code->textField()->focusAction  (requestFocus);
-        _code->textField()->unfocusAction  (releaseFocus);
+        _code->textField()->valueChangedAction  (valueChangedAction);
+        _code->textField()->focusAction         (focusAction);
+        _code->textField()->unfocusAction       (unfocusAction);
     }
     
     // MARK: - Alert Overrides
@@ -137,15 +137,15 @@ private:
         layoutNeeded(true);
     }
     
-    void _fieldRequestFocus(TextField& field) {
+    void _fieldFocus(TextField& field) {
         _email->textField()->focused(false);
         _code->textField()->focused(false);
         field.focused(true);
     }
     
-    void _fieldReleaseFocus(TextField& field, TextField::ReleaseFocusReason reason) {
+    void _fieldUnfocus(TextField& field, TextField::UnfocusReason reason) {
         switch (reason) {
-        case TextField::ReleaseFocusReason::Tab: {
+        case TextField::UnfocusReason::Tab: {
             _email->textField()->focused(false);
             _code->textField()->focused(false);
             
@@ -157,7 +157,7 @@ private:
             break;
         }
         
-        case TextField::ReleaseFocusReason::Return: {
+        case TextField::UnfocusReason::Return: {
             const bool fieldsFilled = !_email->textField()->value().empty() && !_code->textField()->value().empty();
             if (fieldsFilled) {
                 if (okButton()->action()) {
@@ -179,7 +179,7 @@ private:
             break;
         }
         
-        case TextField::ReleaseFocusReason::Escape: {
+        case TextField::UnfocusReason::Escape: {
             break;
         }}
     }

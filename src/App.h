@@ -762,14 +762,14 @@ private:
         return _selection.rev.isMutable();
     }
     
-    void _revColumnNameRequestFocus(UI::RevColumnPtr col) {
+    void _revColumnNameFocus(UI::RevColumnPtr col) {
         for (UI::RevColumnPtr col : _columns) {
             col->name()->focused(false);
         }
         col->name()->focused(true);
     }
     
-    void _revColumnNameReleaseFocus(UI::RevColumnPtr col) {
+    void _revColumnNameUnfocus(UI::RevColumnPtr col) {
         
     }
     
@@ -824,12 +824,12 @@ private:
                 col->name()->valueChangedAction ([=] (UI::TextField& field) {  });
                 col->name()->focusAction ([=] (UI::TextField& field) {
                     auto col = weakCol.lock();
-                    if (col) _revColumnNameRequestFocus(col);
+                    if (col) _revColumnNameFocus(col);
                 });
                 
-                col->name()->unfocusAction ([=] (UI::TextField& field, UI::TextField::ReleaseFocusReason reason) {
+                col->name()->unfocusAction ([=] (UI::TextField& field, UI::TextField::UnfocusReason reason) {
                     auto col = weakCol.lock();
-                    if (col) _revColumnNameReleaseFocus(col);
+                    if (col) _revColumnNameUnfocus(col);
                 });
             
             } else {
