@@ -278,6 +278,9 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: checkout tag, launch debase. col0 doesn't reflect name of tag.
+    #warning TODO:   fix in Git::Repo::headResolved() with heuristic: look at first reflog entry; if the commit matches between the first reflog entry and HEAD, and the reflog entry is a ref, use that ref.
+    
     #warning TODO: when renaming a branch, add new branch name to reflog so it appears in subsequent launches
     
     #warning TODO: implement Git::Repo::refCopy() for tags
@@ -286,18 +289,8 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: when a RevColumn's name has focus, resize window -> what should happen? cancel rename?
     
-    #warning TODO: add branch copying; action menu? drag branch name? both?
-    #warning TODO:   the new branch should be displayed in subsequent debase launches. 3 options to do that:
-    #warning TODO:     1. checkout the branch so that it goes in the reflog. the problem with that is the source
-    #warning TODO:        branch might be readonly, so we might not be able to checkout.
-    #warning TODO:     2. manually update the reflog. we'll need to generate a signature for the current user,
-    #warning TODO:        but that should be doable?
-    #warning TODO:     3. add new schema to State to track additional refs that should be considered in addition
-    #warning TODO:        to the reflog. the new state will need to track the date so that we can sort the refs
-    #warning TODO:        relative to the reflog. (the reflog appears to track dates too.)
-    
     #warning TODO: add 'create branch from commit'
-    #warning TODO:   the new branch should be displayed in subsequent debase launches; see '3 options to do that', above
+    #warning TODO:   add branch to reflog so that it appears in subsequent launches
     
     #warning TODO: add inline branch renaming (by clicking on the name of the branch)
     
@@ -306,6 +299,9 @@ int main(int argc, const char* argv[]) {
     #warning TODO: macos-arm64: run through TestChecklist.txt
     
 //  Future:
+    
+    #warning TODO: add branch duplication; action menu? drag branch name? both?
+    #warning TODO:   add branch to reflog so that it appears in subsequent launches
     
     #warning TODO: ConflictPanel: handle indentation -- if the conflicted block is indented a lot, unindent the text
     #warning TODO:   need to handle tabs properly -- do the de-indenting after filtering the text (which replaces
@@ -338,6 +334,7 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
 //    #warning TODO: fix: copying a commit within a branch doesn't update undo state
 //
 //    #warning TODO: use 'THEIRS' merge option when moving/copying commits within the same branch
