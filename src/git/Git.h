@@ -668,7 +668,24 @@ public:
             if (ir) throw Error(ir, "git_repository_head failed");
             ref = x;
         }
-        if (ref.isBranch()) return revLookup(ref.fullName());
+        if (ref.isBranch()) return ref;
+        if (ref.isTag()) return ref; // HEAD can't point to tags currently, but checking anyway for completeness
+        
+        // The ref isn't a branch or tag, so it's just the detached "HEAD" pointer.
+        // Try to derive the ref by looking at the last reflog entry.
+        // This heuristic allows us to get the ref in the case where the repo has a
+        // tag checked out, in which case the `ref.isTag()` check (above) returns
+        // false (because git doesn't allow HEAD to point to tags currently --
+        // instead it's a detached HEAD).
+        try {
+            Reflog reflog = reflogForRef(head());
+            const git_reflog_entry*const entry = reflog.at(0);
+            const Rev rev = revForReflogCheckout(entry);
+            if (rev.ref && rev.commit==ref.commit()) {
+                return rev;
+            }
+        } catch (...) {}
+        
         return ref.commit();
     }
     
@@ -1189,6 +1206,67 @@ public:
         int ir = git_signature_default(&x, *get());
         if (ir) throw Error(ir, "git_signature_default failed");
         return x;
+    }
+    
+    // revForReflogCheckout(): parse and lookup the rev from the reflog
+    // message string. For example, a checkout message in the reflog looks
+    // like:
+    //   checkout: moving from master to v1
+    // And we want to extract `v1` and turn it into a Rev.
+    //
+    // This is of course an imperfect heuristic and ideally we wouldn't
+    // be parsing log strings, but there doesn't seem to be a better option,
+    // and this is how libgit2 does it to implement its handling of the
+    // @{N} syntax.
+    // 
+    // We decided to implement this ourself instead of using libgit2's
+    // implementation for 2 reasons:
+    // 
+    //   1. libgit2 parses the first rev in the string but we want the second,
+    //      because git includes the symbolic name of revs in the second, but
+    //      not the first. For example if you checkout a tag (master -> v1),
+    //      the message will say:
+    //      
+    //          checkout: moving from master to v1
+    //      
+    //      but when moving from v1 -> master it'll say:
+    //      
+    //          checkout: moving from a561d03 to master
+    //      
+    //      So if we use libgit2's implementation, we can't get the tag name.
+    //   
+    //   2. We can implement reflog iteration much more efficiently. When
+    //      parsing `@{-3}` for example, libgit2 has to perform a regex match
+    //      on at least 3 reflog entries (to match the 'checkout: moving from
+    //      X to Y' string), and then has to redo that same work when parsing
+    //      `@{-4}`. Whereas with our implementation, we process each reflog
+    //      entry only once.
+    
+    Rev revForReflogCheckout(const git_reflog_entry* entry) const {
+        assert(entry);
+        
+        const char* msg = git_reflog_entry_message(entry);
+        if (!msg) throw std::runtime_error("invalid message");
+        if (!Toastbox::String::StartsWith("checkout: moving from ", msg)) throw std::runtime_error("not a checkout entry");
+        
+        const std::string_view msgv = msg;
+        const size_t lastSpaceIdx = msgv.find_last_of(' ');
+        // This function should only be called for checkout reflog messages, so there must be a space.
+        // If there's not, it's programmer error.
+        assert(lastSpaceIdx != std::string::npos);
+        std::string_view revName = msgv.substr(lastSpaceIdx+1);
+        
+        const size_t tildeIdx = revName.find_first_of('~');
+        const size_t carrotIdx = revName.find_first_of('^');
+        revName = revName.substr(0, std::min(tildeIdx, carrotIdx));
+        // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
+        if (_HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
+        return revLookup(std::string(revName));
+    }
+    
+private:
+    static bool _HEADSpecialPointer(std::string_view name) {
+        return Toastbox::String::EndsWith("HEAD", name);
     }
 };
 
