@@ -217,9 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: fix: checkout tag, launch debase. col0 doesn't reflect name of tag.
-    #warning TODO:   fix in Git::Repo::headResolved() with heuristic: look at first reflog entry; if the commit matches between the first reflog entry and HEAD, and the reflog entry is a ref, use that ref.
-    
     #warning TODO: when renaming a branch, add new branch name to reflog so it appears in subsequent launches
     
     #warning TODO: implement Git::Repo::refCopy() for tags
@@ -232,6 +229,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   add branch to reflog so that it appears in subsequent launches
     
     #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+    
+    #warning TODO: add branch/tag deleting by right-clicking branch name
+    
+    #warning TODO: add branch/tag renaming by right-clicking branch name
     
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
@@ -273,6 +274,9 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: fix: checkout tag, launch debase. col0 doesn't reflect name of tag.
+//    #warning TODO:   fix in Git::Repo::headResolved() with heuristic: look at first reflog entry; if the commit matches between the first reflog entry and HEAD, and the reflog entry is a ref, use that ref.
 //
 //    #warning TODO: fix: copying a commit within a branch doesn't update undo state
 //
