@@ -574,7 +574,7 @@ public:
 struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
     using RefCounted::RefCounted;
     
-    void append(const Signature& sig, const Rev& curr, const Rev& next) {
+    void append(const Signature& sig, const Rev& curr, const Rev& next) const {
         const std::string currName = (curr.ref ? curr.ref.name() : curr.commit.idStr());
         const std::string nextName = (next.ref ? next.ref.name() : next.commit.idStr());
         const std::string msg = "checkout: moving from " + currName + " to " + nextName;
@@ -584,7 +584,7 @@ struct Reflog : RefCounted<git_reflog*, git_reflog_free> {
         if (ir) throw Error(ir, "git_reflog_write failed");
     }
     
-    void drop(size_t idx) {
+    void drop(size_t idx) const {
         int ir = git_reflog_drop(*get(), idx, 1);
         if (ir) throw Error(ir, "git_reflog_drop failed");
         ir = git_reflog_write(*get());
@@ -731,21 +731,79 @@ public:
     }
     
     void headDetach() const {
-        int ir = git_repository_detach_head(*get());
+        int ir = git_repository_head_detached(*get());
+        if (ir < 0) throw Error(ir, "git_repository_head_detached failed");
+        
+        // Short-circuit if we're already detached
+        // This is important so that we don't erroneously drop entries from the reflog when
+        // we didn't actually detach, which we would otherwise do without this check
+        if (ir == 1) return;
+        
+        ir = git_repository_detach_head(*get());
         if (ir) throw Error(ir, "git_repository_detach_head failed");
         
         // Forget that we detached head
-        Reflog reflog = reflogForRef(head());
+        const Reflog reflog = reflogForRef(head());
         reflog.drop(0);
     }
     
     void headAttach(const Rev& rev) const {
+        const Reflog reflogPrev = reflogForRef(head());
+        
         checkout(rev);
         
-        // Forget that we attached head
-        Reflog reflog = reflogForRef(head());
-        reflog.drop(0);
+        // Forget that we attached head, if a new reflog entry was created
+        const Reflog reflog = reflogForRef(head());
+        if (reflogPrev.len() != reflog.len()) {
+            reflog.drop(0);
+        }
     }
+    
+    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflogPrev = reflogForRef(head());
+//        const git_reflog_entry* const entryPrev = reflogPrev[0];
+//        const char*const msgPrev = git_reflog_entry_message(entryPrev);
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head, but only if a reflog entry was pushed as a result
+//        // of the checkout.
+//        // This check is necessary because headAttach() could be called twice for the same
+//        // rev, and the second call wouldn't affect the reflog, so we shouldn't drop the
+//        // reflog entry in that case.
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry* const entry = reflog[0];
+//        const char*const msg = git_reflog_entry_message(entry);
+//        if (msgPrev && msg) {
+//            if (strcmp(msgPrev, msg)) {
+//                reflog.drop(0);
+//            }
+//        }
+//    }
+    
+//    void headDetach() const {
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry*const entryPrev = reflog[0];
+//        
+//        int ir = git_repository_detach_head(*get());
+//        if (ir) throw Error(ir, "git_repository_detach_head failed");
+//        
+//        // Forget that we detached head
+//        const git_reflog_entry*const entry = reflog[0];
+//        if (entry != entryPrev) reflog.drop(0);
+//    }
+//    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflog = reflogForRef(head());
+//        const git_reflog_entry*const entryPrev = reflog[0];
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head
+//        const git_reflog_entry*const entry = reflog[0];
+//        if (entry != entryPrev) reflog.drop(0);
+//    }
     
     Index treesMerge(git_merge_file_favor_t fileFavor, const Tree& ancestorTree, const Tree& dstTree, const Tree& srcTree) const {
         git_merge_options opts = GIT_MERGE_OPTIONS_INIT;

@@ -736,6 +736,14 @@ int main(int argc, const char* argv[]) {
             repo = Git::Repo::Open(".");
         } catch (...) {}
         
+//        repo.headDetach();
+//        repo.headAttach(repo.revLookup("master"));
+//        repo.headAttach(repo.revLookup("master"));
+//        repo.headAttach(repo.revLookup("v1"));
+//        repo.headAttach(repo.revLookup("v1"));
+//        repo.headDetach();
+//        exit(0);
+        
         if (repo) {
             if (args.run.revs.empty()) {
                 constexpr size_t RevCountDefault = 5;
