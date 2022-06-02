@@ -14,22 +14,28 @@ public:
         Escape,
     };
     
+    struct Style {
+        bool centered = false;
+        attr_t attr = 0;
+    };
+    
     bool layoutNeeded() const override { return true; }
     
     void layout() override {
         _offUpdate();
         
-        if (_focusAndEnabled()) {
+        if (_focusedAndEnabled()) {
             const ssize_t cursorOff = UTF8::Len(_left(), _cursor());
             cursorState({.visible=true, .origin={(int)cursorOff, 0}});
         }
     }
     
     void draw() override {
-        Attr underline = attr(WA_UNDERLINE);
-        Attr color;
-        if (!_focusAndEnabled()) color = attr(colors().dimmed);
-        drawLineHoriz({}, size().x, ' ');
+        const Style& style = (_focusedAndEnabled() ? _styleFocus : _styleUnfocus);
+        const Attr attrStyle = attr(style.attr);
+        if (style.attr & WA_UNDERLINE) {
+            drawLineHoriz({}, size().x, ' ');
+        }
         
         // Print as many codepoints as will fit our width
         const int width = size().x;
@@ -54,20 +60,32 @@ public:
 //        return true;
 //    }
     
-    const auto& focus() const { return _focus; }
-    template <typename T> bool focus(const T& x) { return _set(_focus, x); }
+    const auto& focused() const { return _focused; }
+    template <typename T> bool focused(const T& x) {
+        if (_set(_focused, x)) {
+            eraseNeeded(true);
+            return true;
+        }
+        return false;
+    }
     
     const auto& value() const { return _value; }
     template <typename T> bool value(const T& x) { return _set(_value, x); }
     
+    const auto& styleFocus() const { return _styleFocus; }
+    template <typename T> bool styleFocus(const T& x) { return _setForce(_styleFocus, x); }
+    
+    const auto& styleUnfocus() const { return _styleUnfocus; }
+    template <typename T> bool styleUnfocus(const T& x) { return _setForce(_styleUnfocus, x); }
+    
     const auto& valueChangedAction() const { return _valueChangedAction; }
     template <typename T> bool valueChangedAction(const T& x) { return _setForce(_valueChangedAction, x); }
     
-    const auto& requestFocusAction() const { return _requestFocusAction; }
-    template <typename T> bool requestFocusAction(const T& x) { return _setForce(_requestFocusAction, x); }
+    const auto& focusAction() const { return _focusAction; }
+    template <typename T> bool focusAction(const T& x) { return _setForce(_focusAction, x); }
     
-    const auto& releaseFocusAction() const { return _releaseFocusAction; }
-    template <typename T> bool releaseFocusAction(const T& x) { return _setForce(_releaseFocusAction, x); }
+    const auto& unfocusAction() const { return _unfocusAction; }
+    template <typename T> bool unfocusAction(const T& x) { return _setForce(_unfocusAction, x); }
     
 private:
     static constexpr int KeySpacing = 2;
@@ -107,8 +125,8 @@ private:
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
                 
-                if (ev.mouseDown() && hit && !_focus) {
-                    if (_requestFocusAction) _requestFocusAction(*this);
+                if (ev.mouseDown() && hit && !_focused) {
+                    if (_focusAction) _focusAction(*this);
                 }
                 
                 if ((ev.mouseDown() && hit) || tracking()) {
@@ -129,7 +147,7 @@ private:
                 }
             }
         
-        } else if (_focusAndEnabled()) {
+        } else if (_focusedAndEnabled()) {
             if (ev.type == Event::Type::KeyDelete) {
                 auto cursor = _cursor();
                 if (cursor == _value.begin()) return true;
@@ -195,15 +213,15 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Tab);
+                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Tab);
+                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                if (_releaseFocusAction) _releaseFocusAction(*this, ReleaseFocusReason::Return);
+                if (_unfocusAction) _unfocusAction(*this, ReleaseFocusReason::Return);
                 return true;
             
             } else {
@@ -229,18 +247,26 @@ private:
         return false;
     }
     
-    bool _focusAndEnabled() const {
-        return _focus && enabledWindow();
+    bool _focusedAndEnabled() const {
+        return _focused && enabledWindow();
     }
     
     std::string _value;
+    Style _styleFocus = {
+        .attr = WA_UNDERLINE,
+    };
+    
+    Style _styleUnfocus = {
+        .attr = WA_UNDERLINE | colors().dimmed,
+    };
+    
     std::function<void(TextField&)> _valueChangedAction;
-    std::function<void(TextField&)> _requestFocusAction;
-    std::function<void(TextField&, ReleaseFocusReason)> _releaseFocusAction;
+    std::function<void(TextField&)> _focusAction;
+    std::function<void(TextField&, ReleaseFocusReason)> _unfocusAction;
     
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
-    bool _focus = false;
+    bool _focused = false;
     CursorState _cursorState;
 };
 

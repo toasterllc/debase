@@ -764,9 +764,9 @@ private:
     
     void _revColumnNameRequestFocus(UI::RevColumnPtr col) {
         for (UI::RevColumnPtr col : _columns) {
-            col->name()->focus(false);
+            col->name()->focused(false);
         }
-        col->name()->focus(true);
+        col->name()->focused(true);
     }
     
     void _revColumnNameReleaseFocus(UI::RevColumnPtr col) {
@@ -822,12 +822,12 @@ private:
                 });
                 
                 col->name()->valueChangedAction ([=] (UI::TextField& field) {  });
-                col->name()->requestFocusAction ([=] (UI::TextField& field) {
+                col->name()->focusAction ([=] (UI::TextField& field) {
                     auto col = weakCol.lock();
                     if (col) _revColumnNameRequestFocus(col);
                 });
                 
-                col->name()->releaseFocusAction ([=] (UI::TextField& field, UI::TextField::ReleaseFocusReason reason) {
+                col->name()->unfocusAction ([=] (UI::TextField& field, UI::TextField::ReleaseFocusReason reason) {
                     auto col = weakCol.lock();
                     if (col) _revColumnNameReleaseFocus(col);
                 });

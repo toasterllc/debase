@@ -27,9 +27,19 @@ public:
         _snapshotsButton->bordered(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
+        _name->styleFocus(TextField::Style{
+            .attr = colors().menu | WA_UNDERLINE | WA_BOLD,
+        });
+        
+        _name->styleUnfocus(TextField::Style{
+            .attr = colors().menu | WA_BOLD,
+        });
+        
+//        _name->textAttr(colors().menu | WA_BOLD);
+        
 //        _name->valueChangedAction ([&] (TextField& field) { _nameChanged(field); });
-//        _name->requestFocusAction ([&] (TextField& field) { _nameRequestFocus(field); });
-//        _name->releaseFocusAction ([&] (TextField& field, bool done) { _nameReleaseFocus(field, done); });
+//        _name->focusAction ([&] (TextField& field) { _nameRequestFocus(field); });
+//        _name->unfocusAction ([&] (TextField& field, bool done) { _nameReleaseFocus(field, done); });
         
         _statusLine1->align(Align::Center);
         _statusLine1->textAttr(colors().error);
