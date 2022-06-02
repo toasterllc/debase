@@ -223,6 +223,10 @@ private:
                 if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
                 return true;
             
+            } else if (ev.type == Event::Type::KeyEscape) {
+                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Escape);
+                return true;
+            
             } else {
                 const int c = (int)ev.type;
                 // Ignore the character if it's not UTF-8 (>=256), or if it's non-printable ASCII

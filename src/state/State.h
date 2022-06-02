@@ -527,6 +527,42 @@ public:
         return lref.snapshots;
     }
     
+    void refReplace(const Git::Ref& refPrev, const Git::Ref& ref) {
+        // Ensure that refs are different since we delete entries for `refPrev`,
+        // so if they're the same we'll end up deleting the entries that we
+        // want to keep
+        assert(refPrev != ref);
+        Ref crefPrev = Convert(refPrev);
+        Ref cref = Convert(ref);
+        
+        // Update _repoState.history
+        {
+            auto it = _repoState.history.find(crefPrev);
+            if (it != _repoState.history.end()) {
+                _repoState.history[cref] = it->second;
+                _repoState.history.erase(it);
+            }
+        }
+        
+        // Update _repoState.snapshots
+        {
+            auto it = _repoState.snapshots.find(crefPrev);
+            if (it != _repoState.snapshots.end()) {
+                _repoState.snapshots[cref] = it->second;
+                _repoState.snapshots.erase(it);
+            }
+        }
+        
+        // Update _loadedRefs
+        {
+            auto it = _loadedRefs.find(crefPrev);
+            if (it != _loadedRefs.end()) {
+                _loadedRefs[cref] = it->second;
+                _loadedRefs.erase(it);
+            }
+        }
+    }
+    
     Git::Repo repo() const {
         return _repo;
     }
