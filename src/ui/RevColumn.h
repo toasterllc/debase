@@ -27,15 +27,9 @@ public:
         _snapshotsButton->bordered(true);
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
-        _name->styleFocus(TextField::Style{
-            .align = Align::Center,
-            .attr = colors().menu | WA_UNDERLINE | WA_BOLD,
-        });
-        
-        _name->styleUnfocus(TextField::Style{
-            .align = Align::Center,
-            .attr = colors().menu | WA_BOLD,
-        });
+        _name->align(Align::Center);
+        _name->attrFocused(colors().menu | WA_UNDERLINE | WA_BOLD);
+        _name->attrUnfocused(colors().menu | WA_BOLD);
         
 //        _name->textAttr(colors().menu | WA_BOLD);
         

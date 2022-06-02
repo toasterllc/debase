@@ -14,27 +14,22 @@ public:
         Escape,
     };
     
-    struct Style {
-        Align align = Align::Left;
-        attr_t attr = 0;
-    };
-    
     bool layoutNeeded() const override { return true; }
     
     void layout() override {
         _offUpdate();
         
         if (_focusedAndEnabled()) {
-            const int alignOff = _alignOff(_style());
+            const int alignOff = _alignOff();
             const size_t cursorOff = UTF8::Len(_left(), _cursor());
             cursorState({.visible=true, .origin={alignOff+(int)cursorOff, 0}});
         }
     }
     
     void draw() override {
-        const Style& style = _style();
-        const Attr attrStyle = attr(style.attr);
-        if (style.attr & WA_UNDERLINE) {
+        const attr_t styleAttr = _attr();
+        const Attr style = attr(styleAttr);
+        if (styleAttr & WA_UNDERLINE) {
             drawLineHoriz({}, size().x, ' ');
         }
         
@@ -44,7 +39,7 @@ public:
         auto right = UTF8::NextN(left, _value.end(), width);
         
         std::string substr(left, right);
-        drawText({_alignOff(style), 0}, substr.c_str());
+        drawText({_alignOff(), 0}, substr.c_str());
     }
     
     bool handleEvent(const Event& ev) override {
@@ -73,11 +68,14 @@ public:
     const auto& value() const { return _value; }
     template <typename T> bool value(const T& x) { return _set(_value, x); }
     
-    const auto& styleFocus() const { return _styleFocus; }
-    template <typename T> bool styleFocus(const T& x) { return _setForce(_styleFocus, x); }
+    const auto& align() const { return _align; }
+    template <typename T> bool align(const T& x) { return _set(_align, x); }
     
-    const auto& styleUnfocus() const { return _styleUnfocus; }
-    template <typename T> bool styleUnfocus(const T& x) { return _setForce(_styleUnfocus, x); }
+    const auto& attrFocused() const { return _attrFocused; }
+    template <typename T> bool attrFocused(const T& x) { return _setForce(_attrFocused, x); }
+    
+    const auto& attrUnfocused() const { return _attrUnfocused; }
+    template <typename T> bool attrUnfocused(const T& x) { return _setForce(_attrUnfocused, x); }
     
     const auto& valueChangedAction() const { return _valueChangedAction; }
     template <typename T> bool valueChangedAction(const T& x) { return _setForce(_valueChangedAction, x); }
@@ -132,7 +130,7 @@ private:
                 
                 if ((ev.mouseDown() && hit) || tracking()) {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.origin.x-_alignOff(_style());
+                    int offX = ev.mouse.origin.x-_alignOff();
                     auto offIt = UTF8::NextN(_left(), _value.end(), offX);
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
@@ -252,14 +250,14 @@ private:
         return _focused && enabledWindow();
     }
     
-    const Style& _style() const {
-        return (_focusedAndEnabled() ? _styleFocus : _styleUnfocus);
+    attr_t _attr() const {
+        return (_focusedAndEnabled() ? _attrFocused : _attrUnfocused);
     }
     
-    int _alignOff(const Style& style) const {
+    int _alignOff() const {
         const size_t len = UTF8::Len(_value);
         const int width = size().x;
-        switch (style.align) {
+        switch (_align) {
         case Align::Left:
             return 0;
         case Align::Center:
@@ -274,13 +272,9 @@ private:
     }
     
     std::string _value;
-    Style _styleFocus = {
-        .attr = WA_UNDERLINE,
-    };
-    
-    Style _styleUnfocus = {
-        .attr = WA_UNDERLINE | colors().dimmed,
-    };
+    Align _align = Align::Left;
+    attr_t _attrFocused = WA_UNDERLINE;
+    attr_t _attrUnfocused = WA_UNDERLINE | colors().dimmed;
     
     std::function<void(TextField&)> _valueChangedAction;
     std::function<void(TextField&)> _focusAction;
