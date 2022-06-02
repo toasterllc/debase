@@ -763,6 +763,8 @@ private:
     }
     
     void _revColumnNameFocus(UI::RevColumnPtr col) {
+        if (!col->rev().isMutable()) return;
+        
         for (UI::RevColumnPtr col : _columns) {
             col->name()->focused(false);
         }
