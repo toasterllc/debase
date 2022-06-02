@@ -15,7 +15,7 @@ public:
     };
     
     struct Style {
-        bool centered = false;
+        Align align = Align::Left;
         attr_t attr = 0;
     };
     
@@ -25,13 +25,14 @@ public:
         _offUpdate();
         
         if (_focusedAndEnabled()) {
-            const ssize_t cursorOff = UTF8::Len(_left(), _cursor());
-            cursorState({.visible=true, .origin={(int)cursorOff, 0}});
+            const int alignOff = _alignOff(_style());
+            const size_t cursorOff = UTF8::Len(_left(), _cursor());
+            cursorState({.visible=true, .origin={alignOff+(int)cursorOff, 0}});
         }
     }
     
     void draw() override {
-        const Style& style = (_focusedAndEnabled() ? _styleFocus : _styleUnfocus);
+        const Style& style = _style();
         const Attr attrStyle = attr(style.attr);
         if (style.attr & WA_UNDERLINE) {
             drawLineHoriz({}, size().x, ' ');
@@ -43,7 +44,7 @@ public:
         auto right = UTF8::NextN(left, _value.end(), width);
         
         std::string substr(left, right);
-        drawText({}, substr.c_str());
+        drawText({_alignOff(style), 0}, substr.c_str());
     }
     
     bool handleEvent(const Event& ev) override {
@@ -131,7 +132,7 @@ private:
                 
                 if ((ev.mouseDown() && hit) || tracking()) {
                     // Update the cursor position to the clicked point
-                    int offX = ev.mouse.origin.x;
+                    int offX = ev.mouse.origin.x-_alignOff(_style());
                     auto offIt = UTF8::NextN(_left(), _value.end(), offX);
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
@@ -249,6 +250,27 @@ private:
     
     bool _focusedAndEnabled() const {
         return _focused && enabledWindow();
+    }
+    
+    const Style& _style() const {
+        return (_focusedAndEnabled() ? _styleFocus : _styleUnfocus);
+    }
+    
+    int _alignOff(const Style& style) const {
+        const size_t len = UTF8::Len(_value);
+        const int width = size().x;
+        switch (style.align) {
+        case Align::Left:
+            return 0;
+        case Align::Center:
+            if ((int)len < width) return (width-(int)len)/2;
+            return 0;
+        case Align::Right:
+            // Unsupported
+            return 0;
+        default:
+            abort();
+        }
     }
     
     std::string _value;

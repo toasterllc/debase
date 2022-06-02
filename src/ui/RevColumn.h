@@ -28,10 +28,12 @@ public:
         _snapshotsButton->actionTrigger(Button::ActionTrigger::MouseDown);
         
         _name->styleFocus(TextField::Style{
+            .align = Align::Center,
             .attr = colors().menu | WA_UNDERLINE | WA_BOLD,
         });
         
         _name->styleUnfocus(TextField::Style{
+            .align = Align::Center,
             .attr = colors().menu | WA_BOLD,
         });
         
