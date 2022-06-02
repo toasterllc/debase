@@ -730,34 +730,44 @@ public:
         submodulesUpdate(true);
     }
     
+    
     void headDetach() const {
-        int ir = git_repository_head_detached(*get());
-        if (ir < 0) throw Error(ir, "git_repository_head_detached failed");
-        
-        // Short-circuit if we're already detached
-        // This is important so that we don't erroneously drop entries from the reflog when
-        // we didn't actually detach, which we would otherwise do without this check
-        if (ir == 1) return;
-        
-        ir = git_repository_detach_head(*get());
+        int ir = git_repository_detach_head(*get());
         if (ir) throw Error(ir, "git_repository_detach_head failed");
-        
-        // Forget that we detached head
-        const Reflog reflog = reflogForRef(head());
-        reflog.drop(0);
     }
     
     void headAttach(const Rev& rev) const {
-        const Reflog reflogPrev = reflogForRef(head());
-        
         checkout(rev);
-        
-        // Forget that we attached head, if a new reflog entry was created
-        const Reflog reflog = reflogForRef(head());
-        if (reflogPrev.len() != reflog.len()) {
-            reflog.drop(0);
-        }
     }
+    
+//    void headDetach() const {
+//        int ir = git_repository_head_detached(*get());
+//        if (ir < 0) throw Error(ir, "git_repository_head_detached failed");
+//        
+//        // Short-circuit if we're already detached
+//        // This is important so that we don't erroneously drop entries from the reflog when
+//        // we didn't actually detach, which we would otherwise do without this check
+//        if (ir == 1) return;
+//        
+//        ir = git_repository_detach_head(*get());
+//        if (ir) throw Error(ir, "git_repository_detach_head failed");
+//        
+//        // Forget that we detached head
+//        const Reflog reflog = reflogForRef(head());
+//        reflog.drop(0);
+//    }
+//    
+//    void headAttach(const Rev& rev) const {
+//        const Reflog reflogPrev = reflogForRef(head());
+//        
+//        checkout(rev);
+//        
+//        // Forget that we attached head, if a new reflog entry was created
+//        const Reflog reflog = reflogForRef(head());
+//        if (reflogPrev.len() != reflog.len()) {
+//            reflog.drop(0);
+//        }
+//    }
     
     
 //    void headAttach(const Rev& rev) const {
