@@ -910,7 +910,7 @@ public:
         return refFullNameLookup(ref.fullName());
     }
     
-    Ref refCopy(const Ref& ref, const std::string& name) {
+    Ref refCopy(const Ref& ref, const std::string& name) const {
 //        if (!(ref.isTag() || ref.isLocalBranch())) {
 //            // This should never happen, but in case there are other ref types that
 //            // we're not aware of, throw an error instead of aborting.
@@ -923,7 +923,9 @@ public:
         //   - update _head
         
         if (ref.isLocalBranch()) {
-            throw Toastbox::RuntimeError("unimplemented");
+            return branchCreate(name, ref.commit(), false);
+            
+//            throw Toastbox::RuntimeError("unimplemented");
 //            git_reference* x = nullptr;
 //            int ir = git_branch_move(&x, *ref, name.c_str(), false);
 //            if (ir) throw Error(ir, "git_branch_move failed");
@@ -938,8 +940,15 @@ public:
         }
     }
     
-    Ref refDelete(const Ref& ref) {
-        throw Toastbox::RuntimeError("unimplemented");
+    void refDelete(const Ref& ref) {
+        if (ref.isLocalBranch() || ref.isTag()) {
+            int ir = git_reference_delete(*ref);
+            if (ir) throw Error(ir, "git_reference_delete failed");
+            
+        } else {
+            // Unsupported ref type
+            throw Toastbox::RuntimeError("unsupported ref type");
+        }
     }
     
 //    Ref revReload(Rev rev) const {

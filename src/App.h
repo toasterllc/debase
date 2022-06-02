@@ -762,42 +762,9 @@ private:
         return _selection.rev.isMutable();
     }
     
-    void _refRename(const Git::Ref& refPrev, const std::string& name) {
-//        if (!(ref.isTag() || ref.isLocalBranch())) {
-//            // This should never happen, but in case there are other ref types that
-//            // we're not aware of, throw an error instead of aborting.
-//            throw Toastbox::RuntimeError("unsupported ref type");
-//        }
-        
-        // TODO: things to handle:
-        //   - update all revs in _revs
-        //   - move all state in `State` for old ref to new ref
-        //   - update _head
-        
-        Git::Ref refNew = _repo.refCopy(refPrev, name);
-        
-        // Update all revs in _revs
-        for (Rev& rev : _revs) {
-            if (rev.ref == refPrev) {
-                rev.ref = refNew;
-            }
-        }
-        
-        // Update _repoState
-        _repoState.refReplace(refPrev, refNew);
-        
-        // Update _head
-        if (_head.ref == refPrev) {
-            _head.ref = refNew;
-        }
-        
-        _repo.refDelete(refPrev);
-        
-        // Reload so that the columns use the updated _revs
-        _reload();
-    }
-    
     void _columnNameFocusedSet(UI::RevColumnPtr fcol, bool commit=true) {
+        bool reload = false;
+        
         // If the given column isn't mutable, then pretend as if we were given nullptr
         if (fcol && !fcol->rev().isMutable()) {
             fcol = nullptr;
@@ -813,7 +780,8 @@ private:
                 const std::string namePrev = _columnNameFocused->name(true);
                 if (name != namePrev) {
                     // Name changed
-                    _refRename(_columnNameFocused->rev().ref, name);
+                    _gitRefRename(_columnNameFocused->rev().ref, name);
+                    reload = true;
                 }
             }
         }
@@ -825,6 +793,10 @@ private:
         }
         
         _columnNameFocused = fcol;
+        
+        if (reload) {
+            _reload();
+        }
     }
     
     void _revColumnNameFocus(UI::RevColumnPtr col) {
@@ -1512,13 +1484,42 @@ private:
     //    sleep(1);
     }
     
+    bool _gitDetachHeadIfEqual(const Git::Ref& ref) {
+        assert(ref);
+        if (_head.ref != ref) return false;
+        if (!_headReattach) {
+            _headReattach = true;
+            _repo.headDetach();
+        }
+        return true;
+    }
+    
+    Git::Ref _gitRefRename(const Git::Ref& refPrev, const std::string& name) {
+        const Git::Ref ref = _repo.refCopy(refPrev, name);
+        
+        // Update all revs in _revs
+        for (Rev& rev : _revs) {
+            if (rev.ref == refPrev) {
+                rev.ref = ref;
+            }
+        }
+        
+        // Update _repoState
+        _repoState.refReplace(refPrev, ref);
+        
+        // Update _head
+        if (_gitDetachHeadIfEqual(refPrev)) {
+            _head.ref = ref;
+        }
+        
+        _repo.refDelete(refPrev);
+        return ref;
+    }
+    
     Git::Ref _gitRefReplace(const Git::Ref& ref, const Git::Commit& commit) {
         // Detach HEAD if it's attached to the ref that we're modifying, otherwise
         // we'll get an error when we try to replace that ref.
-        if (!_headReattach && ref==_head.ref) {
-            _repo.headDetach();
-            _headReattach = true;
-        }
+        _gitDetachHeadIfEqual(ref);
         return _repo.refReplace(ref, commit);
     }
     
