@@ -217,6 +217,14 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: prevent loading stale State for renamed refs that share the name of an old ref
+    #warning TODO:   - State: switch back to old model where we load the refs in the constructor. that way, it's impossible to load old state for a new ref that shares a name with an old ref.
+    #warning TODO:   - State: cleanup state -- have root data structure be a map<Ref,_RefState>,
+    #warning TODO:     instead of separate maps for `history` and `snapshots`
+    #warning TODO:   - State: add a `created` flag to _LoadedRef, and when writing:
+    #warning TODO:       write = created || history!=historyPrev // write history if we created the entry during this session, or if its history changed
+    #warning TODO:       addSnapshot = history!=*historyPrev // add snapshot only if we modified the branch during this session
+    
     #warning TODO: fix: snapshots don't restore branch name
     #warning TODO:   make restoring a RefState a function, so it can be used by both _undoRedo and restoring a snapshot
     
