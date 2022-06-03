@@ -767,7 +767,7 @@ private:
         return _selection.rev.isMutable();
     }
     
-    void _columnNameFocusedSet(UI::RevColumnPtr fcol, bool commit=true) {
+    void _revColumnNameSetFocused(UI::RevColumnPtr fcol, bool commit=true) {
         bool reload = false;
         
         // If the given column isn't mutable, then pretend as if we were given nullptr
@@ -832,7 +832,7 @@ private:
         for (UI::RevColumnPtr col : _columns) {
             const bool focused = (col == fcol);
             col->nameField()->value(col->name(focused));
-            col->nameField()->focused(focused);
+            col->nameField()->focused(focused, UI::Align::Right);
         }
         
         _columnNameFocused = fcol;
@@ -843,7 +843,7 @@ private:
     }
     
     void _revColumnNameFocus(UI::RevColumnPtr col) {
-        _columnNameFocusedSet(col);
+        _revColumnNameSetFocused(col);
     }
     
     void _revColumnNameUnfocus(UI::RevColumnPtr col, UI::TextField::UnfocusReason reason) {
@@ -852,10 +852,10 @@ private:
             // Ignore tabs
             break;
         case UI::TextField::UnfocusReason::Return:
-            _columnNameFocusedSet(nullptr);
+            _revColumnNameSetFocused(nullptr);
             break;
         case UI::TextField::UnfocusReason::Escape:
-            _columnNameFocusedSet(nullptr, false);
+            _revColumnNameSetFocused(nullptr, false);
             break;
         default:
             abort();
@@ -1279,6 +1279,10 @@ private:
         };
         
         _reload();
+        
+        // It's possible that col==null because the new column is offscreen!
+        const UI::RevColumnPtr branchCol = _columnForRev(branchRev);
+        _revColumnNameSetFocused(branchCol, false);
     }
     
     std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {

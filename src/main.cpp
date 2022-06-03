@@ -217,8 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: when creating a new branch from a commit, give the new revcolumn focus
-    
     #warning TODO: implement Git::Repo::refCopy() for tags
     
     #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
@@ -269,6 +267,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: when creating a new branch from a commit, give the new revcolumn focus
+//
 //    #warning TODO: fix: snapshots don't restore branch name
 //    #warning TODO:   make restoring a RefState a function, so it can be used by both _undoRedo and restoring a snapshot
 //

@@ -56,13 +56,26 @@ public:
 //        return true;
 //    }
     
-    const auto& focused() const { return _focused; }
-    template <typename T> bool focused(const T& x) {
-        if (_set(_focused, x)) {
-            eraseNeeded(true);
-            return true;
+    const bool focused() const { return _focused; }
+    bool focused(bool x, Align align=Align::Left) {
+        const bool set = _set(_focused, x);
+        if (set) eraseNeeded(true);
+        
+        switch (align) {
+        case Align::Left:
+            _offLeft = std::numeric_limits<ssize_t>::min();
+            _offCursor = std::numeric_limits<ssize_t>::min();
+            break;
+        case Align::Right:
+            _offLeft = std::numeric_limits<ssize_t>::max();
+            _offCursor = std::numeric_limits<ssize_t>::max();
+            break;
+        default:
+            abort();
         }
-        return false;
+        _offUpdate();
+        
+        return set;
     }
     
     const auto& value() const { return _value; }
