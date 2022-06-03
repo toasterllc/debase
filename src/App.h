@@ -1241,8 +1241,15 @@ private:
         // Keep appending a new suffix until we find an unused branch name
         Git::Branch branch;
         for (size_t i=2; i<10; i++) {
+            assert(!branchName.empty());
+            std::string name = branchName;
+            if (isdigit(branchName.back())) {
+                name += "-" + std::to_string(i);
+            } else {
+                name += std::to_string(i);
+            }
             try {
-                branch = _repo.branchCreate(branchName+"-Copy"+std::to_string(i), commit);
+                branch = _repo.branchCreate(name, commit);
             } catch (const Git::Error& e) {
                 if (e.error == GIT_EEXISTS) continue;
                 throw;
