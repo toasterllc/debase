@@ -776,12 +776,42 @@ private:
         // Commit existing name change
         if (commit) {
             if (_columnNameFocused) {
+                const Rev& rev = _columnNameFocused->rev();
                 const std::string name = _columnNameFocused->nameField()->value();
                 const std::string namePrev = _columnNameFocused->name(true);
                 if (name != namePrev) {
                     // Name changed
-                    _gitRefRename(_columnNameFocused->rev().ref, name);
-                    reload = true;
+                    try {
+                        _gitRefRename(rev.ref, name);
+                        reload = true;
+                    } catch (const Git::Error& e) {
+                        switch (e.error) {
+                        case GIT_EEXISTS: {
+                            std::optional<bool> clicked;
+                            auto alert = _panelPresent<UI::ErrorAlert>();
+                            alert->width                            (45);
+                            alert->message()->text                  ("A ref named '" + name + "' already exists.");
+                            alert->okButton()->label()->text        ("Edit");
+                            alert->dismissButton()->label()->text   ("Revert");
+                            alert->okButton()->action               ( [&] (UI::Button&) { clicked = true; } );
+                            alert->dismissButton()->action          ( [&] (UI::Button&) { clicked = false; } );
+                            
+                            // Wait until the user clicks a button
+                            while (!clicked) track({}, Once);
+                            
+                            // If the user chose 'Edit', then act as if this function were
+                            // never called by simply returning.
+                            if (*clicked) return;
+                            
+                            // The user chose 'Cancel': we don't rename the ref,
+                            // but we continue setting the focus.
+                            break;
+                        }
+                        
+                        default: {
+                            throw;
+                        }}
+                    }
                 }
             }
         }
@@ -1043,7 +1073,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the insertion marker
-            ev = nextEvent();
+            ev = eventNext();
             abort = (ev.type != UI::Event::Type::Mouse);
             // Check if we should abort
             if (abort || ev.mouseUp()) {
@@ -1178,7 +1208,7 @@ private:
             }
             
             eraseNeeded(true); // Need to erase the selection rect
-            ev = nextEvent();
+            ev = eventNext();
             // Check if we should abort
             if (ev.type!=UI::Event::Type::Mouse || ev.mouseUp()) {
                 break;
@@ -1572,7 +1602,7 @@ private:
             auto alert = _panelPresent<UI::ErrorAlert>();
             alert->width                        (50);
             alert->message()->text              ("The file still contains conflict markers. Continue editing?");
-            alert->okButton()->label()->text    ("Continue Editing");
+            alert->okButton()->label()->text    ("Edit");
             alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
             

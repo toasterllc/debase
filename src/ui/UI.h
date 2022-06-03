@@ -84,6 +84,8 @@ struct Edges {
 };
 
 struct Event {
+    using Id = uint32_t;
+    
     enum class Type : int {
         None            = 0,
         Mouse           = KEY_MOUSE,
@@ -109,6 +111,7 @@ struct Event {
         using Bitfield::Bitfield;
     };
     
+    Id id = 0;
     Type type = Type::None;
     std::chrono::steady_clock::time_point time = {};
     struct {

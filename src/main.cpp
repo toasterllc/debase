@@ -217,7 +217,11 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: rename branch, exit debase. undo history is lost.
+    
     #warning TODO: ref rename: implement proper error if a ref already exists with the same name
+    
+    #warning TODO: ref rename: implement proper error if the ref name is invalid
     
     #warning TODO: implement Git::Repo::refCopy() for tags
     

@@ -40,7 +40,7 @@ void View::track(const Event& ev, Deadline deadline) {
     );
     
     do {
-        _eventCurrent = scr.nextEvent(deadline);
+        _eventCurrent = scr.eventNext(deadline);
         if (!_eventCurrent) return; // Deadline passed
         
         // Get our gstate after calling nextEvent first, so that the gstate is calculated after

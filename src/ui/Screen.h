@@ -186,7 +186,7 @@ public:
         _orderPanelsNeeded = false;
     }
     
-    virtual Event nextEvent(Deadline deadline=Forever) {
+    virtual Event eventNext(Deadline deadline=Forever) {
         using namespace std::chrono;
         
         refresh();
@@ -216,6 +216,7 @@ public:
             }
             
             Event ev = {
+                .id = _eventId,
                 .type = (Event::Type)ch,
                 .time = steady_clock::now(),
             };
@@ -244,12 +245,14 @@ public:
                 break;
             }}
             
+            // Increment the event id; we only do this once we're sure that we're returning the event
+            _eventId++;
             return ev;
         }
     }
     
-    virtual Event nextEvent(std::chrono::milliseconds timeout) {
-        return nextEvent(std::chrono::steady_clock::now()+timeout);
+    virtual Event eventNext(std::chrono::milliseconds timeout) {
+        return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
 //    bool handleEvent(GraphicsState gstate, const Event& ev) override {
@@ -288,7 +291,7 @@ public:
 //        do {
 //            refresh();
 //            
-//            _eventCurrent = UI::NextEvent();
+//            _eventCurrent = UI::eventNext();
 //            Defer(_eventCurrent = {}); // Exception safety
 //            
 //            handleEvent(*this, {}, _eventCurrent);
@@ -301,6 +304,10 @@ public:
     
     virtual bool orderPanelsNeeded() { return _orderPanelsNeeded; }
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
+    
+    virtual Event::Id eventId() const {
+        return _eventId;
+    }
     
 private:
     void _cursorDraw() {
@@ -333,6 +340,7 @@ private:
     }
     
     _GraphicsStateSwapper _gstate = View::GStatePush({.screen=this});
+    Event::Id _eventId = 0;
     ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
