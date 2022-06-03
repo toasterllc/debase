@@ -361,23 +361,26 @@ private:
     using _Path = std::filesystem::path;
     using _Json = nlohmann::json;
     
-    struct _RepoState {
-        std::map<Ref,History> history;
-        std::map<Ref,std::vector<Snapshot>> snapshots;
+    struct _RefState {
+        History history;
+        std::vector<Snapshot> snapshots;
     };
     
     struct _LoadedRef {
-        History history;
+        _RefState refState;
+        bool created = false; // Whether the ref was created during this session
         History historyPrev;
         Snapshot snapshotInitial;
-        std::vector<Snapshot> snapshots;
+    };
+    
+    struct _RepoState {
+        std::map<Ref,_RefState> refStates;
     };
     
     _Path _rootDir;
     _Path _repoStateDir;
     Git::Repo _repo;
     
-    _RepoState _repoState;
     std::map<Ref,_LoadedRef> _loadedRefs;
     
     static _Path _RepoStateDirPath(_Path dir, Git::Repo repo) {
@@ -396,18 +399,14 @@ private:
             f.exceptions(std::ios::failbit | std::ios::badbit);
             nlohmann::json j;
             f >> j;
-            j.at("history").get_to(state.history);
-            j.at("snapshots").get_to(state.snapshots);
+            j.get_to(state);
         }
     }
     
     static void _RepoStateWrite(_Path path, const _RepoState& state) {
         std::ofstream f(path);
         f.exceptions(std::ios::failbit | std::ios::badbit);
-        nlohmann::json j = {
-            {"history", state.history},
-            {"snapshots", state.snapshots},
-        };
+        nlohmann::json j = state;
         f << std::setw(4) << j;
     }
     
@@ -428,7 +427,7 @@ private:
         return r;
     }
     
-    _LoadedRef& _loadRef(const Git::Ref& ref) {
+    _LoadedRef& _loadRef(const Git::Ref& ref, const _RefState* refState=nullptr) {
         const Ref cref = Convert(ref);
         
         auto [it, inserted] = _loadedRefs.insert({cref, {}});
@@ -437,49 +436,64 @@ private:
         
         _LoadedRef& lref = it->second;
         
+        if (refState) {
+            lref.refState = *refState;
+        } else {
+            lref.created = true;
+        }
+        
         // Ensure that _state.history has an entry for each ref
         // Also ensure that if the stored history head doesn't
         // match the current head, we create a fresh history.
         Git::Commit headCurrent = ref.commit();
         Git::Commit headStored;
-        auto find = _repoState.history.find(cref);
-        if (find != _repoState.history.end()) {
+        // When we first create a _LoadedRef for a ref we haven't seen before, the current
+        // state of its History will be empty, so check for that before we try to load the
+        // Git::Commit for it.
+        const Commit& h = lref.refState.history.get().head;
+        if (!h.empty()) {
             // Handle the stored commit not existing
             try {
-                headStored = Convert(_repo, find->second.get().head);
+                headStored = Convert(_repo, h);
             } catch (...) {}
         }
         
-        // Use the existing history if the stored ref head matches the current ref head.
+        // Only use the existing history if the stored ref head matches the current ref head.
         // Otherwise, create a fresh (empty) history.
-        if (headStored == headCurrent) {
-            lref.history = find->second;
-        } else {
-            lref.history = History(RefState(ref, headCurrent));
+        if (headStored != headCurrent) {
+            lref.refState.history = History(RefState(ref, headCurrent));
         }
         
         // Remember the initial history so we can tell if it changed upon exit,
         // so we know whether to save it. (We don't want to save histories that
         // didn't change to help prevent clobbering changes from another
         // session.)
-        lref.historyPrev = lref.history;
+        lref.historyPrev = lref.refState.history;
         
         // Populate .snapshotInitial
         lref.snapshotInitial = ref.commit();
         
-        // Populate .snapshots
-        lref.snapshots = _repoState.snapshots[cref];
         return lref;
     }
     
 public:
     RepoState() {}
-    RepoState(_Path rootDir, Git::Repo repo) :
+    RepoState(_Path rootDir, Git::Repo repo, const std::set<Git::Ref>& refs) :
     _rootDir(rootDir), _repoStateDir(_RepoStateDirPath(_rootDir, repo)), _repo(repo) {
-        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, true);
         
-        // Decode _repoState
-        _RepoStateRead(_RepoStateFilePath(_repoStateDir), _repoState);
+        // Read existing state
+        Toastbox::FDStreamInOut versionLockFile = State::AcquireVersionLock(_rootDir, false);
+        _RepoState repoState;
+        _RepoStateRead(_RepoStateFilePath(_repoStateDir), repoState);
+        
+        for (const Git::Ref& ref : refs) {
+            const _RefState* refState = nullptr;
+            const auto find = repoState.refStates.find(Convert(ref));
+            if (find != repoState.refStates.end()) {
+                refState = &find->second;
+            }
+            _loadRef(ref, refState);
+        }
     }
     
     void write() {
@@ -494,21 +508,25 @@ public:
         // We use this strategy so that we don't clobber data written by another debase
         // session, for unrelated refs. If two debase sessions made modifications to the same
         // refs, then the one that write later wins.
-        for (const auto& i : _loadedRefs) {
+        for (auto& i : _loadedRefs) {
             const Ref& ref = i.first;
-            const _LoadedRef& lref = i.second;
-            const History& refHistory = lref.history;
+            _LoadedRef& lref = i.second;
+            const History& refHistory = lref.refState.history;
             const History& refHistoryPrev = lref.historyPrev;
-            if (refHistory != refHistoryPrev) {
-                repoState.history[ref] = refHistory;
-                
-                std::vector<Snapshot> refSnapshots = lref.snapshots;
-                refSnapshots.push_back(refHistory.get().head);
-                refSnapshots.push_back(lref.snapshotInitial);
+            const bool historyChanged = refHistory!=refHistoryPrev;
+            
+            if (historyChanged) {
+                std::vector<Snapshot> snapshots = lref.refState.snapshots;
+                snapshots.push_back(refHistory.get().head);
+                snapshots.push_back(lref.snapshotInitial);
                 // Remove duplicate snapshots and sort them
-                refSnapshots = _CleanSnapshots(refSnapshots);
+                snapshots = _CleanSnapshots(snapshots);
                 
-                repoState.snapshots[ref] = refSnapshots;
+                lref.refState.snapshots = snapshots;
+            }
+            
+            if (lref.created || historyChanged) {
+                repoState.refStates[ref] = lref.refState;
             }
         }
         
@@ -523,12 +541,12 @@ public:
     
     History& history(const Git::Ref& ref) {
         _LoadedRef& lref = _loadRef(ref);
-        return lref.history;
+        return lref.refState.history;
     }
     
     const std::vector<Snapshot>& snapshots(const Git::Ref& ref) {
         _LoadedRef& lref = _loadRef(ref);
-        return lref.snapshots;
+        return lref.refState.snapshots;
     }
     
     void refReplace(const Git::Ref& refPrev, const Git::Ref& ref) {
@@ -536,35 +554,11 @@ public:
         // so if they're the same we'll end up deleting the entries that we
         // want to keep
         assert(refPrev != ref);
-        Ref crefPrev = Convert(refPrev);
-        Ref cref = Convert(ref);
+        const Ref crefPrev = Convert(refPrev);
+        const Ref cref = Convert(ref);
         
-        // Update _repoState.history
-        {
-            auto it = _repoState.history.find(crefPrev);
-            if (it != _repoState.history.end()) {
-                _repoState.history[cref] = it->second;
-                _repoState.history.erase(it);
-            }
-        }
-        
-        // Update _repoState.snapshots
-        {
-            auto it = _repoState.snapshots.find(crefPrev);
-            if (it != _repoState.snapshots.end()) {
-                _repoState.snapshots[cref] = it->second;
-                _repoState.snapshots.erase(it);
-            }
-        }
-        
-        // Update _loadedRefs
-        {
-            auto it = _loadedRefs.find(crefPrev);
-            if (it != _loadedRefs.end()) {
-                _loadedRefs[cref] = it->second;
-                _loadedRefs.erase(it);
-            }
-        }
+        _loadedRefs[cref] = _loadedRefs.at(crefPrev);
+        _loadedRefs.erase(crefPrev);
     }
     
     Git::Repo repo() const {
