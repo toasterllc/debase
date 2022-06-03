@@ -776,13 +776,17 @@ private:
         // Commit existing name change
         if (commit) {
             if (_columnNameFocused) {
-                const Rev& rev = _columnNameFocused->rev();
                 const std::string name = _columnNameFocused->nameField()->value();
                 const std::string namePrev = _columnNameFocused->name(true);
+                Rev rev = _columnNameFocused->rev();
                 if (name != namePrev) {
                     // Name changed
                     try {
-                        _gitRefRename(rev.ref, name);
+                        rev.ref = _gitRefRename(rev.ref, name);
+                        
+                        State::History& h = _repoState.history(rev.ref);
+                        h.push(State::RefState(rev.ref, rev.ref.commit()));
+                        
                         reload = true;
                     } catch (const Git::Error& e) {
                         switch (e.error) {
@@ -1362,7 +1366,7 @@ private:
             
             if (commitNew != commitCur) {
                 Git::Commit commit = State::Convert(_repo, commitNew);
-                h.push(State::RefState{.head = commitNew});
+                h.push(State::RefState(ref, commit));
                 _gitRefReplace(ref, commit);
                 // Clear the selection when restoring a snapshot
                 _selection = {};
@@ -1373,9 +1377,9 @@ private:
     
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
         Rev rev = col->rev();
-        State::History& h = _repoState.history(col->rev().ref);
-        State::RefState refStatePrev = h.get();
-        State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
+        State::History& h = _repoState.history(rev.ref);
+        const State::RefState refStatePrev = h.get();
+        const State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
         
         try {
             Git::Commit commit;
@@ -1385,13 +1389,29 @@ private:
                 throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
             }
             
-            std::set<Git::Commit> selection = State::Convert(_repo, (!undo ? refState.selection : refStatePrev.selectionPrev));
-            (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
+            const std::set<Git::Commit> selection = State::Convert(_repo,
+                (!undo ? refState.selection : refStatePrev.selectionPrev));
+            
+            // Set the ref's commit if it changed
+            if (refState.head != refStatePrev.head) {
+                (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
+            }
+            
+            // Rename the ref if the name changed
+            if (refState.name != refStatePrev.name) {
+                rev.ref = _gitRefRename(rev.ref, refState.name);
+            }
+            
             _selection = {
                 .rev = rev,
                 .commits = selection,
             };
             
+            // Re-get `h` (the history) here!
+            // This is necessary because _gitRefRename() calls RepoState::refReplace(),
+            // which invalidates the existing history, so the pre-existing `h` is no
+            // longer valid.
+            State::History& h = _repoState.history(rev.ref);
             if (undo) h.prev();
             else      h.next();
         
@@ -1423,20 +1443,18 @@ private:
         
         State::History* srcHistory = (srcRev.ref ? &_repoState.history(srcRev.ref) : nullptr);
         if (srcHistory && srcRev.commit!=srcRevPrev.commit) {
-            srcHistory->push({
-                .head = State::Convert(srcRev.commit),
-                .selection = State::Convert(opResult->src.selection),
-                .selectionPrev = State::Convert(opResult->src.selectionPrev),
-            });
+            State::RefState refState(srcRev.ref, srcRev.commit);
+            refState.selection = State::Convert(opResult->src.selection);
+            refState.selectionPrev = State::Convert(opResult->src.selectionPrev);
+            srcHistory->push(refState);
         }
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
         if (dstHistory && dstRev.commit!=dstRevPrev.commit) {
-            dstHistory->push({
-                .head = State::Convert(dstRev.commit),
-                .selection = State::Convert(opResult->dst.selection),
-                .selectionPrev = State::Convert(opResult->dst.selectionPrev),
-            });
+            State::RefState refState(dstRev.ref, dstRev.commit);
+            refState.selection = State::Convert(opResult->dst.selection);
+            refState.selectionPrev = State::Convert(opResult->dst.selectionPrev);
+            dstHistory->push(refState);
         }
         
         // Update the selection

@@ -75,6 +75,10 @@ inline auto Convert(const std::vector<Git::Ref>& x) { return _Convert<Ref>(x); }
 inline auto Convert(const std::set<Git::Ref>& x) { return _Convert<Ref>(x); }
 
 struct RefState {
+    RefState() {}
+    RefState(const Git::Ref& ref, const Git::Commit& head) : name(ref.name()), head(Convert(head)) {}
+    
+    std::string name;
     Commit head;
     std::set<Commit> selection;
     std::set<Commit> selectionPrev;
@@ -121,7 +125,7 @@ struct Snapshot {
 inline void to_json(nlohmann::json& j, const History& out);
 inline void from_json(const nlohmann::json& j, History& out);
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, head, selection, selectionPrev);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, name, head, selection, selectionPrev);
 //NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot::History, _prev, _next, _current);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, head);
 
@@ -451,7 +455,7 @@ private:
         if (headStored == headCurrent) {
             lref.history = find->second;
         } else {
-            lref.history = History(RefState{.head = Convert(headCurrent)});
+            lref.history = History(RefState(ref, headCurrent));
         }
         
         // Remember the initial history so we can tell if it changed upon exit,

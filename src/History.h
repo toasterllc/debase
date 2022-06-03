@@ -40,12 +40,12 @@ public:
         _next.pop_front();
     }
     
-    const T& prevPeek() {
+    const T& prevPeek() const {
         assert(!begin());
         return _prev.front();
     }
     
-    const T& nextPeek() {
+    const T& nextPeek() const {
         assert(!end());
         return _next.front();
     }
