@@ -83,6 +83,14 @@ struct RefState {
     std::set<Commit> selection;
     std::set<Commit> selectionPrev;
     
+    bool operator <(const RefState& x) const {
+        if (name != x.name) return name < x.name;
+        if (head != x.head) return head < x.head;
+        if (selection != x.selection) return selection < x.selection;
+        if (selectionPrev != x.selectionPrev) return selectionPrev < x.selectionPrev;
+        return false;
+    }
+    
     bool operator ==(const RefState& x) const {
         if (head != x.head) return false;
         if (selection != x.selection) return false;
@@ -99,18 +107,17 @@ using History = T_History<RefState>;
 
 struct Snapshot {
     Snapshot() {}
-    Snapshot(Commit c) : creationTime(time(nullptr)), head(c) {}
-    Snapshot(Git::Commit c) : Snapshot(Convert(c)) {}
+    Snapshot(RefState x) : creationTime(time(nullptr)), refState(x) {}
     
     bool operator <(const Snapshot& x) const {
         if (creationTime != x.creationTime) return creationTime < x.creationTime;
-        if (head != x.head) return head < x.head;
+        if (refState != x.refState) return refState < x.refState;
         return false;
     }
     
     bool operator ==(const Snapshot& x) const {
         if (creationTime != x.creationTime) return false;
-        if (head != x.head) return false;
+        if (refState != x.refState) return false;
         return true;
     }
     
@@ -119,7 +126,7 @@ struct Snapshot {
     }
     
     int64_t creationTime = 0;
-    Commit head;
+    RefState refState;
 };
 
 inline void to_json(nlohmann::json& j, const History& out);
@@ -127,7 +134,7 @@ inline void from_json(const nlohmann::json& j, History& out);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, name, head, selection, selectionPrev);
 //NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot::History, _prev, _next, _current);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, head);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, refState);
 
 // MARK: - History Serialization
 inline void to_json(nlohmann::json& j, const History& out) {
@@ -401,9 +408,9 @@ private:
     static std::vector<Snapshot> _CleanSnapshots(const std::vector<Snapshot>& snapshots) {
         std::map<Commit,Snapshot> earliestSnapshot;
         for (const Snapshot& snap : snapshots) {
-            auto find = earliestSnapshot.find(snap.head);
+            auto find = earliestSnapshot.find(snap.refState.head);
             if (find==earliestSnapshot.end() || snap.creationTime<find->second.creationTime) {
-                earliestSnapshot[snap.head] = snap;
+                earliestSnapshot[snap.refState.head] = snap;
             }
         }
         
@@ -460,6 +467,8 @@ private:
         
         // Populate .snapshotInitial
         lref.snapshotInitial = ref.commit();
+        
+        lref.snapshotInitial = Snapshot(RefState());
         
         return lref;
     }
