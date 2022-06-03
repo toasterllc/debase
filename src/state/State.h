@@ -171,6 +171,8 @@ private:
         Version updateVersion = 0;       // Cached value for the most recent version, returned by server
         int64_t updateCheckTime = 0;     // The most recent time that we checked for an update
         Version updateIgnoreVersion = 0; // The most recent version that the user ignored
+        
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(_State, license, trialExpired, theme, lastMoveOfferVersion, updateVersion, updateCheckTime, updateIgnoreVersion);
     };
     
     // _StateVersion: version of our state data structure; different than Version,
@@ -191,32 +193,14 @@ private:
             f.exceptions(std::ios::failbit | std::ios::badbit);
             nlohmann::json j;
             f >> j;
-            j.at("license").get_to(state.license);
-            j.at("trialExpired").get_to(state.trialExpired);
-            j.at("theme").get_to(state.theme);
-            
-            j.at("lastMoveOfferVersion").get_to(state.lastMoveOfferVersion);
-            
-            j.at("updateVersion").get_to(state.updateVersion);
-            j.at("updateCheckTime").get_to(state.updateCheckTime);
-            j.at("updateIgnoreVersion").get_to(state.updateIgnoreVersion);
+            j.get_to(state);
         }
     }
     
     static void _StateWrite(_Path path, const _State& state) {
         std::ofstream f(path);
         f.exceptions(std::ios::failbit | std::ios::badbit);
-        nlohmann::json j = {
-            {"license", state.license},
-            {"trialExpired", state.trialExpired},
-            {"theme", state.theme},
-            
-            {"lastMoveOfferVersion", state.lastMoveOfferVersion},
-            
-            {"updateVersion", state.updateVersion},
-            {"updateCheckTime", state.updateCheckTime},
-            {"updateIgnoreVersion", state.updateIgnoreVersion},
-        };
+        nlohmann::json j = state;
         f << std::setw(4) << j;
     }
     
@@ -355,24 +339,24 @@ public:
     template <typename T> void updateIgnoreVersion(const T& x) { _state.updateIgnoreVersion = x; }
 };
 
-struct _RefState {
-    History history;
-    std::vector<Snapshot> snapshots;
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(_RefState, history, snapshots);
-
-struct _RepoState {
-    std::map<Ref,_RefState> refStates;
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(_RepoState, refStates);
-
 // MARK: - RepoState
 class RepoState {
 private:
     using _Path = std::filesystem::path;
     using _Json = nlohmann::json;
+    
+    struct _RefState {
+        History history;
+        std::vector<Snapshot> snapshots;
+        
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(_RefState, history, snapshots);
+    };
+    
+    struct _RepoState {
+        std::map<Ref,_RefState> refStates;
+        
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(_RepoState, refStates);
+    };
     
     struct _LoadedRef {
         _RefState refState;
