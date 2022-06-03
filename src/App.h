@@ -720,7 +720,7 @@ private:
     UI::ButtonPtr _makeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
         const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
         
-        bool activeSnapshot = State::Convert(ref.commit()) == snap.head;
+        bool activeSnapshot = State::Convert(ref.commit()) == snap.refState.head;
         UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot(activeSnapshot);
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
@@ -789,7 +789,7 @@ private:
                         rev.ref = _gitRefRename(rev.ref, name);
                         
                         State::History& h = _repoState.history(rev.ref);
-                        h.push(State::RefState(rev.ref));
+                        h.push(State::HistoryRefState(rev.ref));
                         
                         reload = true;
                     } catch (const Git::Error& e) {
@@ -1346,6 +1346,33 @@ private:
         return gitOp;
     }
     
+    enum class _RefStateRestoreSelection {
+        None,
+        
+    };
+    
+    Git::Ref _refStateRestore(const Git::Ref& refPrev, const State::RefState& refState) {
+        Git::Ref ref = refPrev;
+        Git::Commit commit;
+        try {
+            commit = State::Convert(_repo, refState.head);
+        } catch (...) {
+            throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
+        }
+        
+        // Set the ref's commit if it changed
+        if (ref.commit() != commit) {
+            ref = _gitRefReplace(ref, commit);
+        }
+        
+        // Rename the ref if the name changed
+        if (ref.name() != refState.name) {
+            ref = _gitRefRename(ref, refState.name);
+        }
+        
+        return ref;
+    }
+    
     void _trackSnapshotsMenu(UI::RevColumnPtr col) {
         UI::SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col->rev().ref;
@@ -1376,13 +1403,13 @@ private:
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
-            const State::Commit commitNew = menuButton->snapshot().head;
-            const State::Commit commitCur = h.get().head;
+            const State::RefState& refState = menuButton->snapshot().refState;
+            const State::RefState& refStatePrev = h.get().refState;
             
-            if (commitNew != commitCur) {
-                ref = _gitRefReplace(ref, commit);
+            if (refState != refStatePrev) {
+                ref = _refStateRestore(ref, refState);
                 
-                h.push(State::RefState(ref));
+                h.push(State::HistoryRefState(ref));
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1393,29 +1420,14 @@ private:
     void _undoRedo(UI::RevColumnPtr col, bool undo) {
         Rev rev = col->rev();
         State::History& h = _repoState.history(rev.ref);
-        const State::RefState refStatePrev = h.get();
-        const State::RefState refState = (undo ? h.prevPeek() : h.nextPeek());
+        const State::HistoryRefState refStatePrev = h.get();
+        const State::HistoryRefState refState = (undo ? h.prevPeek() : h.nextPeek());
         
         try {
-            Git::Commit commit;
-            try {
-                commit = State::Convert(_repo, refState.head);
-            } catch (...) {
-                throw Toastbox::RuntimeError("failed to find commit %s", refState.head.c_str());
-            }
+            rev.ref = _refStateRestore(rev.ref, refState.refState);
             
             const std::set<Git::Commit> selection = State::Convert(_repo,
-                (!undo ? refState.selection : refStatePrev.selectionPrev));
-            
-            // Set the ref's commit if it changed
-            if (refState.head != refStatePrev.head) {
-                (Git::Rev&)rev = _gitRefReplace(rev.ref, commit);
-            }
-            
-            // Rename the ref if the name changed
-            if (refState.name != refStatePrev.name) {
-                rev.ref = _gitRefRename(rev.ref, refState.name);
-            }
+                (undo ? refStatePrev.selectionPrev : refState.selection));
             
             _selection = {
                 .rev = rev,
@@ -1458,7 +1470,7 @@ private:
         
         State::History* srcHistory = (srcRev.ref ? &_repoState.history(srcRev.ref) : nullptr);
         if (srcHistory && srcRev.commit!=srcRevPrev.commit) {
-            State::RefState refState(srcRev.ref);
+            State::HistoryRefState refState(srcRev.ref);
             refState.selection = State::Convert(opResult->src.selection);
             refState.selectionPrev = State::Convert(opResult->src.selectionPrev);
             srcHistory->push(refState);
@@ -1466,7 +1478,7 @@ private:
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
         if (dstHistory && dstRev.commit!=dstRevPrev.commit) {
-            State::RefState refState(dstRev.ref);
+            State::HistoryRefState refState(dstRev.ref);
             refState.selection = State::Convert(opResult->dst.selection);
             refState.selectionPrev = State::Convert(opResult->dst.selectionPrev);
             dstHistory->push(refState);

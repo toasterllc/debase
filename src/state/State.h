@@ -80,21 +80,15 @@ struct RefState {
     
     std::string name;
     Commit head;
-    std::set<Commit> selection;
-    std::set<Commit> selectionPrev;
     
     bool operator <(const RefState& x) const {
         if (name != x.name) return name < x.name;
         if (head != x.head) return head < x.head;
-        if (selection != x.selection) return selection < x.selection;
-        if (selectionPrev != x.selectionPrev) return selectionPrev < x.selectionPrev;
         return false;
     }
     
     bool operator ==(const RefState& x) const {
         if (head != x.head) return false;
-        if (selection != x.selection) return false;
-        if (selectionPrev != x.selectionPrev) return false;
         return true;
     }
     
@@ -103,7 +97,34 @@ struct RefState {
     }
 };
 
-using History = T_History<RefState>;
+struct HistoryRefState {
+    HistoryRefState() {}
+    HistoryRefState(const Git::Ref& ref) : refState(ref) {}
+    
+    RefState refState;
+    std::set<Commit> selection;
+    std::set<Commit> selectionPrev;
+    
+    bool operator <(const HistoryRefState& x) const {
+        if (refState != x.refState) return refState < x.refState;
+        if (selection != x.selection) return selection < x.selection;
+        if (selectionPrev != x.selectionPrev) return selectionPrev < x.selectionPrev;
+        return false;
+    }
+    
+    bool operator ==(const HistoryRefState& x) const {
+        if (refState != x.refState) return false;
+        if (selection != x.selection) return false;
+        if (selectionPrev != x.selectionPrev) return false;
+        return true;
+    }
+    
+    bool operator !=(const HistoryRefState& x) const {
+        return !(*this==x);
+    }
+};
+
+using History = T_History<HistoryRefState>;
 
 struct Snapshot {
     Snapshot() {}
@@ -132,7 +153,8 @@ struct Snapshot {
 inline void to_json(nlohmann::json& j, const History& out);
 inline void from_json(const nlohmann::json& j, History& out);
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, name, head, selection, selectionPrev);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RefState, name, head);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(HistoryRefState, refState, selection, selectionPrev);
 //NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot::History, _prev, _next, _current);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Snapshot, creationTime, refState);
 
@@ -445,7 +467,7 @@ private:
         // When we first create a _LoadedRef for a ref we haven't seen before, the current
         // state of its History will be empty, so check for that before we try to load the
         // Git::Commit for it.
-        const Commit& h = lref.refState.history.get().head;
+        const Commit& h = lref.refState.history.get().refState.head;
         if (!h.empty()) {
             // Handle the stored commit not existing
             try {
@@ -456,7 +478,7 @@ private:
         // Only use the existing history if the stored ref head matches the current ref head.
         // Otherwise, create a fresh (empty) history.
         if (headStored != headCurrent) {
-            lref.refState.history = History(RefState(ref));
+            lref.refState.history = History(HistoryRefState(ref));
         }
         
         // Remember the initial history so we can tell if it changed upon exit,
@@ -512,7 +534,7 @@ public:
             
             if (historyChanged) {
                 std::vector<Snapshot> snapshots = lref.refState.snapshots;
-                snapshots.push_back(refHistory.get().head);
+                snapshots.push_back(refHistory.get().refState);
                 snapshots.push_back(lref.snapshotInitial);
                 // Remove duplicate snapshots and sort them
                 snapshots = _CleanSnapshots(snapshots);
