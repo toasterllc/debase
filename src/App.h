@@ -717,11 +717,12 @@ private:
         abort();
     }
     
-    UI::ButtonPtr _makeSnapshotMenuButton(Git::Repo repo, Git::Ref ref,
-        const State::Snapshot& snap, bool sessionStart, UI::SnapshotButton*& chosen) {
+    UI::ButtonPtr _makeSnapshotMenuButton(const Git::Ref& ref, const State::Snapshot& snap,
+        bool sessionStart, UI::SnapshotButton*& chosen) {
         
-        bool activeSnapshot = State::Convert(ref.commit()) == snap.refState.head;
-        UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(repo, snap, _SnapshotMenuWidth);
+        const State::History& h = _repoState.history(ref);
+        const bool activeSnapshot = h.get().refState == snap.refState;
+        const UI::SnapshotButtonPtr b = std::make_shared<UI::SnapshotButton>(_repo, snap, _SnapshotMenuWidth);
         b->activeSnapshot(activeSnapshot);
         b->action([&] (UI::Button& button) { chosen = (UI::SnapshotButton*)&button; });
         return b;
@@ -1377,7 +1378,7 @@ private:
         UI::SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col->rev().ref;
         std::vector<UI::ButtonPtr> buttons = {
-            _makeSnapshotMenuButton(_repo, ref, _repoState.initialSnapshot(ref), true, menuButton),
+            _makeSnapshotMenuButton(ref, _repoState.initialSnapshot(ref), true, menuButton),
         };
         
         const std::vector<State::Snapshot>& snapshots = _repoState.snapshots(ref);
@@ -1385,7 +1386,7 @@ private:
             // Creating the button will throw if we can't get the commit for the snapshot
             // If that happens, just don't shown the button representing the snapshot
             try {
-                buttons.push_back(_makeSnapshotMenuButton(_repo, ref, *it, false, menuButton));
+                buttons.push_back(_makeSnapshotMenuButton(ref, *it, false, menuButton));
             } catch (...) {}
         }
         
@@ -1409,6 +1410,10 @@ private:
             if (refState != refStatePrev) {
                 ref = _refStateRestore(ref, refState);
                 
+                // Re-get `h` (the history) here!
+                // This is necessary because _refStateRestore() -> _gitRefRename() -> RepoState::refReplace()
+                // invalidates the existing history, so the pre-existing `h` is no longer valid.
+                State::History& h = _repoState.history(ref);
                 h.push(State::HistoryRefState(ref));
                 // Clear the selection when restoring a snapshot
                 _selection = {};
@@ -1424,7 +1429,7 @@ private:
         const State::HistoryRefState refState = (undo ? h.prevPeek() : h.nextPeek());
         
         try {
-            rev.ref = _refStateRestore(rev.ref, refState.refState);
+            (Git::Rev&)rev = _refStateRestore(rev.ref, refState.refState);
             
             const std::set<Git::Commit> selection = State::Convert(_repo,
                 (undo ? refStatePrev.selectionPrev : refState.selection));

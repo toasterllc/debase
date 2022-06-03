@@ -88,6 +88,7 @@ struct RefState {
     }
     
     bool operator ==(const RefState& x) const {
+        if (name != x.name) return false;
         if (head != x.head) return false;
         return true;
     }
@@ -428,11 +429,11 @@ private:
     }
     
     static std::vector<Snapshot> _CleanSnapshots(const std::vector<Snapshot>& snapshots) {
-        std::map<Commit,Snapshot> earliestSnapshot;
+        std::map<RefState,Snapshot> earliestSnapshot;
         for (const Snapshot& snap : snapshots) {
-            auto find = earliestSnapshot.find(snap.refState.head);
+            auto find = earliestSnapshot.find(snap.refState);
             if (find==earliestSnapshot.end() || snap.creationTime<find->second.creationTime) {
-                earliestSnapshot[snap.refState.head] = snap;
+                earliestSnapshot[snap.refState] = snap;
             }
         }
         
