@@ -789,32 +789,36 @@ private:
                         
                         reload = true;
                     } catch (const Git::Error& e) {
+                        std::string errorMsg;
                         switch (e.error) {
-                        case GIT_EEXISTS: {
-                            std::optional<bool> clicked;
-                            auto alert = _panelPresent<UI::ErrorAlert>();
-                            alert->width                            (45);
-                            alert->message()->text                  ("A ref named '" + name + "' already exists.");
-                            alert->okButton()->label()->text        ("Edit");
-                            alert->dismissButton()->label()->text   ("Revert");
-                            alert->okButton()->action               ( [&] (UI::Button&) { clicked = true; } );
-                            alert->dismissButton()->action          ( [&] (UI::Button&) { clicked = false; } );
-                            
-                            // Wait until the user clicks a button
-                            while (!clicked) track({}, Once);
-                            
-                            // If the user chose 'Edit', then act as if this function were
-                            // never called by simply returning.
-                            if (*clicked) return;
-                            
-                            // The user chose 'Cancel': we don't rename the ref,
-                            // but we continue setting the focus.
+                        case GIT_EINVALIDSPEC:
+                            errorMsg = "The ref name '" + name + "' contains invalid characters.";
                             break;
+                        case GIT_EEXISTS:
+                            errorMsg = "A ref named '" + name + "' already exists.";
+                            break;
+                        default:
+                            throw;
                         }
                         
-                        default: {
-                            throw;
-                        }}
+                        std::optional<bool> clicked;
+                        auto alert = _panelPresent<UI::ErrorAlert>();
+                        alert->width                            (45);
+                        alert->message()->text                  (errorMsg);
+                        alert->okButton()->label()->text        ("Edit");
+                        alert->dismissButton()->label()->text   ("Revert");
+                        alert->okButton()->action               ( [&] (UI::Button&) { clicked = true; } );
+                        alert->dismissButton()->action          ( [&] (UI::Button&) { clicked = false; } );
+                        
+                        // Wait until the user clicks a button
+                        while (!clicked) track({}, Once);
+                        
+                        // If the user chose 'Edit', then act as if this function were
+                        // never called by simply returning.
+                        if (*clicked) return;
+                        
+                        // The user chose 'Cancel': we don't rename the ref,
+                        // but we continue setting the focus.
                     }
                 }
             }

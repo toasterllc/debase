@@ -220,8 +220,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: fix: snapshots don't restore branch name
     #warning TODO:   make restoring a RefState a function, so it can be used by both _undoRedo and restoring a snapshot
     
-    #warning TODO: ref rename: implement proper error if the ref name is invalid
-    
     #warning TODO: implement Git::Repo::refCopy() for tags
     
     #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
@@ -272,6 +270,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: ref rename: implement proper error if the ref name is invalid
+//
 //    #warning TODO: fix: rename branch, exit debase. undo history is lost.
 //    #warning TODO:   this is because the State history hasn't changed. if we implement undo for changing a branch name, it should be fixed automatically
 //
