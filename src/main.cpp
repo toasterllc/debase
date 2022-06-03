@@ -218,8 +218,7 @@ int main(int argc, const char* argv[]) {
 //    return 0;
     
     #warning TODO: fix: rename branch, exit debase. undo history is lost.
-    
-    #warning TODO: ref rename: implement proper error if a ref already exists with the same name
+    #warning TODO: this is because the State history hasn't changed. if we implement undo for changing a branch name, it should be fixed automatically
     
     #warning TODO: ref rename: implement proper error if the ref name is invalid
     
@@ -228,11 +227,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
     
     #warning TODO: when a RevColumn's name has focus, resize window -> what should happen? cancel rename?
-    
-    #warning TODO: add 'create branch from commit'
-    #warning TODO:   add branch to reflog so that it appears in subsequent launches
-    
-    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
     
     #warning TODO: add branch/tag deleting by right-clicking branch name
     
@@ -278,6 +272,12 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: add inline branch renaming (by clicking on the name of the branch)
+//
+//    #warning TODO: add 'create branch from commit'
+//    #warning TODO:   add branch to reflog so that it appears in subsequent launches
+//
+//    #warning TODO: ref rename: implement proper error if a ref already exists with the same name
 //
 //    #warning TODO: ref rename: add new ref name to reflog so it appears in subsequent launches
 //
