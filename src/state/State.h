@@ -355,26 +355,30 @@ public:
     template <typename T> void updateIgnoreVersion(const T& x) { _state.updateIgnoreVersion = x; }
 };
 
+struct _RefState {
+    History history;
+    std::vector<Snapshot> snapshots;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(_RefState, history, snapshots);
+
+struct _RepoState {
+    std::map<Ref,_RefState> refStates;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(_RepoState, refStates);
+
 // MARK: - RepoState
 class RepoState {
 private:
     using _Path = std::filesystem::path;
     using _Json = nlohmann::json;
     
-    struct _RefState {
-        History history;
-        std::vector<Snapshot> snapshots;
-    };
-    
     struct _LoadedRef {
         _RefState refState;
         bool created = false; // Whether the ref was created during this session
         History historyPrev;
         Snapshot snapshotInitial;
-    };
-    
-    struct _RepoState {
-        std::map<Ref,_RefState> refStates;
     };
     
     _Path _rootDir;
