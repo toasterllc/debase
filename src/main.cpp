@@ -217,7 +217,7 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: when renaming a branch, add new branch name to reflog so it appears in subsequent launches
+    #warning TODO: ref rename: implement proper error if a ref already exists with the same name
     
     #warning TODO: implement Git::Repo::refCopy() for tags
     
@@ -274,6 +274,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//
+//    #warning TODO: ref rename: add new ref name to reflog so it appears in subsequent launches
 //
 //    #warning TODO: fix: checkout tag, launch debase. col0 doesn't reflect name of tag.
 //    #warning TODO:   fix in Git::Repo::headResolved() with heuristic: look at first reflog entry; if the commit matches between the first reflog entry and HEAD, and the reflog entry is a ref, use that ref.
@@ -769,7 +771,7 @@ int main(int argc, const char* argv[]) {
                     
                     try {
                         Rev rev;
-                        (Git::Rev&)rev = repo.revForReflogCheckout(entry);
+                        (Git::Rev&)rev = repo.reflogRevForCheckoutEntry(entry);
                         // Ignore non-ref reflog entries
                         if (!rev.ref) continue;
                         const auto [_, inserted] = unique.insert(rev);

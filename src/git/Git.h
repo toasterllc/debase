@@ -668,6 +668,7 @@ public:
             if (ir) throw Error(ir, "git_repository_head failed");
             ref = x;
         }
+        
         if (ref.isBranch()) return ref;
         if (ref.isTag()) return ref; // HEAD can't point to tags currently, but checking anyway for completeness
         
@@ -680,7 +681,7 @@ public:
         try {
             Reflog reflog = reflogForRef(head());
             const git_reflog_entry*const entry = reflog.at(0);
-            const Rev rev = revForReflogCheckout(entry);
+            const Rev rev = reflogRevForCheckoutEntry(entry);
             if (rev.ref && rev.commit==ref.commit()) {
                 return rev;
             }
@@ -1269,14 +1270,14 @@ public:
         return blobLookup(id);
     }
     
-    Signature signatureDefaultCreate() {
+    Signature signatureCreateDefault() {
         git_signature* x = nullptr;
         int ir = git_signature_default(&x, *get());
         if (ir) throw Error(ir, "git_signature_default failed");
         return x;
     }
     
-    // revForReflogCheckout(): parse and lookup the rev from the reflog
+    // reflogRevForCheckoutEntry(): parse and lookup the rev from the reflog
     // message string. For example, a checkout message in the reflog looks
     // like:
     //   checkout: moving from master to v1
@@ -1310,7 +1311,7 @@ public:
     //      `@{-4}`. Whereas with our implementation, we process each reflog
     //      entry only once.
     
-    Rev revForReflogCheckout(const git_reflog_entry* entry) const {
+    Rev reflogRevForCheckoutEntry(const git_reflog_entry* entry) const {
         assert(entry);
         
         const char* msg = git_reflog_entry_message(entry);
@@ -1330,6 +1331,14 @@ public:
         // Ignore HEAD special pointers; eg: HEAD, ORIG_HEAD, FETCH_HEAD, REVERT_HEAD
         if (_HEADSpecialPointer(revName)) throw std::runtime_error("HEAD-based special pointer");
         return revLookup(std::string(revName));
+    }
+    
+    void reflogRememberRef(const Ref& ref) {
+        const Reflog reflog = reflogForRef(head());
+        const Rev headRev = headResolved();
+        const Git::Signature sig = signatureCreateDefault();
+        reflog.append(sig, headRev, ref);
+        reflog.append(sig, ref, headRev);
     }
     
 private:

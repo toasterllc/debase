@@ -1214,10 +1214,8 @@ private:
         
         if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
         
-        const Git::Signature sig = _repo.signatureDefaultCreate();
-        Git::Reflog reflog = _repo.reflogForRef(_repo.head());
-        reflog.append(sig, _head, branch);
-        reflog.append(sig, branch, _head);
+        // Remember the new branch in the reflog, so it's visible in subsequent debase launches
+        _repo.reflogRememberRef(branch);
         
         const Rev branchRev(branch);
         auto it = std::find(_revs.begin(), _revs.end(), rev);
@@ -1511,6 +1509,9 @@ private:
         if (_gitDetachHeadIfEqual(refPrev)) {
             _head.ref = ref;
         }
+        
+        // Remember the new ref so it appears in subsequent debase launches
+        _repo.reflogRememberRef(ref);
         
         _repo.refDelete(refPrev);
         return ref;
