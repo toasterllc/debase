@@ -76,7 +76,7 @@ inline auto Convert(const std::set<Git::Ref>& x) { return _Convert<Ref>(x); }
 
 struct RefState {
     RefState() {}
-    RefState(const Git::Ref& ref, const Git::Commit& head) : name(ref.name()), head(Convert(head)) {}
+    RefState(const Git::Ref& ref) : name(ref.name()), head(Convert(ref.commit())) {}
     
     std::string name;
     Commit head;
@@ -456,7 +456,7 @@ private:
         // Only use the existing history if the stored ref head matches the current ref head.
         // Otherwise, create a fresh (empty) history.
         if (headStored != headCurrent) {
-            lref.refState.history = History(RefState(ref, headCurrent));
+            lref.refState.history = History(RefState(ref));
         }
         
         // Remember the initial history so we can tell if it changed upon exit,
@@ -466,9 +466,7 @@ private:
         lref.historyPrev = lref.refState.history;
         
         // Populate .snapshotInitial
-        lref.snapshotInitial = ref.commit();
-        
-        lref.snapshotInitial = Snapshot(RefState());
+        lref.snapshotInitial = Snapshot(RefState(ref));
         
         return lref;
     }

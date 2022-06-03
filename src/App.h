@@ -789,7 +789,7 @@ private:
                         rev.ref = _gitRefRename(rev.ref, name);
                         
                         State::History& h = _repoState.history(rev.ref);
-                        h.push(State::RefState(rev.ref, rev.ref.commit()));
+                        h.push(State::RefState(rev.ref));
                         
                         reload = true;
                     } catch (const Git::Error& e) {
@@ -1376,13 +1376,13 @@ private:
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
-            State::Commit commitNew = menuButton->snapshot().head;
-            State::Commit commitCur = h.get().head;
+            const State::Commit commitNew = menuButton->snapshot().head;
+            const State::Commit commitCur = h.get().head;
             
             if (commitNew != commitCur) {
-                Git::Commit commit = State::Convert(_repo, commitNew);
-                h.push(State::RefState(ref, commit));
-                _gitRefReplace(ref, commit);
+                ref = _gitRefReplace(ref, commit);
+                
+                h.push(State::RefState(ref));
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1458,7 +1458,7 @@ private:
         
         State::History* srcHistory = (srcRev.ref ? &_repoState.history(srcRev.ref) : nullptr);
         if (srcHistory && srcRev.commit!=srcRevPrev.commit) {
-            State::RefState refState(srcRev.ref, srcRev.commit);
+            State::RefState refState(srcRev.ref);
             refState.selection = State::Convert(opResult->src.selection);
             refState.selectionPrev = State::Convert(opResult->src.selectionPrev);
             srcHistory->push(refState);
@@ -1466,7 +1466,7 @@ private:
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
         if (dstHistory && dstRev.commit!=dstRevPrev.commit) {
-            State::RefState refState(dstRev.ref, dstRev.commit);
+            State::RefState refState(dstRev.ref);
             refState.selection = State::Convert(opResult->dst.selection);
             refState.selectionPrev = State::Convert(opResult->dst.selectionPrev);
             dstHistory->push(refState);
