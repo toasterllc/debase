@@ -997,29 +997,17 @@ public:
     }
     
     Ref refCopy(const Ref& ref, const std::string& name) const {
-//        if (!(ref.isTag() || ref.isLocalBranch())) {
-//            // This should never happen, but in case there are other ref types that
-//            // we're not aware of, throw an error instead of aborting.
-//            throw Toastbox::RuntimeError("unsupported ref type");
-//        }
-        
-        // TODO: things to handle:
-        //   - update all revs in _revs
-        //   - move all state in `State` for old ref to new ref
-        //   - update _head
-        
         if (ref.isLocalBranch()) {
             return branchCreate(name, ref.commit(), false);
-            
-//            throw Toastbox::RuntimeError("unimplemented");
-//            git_reference* x = nullptr;
-//            int ir = git_branch_move(&x, *ref, name.c_str(), false);
-//            if (ir) throw Error(ir, "git_branch_move failed");
-//            return x;
-            
+        
         } else if (ref.isTag()) {
-            throw Toastbox::RuntimeError("unimplemented");
-            
+            const Tag tag = Tag::ForRef(ref);
+            if (const TagAnnotation ann = tag.annotation()) {
+                return tagCreateAnnotated(name, ref.commit(), ann.author(), ann.message());
+            } else {
+                return tagCreate(name, ref.commit());
+            }
+        
         } else {
             // Unsupported ref type
             throw Toastbox::RuntimeError("unsupported ref type");
