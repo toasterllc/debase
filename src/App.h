@@ -204,19 +204,19 @@ public:
         
         switch (ev.type) {
         case UI::Event::Type::Mouse: {
-            // Commit changes and unfocus the RevColumn names
-            if (ev.mouseDown(UI::Event::MouseButtons::Any) ||
-                ev.mouseUp(UI::Event::MouseButtons::Any)) {
-                
-                _revColumnNameSetFocused(nullptr, true);
-                
-                // If _revColumnNameSetFocused() handled events within its stack
-                // frame (ie via track()), then we don't want to handle the event
-                // further.
-                if (screen().eventsSince(ev)) {
-                    break;
-                }
-            }
+//            // Commit changes and unfocus the RevColumn names
+//            if (ev.mouseDown(UI::Event::MouseButtons::Any) ||
+//                ev.mouseUp(UI::Event::MouseButtons::Any)) {
+//                
+//                _revColumnNameSetFocused(nullptr, true);
+//                
+//                // If _revColumnNameSetFocused() handled events within its stack
+//                // frame (ie via track()), then we don't want to handle the event
+//                // further.
+//                if (screen().eventsSince(ev)) {
+//                    break;
+//                }
+//            }
             
             const _HitTestResult hitTest = _hitTest(ev.mouse.origin);
             if (ev.mouseDown(UI::Event::MouseButtons::Left)) {

@@ -137,10 +137,6 @@ private:
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
                 
-                if (ev.mouseDown() && hit && !_focused) {
-                    if (_focusAction) _focusAction(*this);
-                }
-                
                 if ((ev.mouseDown() && hit) || tracking()) {
                     // Update the cursor position to the clicked point
                     int offX = ev.mouse.origin.x-_alignOff();
@@ -148,20 +144,39 @@ private:
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
                 
-                if (ev.mouseDown() && hit && !tracking()) {
-                    // Track mouse
-                    // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
-                    // calling track() within its stack frame).
-                    // If it did, then it may have consumed a mouse-up event, which will break our tracking.
-                    // So in that case, just don't track until the next mouse down.
-                    const bool trackAllowed = !screen().eventsSince(ev);
-                    if (trackAllowed) track(ev);
-                    return true;
-                
-                } else if (ev.mouseUp() && tracking()) {
-                    trackStop();
-                    return true;
+                if (ev.mouseDown()) {
+                    if (hit && !_focused) {
+                        if (_focusAction) _focusAction(*this);
+                        
+                        if (_focused) {
+                            track(ev);
+                            return true;
+                        }
+                    
+                    } else if (!hit && _focused) {
+                        if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
+                        
+                        if (!_focused) {
+                            trackStop();
+                            return true;
+                        }
+                    }
                 }
+                
+//                if (ev.mouseDown() && hit && !tracking()) {
+//                    // Track mouse
+//                    // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+//                    // calling track() within its stack frame).
+//                    // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+//                    // So in that case, just don't track until the next mouse down.
+//                    const bool trackAllowed = !screen().eventsSince(ev);
+//                    if (trackAllowed) track(ev);
+//                    return true;
+//                
+//                } else if (ev.mouseUp() && tracking()) {
+//                    trackStop();
+//                    return true;
+//                }
             }
         
         } else if (_focusedAndEnabled()) {

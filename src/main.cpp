@@ -217,6 +217,10 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: why do we give an event to track()? whatever needs that event,
+    #warning TODO:   can it get the event via eventCurrent(), or can we add a
+    #warning TODO:   function to Screen to keep the last event returned by eventNext()?
+    
     #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
     
     #warning TODO: when a RevColumn's name has focus, resize window -> what should happen? cancel rename?
