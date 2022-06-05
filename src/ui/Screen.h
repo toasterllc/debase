@@ -255,7 +255,7 @@ public:
         return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
-    const Event& eventCurrent() const override {
+    virtual const Event& eventCurrent() const {
         return _eventCurrent;
     }
     
@@ -264,52 +264,9 @@ public:
         return _eventCurrent.id != ev.id;
     }
     
-//    bool handleEvent(GraphicsState gstate, const Event& ev) override {
-//        // Intercept and drop events before subviews get a chance
-//        if (_suppressEvents) return true;
-//        return Window::handleEvent(gstate, ev);
-//    }
-    
-//    virtual bool dispatchEvent(const Event& ev) {
-//        const GraphicsState gstate = graphicsStateCalc(*this);
-//        return View::handleEvent(gstate, ev);
-//    }
-    
     virtual GraphicsState graphicsStateCalc(View& target) {
         return _graphicsStateCalc(target, {.screen=this}, *this);
     }
-    
-//    void track(View& target, const Event& ev) {
-//        _track(target, ev);
-//    }
-    
-//    // Signal track() to return
-//    void trackStop() {
-//        _trackStop = true;
-//    }
-    
-    
-    
-//    virtual void track(const Window& win, const Event& ev) {
-////        _TreeState treeState(_TState, win, {});
-//        
-//        _tracking = true;
-//        Defer(_tracking = false); // Exception safety
-//        Defer(_trackStop = false); // Exception safety
-//        
-//        do {
-//            refresh();
-//            
-//            _eventCurrent = UI::eventNext();
-//            Defer(_eventCurrent = {}); // Exception safety
-//            
-//            handleEvent(*this, {}, _eventCurrent);
-//        } while (!_trackStop);
-//    }
-    
-//    virtual bool tracking() const { return _tracking; }
-    
-//    const Event& eventCurrent() const { return _eventCurrent; }
     
     virtual bool orderPanelsNeeded() { return _orderPanelsNeeded; }
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
@@ -343,11 +300,6 @@ private:
     ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
-//    bool _suppressEvents = false;
-//    
-//    bool _tracking = false;
-//    bool _trackStop = false;
-//    Event _eventCurrent;
 };
 
 using ScreenPtr = std::shared_ptr<Screen>;

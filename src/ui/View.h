@@ -322,9 +322,8 @@ public:
     
     // MARK: - Events
     virtual bool handleEvent(const Event& ev) { return false; }
-    virtual const Event& eventCurrent() const { return _eventCurrent; }
     
-    virtual void track(const Event& ev, Deadline deadline=Forever);
+    virtual void track(Deadline deadline=Forever);
     
     virtual void trackStop() {
         _trackStop = true;
@@ -444,6 +443,7 @@ public:
         
         // We have to copy _subviews since we allow it to be modified while we're iterating over it
         // within our handleEvent() callout
+        // TODO: optimize copying _subviews by using a stack array
         Views subviews = _subviews;
         for (auto it=subviews.rbegin(); it!=subviews.rend(); it++) {
             Ptr subview = (*it).lock();
@@ -633,7 +633,6 @@ private:
     bool _tracking = false;
     bool _trackStop = false;
     bool _inhibitErase = false;
-    Event _eventCurrent;
     Edges _hitTestInset;
     std::optional<Color> _borderColor;
 };

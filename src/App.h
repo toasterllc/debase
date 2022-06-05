@@ -405,7 +405,7 @@ public:
 //                alert->message()->text                  ("message");
 //                alert->okButton()->label()->text        ("OK");
 //                alert->okButton()->action               ( [&] (UI::Button& b) { done = true; } );
-//                while (!done) track({}, Once);
+//                while (!done) track(Once);
 //            }
             
             
@@ -415,7 +415,7 @@ public:
             _moveOffer();
             _licenseCheck();
             _updateCheck();
-            track({});
+            track();
             
         } catch (const UI::ExitRequest&) {
             // Nothing to do
@@ -426,12 +426,12 @@ public:
         _repoState.write();
     }
     
-    void track(const UI::Event& ev, Deadline deadline=Forever) override {
+    void track(Deadline deadline=Forever) override {
         for (;;) {
             std::string errorMsg;
             
             try {
-                Screen::track(ev, deadline);
+                Screen::track(deadline);
                 break; // Deadline passed; break out of loop
             
             } catch (const UI::WindowResize&) {
@@ -820,7 +820,7 @@ private:
                         alert->dismissButton()->action          ( [&] (UI::Button&) { clicked = false; } );
                         
                         // Wait until the user clicks a button
-                        while (!clicked) track({}, Once);
+                        while (!clicked) track(Once);
                         
                         // If the user chose 'Edit', then act as if this function were
                         // never called by simply returning.
@@ -1317,7 +1317,7 @@ private:
         menu->buttons({ createBranchButton, combineButton, editButton, deleteButton });
         menu->sizeToFit(ConstraintNoneSize);
         menu->origin(mouseDownEvent.mouse.origin);
-        menu->track(mouseDownEvent);
+        menu->track();
         
         // Handle the clicked button
         std::optional<_GitOp> gitOp;
@@ -1412,7 +1412,7 @@ private:
         menu->size(menu->sizeIntrinsic({ConstraintNone, heightMax}));
         menu->origin(p);
 //        layout(*this, {});
-        menu->track(eventCurrent());
+        menu->track();
         
         if (menuButton) {
             State::History& h = _repoState.history(ref);
@@ -1675,7 +1675,7 @@ private:
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
             
             // Wait until the user clicks a button
-            while (!clicked) track({}, Once);
+            while (!clicked) track(Once);
             
             // If the user canceled, let the caller know
             if (!*clicked) throw _GitModify::ConflictResolveCanceled();
@@ -1722,7 +1722,7 @@ private:
                 panelResult = std::nullopt;
                 
                 // Wait until the user clicks a button
-                while (!panelResult) track({}, Once);
+                while (!panelResult) track(Once);
                 
                 switch (*panelResult) {
                 case UI::ConflictPanel::Result::ChooseOurs:
@@ -1886,7 +1886,7 @@ private:
                 nextDeadline = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
             }
             
-            track({}, nextDeadline);
+            track(nextDeadline);
         }
     }
     
@@ -2010,7 +2010,7 @@ private:
         
         for (;;) {
             // Wait until the user clicks a button
-            while (!choice) track({}, Once);
+            while (!choice) track(Once);
             
             // Trial
             if (*choice) {
@@ -2056,7 +2056,7 @@ private:
         
         for (;;) {
             // Wait until the user clicks a button
-            while (!choice) track({}, Once);
+            while (!choice) track(Once);
             
             // Register
             if (*choice) {
@@ -2223,7 +2223,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         
         // Wait until the user clicks a button
-        while (!done) track({}, Once);
+        while (!done) track(Once);
     }
     
     void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
@@ -2242,7 +2242,7 @@ private:
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         
         // Wait until the user clicks a button
-        while (!done) track({}, Once);
+        while (!done) track(Once);
     }
     
 //    void _conflictRun() {
@@ -2397,7 +2397,7 @@ private:
 //        
 //        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
 //        auto panel = _panelPresent<UI::ConflictPanel>(layout, "master", "SomeBranch", fc, 1);
-//        track({});
+//        track();
 //    }
     
     void _updateAvailableAlertShow(Version version) {
@@ -2554,7 +2554,7 @@ private:
         alert->dismissButton()->action          ( [&] (UI::Button& b) { moveChoice = false; } );
         
         // Wait until the user clicks a button
-        while (!moveChoice) track({}, Once);
+        while (!moveChoice) track(Once);
         
         // We offerred to move debase; update State so we remember that we did so
         {

@@ -19,7 +19,7 @@ bool View::enabledWindow() const {
     return _enabled && window().enabled();
 }
 
-void View::track(const Event& ev, Deadline deadline) {
+void View::track(Deadline deadline) {
     using namespace std::chrono;
     
     class Screen& scr = screen();
@@ -27,7 +27,6 @@ void View::track(const Event& ev, Deadline deadline) {
     
     const bool trackingPrev = _tracking;
     const bool trackStopPrev = _trackStop;
-    const Event eventCurrentPrev = _eventCurrent;
     
     _tracking = true;
     _trackStop = false;
@@ -36,12 +35,13 @@ void View::track(const Event& ev, Deadline deadline) {
     Defer(
         _tracking = trackingPrev;
         _trackStop = trackStopPrev;
-        _eventCurrent = eventCurrentPrev;
     );
     
     do {
-        _eventCurrent = scr.eventNext(deadline);
-        if (!_eventCurrent) return; // Deadline passed
+        // Copy the event! Subviews could recursively call track(), which will
+        // update Screen's ivar, so we don't want to use a reference here.
+        const Event ev = scr.eventNext(deadline);
+        if (!ev) return; // Deadline passed
         
         // Get our gstate after calling nextEvent first, so that the gstate is calculated after
         // a full render pass (which occurs at the start of nextEvent), instead of before.
@@ -53,7 +53,7 @@ void View::track(const Event& ev, Deadline deadline) {
             if (!gstate) throw std::runtime_error("graphicsStateCalc() failed");
         }
         
-        handleEvent(gstate, _eventCurrent);
+        handleEvent(gstate, ev);
     } while (!_trackStop && deadline!=Once);
 }
 

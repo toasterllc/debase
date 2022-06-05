@@ -159,7 +159,7 @@ private:
                 if (_trackWhileFocused) {
                     if (ev.mouseDown()) {
                         if (hit && !_focused) {
-                            _focus(ev);
+                            _focus();
                         } else if (!hit && _focused) {
                             _unfocus(UnfocusReason::Return);
                         }
@@ -167,7 +167,7 @@ private:
                 
                 } else {
                     if (ev.mouseDown() && hit && !_focused) {
-                        _focus(ev);
+                        _focus();
                     }
                     
                     if (ev.mouseDown() && hit && !_dragging) {
@@ -177,7 +177,7 @@ private:
                         // If it did, then it may have consumed a mouse-up event, which will break our tracking.
                         // So in that case, just don't track until the next mouse down.
                         const bool trackAllowed = !screen().eventSince(ev);
-                        if (trackAllowed) track(ev);
+                        if (trackAllowed) track();
                     
                     } else if (ev.mouseUp() && _dragging) {
                         trackStop();
@@ -316,14 +316,14 @@ private:
         }
     }
     
-    void _focus(const Event& ev) {
+    void _focus() {
         assert(!_focused);
         
         if (_focusAction) _focusAction(*this);
         if (!_focused) return;
         
         if (_trackWhileFocused) {
-            track(ev);
+            track();
         }
     }
     

@@ -146,9 +146,9 @@ public:
         return false;
     }
     
-    void track(const Event& ev, Deadline deadline=Forever) override {
+    void track(Deadline deadline=Forever) override {
         _trackState = {};
-        _trackState.startEvent = ev;
+        _trackState.startEvent = screen().eventCurrent();
         
         // Disable button interaction at the very beginning, to prevent accidental clicks
         for (UI::ButtonPtr button : _buttons) {
@@ -156,7 +156,7 @@ public:
             button->interaction(false);
         }
         
-        Panel::track(ev, deadline);
+        Panel::track(deadline);
     }
     
     const auto& title() const { return _title; }

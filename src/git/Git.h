@@ -879,7 +879,7 @@ public:
     Index commitIntegrate(git_merge_file_favor_t fileFavor, const Commit& dst, const Commit& src) const {
         Tree srcTree = src.tree();
         Tree dstTree = dst.tree();
-        Tree ancestorTree = src.parent().tree(); // TODO:MERGE
+        Tree ancestorTree = src.parent().tree();
         return treesMerge(fileFavor, ancestorTree, dstTree, srcTree);
     }
     

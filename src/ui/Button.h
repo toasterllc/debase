@@ -140,7 +140,7 @@ public:
         
         if (hit && ev.mouseDown(_actionButtons) && !screen().eventSince(ev)) {
             // Track mouse
-            track(ev);
+            track();
             handled = true;
         }
         
