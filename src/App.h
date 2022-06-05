@@ -1599,9 +1599,15 @@ private:
             _head.ref = ref;
         }
         
+        // Update _selection
+        if (_selection.rev.ref == refPrev) {
+            (Git::Rev&)_selection.rev = ref;
+        }
+        
         // Remember the new ref so it appears in subsequent debase launches
         _repo.reflogRememberRef(ref);
         
+        // Delete the original ref
         _repo.refDelete(refPrev);
         return ref;
     }

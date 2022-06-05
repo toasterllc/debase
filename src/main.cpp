@@ -219,8 +219,6 @@ int main(int argc, const char* argv[]) {
     
     #warning TODO: fix: press escape while "No matching license was found" window is open; cursor flashes at bottom left of window
     
-    #warning TODO: if you rename a RevColumn that has a selection, the selection becomes pale purple after the rename
-    
     #warning TODO: why do we give an event to track()? whatever needs that event,
     #warning TODO:   can it get the event via eventCurrent(), or can we add a
     #warning TODO:   function to Screen to keep the last event returned by eventNext()?
@@ -269,6 +267,8 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: fix: if you rename a RevColumn that has a selection, the selection becomes pale purple after the rename
+//
 //    #warning TODO: when a RevColumn's name has focus, resize window -> abort rename
 //
 //    #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
