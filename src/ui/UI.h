@@ -108,6 +108,7 @@ struct Event {
     struct MouseButtons : Bitfield<uint8_t> {
         static constexpr Bit Left  = 1<<0;
         static constexpr Bit Right = 1<<1;
+        static constexpr Bit Any   = ~((Bit)0);
         using Bitfield::Bitfield;
     };
     

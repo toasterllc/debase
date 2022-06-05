@@ -255,6 +255,11 @@ public:
         return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
+    // eventsSince() returns whether events have occurred since the given event
+    virtual bool eventsSince(const Event& ev) {
+        return _eventId != ev.id+1;
+    }
+    
 //    bool handleEvent(GraphicsState gstate, const Event& ev) override {
 //        // Intercept and drop events before subviews get a chance
 //        if (_suppressEvents) return true;
@@ -304,10 +309,6 @@ public:
     
     virtual bool orderPanelsNeeded() { return _orderPanelsNeeded; }
     virtual void orderPanelsNeeded(bool x) { _orderPanelsNeeded = x; }
-    
-    virtual Event::Id eventId() const {
-        return _eventId;
-    }
     
 private:
     void _cursorDraw() {

@@ -154,7 +154,7 @@ private:
                     // calling track() within its stack frame).
                     // If it did, then it may have consumed a mouse-up event, which will break our tracking.
                     // So in that case, just don't track until the next mouse down.
-                    const bool trackAllowed = (screen().eventId() == ev.id+1);
+                    const bool trackAllowed = !screen().eventsSince(ev);
                     if (trackAllowed) track(ev);
                     return true;
                 
