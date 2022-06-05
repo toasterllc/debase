@@ -225,10 +225,6 @@ int main(int argc, const char* argv[]) {
     #warning TODO:   can it get the event via eventCurrent(), or can we add a
     #warning TODO:   function to Screen to keep the last event returned by eventNext()?
     
-    #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
-    
-    #warning TODO: when a RevColumn's name has focus, resize window -> what should happen? cancel rename?
-    
     #warning TODO: add branch/tag deleting by right-clicking branch name
     
     #warning TODO: add branch/tag renaming by right-clicking branch name
@@ -273,6 +269,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: when a RevColumn's name has focus, resize window -> abort rename
+//
+//    #warning TODO: when a RevColumn's name has focus, unfocus when clicking anywhere else
+//
 //    #warning TODO: implement Git::Repo::refCopy() for tags
 //
 //    #warning TODO: when creating a new branch from a commit, give the new revcolumn focus

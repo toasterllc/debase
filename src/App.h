@@ -432,6 +432,7 @@ public:
                 break; // Deadline passed; break out of loop
             
             } catch (const UI::WindowResize&) {
+                _revColumnNameSetFocused(nullptr, false, false);
                 _reload();
             
             // Bubble up
