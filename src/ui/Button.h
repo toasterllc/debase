@@ -124,6 +124,7 @@ public:
         }
         
         // Trigger action
+        bool handled = false;
         if (trigger) {
             // Reset _actionTriggerState when we trigger to prevent further triggers
             // until the next mouse-down.
@@ -134,15 +135,16 @@ public:
             if (_action) {
                 _action(*this);
             }
+            handled = true;
         }
         
         if (hit && ev.mouseDown(_actionButtons) && !screen().eventSince(ev)) {
             // Track mouse
             track(ev);
-            return true;
+            handled = true;
         }
         
-        return false;
+        return handled;
     }
     
 private:

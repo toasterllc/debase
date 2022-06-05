@@ -140,7 +140,7 @@ private:
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
                 
-                if (ev.mouseDown()) {
+                if (ev.mouseDown() && hit) {
                     _dragging = true;
                 } else if (ev.mouseUp()) {
                     _dragging = false;
@@ -156,24 +156,22 @@ private:
                 if (_trackWhileFocused) {
                     if (ev.mouseDown()) {
                         if (hit && !_focused) {
-                            if (_focusAction) _focusAction(*this);
-                            
-                            if (_focused) {
-                                track(ev);
+                            if (_focus(ev)) {
                                 return true;
                             }
                         
                         } else if (!hit && _focused) {
-                            if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
-                            
-                            if (!_focused) {
-                                trackStop();
+                            if (_unfocus(UnfocusReason::Return)) {
                                 return true;
                             }
                         }
                     }
                 
                 } else {
+                    if (ev.mouseDown() && hit && !_focused) {
+                        _focus(ev);
+                    }
+                    
                     if (ev.mouseDown() && hit && !_dragging) {
                         // Track mouse
                         // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
@@ -257,20 +255,20 @@ private:
                 return true;
             
             } else if (ev.type == Event::Type::KeyTab) {
-                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Tab);
+                _unfocus(UnfocusReason::Tab);
                 if (_trackWhileFocused)
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
-                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Tab);
+                _unfocus(UnfocusReason::Tab);
                 return true;
             
             } else if (ev.type == Event::Type::KeyReturn) {
-                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
+                _unfocus(UnfocusReason::Return);
                 return true;
             
             } else if (ev.type == Event::Type::KeyEscape) {
-                if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Escape);
+                _unfocus(UnfocusReason::Escape);
                 return true;
             
             } else {
@@ -319,6 +317,29 @@ private:
         default:
             abort();
         }
+    }
+    
+    bool _focus(const Event& ev) {
+        assert(!_focused);
+        
+        if (_focusAction) _focusAction(*this);
+        if (!_focused) return false;
+        
+        if (_trackWhileFocused) {
+            track(ev);
+        }
+        
+        return true;
+    }
+    
+    bool _unfocus(UnfocusReason reason) {
+        assert(_focused);
+        
+        if (_unfocusAction) _unfocusAction(*this, reason);
+        if (_focused) return false;
+        
+        trackStop();
+        return true;
     }
     
     std::string _value;
