@@ -57,23 +57,25 @@ public:
 //    }
     
     const bool focused() const { return _focused; }
-    bool focused(bool x, Align align=Align::Left) {
+    bool focused(bool x, std::optional<Align> align=std::nullopt) {
         const bool set = _set(_focused, x);
         if (set) eraseNeeded(true);
         
-        switch (align) {
-        case Align::Left:
-            _offLeft = std::numeric_limits<ssize_t>::min();
-            _offCursor = std::numeric_limits<ssize_t>::min();
-            break;
-        case Align::Right:
-            _offLeft = std::numeric_limits<ssize_t>::max();
-            _offCursor = std::numeric_limits<ssize_t>::max();
-            break;
-        default:
-            abort();
+        if (align) {
+            switch (*align) {
+            case Align::Left:
+                _offLeft = std::numeric_limits<ssize_t>::min();
+                _offCursor = std::numeric_limits<ssize_t>::min();
+                break;
+            case Align::Right:
+                _offLeft = std::numeric_limits<ssize_t>::max();
+                _offCursor = std::numeric_limits<ssize_t>::max();
+                break;
+            default:
+                abort();
+            }
+            _offUpdate();
         }
-        _offUpdate();
         
         return set;
     }
@@ -139,6 +141,7 @@ private:
         if (ev.type == Event::Type::Mouse) {
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
+                const bool handled = ((ev.mouseDown() && hit) || (ev.mouseUp() && _dragging));
                 
                 if (ev.mouseDown() && hit) {
                     _dragging = true;
@@ -156,14 +159,9 @@ private:
                 if (_trackWhileFocused) {
                     if (ev.mouseDown()) {
                         if (hit && !_focused) {
-                            if (_focus(ev)) {
-                                return true;
-                            }
-                        
+                            _focus(ev);
                         } else if (!hit && _focused) {
-                            if (_unfocus(UnfocusReason::Return)) {
-                                return true;
-                            }
+                            _unfocus(UnfocusReason::Return);
                         }
                     }
                 
@@ -180,13 +178,13 @@ private:
                         // So in that case, just don't track until the next mouse down.
                         const bool trackAllowed = !screen().eventSince(ev);
                         if (trackAllowed) track(ev);
-                        return true;
                     
                     } else if (ev.mouseUp() && _dragging) {
                         trackStop();
-                        return true;
                     }
                 }
+                
+                return handled;
             }
         
         } else if (_focusedAndEnabled()) {
@@ -256,7 +254,6 @@ private:
             
             } else if (ev.type == Event::Type::KeyTab) {
                 _unfocus(UnfocusReason::Tab);
-                if (_trackWhileFocused)
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
@@ -319,34 +316,31 @@ private:
         }
     }
     
-    bool _focus(const Event& ev) {
+    void _focus(const Event& ev) {
         assert(!_focused);
         
         if (_focusAction) _focusAction(*this);
-        if (!_focused) return false;
+        if (!_focused) return;
         
         if (_trackWhileFocused) {
             track(ev);
         }
-        
-        return true;
     }
     
-    bool _unfocus(UnfocusReason reason) {
+    void _unfocus(UnfocusReason reason) {
         assert(_focused);
         
         if (_unfocusAction) _unfocusAction(*this, reason);
-        if (_focused) return false;
+        if (_focused) return;
         
         trackStop();
-        return true;
     }
     
     std::string _value;
     Align _align = Align::Left;
     attr_t _attrFocused = WA_UNDERLINE;
     attr_t _attrUnfocused = WA_UNDERLINE | colors().dimmed;
-    bool _trackWhileFocused = true;
+    bool _trackWhileFocused = false;
     
     std::function<void(TextField&)> _valueChangedAction;
     std::function<void(TextField&)> _focusAction;

@@ -180,6 +180,7 @@ private:
         }
         
         case TextField::UnfocusReason::Escape: {
+            dismiss();
             break;
         }}
     }

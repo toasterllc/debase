@@ -217,6 +217,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: fix: press escape while "No matching license was found" window is open; cursor flashes at bottom left of window
+    
     #warning TODO: if you rename a RevColumn that has a selection, the selection becomes pale purple after the rename
     
     #warning TODO: why do we give an event to track()? whatever needs that event,
