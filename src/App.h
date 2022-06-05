@@ -248,17 +248,20 @@ public:
             break;
         }
         
-        case UI::Event::Type::KeyC: {
-//                {
-//                    _registerAlert = std::make_shared<UI::RegisterAlert>(_colors);
-//                    _registerAlert->color           = colors().menu;
-//                    _registerAlert->messageInsetY   = 1;
-//                    _registerAlert->title           = "Register";
-//                    _registerAlert->message         = "Please register debase";
-//                }
-//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//                break;
+        case UI::Event::Type::KeyB: {
+            if (!_selectionCanBranch()) {
+                beep();
+                break;
+            }
             
+            assert(_selection.commits.size() == 1);
+            const Rev& rev = _selection.rev;
+            const Git::Commit& commit = *_selection.commits.begin();
+            _branchCreateFromRev(rev, commit);
+            break;
+        }
+        
+        case UI::Event::Type::KeyC: {
             if (!_selectionCanCombine()) {
                 beep();
                 break;
@@ -1287,7 +1290,7 @@ private:
         
         // It's possible that col==null because the new column is offscreen!
         const UI::RevColumnPtr branchCol = _columnForRev(branchRev);
-        _revColumnNameSetFocused(branchCol, false, false);
+        _revColumnNameSetFocused(branchCol, false, true);
     }
     
     std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {

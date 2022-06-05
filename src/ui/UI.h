@@ -102,6 +102,7 @@ struct Event {
         KeyReturn       = '\n',
         KeyCtrlC        = '\x03',
         KeyCtrlD        = '\x04',
+        KeyB            = 'b',
         KeyC            = 'c',
     };
     
