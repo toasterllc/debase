@@ -217,6 +217,8 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
+    #warning TODO: if you rename a RevColumn that has a selection, the selection becomes pale purple after the rename
+    
     #warning TODO: why do we give an event to track()? whatever needs that event,
     #warning TODO:   can it get the event via eventCurrent(), or can we add a
     #warning TODO:   function to Screen to keep the last event returned by eventNext()?

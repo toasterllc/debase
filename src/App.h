@@ -213,7 +213,7 @@ public:
 //                // If _revColumnNameSetFocused() handled events within its stack
 //                // frame (ie via track()), then we don't want to handle the event
 //                // further.
-//                if (screen().eventsSince(ev)) {
+//                if (screen().eventSince(ev)) {
 //                    break;
 //                }
 //            }

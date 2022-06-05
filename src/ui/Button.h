@@ -9,9 +9,10 @@ namespace UI {
 
 class Button : public View {
 public:
-    enum ActionTrigger {
-        MouseUp,
-        MouseDown,
+    struct ActionTrigger : Bitfield<uint8_t> {
+        static constexpr Bit MouseDown  = 1<<0;
+        static constexpr Bit MouseUp    = 1<<1;
+        using Bitfield::Bitfield;
     };
     
     // MARK: - Creation
@@ -27,9 +28,6 @@ public:
     // MARK: - Accessors
     auto& label() { return _label; }
     auto& key() { return _key; }
-    
-    const auto& mouseUpTracks() const { return _mouseUpTracks; }
-    template <typename T> bool mouseUpTracks(const T& x) { return _set(_mouseUpTracks, x); }
     
     const auto& highlighted() const { return _highlighted; }
     template <typename T> bool highlighted(const T& x) { return _set(_highlighted, x); }
@@ -92,29 +90,53 @@ public:
         // Only consider mouse events
         if (ev.type != Event::Type::Mouse) return false;
         
+//        if (!ev.mouseDown() && !ev.mouseUp()) return false; // Ignore mouse-moved for debugging
+        
         const bool hit = hitTest(ev.mouse.origin);
-        const bool mouseDownTriggered = (_actionTrigger==ActionTrigger::MouseDown && ev.mouseDown(_actionButtons));
-        const bool mouseUpTriggered = (_actionTrigger==ActionTrigger::MouseUp && ev.mouseUp(_actionButtons));
         highlighted(hit);
         
-        // Trigger action
-        if ((hit || tracking()) && (mouseDownTriggered || mouseUpTriggered)) {
-            
-            // Cleanup ourself before calling out
-            trackStop();
-            
-            if (hit && enabledWindow() && _action) {
-                _action(*this);
+        if (hit && enabledWindow()) {
+            if (ev.mouseDown(_actionButtons)) {
+                _actionTriggerState = 0;
+                _actionTriggerState |= ActionTrigger::MouseDown;
+            } else if (ev.mouseUp(_actionButtons)) {
+                _actionTriggerState |= ActionTrigger::MouseUp;
             }
-            
-            return true;
         }
         
-        // We allow both mouse-down and mouse-up events to trigger tracking.
-        // Mouse-up events are to allow Menu to use this function for context
-        // menus: right-mouse-down opens the menu, while the right-mouse-up
-        // triggers the Button action via this function.
-        if (hit && (ev.mouseDown(_actionButtons) || (_mouseUpTracks && ev.mouseUp(_actionButtons)))) {
+//                  ud
+//        trigger = 01
+//        state   = 11
+//        
+//        trigger = 10
+//        state   = 11
+//        
+//        trigger = 11
+//        state   = 10
+        
+//        const bool trigger = (_actionTriggerState == _actionTrigger);
+        const bool trigger = ((_actionTriggerState & _actionTrigger) == _actionTrigger);
+        
+        // Cleanup ourself on mouse-up
+        if (ev.mouseUp(_actionButtons)) {
+            _actionTriggerState = 0;
+            trackStop();
+        }
+        
+        // Trigger action
+        if (trigger) {
+            // Reset _actionTriggerState when we trigger to prevent further triggers
+            // until the next mouse-down.
+            // This is necessary in the case where _actionTrigger==MouseDown. If we didn't
+            // clear _actionTriggerState upon triggering, then we'd trigger again on
+            // MouseUp, because _actionTriggerState still had the MouseDown bit set.
+            _actionTriggerState = 0;
+            if (_action) {
+                _action(*this);
+            }
+        }
+        
+        if (hit && ev.mouseDown(_actionButtons) && !screen().eventSince(ev)) {
             // Track mouse
             track(ev);
             return true;
@@ -129,7 +151,6 @@ private:
     LabelPtr _label = subviewCreate<Label>();
     LabelPtr _key = subviewCreate<Label>();
     
-    bool _mouseUpTracks = false;
     bool _highlighted = false;
     bool _mouseActive = false;
     bool _bordered = false;
@@ -137,7 +158,8 @@ private:
     std::optional<attr_t> _labelDefaultAttr;
     std::function<void(Button&)> _action;
     Event::MouseButtons _actionButtons = Event::MouseButtons::Left;
-    ActionTrigger _actionTrigger = ActionTrigger::MouseUp;
+    ActionTrigger _actionTrigger = ActionTrigger::MouseDown | ActionTrigger::MouseUp;
+    ActionTrigger _actionTriggerState = 0;
 };
 
 using ButtonPtr = std::shared_ptr<Button>;

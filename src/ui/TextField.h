@@ -90,6 +90,9 @@ public:
     const auto& attrUnfocused() const { return _attrUnfocused; }
     template <typename T> bool attrUnfocused(const T& x) { return _setForce(_attrUnfocused, x); }
     
+    const auto& trackWhileFocused() const { return _trackWhileFocused; }
+    template <typename T> bool trackWhileFocused(const T& x) { return _set(_trackWhileFocused, x); }
+    
     const auto& valueChangedAction() const { return _valueChangedAction; }
     template <typename T> bool valueChangedAction(const T& x) { return _setForce(_valueChangedAction, x); }
     
@@ -137,46 +140,55 @@ private:
             if (enabledWindow()) {
                 const bool hit = hitTest(ev.mouse.origin);
                 
-                if ((ev.mouseDown() && hit) || tracking()) {
+                if (ev.mouseDown()) {
+                    _dragging = true;
+                } else if (ev.mouseUp()) {
+                    _dragging = false;
+                }
+                
+                if ((ev.mouseDown() && hit) || _dragging) {
                     // Update the cursor position to the clicked point
                     int offX = ev.mouse.origin.x-_alignOff();
                     auto offIt = UTF8::NextN(_left(), _value.end(), offX);
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
                 
-                if (ev.mouseDown()) {
-                    if (hit && !_focused) {
-                        if (_focusAction) _focusAction(*this);
+                if (_trackWhileFocused) {
+                    if (ev.mouseDown()) {
+                        if (hit && !_focused) {
+                            if (_focusAction) _focusAction(*this);
+                            
+                            if (_focused) {
+                                track(ev);
+                                return true;
+                            }
                         
-                        if (_focused) {
-                            track(ev);
-                            return true;
-                        }
-                    
-                    } else if (!hit && _focused) {
-                        if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
-                        
-                        if (!_focused) {
-                            trackStop();
-                            return true;
+                        } else if (!hit && _focused) {
+                            if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Return);
+                            
+                            if (!_focused) {
+                                trackStop();
+                                return true;
+                            }
                         }
                     }
-                }
                 
-//                if (ev.mouseDown() && hit && !tracking()) {
-//                    // Track mouse
-//                    // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
-//                    // calling track() within its stack frame).
-//                    // If it did, then it may have consumed a mouse-up event, which will break our tracking.
-//                    // So in that case, just don't track until the next mouse down.
-//                    const bool trackAllowed = !screen().eventsSince(ev);
-//                    if (trackAllowed) track(ev);
-//                    return true;
-//                
-//                } else if (ev.mouseUp() && tracking()) {
-//                    trackStop();
-//                    return true;
-//                }
+                } else {
+                    if (ev.mouseDown() && hit && !_dragging) {
+                        // Track mouse
+                        // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+                        // calling track() within its stack frame).
+                        // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+                        // So in that case, just don't track until the next mouse down.
+                        const bool trackAllowed = !screen().eventSince(ev);
+                        if (trackAllowed) track(ev);
+                        return true;
+                    
+                    } else if (ev.mouseUp() && _dragging) {
+                        trackStop();
+                        return true;
+                    }
+                }
             }
         
         } else if (_focusedAndEnabled()) {
@@ -246,6 +258,7 @@ private:
             
             } else if (ev.type == Event::Type::KeyTab) {
                 if (_unfocusAction) _unfocusAction(*this, UnfocusReason::Tab);
+                if (_trackWhileFocused)
                 return true;
             
             } else if (ev.type == Event::Type::KeyBackTab) {
@@ -312,11 +325,13 @@ private:
     Align _align = Align::Left;
     attr_t _attrFocused = WA_UNDERLINE;
     attr_t _attrUnfocused = WA_UNDERLINE | colors().dimmed;
+    bool _trackWhileFocused = true;
     
     std::function<void(TextField&)> _valueChangedAction;
     std::function<void(TextField&)> _focusAction;
     std::function<void(TextField&, UnfocusReason)> _unfocusAction;
     
+    bool _dragging = false;
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
     bool _focused = false;

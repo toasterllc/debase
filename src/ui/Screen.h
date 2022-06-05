@@ -255,8 +255,8 @@ public:
         return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
-    // eventsSince() returns whether events have occurred since the given event
-    virtual bool eventsSince(const Event& ev) {
+    // eventSince() returns whether events have occurred since the given event
+    virtual bool eventSince(const Event& ev) {
         return _eventId != ev.id+1;
     }
     

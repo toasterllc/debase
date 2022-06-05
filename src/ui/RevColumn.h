@@ -30,6 +30,7 @@ public:
         _nameField->align(Align::Center);
         _nameField->attrFocused(colors().menu | WA_UNDERLINE | WA_BOLD);
         _nameField->attrUnfocused(colors().menu | WA_BOLD);
+        _nameField->trackWhileFocused(true);
         
 //        _nameField->textAttr(colors().menu | WA_BOLD);
         
