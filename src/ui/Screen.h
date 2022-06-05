@@ -216,7 +216,7 @@ public:
             }
             
             Event ev = {
-                .id = _eventId,
+                .id = _eventCurrent.id+1,
                 .type = (Event::Type)ch,
                 .time = steady_clock::now(),
             };
@@ -245,8 +245,8 @@ public:
                 break;
             }}
             
-            // Increment the event id; we only do this once we're sure that we're returning the event
-            _eventId++;
+            // Only set _eventCurrent once we're sure that we're returning the event
+            _eventCurrent = ev;
             return ev;
         }
     }
@@ -255,9 +255,13 @@ public:
         return eventNext(std::chrono::steady_clock::now()+timeout);
     }
     
+    const Event& eventCurrent() const override {
+        return _eventCurrent;
+    }
+    
     // eventSince() returns whether events have occurred since the given event
     virtual bool eventSince(const Event& ev) {
-        return _eventId != ev.id+1;
+        return _eventCurrent.id != ev.id;
     }
     
 //    bool handleEvent(GraphicsState gstate, const Event& ev) override {
@@ -335,7 +339,7 @@ private:
     }
     
     _GraphicsStateSwapper _gstate = View::GStatePush({.screen=this});
-    Event::Id _eventId = 0;
+    Event _eventCurrent;
     ColorPalette _colors;
     CursorState _cursorState;
     bool _orderPanelsNeeded = false;
