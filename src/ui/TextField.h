@@ -60,7 +60,18 @@ public:
     const bool focused() const { return _focused; }
     bool focused(bool x) {
         const bool set = _set(_focused, x);
-        if (set) eraseNeeded(true);
+        if (set) {
+            eraseNeeded(true);
+            
+            if (_trackWhileFocused) {
+                if (_focused) {
+                    track();
+                } else {
+                    trackStop();
+                }
+            }
+        }
+        
         return set;
     }
     
@@ -141,152 +152,126 @@ private:
     bool _handleEvent(const Event& ev) {
         if (ev.type == Event::Type::Mouse) {
             if (enabledWindow()) {
-                const bool hit = hitTest(ev.mouse.origin);
-                const bool handled = ((ev.mouseDown() && hit) || (ev.mouseUp() && _dragging));
+//                if (!ev.mouseDown(Event::MouseButtons::Any) && !ev.mouseDown(Event::MouseButtons::Any)) return ;
                 
-                if (ev.mouseDown() && hit) {
-                    _dragging = true;
-                } else if (ev.mouseUp()) {
-                    _dragging = false;
+                const bool hit = hitTest(ev.mouse.origin);
+                const bool handled = ((ev.mouseDown() && hit) || (ev.mouseUp() && _drag));
+//                const bool dragPrev = _drag;
+//                
+//                if (ev.mouseDown() && hit) {
+//                    _drag = true;
+//                } else if (ev.mouseUp()) {
+//                    _drag = false;
+//                }
+//                
+//                if ((ev.mouseDown() && hit) || _drag) {
+//                    // Update the cursor position to the clicked point
+//                    int offX = ev.mouse.origin.x-_alignOff();
+//                    auto offIt = UTF8::NextN(_left(), _value.end(), offX);
+//                    _offCursor = std::distance(_value.begin(), offIt);
+//                }
+//                
+//                if (_trackWhileFocused) {
+//                    if (ev.mouseDown()) {
+//                        if (hit && !_focused) {
+//                            _focus();
+//                        } else if (!hit && _focused) {
+//                            _unfocus(UnfocusReason::Click);
+//                        }
+//                    }
+//                
+//                } else {
+//                    if (ev.mouseDown() && hit && !_focused) {
+//                        _focus();
+//                    }
+//                    
+//                    if (ev.mouseDown() && hit && !_drag) {
+//                        // Track mouse
+//                        // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+//                        // calling track() within its stack frame).
+//                        // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+//                        // So in that case, just don't track until the next mouse down.
+//                        const bool trackAllowed = !screen().eventSince(ev);
+//                        if (trackAllowed) track();
+//                    
+//                    } else if (ev.mouseUp() && _drag) {
+//                        trackStop();
+//                    }
+//                }
+                
+                if (ev.mouseDown() && hit && !_drag) {
+                    _drag = true;
+                } else if (ev.mouseUp() && _drag) {
+                    _drag = false;
                 }
                 
-                if ((ev.mouseDown() && hit) || _dragging) {
+                if ((ev.mouseDown() && hit) || _drag) {
                     // Update the cursor position to the clicked point
                     int offX = ev.mouse.origin.x-_alignOff();
                     auto offIt = UTF8::NextN(_left(), _value.end(), offX);
                     _offCursor = std::distance(_value.begin(), offIt);
                 }
                 
-                if (_trackWhileFocused) {
-                    if (ev.mouseDown()) {
-                        if (hit && !_focused) {
-                            _focus();
-                        } else if (!hit && _focused) {
-                            _unfocus(UnfocusReason::Click);
-                        }
+                if (ev.mouseDown() && hit && !_focused) {
+                    _focus();
+                } else if (ev.mouseDown(Event::MouseButtons::Any) && !hit && _focused) {
+                    _unfocus(UnfocusReason::Click);
+                }
+                
+                if (_drag && !_dragTrack) {
+                    // Track mouse
+                    // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+                    // calling track() within its stack frame).
+                    // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+                    // So in that case, just don't track until the next mouse down.
+                    if (!screen().eventSince(ev)) {
+                        _dragTrack = true;
+                        track();
                     }
                 
-                } else {
-                    if (ev.mouseDown() && hit && !_focused) {
-                        _focus();
-                    }
-                    
-                    if (ev.mouseDown() && hit && !_dragging) {
-                        // Track mouse
-                        // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
-                        // calling track() within its stack frame).
-                        // If it did, then it may have consumed a mouse-up event, which will break our tracking.
-                        // So in that case, just don't track until the next mouse down.
-                        const bool trackAllowed = !screen().eventSince(ev);
-                        if (trackAllowed) track();
-                    
-                    } else if (ev.mouseUp() && _dragging) {
-                        trackStop();
-                    }
+                } else if (!_drag && _dragTrack) {
+                    _dragTrack = false;
+                    trackStop();
                 }
+                
+//                if (_drag != dragPrev) {
+//                    if (_drag) {
+//                        // Track mouse
+//                        // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+//                        // calling track() within its stack frame).
+//                        // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+//                        // So in that case, just don't track until the next mouse down.
+//                        const bool trackAllowed = !screen().eventSince(ev);
+//                        if (trackAllowed) track();
+//                    
+//                    } else {
+//                        trackStop();
+//                    }
+//                }
+                
+//                if (ev.mouseDown() && hit && !_drag) {
+//                    _drag = true;
+//                    // Track mouse
+//                    // Only allow tracking if the callout above (_focusAction()) didn't consume events (ie by
+//                    // calling track() within its stack frame).
+//                    // If it did, then it may have consumed a mouse-up event, which will break our tracking.
+//                    // So in that case, just don't track until the next mouse down.
+//                    const bool trackAllowed = !screen().eventSince(ev);
+//                    if (trackAllowed) track();
+//                
+//                } else if (ev.mouseUp() && _drag) {
+//                    _drag = false;
+//                    trackStop();
+//                }
                 
                 return handled;
             }
         
         } else if (_focusedAndEnabled()) {
-            if (ev.type == Event::Type::KeyDelete) {
-                auto cursor = _cursor();
-                if (cursor == _value.begin()) return true;
-                
-                auto eraseBegin = UTF8::Prev(cursor, _value.begin());
-                size_t eraseSize = std::distance(eraseBegin, cursor);
-                _value.erase(eraseBegin, cursor);
-                _offCursor -= eraseSize;
-                _offUpdate();
-                
-                if (_valueChangedAction) _valueChangedAction(*this);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyFnDelete) {
-                auto cursor = _cursor();
-                if (cursor == _value.end()) return true;
-                
-                auto eraseEnd = UTF8::Next(cursor, _value.end());
-                _value.erase(cursor, eraseEnd);
-                _offUpdate();
-                
-                if (_valueChangedAction) _valueChangedAction(*this);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyLeft) {
-                auto cursor = _cursor();
-                if (cursor == _value.begin()) return true;
-                
-                // If the cursor's at the display-beginning, shift view left
-                if (cursor == _cursorMin()) {
-                    auto left = UTF8::Prev(_left(), _value.begin());
-                    _offLeft = std::distance(_value.begin(), left);
-                }
-                
-                auto it = UTF8::Prev(cursor, _value.begin());
-                _offCursor = std::distance(_value.begin(), it);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyRight) {
-                auto cursor = _cursor();
-                if (cursor == _value.end()) return true;
-                
-                // If the cursor's at the display-end, shift view right
-                if (cursor == _cursorMax()) {
-                    auto left = UTF8::Next(_left(), _value.end());
-                    _offLeft = std::distance(_value.begin(), left);
-                }
-                
-                auto it = UTF8::Next(cursor, _value.end());
-                _offCursor = std::distance(_value.begin(), it);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyUp) {
-                _offLeft = _offLeftMin();
-                _offCursor = _offCursorMin();
-                _offUpdate();
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyDown) {
-                _offLeft = _offLeftMax();
-                _offCursor = _offCursorMax();
-                _offUpdate();
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyTab) {
-                _unfocus(UnfocusReason::Tab);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyBackTab) {
-                _unfocus(UnfocusReason::Tab);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyReturn) {
-                _unfocus(UnfocusReason::Return);
-                return true;
-            
-            } else if (ev.type == Event::Type::KeyEscape) {
-                _unfocus(UnfocusReason::Escape);
-                return true;
-            
-            } else {
-                const int c = (int)ev.type;
-                // Ignore the character if it's not UTF-8 (>=256), or if it's non-printable ASCII
-                if (c>=256 || (c<128 && !isprint(c))) return false;
-                
-                // If the cursor's at the display-end, shift view right
-                if (_cursor() == _cursorMax()) {
-                    auto left = UTF8::Next(_left(), _value.end());
-                    _offLeft = std::distance(_value.begin(), left);
-                }
-                
-                _value.insert(_cursor(), c);
-                _offCursor++;
-                _offUpdate();
-                
-                if (_valueChangedAction) _valueChangedAction(*this);
-                return true;
+            if (!_drag) {
+                _handleKey(ev);
             }
+            return true;
         }
         
         return false;
@@ -322,10 +307,6 @@ private:
         
         if (_focusAction) _focusAction(*this);
         if (!_focused) return;
-        
-        if (_trackWhileFocused) {
-            track();
-        }
     }
     
     void _unfocus(UnfocusReason reason) {
@@ -333,8 +314,96 @@ private:
         
         if (_unfocusAction) _unfocusAction(*this, reason);
         if (_focused) return;
+    }
+    
+    void _handleKey(const Event& ev) {
+        if (ev.type == Event::Type::KeyDelete) {
+            auto cursor = _cursor();
+            if (cursor == _value.begin()) return;
+            
+            auto eraseBegin = UTF8::Prev(cursor, _value.begin());
+            size_t eraseSize = std::distance(eraseBegin, cursor);
+            _value.erase(eraseBegin, cursor);
+            _offCursor -= eraseSize;
+            _offUpdate();
+            
+            if (_valueChangedAction) _valueChangedAction(*this);
         
-        trackStop();
+        } else if (ev.type == Event::Type::KeyFnDelete) {
+            auto cursor = _cursor();
+            if (cursor == _value.end()) return;
+            
+            auto eraseEnd = UTF8::Next(cursor, _value.end());
+            _value.erase(cursor, eraseEnd);
+            _offUpdate();
+            
+            if (_valueChangedAction) _valueChangedAction(*this);
+        
+        } else if (ev.type == Event::Type::KeyLeft) {
+            auto cursor = _cursor();
+            if (cursor == _value.begin()) return;
+            
+            // If the cursor's at the display-beginning, shift view left
+            if (cursor == _cursorMin()) {
+                auto left = UTF8::Prev(_left(), _value.begin());
+                _offLeft = std::distance(_value.begin(), left);
+            }
+            
+            auto it = UTF8::Prev(cursor, _value.begin());
+            _offCursor = std::distance(_value.begin(), it);
+        
+        } else if (ev.type == Event::Type::KeyRight) {
+            auto cursor = _cursor();
+            if (cursor == _value.end()) return;
+            
+            // If the cursor's at the display-end, shift view right
+            if (cursor == _cursorMax()) {
+                auto left = UTF8::Next(_left(), _value.end());
+                _offLeft = std::distance(_value.begin(), left);
+            }
+            
+            auto it = UTF8::Next(cursor, _value.end());
+            _offCursor = std::distance(_value.begin(), it);
+        
+        } else if (ev.type == Event::Type::KeyUp) {
+            _offLeft = _offLeftMin();
+            _offCursor = _offCursorMin();
+            _offUpdate();
+        
+        } else if (ev.type == Event::Type::KeyDown) {
+            _offLeft = _offLeftMax();
+            _offCursor = _offCursorMax();
+            _offUpdate();
+        
+        } else if (ev.type == Event::Type::KeyTab) {
+            _unfocus(UnfocusReason::Tab);
+        
+        } else if (ev.type == Event::Type::KeyBackTab) {
+            _unfocus(UnfocusReason::Tab);
+        
+        } else if (ev.type == Event::Type::KeyReturn) {
+            _unfocus(UnfocusReason::Return);
+        
+        } else if (ev.type == Event::Type::KeyEscape) {
+            _unfocus(UnfocusReason::Escape);
+        
+        } else {
+            const int c = (int)ev.type;
+            // Ignore the character if it's not UTF-8 (>=256), or if it's non-printable ASCII
+            if (c>=256 || (c<128 && !isprint(c))) return;
+            
+            // If the cursor's at the display-end, shift view right
+            if (_cursor() == _cursorMax()) {
+                auto left = UTF8::Next(_left(), _value.end());
+                _offLeft = std::distance(_value.begin(), left);
+            }
+            
+            _value.insert(_cursor(), c);
+            _offCursor++;
+            _offUpdate();
+            
+            if (_valueChangedAction) _valueChangedAction(*this);
+        }
     }
     
     std::string _value;
@@ -347,7 +416,8 @@ private:
     std::function<void(TextField&)> _focusAction;
     std::function<void(TextField&, UnfocusReason)> _unfocusAction;
     
-    bool _dragging = false;
+    bool _drag = false;
+    bool _dragTrack = false;
     ssize_t _offLeft = 0;
     ssize_t _offCursor = 0;
     bool _focused = false;

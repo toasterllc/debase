@@ -709,8 +709,9 @@ private:
         for (UI::RevColumnPtr col : _columns) {
             if (col->rev() == rev) return col;
         }
-        // Programmer error if it doesn't exist
-        abort();
+        return nullptr;
+//        // Programmer error if it doesn't exist
+//        abort();
     }
     
     UI::CommitPanelPtr _panelForCommit(UI::RevColumnPtr col, Git::Commit commit) {
@@ -772,8 +773,6 @@ private:
     }
     
     void _revColumnNameSetFocused(UI::RevColumnPtr fcol, bool commit, bool moveCursor) {
-        bool reload = false;
-        
         // If the given column isn't mutable, then pretend as if we were given nullptr
         if (fcol && !fcol->rev().isMutable()) {
             fcol = nullptr;
@@ -796,7 +795,8 @@ private:
                         State::History& h = _repoState.history(rev.ref);
                         h.push(State::HistoryRefState(rev.ref));
                         
-                        reload = true;
+                        _reload();
+                    
                     } catch (const Git::Error& e) {
                         std::string errorMsg;
                         switch (e.error) {
@@ -833,22 +833,37 @@ private:
             }
         }
         
-        for (UI::RevColumnPtr col : _columns) {
-            const bool focused = (col == fcol);
-            col->nameField()->value(col->name(focused));
-            if (moveCursor) {
-                col->nameField()->focused(focused);
-                col->nameField()->seek(UI::Align::Right);
-            } else {
-                col->nameField()->focused(focused);
-            }
+        if (_columnNameFocused) {
+            _columnNameFocused->nameField()->value(_columnNameFocused->name(false));
+            _columnNameFocused->nameField()->focused(false);
         }
         
         _columnNameFocused = fcol;
         
-        if (reload) {
-            _reload();
+        if (_columnNameFocused) {
+            _columnNameFocused->nameField()->value(_columnNameFocused->name(true));
+            if (moveCursor) _columnNameFocused->nameField()->seek(UI::Align::Right);
+            _columnNameFocused->nameField()->focused(true);
         }
+        
+//        // Unfocus all columns
+//        for (UI::RevColumnPtr col : _columns) {
+//            const bool focused = (col == fcol);
+//            col->nameField()->value(col->name(focused));
+//            col->nameField()->focused(false);
+//            if (moveCursor) {
+//                col->nameField()->focused(focused);
+//                col->nameField()->seek(UI::Align::Right);
+//            } else {
+//                col->nameField()->focused(focused);
+//            }
+//        }
+//        
+//        _columnNameFocused = fcol;
+//        
+//        if (reload) {
+//            _reload();
+//        }
     }
     
     void _revColumnNameFocus(UI::RevColumnPtr col) {
@@ -1002,6 +1017,8 @@ private:
         }
         
         UI::RevColumnPtr selectionColumn = _columnForRev(_selection.rev);
+        if (!selectionColumn) abort();
+        
         Git::Commit titleCommit = _FindLatestCommit(_selection.rev.commit, _selection.commits);
         UI::CommitPanelPtr titlePanel = _panelForCommit(selectionColumn, titleCommit);
         
@@ -1292,6 +1309,8 @@ private:
         
         // It's possible that col==null because the new column is offscreen!
         const UI::RevColumnPtr branchCol = _columnForRev(branchRev);
+        if (!branchCol) return;
+        
         _revColumnNameSetFocused(branchCol, false, true);
     }
     
@@ -1326,6 +1345,7 @@ private:
         
         if (menuButton == createBranchButton.get()) {
             assert(_selection.commits.size() == 1);
+            menu = nullptr;
             const Rev& rev = mouseDownColumn->rev();
             const Git::Commit& commit = *_selection.commits.begin();
             _branchCreateFromRev(rev, commit);
