@@ -860,6 +860,7 @@ private:
             // Ignore tabs
             break;
         case UI::TextField::UnfocusReason::Return:
+        case UI::TextField::UnfocusReason::Click:
             _revColumnNameSetFocused(nullptr, true, false);
             break;
         case UI::TextField::UnfocusReason::Escape:

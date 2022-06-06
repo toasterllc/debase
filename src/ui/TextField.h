@@ -12,6 +12,7 @@ public:
         Tab,
         Return,
         Escape,
+        Click,
     };
     
     bool layoutNeeded() const override { return true; }
@@ -161,7 +162,7 @@ private:
                         if (hit && !_focused) {
                             _focus();
                         } else if (!hit && _focused) {
-                            _unfocus(UnfocusReason::Return);
+                            _unfocus(UnfocusReason::Click);
                         }
                     }
                 

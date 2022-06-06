@@ -182,6 +182,11 @@ private:
         case TextField::UnfocusReason::Escape: {
             dismiss();
             break;
+        }
+        
+        case TextField::UnfocusReason::Click: {
+            // Ignore clicks
+            break;
         }}
     }
     
