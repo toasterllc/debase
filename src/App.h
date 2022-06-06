@@ -837,7 +837,8 @@ private:
             const bool focused = (col == fcol);
             col->nameField()->value(col->name(focused));
             if (moveCursor) {
-                col->nameField()->focused(focused, UI::Align::Right);
+                col->nameField()->focused(focused);
+                col->nameField()->seek(UI::Align::Right);
             } else {
                 col->nameField()->focused(focused);
             }

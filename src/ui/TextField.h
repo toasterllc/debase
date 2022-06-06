@@ -58,27 +58,27 @@ public:
 //    }
     
     const bool focused() const { return _focused; }
-    bool focused(bool x, std::optional<Align> align=std::nullopt) {
+    bool focused(bool x) {
         const bool set = _set(_focused, x);
         if (set) eraseNeeded(true);
-        
-        if (align) {
-            switch (*align) {
-            case Align::Left:
-                _offLeft = std::numeric_limits<ssize_t>::min();
-                _offCursor = std::numeric_limits<ssize_t>::min();
-                break;
-            case Align::Right:
-                _offLeft = std::numeric_limits<ssize_t>::max();
-                _offCursor = std::numeric_limits<ssize_t>::max();
-                break;
-            default:
-                abort();
-            }
-            _offUpdate();
-        }
-        
         return set;
+    }
+    
+    // seek(): move the cursor according to `align`
+    void seek(Align align) {
+        switch (align) {
+        case Align::Left:
+            _offLeft = std::numeric_limits<ssize_t>::min();
+            _offCursor = std::numeric_limits<ssize_t>::min();
+            break;
+        case Align::Right:
+            _offLeft = std::numeric_limits<ssize_t>::max();
+            _offCursor = std::numeric_limits<ssize_t>::max();
+            break;
+        default:
+            abort();
+        }
+        _offUpdate();
     }
     
     const auto& value() const { return _value; }
