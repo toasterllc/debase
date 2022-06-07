@@ -223,6 +223,8 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: improve UI of snapshots menu by separating the entries into 2 sections: 'Session Start' and 'Saved'
+    
     #warning TODO: add tag indicator for tag columns
     
     #warning TODO: add branch duplication; action menu? drag branch name? both?

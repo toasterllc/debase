@@ -47,6 +47,9 @@ public:
         return _ButtonHeight;
     }
     
+    // focusable(): override Alert implementation because we don't want to affect cursor
+    bool focusable() const override { return false; }
+    
     auto& registerButton() { return _registerButton; }
     
 private:

@@ -18,6 +18,11 @@ public:
         truncateEdges                   (UI::Edges{.l=0, .r=0, .t=0, .b=1});
     }
     
+    // MARK: - Alert Overrides
+    
+    // focusable(): override Alert implementation because we don't want to affect cursor
+    bool focusable() const override { return false; }
+    
     bool handleEvent(const Event& ev) override {
         const bool hit = hitTest(ev.mouse.origin);
         const bool mouseDown = ev.mouseDown(Event::MouseButtons::Left|Event::MouseButtons::Right);
