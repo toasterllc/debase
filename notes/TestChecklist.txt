@@ -89,11 +89,7 @@ Executing debase outside of git repo shows error dialog
 If the current branch has uncomitted changes, debase considers all instances of that
 branch read-only (eg master, master~10, and other skip'd instances)
 
-Running debase from outside of a git repo shows an error and then exits
-
 Modifying currently-checked-out branch lazily detaches head / reattaches head upon exit
-
-Delete commits using delete key
 
 Moving mouse and exiting debase doesn't result in mouse-moved escape sequences being printed to terminal
 
@@ -108,6 +104,15 @@ Recent tags/branches correctly reflects:
     git reflog | grep 'checkout:'
 
 When deleting the branch that's checked out, debase doesn't try to check out the branch when exiting (since it no longer exists)
+
+
+* Keys
+
+Create branch with 'b' key
+Combine commits with 'c' key
+Edit commits with return key
+Delete commits using delete key
+
 
 * Edit commit
 Edit commit with double-click
@@ -124,6 +129,9 @@ Copy commits allowed
 Move commits disallowed
 Delete commits disallowed
 Edit commit disallowed
+Rename 'branch' disallowed
+Duplicate 'branch' allowed
+Delete 'branch' disallowed
 
 
 * Register window

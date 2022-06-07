@@ -391,6 +391,7 @@ private:
     struct _LoadedRef {
         _RefState refState;
         bool created = false; // Whether the ref was created during this session
+        bool snapshotInitialPushed = false;
         History historyPrev;
         Snapshot snapshotInitial;
     };
@@ -533,16 +534,6 @@ public:
             const History& refHistoryPrev = lref.historyPrev;
             const bool historyChanged = refHistory!=refHistoryPrev;
             
-            if (historyChanged) {
-                std::vector<Snapshot> snapshots = lref.refState.snapshots;
-//                snapshots.push_back(refHistory.get().refState); // Not sure why we had this? When the history is modified, we only want to create a snapshot containing the initial state right?
-                snapshots.push_back(lref.snapshotInitial);
-                // Remove duplicate snapshots and sort them
-                snapshots = _CleanSnapshots(snapshots);
-                
-                lref.refState.snapshots = snapshots;
-            }
-            
             if (lref.created || historyChanged) {
                 repoState.refStates[ref] = lref.refState;
             }
@@ -552,19 +543,30 @@ public:
         _RepoStateWrite(_RepoStateFilePath(_repoStateDir), repoState);
     }
     
-    Snapshot& initialSnapshot(const Git::Ref& ref) {
+    const std::vector<Snapshot>& snapshots(const Git::Ref& ref) {
+        _LoadedRef& lref = _loadRef(ref);
+        return lref.refState.snapshots;
+    }
+    
+    Snapshot& snapshotInitial(const Git::Ref& ref) {
         _LoadedRef& lref = _loadRef(ref);
         return lref.snapshotInitial;
+    }
+    
+    void snapshotInitialPush(const Git::Ref& ref) {
+        _LoadedRef& lref = _loadRef(ref);
+        if (lref.snapshotInitialPushed) return;
+        lref.snapshotInitialPushed = true;
+        
+        std::vector<Snapshot> snapshots = lref.refState.snapshots;
+        snapshots.push_back(lref.snapshotInitial);
+        snapshots = _CleanSnapshots(snapshots);
+        lref.refState.snapshots = snapshots;
     }
     
     History& history(const Git::Ref& ref) {
         _LoadedRef& lref = _loadRef(ref);
         return lref.refState.history;
-    }
-    
-    const std::vector<Snapshot>& snapshots(const Git::Ref& ref) {
-        _LoadedRef& lref = _loadRef(ref);
-        return lref.refState.snapshots;
     }
     
     void refReplace(const Git::Ref& refPrev, const Git::Ref& ref) {

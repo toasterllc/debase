@@ -810,6 +810,8 @@ private:
                         
                         State::History& h = _repoState.history(rev.ref);
                         h.push(State::HistoryRefState(rev.ref));
+                        // We made a modification -- push the initial snapshot
+                        _repoState.snapshotInitialPush(rev.ref);
                         
                         _reload();
                     
@@ -1384,7 +1386,7 @@ private:
             auto alert = _panelPresent<UI::ErrorAlert>();
             alert->width                        (50);
             alert->title()->text                ("Confirm Delete");
-            alert->message()->text              ("Deleting a branch can't be undone.\n\nAre you sure you want to delete this ref?");
+            alert->message()->text              ("Deleting refs cannot be undone.\n\nAre you sure you want to delete it?");
             alert->okButton()->label()->text    ("Delete");
             alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
@@ -1498,7 +1500,7 @@ private:
         UI::SnapshotButton* menuButton = nullptr;
         Git::Ref ref = col->rev().ref;
         std::vector<UI::ButtonPtr> buttons = {
-            _makeSnapshotMenuButton(ref, _repoState.initialSnapshot(ref), true, menuButton),
+            _makeSnapshotMenuButton(ref, _repoState.snapshotInitial(ref), true, menuButton),
         };
         
         const std::vector<State::Snapshot>& snapshots = _repoState.snapshots(ref);
@@ -1535,6 +1537,9 @@ private:
                 // invalidates the existing history, so the pre-existing `h` is no longer valid.
                 State::History& h = _repoState.history(ref);
                 h.push(State::HistoryRefState(ref));
+                // We made a modification -- push the initial snapshot
+                _repoState.snapshotInitialPush(ref);
+                
                 // Clear the selection when restoring a snapshot
                 _selection = {};
                 _reload();
@@ -1566,6 +1571,9 @@ private:
             State::History& h = _repoState.history(rev.ref);
             if (undo) h.prev();
             else      h.next();
+            
+            // We made a modification -- push the initial snapshot
+            _repoState.snapshotInitialPush(rev.ref);
         
         } catch (const std::exception& e) {
             if (undo) throw Toastbox::RuntimeError("undo failed: %s", e.what());
@@ -1599,6 +1607,8 @@ private:
             refState.selection = State::Convert(opResult->src.selection);
             refState.selectionPrev = State::Convert(opResult->src.selectionPrev);
             srcHistory->push(refState);
+            // We made a modification -- push the initial snapshot
+            _repoState.snapshotInitialPush(srcRev.ref);
         }
         
         State::History* dstHistory = (dstRev.ref ? &_repoState.history(dstRev.ref) : nullptr);
@@ -1607,6 +1617,8 @@ private:
             refState.selection = State::Convert(opResult->dst.selection);
             refState.selectionPrev = State::Convert(opResult->dst.selectionPrev);
             dstHistory->push(refState);
+            // We made a modification -- push the initial snapshot
+            _repoState.snapshotInitialPush(dstRev.ref);
         }
         
         // Update the selection
