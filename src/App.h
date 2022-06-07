@@ -49,6 +49,7 @@ public:
     App(Git::Repo repo, const std::vector<Rev>& revs) :
     Screen(Uninit), _repo(repo), _revs(revs) {}
     
+    // focusable(): override to affect cursor state
     bool focusable() const override { return true; }
     
     using UI::Screen::layout;
