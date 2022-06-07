@@ -86,7 +86,13 @@ public:
     }
     
     const auto& value() const { return _value; }
-    template <typename T> bool value(const T& x) { return _set(_value, x); }
+    template <typename T> bool value(const T& x) {
+        const bool set = _set(_value, x);
+        if (!set) return false;
+        // When setting our value, move the cursor to the end
+        seek(UI::Align::Right);
+        return true;
+    }
     
     const auto& align() const { return _align; }
     template <typename T> bool align(const T& x) { return _set(_align, x); }
