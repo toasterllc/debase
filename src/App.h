@@ -1268,6 +1268,7 @@ private:
     //   detached commit -> branch
     void _revCreate(_RevCreateType type, const Rev& revTemplate, const Git::Commit& commit) {
         std::string name;
+        bool suffixRequired = true;
         if (revTemplate.ref) {
             if (revTemplate.ref.isBranch()) {
                 name = _repo.branchNameLocal(Git::Branch::ForRef(revTemplate.ref));
@@ -1276,12 +1277,17 @@ private:
             }
         } else {
             name = "NewBranch";
+            suffixRequired = false;
         }
+        
+        assert(!name.empty());
         
         // Keep appending a new suffix until we find an unused ref name
         Git::Ref ref;
         for (size_t i=0; i<20; i++) {
-            assert(!name.empty());
+            // If a suffix is required and this iteration is the non-suffix
+            // iteration (i=0), then skip this iteration.
+            if (!i && suffixRequired) continue;
             
             std::string fullName = name;
             // When i=0, don't append a suffix
@@ -1294,6 +1300,7 @@ private:
                     fullName += suffix;
                 }
             }
+            
             try {
                 switch (type) {
                 case _RevCreateType::MatchTemplate:
