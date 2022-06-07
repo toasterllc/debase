@@ -223,6 +223,8 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: add tag indicator for tag columns
+    
     #warning TODO: add branch duplication; action menu? drag branch name? both?
     #warning TODO:   add branch to reflog so that it appears in subsequent launches
     

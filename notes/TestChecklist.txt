@@ -28,19 +28,28 @@ History lost when head commit doesn't match saved commit
 
 <rev>~3 syntax works, and branch is editable
 
-Executing debase outside of git repo shows error dialog
-
 Moving/copying commits between branch and branch~4 works as expected, included updating the undo state
 
 
 * General tag editing: same as 'General branch editing'
 
 
-* Creating branches
+* Create branch: right click commit > 'Branch'
 
-Create branch from commit within regular branch
-Create branch from commit within remote-tracking branch
-Create branch from commit within tag
+Source = regular branch
+Source = remote-tracking branch
+Source = tag
+Source = detached commit (ie read-only)
+
+
+* Create branch: right click branch > 'Duplicate'
+
+Source = regular branch
+Source = remote-tracking branch
+Source = detached commit (ie read-only)
+
+
+* Create tag: right click tag > 'Duplicate'
 
 
 * Renaming branches
@@ -48,7 +57,7 @@ Create branch from commit within tag
 Rename currently-checked-out branch
     - snapshots retained
     - undo history retained
-    - exiting debase
+    - exiting debase checks out the new branch name
 
 Rename non-currently-checked-out branch
     - snapshots retained
@@ -75,6 +84,8 @@ Conflict window doesn't appear when copying/moving commits within same branch
 
 * Other features
 
+Executing debase outside of git repo shows error dialog
+
 If the current branch has uncomitted changes, debase considers all instances of that
 branch read-only (eg master, master~10, and other skip'd instances)
 
@@ -96,6 +107,7 @@ Ctrl-C exits while dragging context menu
 Recent tags/branches correctly reflects:
     git reflog | grep 'checkout:'
 
+When deleting the branch that's checked out, debase doesn't try to check out the branch when exiting (since it no longer exists)
 
 * Edit commit
 Edit commit with double-click

@@ -1001,16 +1001,18 @@ public:
         return refFullNameLookup(ref.fullName());
     }
     
-    Ref refCopy(const Ref& ref, const std::string& name) const {
-        if (ref.isLocalBranch()) {
-            return branchCreate(name, ref.commit(), false);
+    Ref refCopy(const Ref& ref, const std::string& name, Commit commit=nullptr) const {
+        if (!commit) commit = ref.commit();
+        
+        if (ref.isBranch()) {
+            return branchCreate(name, commit, false);
         
         } else if (ref.isTag()) {
             const Tag tag = Tag::ForRef(ref);
             if (const TagAnnotation ann = tag.annotation()) {
-                return tagCreateAnnotated(name, ref.commit(), ann.author(), ann.message());
+                return tagCreateAnnotated(name, commit, ann.author(), ann.message());
             } else {
-                return tagCreate(name, ref.commit());
+                return tagCreate(name, commit);
             }
         
         } else {

@@ -260,7 +260,7 @@ public:
             assert(_selection.commits.size() == 1);
             const Rev& rev = _selection.rev;
             const Git::Commit& commit = *_selection.commits.begin();
-            _branchCreateFromRev(rev, commit);
+            _revCreate(_RevCreateType::Branch, rev, commit);
             break;
         }
         
@@ -1257,28 +1257,57 @@ private:
         _selectionRect = std::nullopt;
     }
     
-    void _branchCreateFromRev(const Rev& rev, const Git::Commit& commit) {
-        std::string branchName = "NewBranch";
-        if (rev.ref) {
-            if (rev.ref.isBranch()) {
-                branchName = _repo.branchNameLocal(Git::Branch::ForRef(rev.ref));
+    enum class _RevCreateType {
+        MatchTemplate,
+        Branch,
+    };
+    
+    // _revCreate(): copies a given rev:
+    //   branch          -> branch
+    //   tag             -> tag
+    //   detached commit -> branch
+    void _revCreate(_RevCreateType type, const Rev& revTemplate, const Git::Commit& commit) {
+        std::string name;
+        if (revTemplate.ref) {
+            if (revTemplate.ref.isBranch()) {
+                name = _repo.branchNameLocal(Git::Branch::ForRef(revTemplate.ref));
             } else {
-                branchName = rev.ref.name();
+                name = revTemplate.ref.name();
             }
+        } else {
+            name = "NewBranch";
         }
         
-        // Keep appending a new suffix until we find an unused branch name
-        Git::Branch branch;
-        for (size_t i=2; i<10; i++) {
-            assert(!branchName.empty());
-            std::string name = branchName;
-            if (isdigit(branchName.back())) {
-                name += "-" + std::to_string(i);
-            } else {
-                name += std::to_string(i);
+        // Keep appending a new suffix until we find an unused ref name
+        Git::Ref ref;
+        for (size_t i=0; i<20; i++) {
+            assert(!name.empty());
+            
+            std::string fullName = name;
+            // When i=0, don't append a suffix
+            // This is to handle the case where !revTemplate.ref, so we use the default name (NewBranch)
+            if (i) {
+                const std::string suffix = std::to_string(i+1);
+                if (isdigit(name.back())) {
+                    fullName += "-" + suffix;
+                } else {
+                    fullName += suffix;
+                }
             }
             try {
-                branch = _repo.branchCreate(name, commit);
+                switch (type) {
+                case _RevCreateType::MatchTemplate:
+                    if (revTemplate.ref) {
+                        ref = _repo.refCopy(revTemplate.ref, fullName, commit);
+                    } else {
+                        ref = _repo.branchCreate(fullName, commit);
+                    }
+                    break;
+                case _RevCreateType::Branch:
+                    ref = _repo.branchCreate(fullName, commit);
+                    break;
+                }
+                
             } catch (const Git::Error& e) {
                 if (e.error == GIT_EEXISTS) continue;
                 throw;
@@ -1286,33 +1315,35 @@ private:
             break;
         }
         
-        if (!branch) throw Toastbox::RuntimeError("failed to find an unused branch name");
+        if (!ref) throw Toastbox::RuntimeError("failed to find an unused ref name");
         
-        // Remember the new branch in the reflog, so it's visible in subsequent debase launches
-        _repo.reflogRememberRef(branch);
+        // Remember the new ref in the reflog, so it's visible in subsequent debase launches
+        _repo.reflogRememberRef(ref);
         
-        const Rev branchRev(branch);
-        auto it = std::find(_revs.begin(), _revs.end(), rev);
+        const Rev rev(ref);
+        auto it = std::find(_revs.begin(), _revs.end(), revTemplate);
         assert(it != _revs.end());
-        _revs.insert(it+1, branchRev);
+        _revs.insert(it+1, rev);
         
-        // Set our selection to the first commit of the new branch
+        // Set our selection to the first commit of the new ref
         _selection = {
-            .rev = branchRev,
+            .rev = rev,
             .commits = {commit},
         };
         
         _reload();
         
-        // It's possible that col==null because the new column is offscreen!
-        const UI::RevColumnPtr branchCol = _columnForRev(branchRev);
-        if (!branchCol) return;
-        
-        _revColumnNameSetFocused(branchCol, false, true);
+        const UI::RevColumnPtr col = _columnForRev(rev);
+        if (!col) return; // It's possible that col==null because the new column is offscreen!
+        _revColumnNameSetFocused(col, false, true);
     }
     
     bool _columnCanRename(UI::RevColumnPtr col) {
         return col->rev().isMutable();
+    }
+    
+    bool _columnCanDuplicate(UI::RevColumnPtr col) {
+        return true;
     }
     
     bool _columnCanDelete(UI::RevColumnPtr col) {
@@ -1321,11 +1352,12 @@ private:
     
     void _trackContextMenuRevNameField(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn) {
         UI::Button* menuButton = nullptr;
-        UI::ButtonPtr renameButton  = _makeContextMenuButton("Rename", "",  _columnCanRename(mouseDownColumn), menuButton);
-        UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete…", "", _columnCanDelete(mouseDownColumn), menuButton);
+        UI::ButtonPtr renameButton      = _makeContextMenuButton("Rename",      "", _columnCanRename(mouseDownColumn),      menuButton);
+        UI::ButtonPtr duplicateButton   = _makeContextMenuButton("Duplicate",   "", _columnCanDuplicate(mouseDownColumn),   menuButton);
+        UI::ButtonPtr deleteButton      = _makeContextMenuButton("Delete…",     "", _columnCanDelete(mouseDownColumn),      menuButton);
         
         UI::MenuPtr menu = subviewCreate<UI::Menu>();
-        menu->buttons({ renameButton, deleteButton });
+        menu->buttons({ renameButton, duplicateButton, deleteButton });
         menu->sizeToFit(ConstraintNoneSize);
         menu->origin(mouseDownEvent.mouse.origin);
         menu->track();
@@ -1334,12 +1366,18 @@ private:
             menu = nullptr; // Hide menu before renaming begins
             _revColumnNameSetFocused(mouseDownColumn, true, true);
         
+        } else if (menuButton == duplicateButton.get()) {
+            menu = nullptr; // Hide menu before renaming begins
+            const Rev& rev = mouseDownColumn->rev();
+            const Git::Commit& commit = rev.commit;
+            _revCreate(_RevCreateType::MatchTemplate, rev, commit);
+        
         } else if (menuButton == deleteButton.get()) {
             std::optional<bool> clicked;
             auto alert = _panelPresent<UI::ErrorAlert>();
             alert->width                        (50);
             alert->title()->text                ("Confirm Delete");
-            alert->message()->text              ("Deleting a branch can't be undone.\n\nAre you sure you want to delete this branch?");
+            alert->message()->text              ("Deleting a branch can't be undone.\n\nAre you sure you want to delete this ref?");
             alert->okButton()->label()->text    ("Delete");
             alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
@@ -1389,7 +1427,7 @@ private:
             menu = nullptr;
             const Rev& rev = mouseDownColumn->rev();
             const Git::Commit& commit = *_selection.commits.begin();
-            _branchCreateFromRev(rev, commit);
+            _revCreate(_RevCreateType::Branch, rev, commit);
         
         } else if (menuButton == combineButton.get()) {
             gitOp = _GitOp{

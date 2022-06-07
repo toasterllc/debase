@@ -535,7 +535,7 @@ public:
             
             if (historyChanged) {
                 std::vector<Snapshot> snapshots = lref.refState.snapshots;
-                snapshots.push_back(refHistory.get().refState);
+//                snapshots.push_back(refHistory.get().refState); // Not sure why we had this? We only want to create a snapshot when the history is modified right?
                 snapshots.push_back(lref.snapshotInitial);
                 // Remove duplicate snapshots and sort them
                 snapshots = _CleanSnapshots(snapshots);
