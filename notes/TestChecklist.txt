@@ -105,6 +105,9 @@ Recent tags/branches correctly reflects:
 
 When deleting the branch that's checked out, debase doesn't try to check out the branch when exiting (since it no longer exists)
 
+With TrialCountdownAlert visible: make sure RevColumn cursor appears when editing RevColumn name
+
+With UpdateAvailableAlert visible: make sure RevColumn cursor appears when editing RevColumn name
 
 * Keys
 
