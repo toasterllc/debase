@@ -217,10 +217,6 @@ int main(int argc, const char* argv[]) {
 //    printf("%s\n", License::Calc().c_str());
 //    return 0;
     
-    #warning TODO: add branch/tag deleting by right-clicking branch name
-    
-    #warning TODO: add branch/tag renaming by right-clicking branch name
-    
     #warning TODO: linux:       run through TestChecklist.txt
     #warning TODO: macos-x86:   run through TestChecklist.txt
     #warning TODO: macos-arm64: run through TestChecklist.txt
@@ -261,6 +257,10 @@ int main(int argc, const char* argv[]) {
     #warning TODO: ? add feature requests field in register panel
     
 //  DONE:
+//    #warning TODO: add branch/tag deleting by right-clicking branch name
+//    
+//    #warning TODO: add branch/tag renaming by right-clicking branch name
+//    
 //    #warning TODO: why do we give an event to track()? whatever needs that event,
 //    #warning TODO:   can it get the event via eventCurrent(), or can we add a
 //    #warning TODO:   function to Screen to keep the last event returned by eventNext()?
