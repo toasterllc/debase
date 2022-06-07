@@ -408,6 +408,11 @@ struct Ref : RefCounted<git_reference*, git_reference_free> {
         return x;
     }
     
+//    void remove() const {
+//        int ir = git_reference_delete(*get());
+//        if (ir) throw Error(ir, "git_reference_delete failed");
+//    }
+    
     // To allow json serialization
     operator std::string() const {
         return fullName();

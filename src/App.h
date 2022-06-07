@@ -221,8 +221,11 @@ public:
             
             } else if (ev.mouseDown(UI::Event::MouseButtons::Right)) {
                 if (hitTest) {
-                    if (hitTest.panel) {
-                        std::optional<_GitOp> gitOp = _trackContextMenu(ev, hitTest.column, hitTest.panel);
+                    if (hitTest.nameField) {
+                        _trackContextMenuRevNameField(ev, hitTest.column);
+                    
+                    } else if (hitTest.panel) {
+                        std::optional<_GitOp> gitOp = _trackContextMenuCommitPanel(ev, hitTest.column, hitTest.panel);
                         if (gitOp) _gitOpExec(*gitOp);
                     }
                 }
@@ -357,7 +360,10 @@ public:
         // Reattach head upon return
         // We do this via Defer() so that it executes even if there's an exception
         Defer(
-            if (_headReattach) {
+            // We have a separate check for `_head`, which is necessary because we allow branches to be deleted,
+            // so if the branch that _head is attached to is deleted, _head is empty (ie _head==Rev()), in which
+            // case we don't want to try to reattach HEAD to it.
+            if (_headReattach && _head) {
                 // Restore previous head on exit
                 std::cout << "Restoring HEAD to " << _head.ref.name() << std::endl;
                 std::string err;
@@ -489,6 +495,7 @@ private:
     
     struct _HitTestResult {
         UI::RevColumnPtr column;
+        UI::TextFieldPtr nameField;
         UI::CommitPanelPtr panel;
         operator bool() const {
             return (bool)column;
@@ -650,7 +657,16 @@ private:
     
     _HitTestResult _hitTest(const UI::Point& p) {
         for (UI::RevColumnPtr col : _columns) {
-            UI::CommitPanelPtr panel = col->hitTestCommit(View::SubviewConvert(*col, p));
+            const UI::Point cp = View::SubviewConvert(*col, p);
+            UI::TextFieldPtr nameField = col->hitTestNameField(cp);
+            if (nameField) {
+                return {
+                    .column = col,
+                    .nameField = nameField,
+                };
+            }
+            
+            UI::CommitPanelPtr panel = col->hitTestCommit(cp);
             if (panel) {
                 return {
                     .column = col,
@@ -772,7 +788,7 @@ private:
         return _selection.rev.isMutable();
     }
     
-    void _revColumnNameSetFocused(UI::RevColumnPtr fcol, bool commit, bool moveCursor) {
+    void _revColumnNameSetFocused(UI::RevColumnPtr fcol, bool commit, bool seekCursor) {
         // If the given column isn't mutable, then pretend as if we were given nullptr
         if (fcol && !fcol->rev().isMutable()) {
             fcol = nullptr;
@@ -842,7 +858,7 @@ private:
         
         if (_columnNameFocused) {
             _columnNameFocused->nameField()->value(_columnNameFocused->name(true));
-            if (moveCursor) _columnNameFocused->nameField()->seek(UI::Align::Right);
+            if (seekCursor) _columnNameFocused->nameField()->seek(UI::Align::Right);
             _columnNameFocused->nameField()->focused(true);
         }
     }
@@ -1295,7 +1311,51 @@ private:
         _revColumnNameSetFocused(branchCol, false, true);
     }
     
-    std::optional<_GitOp> _trackContextMenu(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
+    bool _columnCanRename(UI::RevColumnPtr col) {
+        return col->rev().isMutable();
+    }
+    
+    bool _columnCanDelete(UI::RevColumnPtr col) {
+        return col->rev().isMutable();
+    }
+    
+    void _trackContextMenuRevNameField(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn) {
+        UI::Button* menuButton = nullptr;
+        UI::ButtonPtr renameButton  = _makeContextMenuButton("Rename", "",  _columnCanRename(mouseDownColumn), menuButton);
+        UI::ButtonPtr deleteButton  = _makeContextMenuButton("Delete…", "", _columnCanDelete(mouseDownColumn), menuButton);
+        
+        UI::MenuPtr menu = subviewCreate<UI::Menu>();
+        menu->buttons({ renameButton, deleteButton });
+        menu->sizeToFit(ConstraintNoneSize);
+        menu->origin(mouseDownEvent.mouse.origin);
+        menu->track();
+        
+        if (menuButton == renameButton.get()) {
+            menu = nullptr; // Hide menu before renaming begins
+            _revColumnNameSetFocused(mouseDownColumn, true, true);
+        
+        } else if (menuButton == deleteButton.get()) {
+            std::optional<bool> clicked;
+            auto alert = _panelPresent<UI::ErrorAlert>();
+            alert->width                        (50);
+            alert->title()->text                ("Confirm Delete");
+            alert->message()->text              ("Deleting a branch can't be undone.\n\nAre you sure you want to delete this branch?");
+            alert->okButton()->label()->text    ("Delete");
+            alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
+            alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+            
+            // Wait until the user clicks a button
+            while (!clicked) track(Once);
+            
+            if (*clicked) {
+                // Delete the ref
+                _gitRefDelete(mouseDownColumn->rev().ref);
+                _reload();
+            }
+        }
+    }
+    
+    std::optional<_GitOp> _trackContextMenuCommitPanel(const UI::Event& mouseDownEvent, UI::RevColumnPtr mouseDownColumn, UI::CommitPanelPtr mouseDownPanel) {
         // If the commit that was clicked isn't selected, set the selection to only that commit
         if (!_selected(mouseDownColumn, mouseDownPanel)) {
             _selection = {
@@ -1312,7 +1372,7 @@ private:
         UI::Button* menuButton = nullptr;
         UI::ButtonPtr createBranchButton    = _makeContextMenuButton("Branch",  "b",    _selectionCanBranch(),  menuButton);
         UI::ButtonPtr combineButton         = _makeContextMenuButton("Combine", "c",    _selectionCanCombine(), menuButton);
-        UI::ButtonPtr editButton            = _makeContextMenuButton("Edit",    "ret",  _selectionCanEdit(),    menuButton);
+        UI::ButtonPtr editButton            = _makeContextMenuButton("Edit…",   "ret",  _selectionCanEdit(),    menuButton);
         UI::ButtonPtr deleteButton          = _makeContextMenuButton("Delete",  "del",  _selectionCanDelete(),  menuButton);
         
         UI::MenuPtr menu = subviewCreate<UI::Menu>();
@@ -1616,6 +1676,29 @@ private:
         // Delete the original ref
         _repo.refDelete(refPrev);
         return ref;
+    }
+    
+    void _gitRefDelete(const Git::Ref& ref) {
+        // Update _revs by removing revs that match `ref`
+        _revs.erase(
+            std::remove_if(_revs.begin(), _revs.end(), [&] (const Rev& rev) { return rev.ref==ref; }),
+        _revs.end());
+        
+        // Update _repoState
+        _repoState.refRemove(ref);
+        
+        // Update _head
+        if (_gitDetachHeadIfEqual(ref)) {
+            _head = {};
+        }
+        
+        // Update _selection
+        if (_selection.rev.ref == ref) {
+            _selection = {};
+        }
+        
+        // Delete the ref
+        _repo.refDelete(ref);
     }
     
     Git::Ref _gitRefReplace(const Git::Ref& ref, const Git::Commit& commit) {

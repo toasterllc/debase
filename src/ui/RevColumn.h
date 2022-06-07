@@ -186,6 +186,11 @@ public:
         }
     }
     
+    TextFieldPtr hitTestNameField(const Point& p) {
+        if (HitTest(_nameField->frame(), p)) return _nameField;
+        return nullptr;
+    }
+    
     CommitPanelPtr hitTestCommit(const Point& p) {
         for (CommitPanelPtr panel : _panels) {
             if (HitTest(panel->frame(), p)) return panel;

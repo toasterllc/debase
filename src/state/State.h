@@ -579,6 +579,10 @@ public:
         _loadedRefs.erase(crefPrev);
     }
     
+    void refRemove(const Git::Ref& ref) {
+        _loadedRefs.erase(Convert(ref));
+    }
+    
     Git::Repo repo() const {
         return _repo;
     }
