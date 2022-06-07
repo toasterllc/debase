@@ -596,7 +596,8 @@ private:
                 colors.menu             = colors.pairNew(colors.colorNew(194,   0,  71));
                 colors.error            = colors.menu;
                 
-                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
+                colors.conflictTextMain = colors.pairNew(colors.colorNew(0, 0, 0), colors.colorNew( 220,  220,  220));
+                colors.conflictTextDim  = colors.pairNew(colors.colorNew( 120,  120,  120));
             }
         
         } else {
@@ -612,10 +613,10 @@ private:
                 colors.menu             = colors.selectionCopy;
                 colors.error            = colors.pairNew(colors.colorNew(.969*255, .298*255, .435*255));
                 
+                // conflictTextMain/conflictTextDim: manually chosen to look good in iTerm
+                // (which has a black background instead of dark gray)
                 colors.conflictTextMain = colors.pairNew(colors.colorNew(255, 255, 255), colors.colorNew( 20,  20,  20));
                 colors.conflictTextDim  = colors.pairNew(colors.colorNew( 70,  70,  70));
-                
-                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
             
             } else {
                 colors.normal           = UI::Color();
@@ -626,7 +627,12 @@ private:
                 colors.menu             = colors.pairNew(colors.colorNew(.969*255, .298*255, .435*255));
                 colors.error            = colors.menu;
                 
-                #warning TODO: implement colors.conflictTextMain and colors.conflictTextDim
+                // Same as Apple_Terminal version because when specifying a background color,
+                // Apple_Terminal doesn't apply filtering, so we get the actual value that we
+                // specify (unlike when we don't specify a background color, which causes
+                // filtering to be applied on the colors we specify)
+                colors.conflictTextMain = colors.pairNew(colors.colorNew(0, 0, 0), colors.colorNew( 220,  220,  220));
+                colors.conflictTextDim  = colors.pairNew(colors.colorNew( 120,  120,  120));
             }
         }
         

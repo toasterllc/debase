@@ -62,7 +62,7 @@ public:
         
         _openInEditorButton->bordered(true);
         _openInEditorButton->highlightColor(colors().error);
-        _openInEditorButton->label()->text("Open in Editor");
+        _openInEditorButton->label()->text("Open in Editor…");
         _openInEditorButton->action( [&] (UI::Button& b) { _done(b); } );
         
         _cancelButton->bordered(true);

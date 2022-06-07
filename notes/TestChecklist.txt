@@ -264,3 +264,7 @@ Update dialog appears when there's an update available
 Update dialog isn't shown after clicking ignore
 Update dialog is shown for versions > the version that was ignored
 Update check doesn't occur on first launch
+
+
+* iTerm
+Make sure things generally work
