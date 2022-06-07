@@ -17,6 +17,8 @@ Redo Delete commits
 Redo Combine commits
 Redo Edit commit
 
+Delete branch
+
 Previously-fixed bug: With no undo history on any branch, copy commits from one branch to another
     Undo history should now be populated
 
@@ -55,6 +57,20 @@ Rename non-currently-checked-out branch
 Rename tag
     - snapshots retained
     - undo history retained
+
+Undo rename branch
+Redo rename branch
+
+
+* Conflict resolution
+
+Conflict window appears when copying/moving commits between branches
+
+Conflict window doesn't appear when copying/moving commits within same branch
+
+'No-file' conflicts (one side of the conflict is 'no file')
+    Selecting the no-file side results in no file
+    Resolving conflict in editor: deleting entire content causes the file to be deleted (ie not an empty file)
 
 
 * Other features
