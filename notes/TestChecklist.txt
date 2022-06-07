@@ -109,6 +109,7 @@ With TrialCountdownAlert visible: make sure RevColumn cursor appears when editin
 
 With UpdateAvailableAlert visible: make sure RevColumn cursor appears when editing RevColumn name
 
+
 * Keys
 
 Create branch with 'b' key
