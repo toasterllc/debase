@@ -845,25 +845,6 @@ private:
             if (moveCursor) _columnNameFocused->nameField()->seek(UI::Align::Right);
             _columnNameFocused->nameField()->focused(true);
         }
-        
-//        // Unfocus all columns
-//        for (UI::RevColumnPtr col : _columns) {
-//            const bool focused = (col == fcol);
-//            col->nameField()->value(col->name(focused));
-//            col->nameField()->focused(false);
-//            if (moveCursor) {
-//                col->nameField()->focused(focused);
-//                col->nameField()->seek(UI::Align::Right);
-//            } else {
-//                col->nameField()->focused(focused);
-//            }
-//        }
-//        
-//        _columnNameFocused = fcol;
-//        
-//        if (reload) {
-//            _reload();
-//        }
     }
     
     void _revColumnNameFocus(UI::RevColumnPtr col) {
