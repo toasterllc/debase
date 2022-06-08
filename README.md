@@ -10,10 +10,6 @@
     # x86_64 only
     make -j8 ARCHS=x86_64
 
-### Codesign
-
-    make codesign
-
 ### Notarize Binary
 
     make notarize
