@@ -1,0 +1,3 @@
+Clone 'Mouse' branch of git@github.com:heytoaster/asciinema.git
+
+PYTHONPATH=~/repos/asciinema:~/repos/asciinema/python python3 -m asciinema rec --overwrite recording.cast
