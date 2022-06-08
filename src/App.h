@@ -38,7 +38,6 @@
 #include "Syscall.h"
 #include "Rev.h"
 #include "ConflictText.h"
-#include <os/log.h>
 
 extern "C" {
     extern char** environ;
