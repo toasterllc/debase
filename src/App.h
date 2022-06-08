@@ -1392,7 +1392,7 @@ private:
             auto alert = _panelPresent<UI::ErrorAlert>();
             alert->width                        (50);
             alert->title()->text                ("Confirm Delete");
-            alert->message()->text              ("Deleting refs cannot be undone.\n\nAre you sure you want to delete it?");
+            alert->message()->text              ("Are you sure you want to delete this ref?\n\nDeleting refs cannot be undone.");
             alert->okButton()->label()->text    ("Delete");
             alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
             alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
