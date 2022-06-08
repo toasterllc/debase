@@ -1,5 +1,6 @@
 NAME = debase
 DEBUG ?= 0
+STAGE ?= $(DEBUG)
 ARCHS ?= x86_64 arm64
 
 ifeq ($(shell uname -s), Darwin)
