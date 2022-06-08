@@ -1238,11 +1238,11 @@ public:
     ) const {
         git_merge_file_options opts = {
             .version = GIT_MERGE_FILE_OPTIONS_VERSION,
+            .our_label = _DebaseProductId,
+            .their_label = _DebaseProductId,
             // Using the 'patience' algorithm because it seems to remove conflicts
             // where both sides contain the exact same code
             .flags = GIT_MERGE_FILE_DIFF_PATIENCE,
-            .our_label = _DebaseProductId,
-            .their_label = _DebaseProductId,
         };
         
         git_merge_file_result x;
