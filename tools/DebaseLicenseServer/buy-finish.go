@@ -127,7 +127,7 @@ func buyFinish(ctx context.Context, paymentIntentId string) (license.Email, []st
 
 	var licsForPayment map[license.LicenseCode]*license.DBLicense
 	var licsForPaymentCreated bool
-	licsRef := Db.Collection(LicensesCollection).Doc(string(uid))
+	licsRef := Db.Collection(licensesCollection()).Doc(string(uid))
 	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Transactions can run multiple times, where the last one wins.
 		// So make sure that our output vars are cleared by default, so they don't

@@ -60,7 +60,7 @@ func endpointTrialLookup(ctx context.Context, w http.ResponseWriter, r *http.Req
 	trialNew := trialCreate(minfo)
 
 	var trial *license.DBTrial
-	trialRef := Db.Collection(TrialsCollection).Doc(string(mid))
+	trialRef := Db.Collection(trialsCollection()).Doc(string(mid))
 	err = Db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Get the license
 		trialDoc, err := tx.Get(trialRef)

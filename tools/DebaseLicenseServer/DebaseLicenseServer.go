@@ -21,11 +21,25 @@ const (
 	EndpointBuyFinishWebhook    = "buy-finish-webhook"
 )
 
+const (
+	EnvironmentProd  = "prod"
+	EnvironmentStage = "stage"
+)
+
+var Environment string
 var AWSAccessKey string
 var AWSSecretKey string
 var StripeBuyFinishWebhookSecret string
 
 func init() {
+	Environment = os.Getenv("ENV")
+	switch Environment {
+	case EnvironmentProd:
+	case EnvironmentStage:
+	default:
+		log.Fatalf("ENV invalid: %v", Environment)
+	}
+
 	var err error
 	Db, err = firestore.NewClient(context.Background(), firestore.DetectProjectID)
 	if err != nil {

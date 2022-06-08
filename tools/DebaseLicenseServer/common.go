@@ -18,9 +18,6 @@ import "C"
 
 type Reply interface{}
 
-const LicensesCollection = "debase-licenses"
-const TrialsCollection = "debase-trials"
-
 var DebaseProductId = C.GoString(C.DebaseProductId)
 var DebaseKeyPrivate = *(*[ed25519.SeedSize]byte)(unsafe.Pointer(&C.DebaseKeyPrivate))
 var DebaseVersion = uint32(C.DebaseVersion)
@@ -41,5 +38,27 @@ func sealedLicense(lic license.HTTPLicense) license.HTTPSealedLicense {
 	return license.HTTPSealedLicense{
 		Payload:   string(payload),
 		Signature: hex.EncodeToString(sig),
+	}
+}
+
+func licensesCollection() string {
+	switch Environment {
+	case EnvironmentProd:
+		return "debase-licenses"
+	case EnvironmentStage:
+		return "debase-licenses-stage"
+	default:
+		panic("unknown Environment")
+	}
+}
+
+func trialsCollection() string {
+	switch Environment {
+	case EnvironmentProd:
+		return "debase-trials"
+	case EnvironmentStage:
+		return "debase-trials-stage"
+	default:
+		panic("unknown Environment")
 	}
 }
