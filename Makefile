@@ -43,7 +43,8 @@ CPPFLAGS =										\
 	-MMD										\
 	-MP											\
 	-Wall										\
-	-DDEBUG=$(DEBUG)
+	-DDEBUG=$(DEBUG)							\
+	-DSTAGE=$(STAGE)
 
 CFLAGS =										\
 	-std=c11									\
