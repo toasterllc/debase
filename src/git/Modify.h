@@ -462,13 +462,6 @@ private:
         };
     }
     
-    static std::string _Trim(std::string_view str) {
-        std::string x(str);
-        x.erase(x.find_last_not_of(' ')+1);
-        x.erase(0, x.find_first_not_of(' '));
-        return x;
-    }
-    
     struct _CommitAuthor {
         std::string name;
         std::string email;
@@ -496,10 +489,10 @@ private:
         if (emailEnd == std::string::npos) return std::nullopt;
         if (emailStart >= emailEnd) return std::nullopt;
         
-        std::string name = _Trim(str.substr(0, emailStart));
+        std::string name = String::Trim(str.substr(0, emailStart));
         if (name.empty()) return std::nullopt;
         
-        std::string email = _Trim(str.substr(emailStart+1, emailEnd-emailStart-1));
+        std::string email = String::Trim(str.substr(emailStart+1, emailEnd-emailStart-1));
         if (email.empty()) return std::nullopt;
         
         return _CommitAuthor{
@@ -548,9 +541,9 @@ private:
         // Find author string
         std::optional<std::string> authorStr;
         for (; !authorStr && iter!=lines.end(); iter++) {
-            std::string line = _Trim(*iter);
+            std::string line = String::Trim(*iter);
             if (Toastbox::String::StartsWith(_AuthorPrefix, line)) {
-                authorStr = _Trim(line.substr(std::size(_AuthorPrefix)-1));
+                authorStr = String::Trim(line.substr(std::size(_AuthorPrefix)-1));
             }
             else if (!line.empty()) break;
         }
@@ -558,16 +551,16 @@ private:
         // Find time string
         std::optional<std::string> timeStr;
         for (; !timeStr && iter!=lines.end(); iter++) {
-            std::string line = _Trim(*iter);
+            std::string line = String::Trim(*iter);
             if (Toastbox::String::StartsWith(_TimePrefix, line)) {
-                timeStr = _Trim(line.substr(std::size(_TimePrefix)-1));
+                timeStr = String::Trim(line.substr(std::size(_TimePrefix)-1));
             }
             else if (!line.empty()) break;
         }
         
         // Skip whitespace until message starts
         for (; iter!=lines.end(); iter++) {
-            std::string line = _Trim(*iter);
+            std::string line = String::Trim(*iter);
             if (!line.empty()) break;
         }
         

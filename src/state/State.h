@@ -29,7 +29,7 @@ struct Commit : std::string {
 // State::X -> Git::X
 
 inline Git::Ref Convert(Git::Repo repo, const Ref& x) { return repo.refLookup(x); }
-inline Git::Commit Convert(Git::Repo repo, const Commit& x) { return repo.commitLookup(x); }
+inline Git::Commit Convert(Git::Repo repo, const Commit& x) { return repo.commitLookup(Git::IdFromString(x)); }
 
 template <typename T_DstElm, typename T_SrcElm>
 inline auto _Convert(Git::Repo repo, const std::vector<T_SrcElm>& x) {

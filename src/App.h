@@ -1813,21 +1813,51 @@ private:
             conflictStr = Git::EditorRun(_repo, spawn, conflictStr);
             
             // Verify that there are no conflict markers
-            if (!Git::ConflictStringContainsConflictMarkers(markers, conflictStr)) break;
+            if (Git::ConflictStringContainsConflictMarkers(markers, conflictStr)) {
+                std::optional<bool> clicked;
+                auto alert = _panelPresent<UI::ErrorAlert>();
+                alert->width                        (50);
+                alert->message()->text              ("The file still contains conflict markers. Continue editing?");
+                alert->okButton()->label()->text    ("Edit");
+                alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
+                alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+                
+                // Wait until the user clicks a button
+                while (!clicked) track(Once);
+                
+                // If the user canceled, let the caller know
+                if (!*clicked) throw _GitModify::ConflictResolveCanceled();
+                continue;
+            }
             
-            std::optional<bool> clicked;
-            auto alert = _panelPresent<UI::ErrorAlert>();
-            alert->width                        (50);
-            alert->message()->text              ("The file still contains conflict markers. Continue editing?");
-            alert->okButton()->label()->text    ("Edit");
-            alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
-            alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+            // If this is a submodule conflict, validate the hash
+            if (fc.type == Git::Conflict::Type::Submodule) {
+                const Git::Repo submoduleRepo = Git::Repo::Open(_repo.path() / fc.path);
+                try {
+                    conflictStr = Toastbox::String::Trim(conflictStr); // Remove whitespace from the hash
+                    submoduleRepo.commitLookup(Git::IdFromString(conflictStr));
+                
+                } catch (...) {
+                    // Submodule hash is invalid
+                    std::optional<bool> clicked;
+                    auto alert = _panelPresent<UI::ErrorAlert>();
+                    alert->width                        (50);
+                    alert->message()->text              ("The submodule commit hash is invalid. Continue editing?");
+                    alert->okButton()->label()->text    ("Edit");
+                    alert->okButton()->action           ( [&] (UI::Button&) { clicked = true; } );
+                    alert->dismissButton()->action      ( [&] (UI::Button&) { clicked = false; } );
+                    
+                    // Wait until the user clicks a button
+                    while (!clicked) track(Once);
+                    
+                    // If the user canceled, let the caller know
+                    if (!*clicked) throw _GitModify::ConflictResolveCanceled();
+                    continue;
+                }
+            }
             
-            // Wait until the user clicks a button
-            while (!clicked) track(Once);
-            
-            // If the user canceled, let the caller know
-            if (!*clicked) throw _GitModify::ConflictResolveCanceled();
+            // No issues, we're done
+            break;
         }
         return conflictStr;
     }
@@ -2578,7 +2608,7 @@ private:
             if (state.lastMoveOfferVersion() >= DebaseVersion) return;
         }
         
-        fs::path currentExecutablePath;
+        _Path currentExecutablePath;
         try {
             currentExecutablePath = CurrentExecutablePath();
         } catch (...) {
@@ -2599,9 +2629,9 @@ private:
         const char* homeEnv = getenv("HOME");
         if (!homeEnv) return;
         
-        const fs::path homePath = homeEnv;
-        const fs::path binDirRelativePath = UserBinRelativePath();
-        const fs::path binDirPath = homePath / binDirRelativePath;
+        const _Path homePath = homeEnv;
+        const _Path binDirRelativePath = UserBinRelativePath();
+        const _Path binDirPath = homePath / binDirRelativePath;
         bool createBinDir = false;
         try {
             // exists() can throw if binDirPath isn't accessible (eg because of parent directory permissions)
@@ -2640,7 +2670,7 @@ private:
         constexpr const char* ShellZsh  = "zsh";
         
         struct ShellInfo {
-            fs::path profilePath;
+            _Path profilePath;
             std::string updatePathCommand;
             std::string restartShellCommand;
         };
@@ -2735,7 +2765,7 @@ private:
         
         static struct {
             ShellInfo shell;
-            fs::path binDirRelativePath;
+            _Path binDirRelativePath;
             bool updateShellPath = false;
         } ctx = {
             shell,

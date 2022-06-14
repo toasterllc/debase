@@ -847,7 +847,7 @@ public:
     }
     
     Tree indexWrite(const Index& index) const {
-        git_oid treeId;
+        Id treeId;
         int ir = git_index_write_tree_to(&treeId, *index, *get());
         if (ir) throw Error(ir, "git_index_write_tree_to failed");
         
@@ -906,7 +906,7 @@ public:
         msg << "\n";
         msg << git_commit_message(*src);
         
-        git_oid id;
+        Id id;
         int ir = git_commit_amend(&id, *dst, nullptr, nullptr, nullptr, git_commit_message_encoding(*dst), msg.str().c_str(), *newTree);
         if (ir) throw Error(ir, "git_commit_amend failed");
         return commitLookup(id);
@@ -914,7 +914,7 @@ public:
     
     // commitAmend(): change parents/tree of a commit
     Commit commitAmend(const Commit& commit, const std::vector<Commit>& parents, const Tree& tree) const {
-        git_oid id;
+        Id id;
         
         assert(parents.size() <= 4); // Protect stack-allocated array from being too large
         const git_commit* stackParents[parents.size()];
@@ -940,7 +940,7 @@ public:
     
     // commitAmend(): change the author/message of a commit
     Commit commitAmend(const Commit& commit, const Signature& author, const std::string& msg) const {
-        git_oid id;
+        Id id;
         int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
             nullptr, (!msg.empty() ? msg.c_str() : nullptr), nullptr);
         if (ir) throw Error(ir, "git_commit_amend failed");
@@ -954,12 +954,12 @@ public:
         return x;
     }
     
-    Commit commitLookup(const std::string& idStr) const {
-        Id id;
-        int ir = git_oid_fromstr(&id, idStr.c_str());
-        if (ir) throw Error(ir, "git_oid_fromstr failed");
-        return commitLookup(id);
-    }
+//    Commit commitLookup(const std::string& idStr) const {
+//        Id id;
+//        int ir = git_oid_fromstr(&id, idStr.c_str());
+//        if (ir) throw Error(ir, "git_oid_fromstr failed");
+//        return commitLookup(id);
+//    }
     
     Ref refReplace(const Ref& ref, const Commit& commit) const {
         if (ref.isLocalBranch()) {
@@ -1120,14 +1120,14 @@ public:
     }
     
     Tag tagCreate(const std::string& name, const Commit& commit, bool force=false) const {
-        git_oid id;
+        Id id;
         int ir = git_tag_create_lightweight(&id, *get(), name.c_str(), *(Object)commit, force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
     }
     
     Tag tagCreateAnnotated(const std::string& name, const Commit& commit, const Signature& author, const std::string& message, bool force=false) const {
-        git_oid id;
+        Id id;
         int ir = git_tag_create(&id, *get(), name.c_str(), *((Object)commit), *author, message.c_str(), force);
         if (ir) throw Error(ir, "git_tag_create failed");
         return tagLookup(name);
@@ -1267,7 +1267,7 @@ public:
     }
     
     Blob blobCreate(const void* data, size_t len) const {
-        git_oid id;
+        Id id;
         int ir = git_blob_create_from_buffer(&id, *get(), data, len);
         if (ir) throw Error(ir, "git_blob_create_from_buffer failed");
         return blobLookup(id);
