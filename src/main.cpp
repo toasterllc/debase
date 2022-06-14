@@ -223,6 +223,12 @@ int main(int argc, const char* argv[]) {
     
 //  Future:
     
+    #warning TODO: handle submodule conflicts, where the source/destination branches have a submodule with different commits checked out.
+    #warning TODO:   to handle this, we'll need to look at git_index_entry's mode field. when the high 4 bits == 1110, it's a 'gitlink', which (presumably) means a submodule.
+    #warning TODO:   add a 'type' field or similar to Git::FileConflict to allow us to signify where it's a regular file conflict, or a submodule conflict.
+    #warning TODO:   -------
+    #warning TODO:   to reproduce, use MDC repo. drag commit 60dfc7c (source branch) onto 7e18563 (destination branch).
+    
     #warning TODO: ConflictPanel: improve appearance of conflict text on linux
     #warning TODO:   any way to determine background color?
     
