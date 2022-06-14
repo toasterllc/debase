@@ -26,8 +26,46 @@ using namespace Toastbox;
     r;                                      \
 })
 
-inline std::string StringForId(const git_oid& oid) {
+class Error : public std::runtime_error {
+public:
+    Error(int error, const char* msg=nullptr) :
+    std::runtime_error(_ErrorMsg(msg)), error((git_error_code)error) {}
+    
+    git_error_code error = GIT_OK;
+    
+protected:
+    static std::string _ErrorMsg(const char* msg) {
+        if (!msg) return git_error_last()->message;
+        
+        char buf[256];
+        const git_error* gitErr = git_error_last();
+        const char* gitErrMsg = (gitErr ? gitErr->message : nullptr);
+        if (gitErrMsg) {
+            snprintf(buf, sizeof(buf), "%s: %s", msg, gitErrMsg);
+        } else {
+            snprintf(buf, sizeof(buf), "%s", msg);
+        }
+        return buf;
+    }
+};
+
+class ConflictError : public Error {
+public:
+    ConflictError(int error, const std::vector<std::filesystem::path>& paths) : Error(error), paths(paths) {}
+    std::vector<std::filesystem::path> paths;
+};
+
+using Id = git_oid;
+
+inline std::string StringFromId(const git_oid& oid) {
     return git_oid_tostr_s(&oid);
+}
+
+inline Id IdFromString(const std::string& str) {
+    Id id;
+    int ir = git_oid_fromstr(&id, str.c_str());
+    if (ir) throw Error(ir, "git_oid_fromstr failed");
+    return id;
 }
 
 inline std::string DisplayStringForId(const git_oid& oid, size_t len) {
@@ -134,36 +172,6 @@ inline Time TimeFromString(const std::string& str) {
     };
 }
 
-class Error : public std::runtime_error {
-public:
-    Error(int error, const char* msg=nullptr) :
-    std::runtime_error(_ErrorMsg(msg)), error((git_error_code)error) {}
-    
-    git_error_code error = GIT_OK;
-    
-protected:
-    static std::string _ErrorMsg(const char* msg) {
-        if (!msg) return git_error_last()->message;
-        
-        char buf[256];
-        const git_error* gitErr = git_error_last();
-        const char* gitErrMsg = (gitErr ? gitErr->message : nullptr);
-        if (gitErrMsg) {
-            snprintf(buf, sizeof(buf), "%s: %s", msg, gitErrMsg);
-        } else {
-            snprintf(buf, sizeof(buf), "%s", msg);
-        }
-        return buf;
-    }
-};
-
-class ConflictError : public Error {
-public:
-    ConflictError(int error, const std::vector<std::filesystem::path>& paths) : Error(error), paths(paths) {}
-    std::vector<std::filesystem::path> paths;
-};
-
-using Id = git_oid;
 using Tree = RefCounted<git_tree*, git_tree_free>;
 
 static void _MergeFileResultFree(git_merge_file_result& x) {
@@ -535,7 +543,7 @@ public:
     
     std::string fullName() const {
         if (ref) return ref.fullName();
-        return StringForId(commit.id());
+        return StringFromId(commit.id());
     }
     
     bool isMutable() const {
@@ -569,7 +577,7 @@ public:
 //    
 //    std::string fullName() const {
 //        if (ref) return ref.fullName();
-//        return StringForId(commit.id());
+//        return StringFromId(commit.id());
 //    }
     
     Commit commit;  // Mandatory

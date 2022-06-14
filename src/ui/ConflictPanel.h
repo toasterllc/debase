@@ -21,7 +21,7 @@ public:
     ConflictPanel(
         Layout layout, std::string_view title,
         std::string_view refNameOurs, std::string_view refNameTheirs,
-        const Git::FileConflict& fc, size_t hunkIdx) :
+        const Git::Conflict& fc, size_t hunkIdx) :
         _layout(layout), _fileConflict(fc), _hunkIdx(hunkIdx) {
         
         borderColor(colors().error);
@@ -161,7 +161,7 @@ public:
 //        drawRect(contentRectRight);
         
 //        auto& hunk = _fileConflict.hunks[_hunkIdx];
-//        assert(hunk.type == Git::FileConflict::Hunk::Type::Conflict);
+//        assert(hunk.type == Git::Conflict::Hunk::Type::Conflict);
 //        
 //        auto& lines = (_layout==Layout::LeftOurs ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
 //        int offY = Inset.y+std::max(0, (h-(int)lines.size())/2);
@@ -218,11 +218,11 @@ private:
         };
     }
     
-    const std::vector<std::string>& _hunkLinesGet(const Git::FileConflict::Hunk& hunk, bool left) const {
+    const std::vector<std::string>& _hunkLinesGet(const Git::Conflict::Hunk& hunk, bool left) const {
         switch (hunk.type) {
-        case Git::FileConflict::Hunk::Type::Normal:
+        case Git::Conflict::Hunk::Type::Normal:
             return hunk.normal.lines;
-        case Git::FileConflict::Hunk::Type::Conflict:
+        case Git::Conflict::Hunk::Type::Conflict:
             switch (_layout) {
             case Layout::LeftOurs:
                 return (left ? hunk.conflict.linesOurs : hunk.conflict.linesTheirs);
@@ -387,12 +387,12 @@ private:
                     
                     // The file is considered deleted if the total number of lines==0. (Therefore
                     // an empty but existing file would have 1 line containing an empty string.)
-                    // So if our FileConflict has one hunk and that hunk has zero lines, then it's
+                    // So if our Conflict has one hunk and that hunk has zero lines, then it's
                     // a non-existent file.
                     const char* text = nullptr;
                     size_t textLen = 0;
                     
-                    const bool noFile = _fileConflict.noFile(Git::FileConflict::Side::Ours) || _fileConflict.noFile(Git::FileConflict::Side::Theirs);
+                    const bool noFile = _fileConflict.noFile(Git::Conflict::Side::Ours) || _fileConflict.noFile(Git::Conflict::Side::Theirs);
                     if (noFile) {
                         text = NoFile;
                         textLen = std::size(NoFile)-1;
@@ -441,7 +441,7 @@ private:
     }
     
     const Layout _layout = Layout::LeftOurs;
-    const Git::FileConflict& _fileConflict;
+    const Git::Conflict& _fileConflict;
     const size_t _hunkIdx = 0;
     
     LabelPtr _title = subviewCreate<Label>();

@@ -7,7 +7,12 @@
 
 namespace Git {
 
-struct FileConflict {
+struct Conflict {
+    enum class Type {
+        File,
+        Submodule,
+    };
+    
     enum class Side {
         Ours,
         Theirs,
@@ -52,13 +57,15 @@ struct FileConflict {
         }
     };
     
+    Type type = Type::File;
     std::filesystem::path path;
     std::vector<Hunk> hunks;
     
     // noFile(side): returns whether the given `side` of the conflict
     // represents a non-existent file
     bool noFile(Side side) const {
-        return  hunks.size()==1                     &&
+        return  type==Type::File                    &&
+                hunks.size()==1                     &&
                 hunks[0].type==Hunk::Type::Conflict &&
                 hunks[0].lines(side).empty();
     }
@@ -91,7 +98,7 @@ struct ConflictMarkers {
     const char* end       = nullptr;
 };
 
-inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMarkers& markers, std::string_view str) {
+inline std::vector<Conflict::Hunk> HunksFromConflictString(const ConflictMarkers& markers, std::string_view str) {
     const std::vector<std::string> lines = Toastbox::String::Split(str, "\n");
     
     enum class _ParseState {
@@ -100,8 +107,8 @@ inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMar
         ConflictTheirs,
     };
     
-    std::vector<FileConflict::Hunk> hunks;
-    FileConflict::Hunk hunk;
+    std::vector<Conflict::Hunk> hunks;
+    Conflict::Hunk hunk;
     _ParseState parseState = _ParseState::Normal;
     for (const std::string& line : lines) {
         switch (parseState) {
@@ -109,7 +116,7 @@ inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMar
             if (String::StartsWith(markers.start, line)) {
                 if (!hunk.empty()) hunks.push_back(std::move(hunk));
                 parseState = _ParseState::ConflictOurs;
-                hunk.type = FileConflict::Hunk::Type::Conflict;
+                hunk.type = Conflict::Hunk::Type::Conflict;
             } else {
                 hunk.normal.lines.push_back(line);
             }
@@ -118,7 +125,7 @@ inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMar
         case _ParseState::ConflictOurs:
             if (String::StartsWith(markers.separator, line)) {
                 parseState = _ParseState::ConflictTheirs;
-                hunk.type = FileConflict::Hunk::Type::Conflict;
+                hunk.type = Conflict::Hunk::Type::Conflict;
             } else {
                 hunk.conflict.linesOurs.push_back(line);
             }
@@ -128,7 +135,7 @@ inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMar
             if (String::StartsWith(markers.end, line)) {
                 if (!hunk.empty()) hunks.push_back(std::move(hunk));
                 parseState = _ParseState::Normal;
-                hunk.type = FileConflict::Hunk::Type::Normal;
+                hunk.type = Conflict::Hunk::Type::Normal;
             } else {
                 hunk.conflict.linesTheirs.push_back(line);
             }
@@ -143,15 +150,15 @@ inline std::vector<FileConflict::Hunk> HunksFromConflictString(const ConflictMar
     return hunks;
 }
 
-inline std::string ConflictStringFromHunks(const ConflictMarkers& markers, const std::vector<FileConflict::Hunk>& hunks) {
+inline std::string ConflictStringFromHunks(const ConflictMarkers& markers, const std::vector<Conflict::Hunk>& hunks) {
     std::vector<std::string> lines;
-    for (const Git::FileConflict::Hunk& hunk : hunks) {
+    for (const Git::Conflict::Hunk& hunk : hunks) {
         switch (hunk.type) {
-        case FileConflict::Hunk::Type::Normal:
+        case Conflict::Hunk::Type::Normal:
             lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
             break;
         
-        case FileConflict::Hunk::Type::Conflict:
+        case Conflict::Hunk::Type::Conflict:
             lines.push_back(markers.start);
             lines.insert(lines.end(), hunk.conflict.linesOurs.begin(), hunk.conflict.linesOurs.end());
             lines.push_back(markers.separator);
@@ -177,7 +184,7 @@ inline bool ConflictStringContainsConflictMarkers(const ConflictMarkers& markers
     return false;
 }
 
-inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& index) {
+inline std::vector<Conflict> ConflictsGet(const Repo& repo, const Index& index) {
     using namespace Toastbox;
     using _Path = std::filesystem::path;
     
@@ -213,13 +220,22 @@ inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& ind
         }
     }
     
-    std::vector<FileConflict> fileConflicts;
+    std::vector<Conflict> fileConflicts;
     for (auto const& [path, conflict] : conflicts) {
-        FileConflict fc = {
+        constexpr uint32_t ObjTypeMask    = 0xF000;
+        constexpr uint32_t ObjTypeNone    = 0x0000;
+        constexpr uint32_t ObjTypeFile    = 0x8000;
+        constexpr uint32_t ObjTypeGitlink = 0xE000;
+        
+        const uint32_t objTypeOurs   = (conflict.ours ? (conflict.ours->mode & ObjTypeMask) : ObjTypeNone);
+        const uint32_t objTypeTheirs = (conflict.theirs ? (conflict.theirs->mode & ObjTypeMask) : ObjTypeNone);
+        
+        Conflict fc = {
             .path = path,
         };
         
-        if (conflict.ours && conflict.theirs) {
+        if (objTypeOurs==ObjTypeFile && objTypeTheirs==ObjTypeFile) {
+            // File vs file conflict
             const Git::MergeFileResult mergeResult = repo.merge(conflict.ancestor, conflict.ours, conflict.theirs);
             const std::string content(mergeResult->ptr, mergeResult->len);
             fc.hunks = HunksFromConflictString({
@@ -228,24 +244,39 @@ inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& ind
                 .end        = Repo::MergeMarkerEnd,
             }, content);
         
-        } else if ((conflict.ours && !conflict.theirs) || (!conflict.ours && conflict.theirs)) {
+        } else if (objTypeOurs==ObjTypeGitlink && objTypeTheirs==ObjTypeGitlink) {
+            // Submodule hash vs submodule hash conflict
+            fc.type = Conflict::Type::Submodule;
+            fc.hunks = {
+                Conflict::Hunk{
+                    .type = Conflict::Hunk::Type::Conflict,
+                    .conflict = {
+                        .linesOurs   = { StringFromId(conflict.ours->id) },
+                        .linesTheirs = { StringFromId(conflict.theirs->id) },
+                    },
+                },
+            };
+        
+        } else if ((objTypeOurs==ObjTypeFile && objTypeTheirs==ObjTypeNone) ||
+                   (objTypeOurs==ObjTypeNone && objTypeTheirs==ObjTypeFile)) {
+            // File vs no-file conflict
             std::vector<std::string> linesOurs;
             std::vector<std::string> linesTheirs;
             
-            if (conflict.ours) {
+            if (objTypeOurs==ObjTypeFile) {
                 Blob blob = repo.blobLookup(conflict.ours->id);
                 std::string content((const char*)blob.data(), blob.size());
                 linesOurs = Toastbox::String::Split(content, "\n");
             }
             
-            if (conflict.theirs) {
+            if (objTypeTheirs==ObjTypeFile) {
                 Blob blob = repo.blobLookup(conflict.theirs->id);
                 std::string content((const char*)blob.data(), blob.size());
                 linesTheirs = Toastbox::String::Split(content, "\n");
             }
             
             fc.hunks.push_back({
-                .type = FileConflict::Hunk::Type::Conflict,
+                .type = Conflict::Hunk::Type::Conflict,
                 .conflict = {
                     .linesOurs = linesOurs,
                     .linesTheirs = linesTheirs,
@@ -253,8 +284,7 @@ inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& ind
             });
         
         } else {
-            // Is this possible? Ie, conflict.ours==conflict.theirs==null but we still have a conflict?
-            abort();
+            throw Toastbox::RuntimeError("unsupported conflict scenario");
         }
         
         fileConflicts.push_back(std::move(fc));
@@ -265,27 +295,48 @@ inline std::vector<FileConflict> ConflictsGet(const Repo& repo, const Index& ind
 
 // ConflictResolve(): resolve a conflict for a particular file, using the supplied file content `content`.
 // content == nullopt means that the file shouldn't exist.
-inline void ConflictResolve(const Repo& repo, const Index& index, const FileConflict& conflict,
+inline void ConflictResolve(const Repo& repo, const Index& index, const Conflict& conflict,
     const std::optional<std::string>& content) {
     
     const char* path = conflict.path.c_str();
-    if (content) {
-        const Blob blob = repo.blobCreate(content->data(), content->size());
-        const git_index_entry* entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_THEIRS);
-        if (!entryPrev) entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_OURS);
-        assert(entryPrev);
+    const git_index_entry* entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_THEIRS);
+    if (!entryPrev) entryPrev = index.find(conflict.path, GIT_INDEX_STAGE_OURS);
+    assert(entryPrev);
+    
+    switch (conflict.type) {
+    case Conflict::Type::File: {
+        if (content) {
+            const Blob blob = repo.blobCreate(content->data(), content->size());
+            
+            const git_index_entry entry = {
+                .mode = entryPrev->mode,
+                .file_size = (uint32_t)content->size(),
+                .id = blob.id(),
+                .path = path,
+            };
+            
+            index.add(entry);
+        
+        } else {
+            index.remove(path);
+        }
+        break;
+    }
+    
+    case Conflict::Type::Submodule: {
+        if (!content) throw Toastbox::RuntimeError("unsupported conflict scenario");
         
         const git_index_entry entry = {
             .mode = entryPrev->mode,
-            .file_size = (uint32_t)content->size(),
-            .id = blob.id(),
+            .id = IdFromString(*content),
             .path = path,
         };
-        
         index.add(entry);
+        break;
+    }
     
-    } else {
-        index.remove(path);
+    default:
+        throw Toastbox::RuntimeError("unsupported conflict type");
     }
     
     index.conflictClear(path);

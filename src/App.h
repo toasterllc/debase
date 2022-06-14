@@ -1594,7 +1594,7 @@ private:
             .repo = _repo,
             .refReplace = [&] (const Git::Ref& ref, const Git::Commit& commit) { return _gitRefReplace(ref, commit); },
             .spawn = [&] (const char*const* argv) { _gitSpawn(argv); },
-            .conflictsResolve = [&] (const Git::Index& index, const std::vector<Git::FileConflict>& fcs) { _gitConflictsResolve(gitOp, index, fcs); },
+            .conflictsResolve = [&] (const Git::Index& index, const std::vector<Git::Conflict>& fcs) { _gitConflictsResolve(gitOp, index, fcs); },
         };
         
         auto opResult = _GitModify::Exec(ctx, gitOp);
@@ -1800,7 +1800,7 @@ private:
         if (!preserveTerminal) _cursesInit();
     }
     
-    std::string _gitConflictResolveInEditor(const Git::FileConflict& fc) {
+    std::string _gitConflictResolveInEditor(const Git::Conflict& fc) {
         const Git::ConflictMarkers markers = Git::ConflictMarkers{
             .start      = Git::Repo::MergeMarkerBareStart,
             .separator  = Git::Repo::MergeMarkerBareSeparator,
@@ -1836,14 +1836,14 @@ private:
         UI::ConflictPanel::Layout layout,
         size_t conflictIdx, size_t conflictCount,
         const Rev& revOurs, const Rev& revTheirs,
-        const Git::FileConflict& fc) {
+        const Git::Conflict& fc) {
         
         std::vector<std::string> lines;
         for (size_t i=0; i<fc.hunks.size(); i++) {
-            const Git::FileConflict::Hunk& hunk = fc.hunks[i];
+            const Git::Conflict::Hunk& hunk = fc.hunks[i];
             
             // If it's a normal hunk (ie not a conflict), just append the lines
-            if (hunk.type == Git::FileConflict::Hunk::Type::Normal) {
+            if (hunk.type == Git::Conflict::Hunk::Type::Normal) {
                 lines.insert(lines.end(), hunk.normal.lines.begin(), hunk.normal.lines.end());
                 continue;
             }
@@ -1886,7 +1886,7 @@ private:
                         // If the user cleared the conflict file, and there's a branch of the
                         // conflict that represents a non-existent file, then consider the
                         // file as non-existent, rather than an empty file.
-                        const bool noFile = fc.noFile(Git::FileConflict::Side::Ours) || fc.noFile(Git::FileConflict::Side::Theirs);
+                        const bool noFile = fc.noFile(Git::Conflict::Side::Ours) || fc.noFile(Git::Conflict::Side::Theirs);
                         if (editorContent.empty() && noFile) {
                             return std::nullopt;
                         }
@@ -1913,7 +1913,7 @@ private:
         return Toastbox::String::Join(lines, "\n");
     }
     
-    void _gitConflictsResolve(const _GitOp& op, const Git::Index& index, const std::vector<Git::FileConflict>& fcs) {
+    void _gitConflictsResolve(const _GitOp& op, const Git::Index& index, const std::vector<Git::Conflict>& fcs) {
         // op.dst.rev is optional (depending on the git operation), so if it doesn't exist,
         // fallback to op.src.rev (which is required)
         const Rev revOurs = (op.dst.rev ? op.dst.rev : op.src.rev);
@@ -1935,13 +1935,13 @@ private:
         
         // Count the total number of conflict
         size_t conflictCount = 0;
-        for (const Git::FileConflict& fc : fcs) {
+        for (const Git::Conflict& fc : fcs) {
             conflictCount += fc.conflictCount();
         }
         
-        // Show the conflict panel for each hunk within each FileConflict
+        // Show the conflict panel for each hunk within each Conflict
         size_t conflictIdx = 0;
-        for (const Git::FileConflict& fc : fcs) {
+        for (const Git::Conflict& fc : fcs) {
             const std::optional<std::string> content = _gitRunConflictPanel(layout, conflictIdx, conflictCount, revOurs, revTheirs, fc);
             Git::ConflictResolve(_repo, index, fc, content);
             conflictIdx += fc.conflictCount();
@@ -2396,11 +2396,11 @@ private:
     
 //    void _conflictRun() {
 //        
-//        Git::FileConflict fc = {
+//        Git::Conflict fc = {
 //            .path = "/Some/Really/Long/Path/That/We/Want/To/Truncate/FDStream.h",
 //            .hunks = {
-//                Git::FileConflict::Hunk{
-//                    .type = Git::FileConflict::Hunk::Type::Normal,
+//                Git::Conflict::Hunk{
+//                    .type = Git::Conflict::Hunk::Type::Normal,
 //                    .normal = {
 //                        .lines = {
 //                            "#pragma once",
@@ -2419,8 +2419,8 @@ private:
 //                    },
 //                },
 //                
-//                Git::FileConflict::Hunk{
-//                    .type = Git::FileConflict::Hunk::Type::Conflict,
+//                Git::Conflict::Hunk{
+//                    .type = Git::Conflict::Hunk::Type::Conflict,
 //                    .conflict = {
 //                        .linesOurs = {
 //                            "#include <memory>",
@@ -2437,8 +2437,8 @@ private:
 //                    },
 //                },
 //                
-//                Git::FileConflict::Hunk{
-//                    .type = Git::FileConflict::Hunk::Type::Normal,
+//                Git::Conflict::Hunk{
+//                    .type = Git::Conflict::Hunk::Type::Normal,
 //                    .normal = {
 //                        .lines = {
 //                            "",

@@ -134,7 +134,7 @@ public:
 //    
 //    virtual std::string fullName() const {
 //        if (Ref r = ref()) return r.fullName();
-//        return StringForId(commit().id());
+//        return StringFromId(commit().id());
 //    }
 //    
 //    virtual bool isMutable() const {

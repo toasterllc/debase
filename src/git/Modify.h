@@ -16,7 +16,7 @@ public:
         Repo repo;
         std::function<Ref(const Ref&, const Commit&)> refReplace;
         std::function<void(const char*const*)> spawn;
-        std::function<void(const Index&, const std::vector<FileConflict>&)> conflictsResolve;
+        std::function<void(const Index&, const std::vector<Conflict>&)> conflictsResolve;
     };
     
     struct Op {
@@ -88,14 +88,14 @@ private:
         // In that case, we want to iterate over all the conflicts and choose the 'theirs' side.
         // If fileFavor==GIT_MERGE_FILE_FAVOR_NORMAL, we need to let the user decide how to solve the
         // merge conflict.
-        const std::vector<FileConflict> fcs = ConflictsGet(ctx.repo, index);
+        const std::vector<Conflict> fcs = ConflictsGet(ctx.repo, index);
         switch (fileFavor) {
         case GIT_MERGE_FILE_FAVOR_NORMAL:
             ctx.conflictsResolve(index, fcs);
             return;
         case GIT_MERGE_FILE_FAVOR_THEIRS:
-            for (const FileConflict& fc : fcs) {
-                ConflictResolve(ctx.repo, index, fc, fc.content(FileConflict::Side::Theirs));
+            for (const Conflict& fc : fcs) {
+                ConflictResolve(ctx.repo, index, fc, fc.content(Conflict::Side::Theirs));
             }
             return;
         // Unsupported git_merge_file_favor_t
