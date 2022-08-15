@@ -12,7 +12,7 @@
 #include "lib/ncurses/build-linux/include/panel.h"
 #endif
 
-#include "Bitfield.h"
+#include "lib/toastbox/Bitfield.h"
 
 namespace UI {
 
