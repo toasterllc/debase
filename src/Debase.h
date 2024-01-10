@@ -14,15 +14,15 @@
 #define DebaseKeyPublic DebaseKeyPublicStage
 #endif // !STAGE
 
-#define _ToasterShortURLProd    "heytoaster.com"
-#define _ToasterShortURLStage   "stage.heytoaster.com"
+#define _ToasterShortURLProd    "toaster.llc"
+#define _ToasterShortURLStage   "stage.toaster.llc"
 
 #define _ToasterURL             "https://" _ToasterShortURL
-#define _ToasterSupportEmail    "support@heytoaster.com"
+#define _ToasterSupportEmail    "support@toaster.llc"
 
 #define _DebaseVersion          1
 #define _DebaseFilename         "debase"
-#define _DebaseProductId        "com.heytoaster.debase"
+#define _DebaseProductId        "llc.toaster.debase"
 
 inline const char* ToasterDisplayURL        = _ToasterShortURL;
 inline const char* ToasterSupportEmail      = _ToasterSupportEmail;

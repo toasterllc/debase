@@ -125,7 +125,7 @@ inline Status Validate(const Context& ctx, const License& license) {
 // - have a troubleshooting mechanism to allow a license to be specified on the command line,
 //   to support users who email that the trial isn't working, or requesting more time.
 //   2 parts:
-//     debase --machine    prints the machine id, which the user communicates to support@heytoaster.com
-//     debase --license    sets the license, supplied by support@heytoaster.com
+//     debase --machine    prints the machine id, which the user communicates to support@toaster.llc
+//     debase --license    sets the license, supplied by support@toaster.llc
 
 } // namespace License

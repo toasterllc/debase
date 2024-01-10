@@ -169,8 +169,8 @@ notarize: codesign
 	
 	xcrun altool									\
 		 --notarize-app								\
-		 --primary-bundle-id com.heytoaster.debase	\
-		 --username 'apple@heytoaster.com'			\
+		 --primary-bundle-id llc.toaster.debase		\
+		 --username 'apple@toaster.llc'				\
 		 --password '@keychain:altool'				\
 		 --file $(BUILDDIR)/$(NAME).zip
 	

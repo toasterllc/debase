@@ -368,7 +368,7 @@ int main(int argc, const char* argv[]) {
 //    #warning TODO:   RevColumn shows a hash / is read-only
 //    #warning TODO:   further, when exiting debase, if the tag was modified, we don't re-attach head to the rewritten tag -- HEAD stays attached to the old hash
 //
-//    #warning TODO: figure out what the columns being shown in heytoaster.com repo are
+//    #warning TODO: figure out what the columns being shown in toaster.llc repo are
 //             it was correct, just the reflog
 //
 //    #warning TODO: first run experience: allow running debase from outside a git repo
