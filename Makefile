@@ -65,13 +65,11 @@ INCDIRS =										\
 
 LIBDIRS =										\
 	-L./lib/libgit2/build-$(PLATFORM)			\
-	-L./lib/libcurl/build-$(PLATFORM)			\
 	-L./lib/ncurses/build-$(PLATFORM)
 
 LIBS =											\
 	-lgit2										\
 	-lz											\
-	-lcurl										\
 	-lpthread									\
 	-lformw										\
 	-lmenuw										\
@@ -91,11 +89,6 @@ ifeq ($(PLATFORM), mac)
 		-framework Security						\
 		-framework SystemConfiguration			\
 		-liconv
-
-else ifeq ($(PLATFORM), linux)
-	LIBS +=										\
-		-lssl									\
-		-lcrypto
 endif
 
 OBJS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SRCS))))

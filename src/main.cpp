@@ -12,11 +12,6 @@
 #include "Syscall.h"
 #include "Rev.h"
 
-//extern "C" {
-//#include "lib/libcurl/include/curl/curl.h"
-//#include "lib/libcurl/lib/curl_base64.h"
-//}
-
 struct _Args {
     struct {
         bool en = false;

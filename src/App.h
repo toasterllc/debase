@@ -14,14 +14,12 @@
 #include "ui/Alert.h"
 #include "ui/ButtonSpinner.h"
 #include "ui/ErrorAlert.h"
-#include "ui/UpdateAvailableAlert.h"
 #include "ui/ConflictPanel.h"
 //#include "ui/TabPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
 #include "git/Conflict.h"
-#include "network/Network.h"
 #include "lib/toastbox/String.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
@@ -75,35 +73,6 @@ public:
                 const bool visible = (selectState!=_SelectState::True ? true : (!dragging || copying));
                 panel->visible(visible);
             }
-        }
-        
-//        {
-//            constexpr int InsetX = 3;
-//            constexpr int ColumnWidth = 32;
-//            constexpr int ColumnSpacing = 6;
-//            int offX = InsetX;
-//            for (UI::RevColumnPtr col : _columns) {
-//                col->frame({{offX, 0}, {ColumnWidth, size().y}});
-//                col->layout(*this);
-//                offX += ColumnWidth+ColumnSpacing;
-//            }
-//        }
-        
-//        const UI::Color selectionColor = (_drag.copy ? colors().selectionCopy : colors().selection);
-        
-//        // Order all the title panel and shadow panels
-//        if (dragging) {
-//            for (auto it=_drag.shadowPanels.rbegin(); it!=_drag.shadowPanels.rend(); it++) {
-//                (*it)->orderFront();
-//            }
-//            _drag.titlePanel->orderFront();
-//        }
-        
-        if (_updateAvailableAlert) {
-            auto p = _updateAvailableAlert;
-            const UI::Rect b = bounds();
-            p->size(p->sizeIntrinsic({b.size.x, ConstraintNone}));
-            p->origin({(b.w()-p->frame().w())/2, b.h()-p->frame().h()});
         }
         
         for (UI::PanelPtr panel : _panels) {
@@ -347,31 +316,7 @@ public:
             Window::operator =(Window(::stdscr));
             
             _reload();
-            
-//            _conflictRun();
-            
-            
-            
-            
-            
-//            {
-//                bool done = false;
-//                auto alert = _panelPresent<UI::Alert>();
-//                alert->width                            (50);
-//                alert->color                            (colors().menu);
-//                alert->title()->text                    ("title");
-//                alert->message()->text                  ("message");
-//                alert->okButton()->label()->text        ("OK");
-//                alert->okButton()->action               ( [&] (UI::Button& b) { done = true; } );
-//                while (!done) track(Once);
-//            }
-            
-            
-            
-            
-            
             _moveOffer();
-            _updateCheck();
             track();
             
         } catch (const UI::ExitRequest&) {
@@ -934,8 +879,6 @@ private:
         _columns.erase(_columns.begin()+colCount, _columns.end());
         
         // Update subviews
-        if (_updateAvailableAlert) sv.push_back(_updateAvailableAlert);
-        
         for (UI::PanelPtr panel : _panels) {
             sv.push_back(panel);
         }
@@ -2138,26 +2081,6 @@ private:
 //        track();
 //    }
     
-    void _updateAvailableAlertShow(Version version) {
-        _updateAvailableAlert = subviewCreate<UI::UpdateAvailableAlert>(version);
-        
-        _updateAvailableAlert->okButton()->action([=] (UI::Button&) {
-            OpenURL(DebaseDownloadURL);
-            _updateAvailableAlert = nullptr;
-        });
-        
-//        _updateAvailableAlert->okButton()->action(std::bind(&App::_updateCheckActionDownload, this));
-//        _updateAvailableAlert->dismissButton()->action(std::bind(&App::_updateCheckActionIgnore, this));
-        
-        _updateAvailableAlert->dismissButton()->action([=] (UI::Button&) {
-            // Ignore this version in the future
-            State::State state(StateDir());
-            state.updateIgnoreVersion(version);
-            state.write();
-            _updateAvailableAlert = nullptr;
-        });
-    }
-    
     void _moveOffer() {
         namespace fs = std::filesystem;
         
@@ -2358,66 +2281,6 @@ private:
         });
     }
     
-    void _updateCheck() {
-        using namespace std::chrono;
-        const std::time_t currentTime = system_clock::to_time_t(system_clock::now());
-        
-        // Limit lifetime of `state` since it blocks other debase instances
-        {
-            State::State state(StateDir());
-            
-            // Show the update-available dialog if we're already aware that an update is available
-            // and the user hasn't ignored that version.
-            if (state.updateVersion()>DebaseVersion && state.updateVersion()>state.updateIgnoreVersion()) {
-                _updateAvailableAlertShow(state.updateVersion());
-                return;
-            }
-            
-            // If updateCheckTime is uninitialized, set it to the current time and return.
-            // We don't check for updates in this case, because we don't want to do network IO
-            // when debase is initially launched.
-            const system_clock::time_point updateCheckTime = system_clock::from_time_t(state.updateCheckTime());
-            if (updateCheckTime.time_since_epoch() == system_clock::duration::zero()) {
-                state.updateCheckTime(currentTime);
-                state.write();
-                return;
-            }
-            
-            // Rate-limit update checks to once per week
-            constexpr auto Week = seconds(60*60*24*7);
-            if (system_clock::now()-updateCheckTime < Week) return;
-        }
-        
-        Version latestVersion = 0;
-        auto async = Async([&]() {
-            Network::Request(DebaseCurrentVersionURL, nullptr, latestVersion);
-        });
-        
-        _waitForAsync(async);
-        try {
-//            #warning TODO: remove
-//            latestVersion = 7;
-            async.get();
-        } catch (...) {
-            // Version check failed
-            return;
-        }
-        
-        // Update state
-        {
-            State::State state(StateDir());
-            state.updateVersion(latestVersion);
-            state.updateCheckTime(currentTime);
-            state.write();
-            
-            // Show the update-available dialog if the latest version is greater than our current version,
-            // and the user hasn't ignored that version.
-            if (latestVersion>DebaseVersion && latestVersion>state.updateIgnoreVersion()) {
-                _updateAvailableAlertShow(latestVersion);
-            }
-        }
-    }
-    
     Git::Repo _repo;
     std::vector<Rev> _revs;
     
@@ -2448,8 +2311,5 @@ private:
     _Selection _selection;
     std::optional<UI::Rect> _selectionRect;
     
-//    AsyncFn<Version> _updateCheckAsync;
-    
-    UI::AlertPtr _updateAvailableAlert;
     std::deque<UI::PanelPtr> _panels;
 };
