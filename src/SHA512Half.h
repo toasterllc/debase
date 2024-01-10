@@ -31,7 +31,7 @@ inline std::string StringForHash(const Hash& hash) noexcept {
     char str[Len*2+1];
     size_t i = 0;
     for (uint8_t b : hash) {
-        sprintf(str+i, "%02x", b);
+        snprintf(str+i, sizeof(str)-i, "%02x", b);
         i += 2;
     }
     return str;
