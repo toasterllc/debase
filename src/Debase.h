@@ -2,66 +2,13 @@
 #include <stdint.h>
 #include "Version.h"
 
-#if DebaseLicenseServer
-#define inline // Go can't handle 'inline' below
-#endif
-
-#if !STAGE
-#define _ToasterShortURL _ToasterShortURLProd
-#define DebaseKeyPublic DebaseKeyPublicProd
-#else
-#define _ToasterShortURL _ToasterShortURLStage
-#define DebaseKeyPublic DebaseKeyPublicStage
-#endif // !STAGE
-
-#define _ToasterShortURLProd    "toaster.llc"
-#define _ToasterShortURLStage   "stage.toaster.llc"
-
-#define _ToasterURL             "https://" _ToasterShortURL
-#define _ToasterSupportEmail    "support@toaster.llc"
-
-#define _DebaseVersion          1
-#define _DebaseFilename         "debase"
-#define _DebaseProductId        "llc.toaster.debase"
-
-inline const char* ToasterDisplayURL        = _ToasterShortURL;
-inline const char* ToasterSupportEmail      = _ToasterSupportEmail;
+#define _DebaseVersion                      2
+#define _DebaseFilename                     "debase"
+#define _DebaseProductId                    "llc.toaster.debase"
+#define _ToasterURL                         "https://toaster.llc"
 
 inline const Version DebaseVersion          = _DebaseVersion;
 inline const char* DebaseFilename           = _DebaseFilename;
 inline const char* DebaseProductId          = _DebaseProductId;
 inline const char* DebaseDownloadURL        = _ToasterURL "/#debase-download";
-inline const char* DebaseBuyURL             = _ToasterURL "/#debase-buy";
 inline const char* DebaseCurrentVersionURL  = _ToasterURL "/debase/version";
-inline const char* DebaseLicenseLookupURL   = _ToasterURL "/debase/license/license-lookup";
-inline const char* DebaseTrialLookupURL     = _ToasterURL "/debase/license/trial-lookup";
-
-#if DebaseLicenseServer
-inline const uint8_t DebaseKeyPrivateProd[] = {
-    0xb3, 0xab, 0xbe, 0xc7, 0xfe, 0xe3, 0x1e, 0x1a,
-    0xd4, 0xa4, 0x4e, 0xde, 0xfa, 0xf2, 0xc4, 0x4a,
-    0xa5, 0x67, 0xdb, 0x03, 0x36, 0x32, 0x35, 0xa2,
-    0xfa, 0xe4, 0x17, 0xb3, 0x15, 0x90, 0x66, 0x81,
-};
-
-inline const uint8_t DebaseKeyPrivateStage[] = {
-    0xda, 0x6f, 0x2d, 0x30, 0x12, 0x8b, 0x0a, 0x20,
-    0xc6, 0xf8, 0x2e, 0xda, 0x71, 0xfc, 0x82, 0xa4,
-    0x5b, 0x2d, 0xeb, 0xd9, 0xfa, 0x53, 0x22, 0xbf,
-    0x08, 0xdf, 0x79, 0x59, 0x7e, 0x4e, 0x77, 0xf0,
-};
-#endif // DebaseLicenseServer
-
-inline const uint8_t DebaseKeyPublicProd[] = {
-    0x9e, 0xf7, 0x3a, 0x4c, 0xab, 0x98, 0x6e, 0x0b,
-    0x98, 0xae, 0xa8, 0x64, 0xb9, 0x4c, 0x18, 0xca,
-    0x6e, 0x7b, 0xa1, 0x04, 0x44, 0x15, 0x55, 0x3f,
-    0x1b, 0x79, 0x34, 0xba, 0x6c, 0x84, 0xec, 0xff,
-};
-
-inline const uint8_t DebaseKeyPublicStage[] = {
-    0xc6, 0x07, 0x99, 0xf5, 0xba, 0x9b, 0xaa, 0xbd,
-    0x89, 0x3e, 0x66, 0xfb, 0x8d, 0xa4, 0x21, 0x61,
-    0xfe, 0x98, 0x1f, 0xf9, 0xa3, 0x65, 0x85, 0x56,
-    0x4b, 0x3b, 0xdc, 0xf2, 0x2c, 0x51, 0xf3, 0xef,
-};

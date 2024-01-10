@@ -18,14 +18,8 @@ endif
 GITHASHHEADER = src/DebaseGitHash.h
 
 SRCS =											\
-	lib/c25519/src/sha512.c						\
-	lib/c25519/src/edsign.c						\
-	lib/c25519/src/ed25519.c					\
-	lib/c25519/src/fprime.c						\
-	lib/c25519/src/f25519.c						\
 	src/OpenURL-$(PLATFORM).*					\
 	src/ProcessPath-$(PLATFORM).*				\
-	src/machine/Machine-$(PLATFORM).*			\
 	src/state/StateDir-$(PLATFORM).*			\
 	src/ui/View.cpp								\
 	src/main.cpp

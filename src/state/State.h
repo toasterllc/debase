@@ -10,7 +10,6 @@
 #include "lib/nlohmann/json.h"
 #include "git/Git.h"
 #include "git/Modify.h"
-#include "license/License.h"
 #include "Version.h"
 #include "History.h"
 
@@ -193,8 +192,6 @@ private:
     using _Path = std::filesystem::path;
     
     struct _State {
-        License::SealedLicense license;
-        bool trialExpired = false;
         Theme theme = Theme::None;
         Version lastMoveOfferVersion = 0; // The last debase version that was offerred to be moved
         
@@ -202,7 +199,7 @@ private:
         int64_t updateCheckTime = 0;     // The most recent time that we checked for an update
         Version updateIgnoreVersion = 0; // The most recent version that the user ignored
         
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(_State, license, trialExpired, theme, lastMoveOfferVersion, updateVersion, updateCheckTime, updateIgnoreVersion);
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(_State, theme, lastMoveOfferVersion, updateVersion, updateCheckTime, updateIgnoreVersion);
     };
     
     // _StateVersion: version of our state data structure; different than Version,
@@ -287,7 +284,6 @@ please use a newer version of debase, or delete:
    %s
 
 *** Warning: deleting the above directory will delete all debase state, such as:
-***   debase license
 ***   debase undo/redo history for all repositories
 ***   debase snapshots for all repositories
 )#",
@@ -346,12 +342,6 @@ public:
     void write() {
         _StateWrite(_StateFilePath(_rootDir), _state);
     }
-    
-    const auto& license() const { return _state.license; }
-    template <typename T> void license(const T& x) { _state.license = x; }
-    
-    const auto& trialExpired() const { return _state.trialExpired; }
-    template <typename T> void trialExpired(const T& x) { _state.trialExpired = x; }
     
     const auto& theme() const { return _state.theme; }
     template <typename T> void theme(const T& x) { _state.theme = x; }

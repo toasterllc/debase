@@ -11,11 +11,8 @@
 #include "ui/SnapshotButton.h"
 #include "ui/Menu.h"
 #include "ui/SnapshotMenu.h"
-#include "ui/WelcomeAlert.h"
 #include "ui/Alert.h"
-#include "ui/RegisterAlert.h"
 #include "ui/ButtonSpinner.h"
-#include "ui/TrialCountdownAlert.h"
 #include "ui/ErrorAlert.h"
 #include "ui/UpdateAvailableAlert.h"
 #include "ui/ConflictPanel.h"
@@ -23,8 +20,6 @@
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
-#include "license/License.h"
-#include "license/Server.h"
 #include "git/Conflict.h"
 #include "network/Network.h"
 #include "lib/toastbox/String.h"
@@ -38,6 +33,7 @@
 #include "Syscall.h"
 #include "Rev.h"
 #include "ConflictText.h"
+#include "OpenURL.h"
 
 extern "C" {
     extern char** environ;
@@ -103,13 +99,6 @@ public:
 //            _drag.titlePanel->orderFront();
 //        }
         
-        if (_trialCountdownAlert) {
-            auto panel = _trialCountdownAlert;
-            const UI::Rect b = bounds();
-            panel->size(panel->sizeIntrinsic({b.size.x, ConstraintNone}));
-            panel->origin(b.br()-panel->size());
-        }
-        
         if (_updateAvailableAlert) {
             auto p = _updateAvailableAlert;
             const UI::Rect b = bounds();
@@ -156,52 +145,16 @@ public:
             if (_drag.insertionMarker) {
                 Attr color = attr(selectionColor);
                 drawLineHoriz(_drag.insertionMarker->origin, _drag.insertionMarker->size.x);
-//                os_log(OS_LOG_DEFAULT, "DRAW INSERTION MARKER @ p={%d %d} w=%d",
-//                    _drag.insertionMarker->origin.x, _drag.insertionMarker->origin.y, _drag.insertionMarker->size.x);
             }
         }
-        
-//        for (UI::PanelPtr panel : _drag.shadowPanels) {
-//            panel->draw(*panel);
-//        }
         
         if (_selectionRect) {
             Attr color = attr(colors().selection);
             drawRect(*_selectionRect);
         }
-        
-//        if (_messagePanel) {
-//            _messagePanel->draw(*_messagePanel);
-//        }
-//        
-//        if (_welcomeAlert) {
-//            _welcomeAlert->draw(*_welcomeAlert);
-//        }
-//        
-//        if (_registerAlert) {
-//            _registerAlert->draw(*_registerAlert);
-//        }
     }
     
     bool handleEvent(const UI::Event& ev) override {
-//            if (_messagePanel) {
-//                return _messagePanel->handleEvent(win, _messagePanel->convert(ev));
-//            }
-//            
-//            if (_welcomeAlert) {
-//                return _welcomeAlert->handleEvent(win, _welcomeAlert->convert(ev));
-//            }
-//            
-//            if (_registerAlert) {
-//                return _registerAlert->handleEvent(win, _registerAlert->convert(ev));
-//            }
-        
-//            // Let every column handle the event
-//            for (UI::RevColumnPtr col : _columns) {
-//                bool handled = col->handleEvent(ev);
-//                if (handled) return true;
-//            }
-        
         switch (ev.type) {
         case UI::Event::Type::Mouse: {
             const _HitTestResult hitTest = _hitTest(ev.mouse.origin);
@@ -314,8 +267,7 @@ public:
             
             _reload();
             _moveOffer();
-            _licenseCheck();
-            _errorMessageRun("debase must be run from a git repository.", false);
+            _errorMessageRun("debase must be run from a git repository.");
             
         } catch (const UI::ExitRequest&) {
             // Nothing to do
@@ -419,7 +371,6 @@ public:
             
             
             _moveOffer();
-            _licenseCheck();
             _updateCheck();
             track();
             
@@ -467,7 +418,7 @@ public:
             if (!errorMsg.empty()) {
                 errorMsg[0] = toupper(errorMsg[0]);
                 if (errorMsg.back() != '.') errorMsg += '.';
-                _errorMessageRun(errorMsg, false);
+                _errorMessageRun(errorMsg);
             }
         }
     }
@@ -983,7 +934,6 @@ private:
         _columns.erase(_columns.begin()+colCount, _columns.end());
         
         // Update subviews
-        if (_trialCountdownAlert) sv.push_back(_trialCountdownAlert);
         if (_updateAvailableAlert) sv.push_back(_updateAvailableAlert);
         
         for (UI::PanelPtr panel : _panels) {
@@ -1978,60 +1928,6 @@ private:
         }
     }
     
-    static License::Context _LicenseContext(const _Path& dir) {
-        using namespace std::chrono;
-        using namespace std::filesystem;
-        Machine::MachineId machineId = Machine::MachineIdCalc(DebaseProductId);
-        Machine::MachineInfo machineInfo = Machine::MachineInfoCalc();
-        
-        // Find t = max(time(), <time of each file in dir>),
-        // to help prevent time-rollback attacks.
-        system_clock::time_point latestTime = system_clock::now();
-        try {
-            for (const path& p : directory_iterator(dir)) {
-                try {
-                    // We'd ideally use std::filesystem::last_write_time() here instead of our
-                    // custom Stat() function, but last_write_time() returns a
-                    // time_point<file_clock>, but we need a time_point<system_clock>, and as
-                    // of C++17, there's no proper way to convert between the two (and they
-                    // apparently use different epochs on Linux!)
-                    // 
-                    // We should be able to use last_write_time() when we upgrade to C++20,
-                    // which fixes the situation with file_clock::to_sys() /
-                    // file_clock::from_sys() and std::chrono::clock_cast().
-                    auto writeTime = system_clock::from_time_t(Stat(p).st_mtime);
-                    latestTime = std::max(latestTime, writeTime);
-                } catch (...) {} // Continue to next file if an error occurs
-            }
-        } catch (...) {} // Suppress failures while getting latest write time in repo dir
-        
-        return License::Context{
-            .machineId = machineId,
-            .machineInfo = machineInfo,
-            .version = DebaseVersion,
-            .time = latestTime,
-        };
-    }
-    
-//    void _trialStart(State::State& state) {
-//        
-//    }
-    
-    const License::Context& _licenseCtxGet() {
-        // We'd normally use _repo.path(), but we allow ourself to be
-        // executed from outside a git repo (for an improved first-run
-        // experience). So use "." instead, which will work whether
-        // _repo==null or not.
-        if (!_licenseCtx) _licenseCtx = _LicenseContext(".");
-        return *_licenseCtx;
-    }
-    
-    License::Status _licenseUnseal(const License::SealedLicense& sealed, License::License& license) {
-        License::Status st = License::Unseal(DebaseKeyPublic, sealed, license);
-        if (st != License::Status::Valid) return st;
-        return License::Validate(_licenseCtxGet(), license);
-    }
-    
     void _layoutPanel(UI::PanelPtr panel) {
         panel->size(panel->sizeIntrinsic(bounds().size));
         
@@ -2069,350 +1965,13 @@ private:
         }
     }
     
-    template <typename T>
-    std::optional<License::License> _licenseLookupRun(UI::PanelPtr panel, UI::ButtonPtr animateButton, const char* url, const T& cmd) {
-        
-//        // Disable interaction while we wait for the license request
-//        assert(interaction());
-//        interaction(false);
-//        Defer( interaction(true); );
-        
-        // Request license and wait until we get a response
-        License::Server::ReplyLicenseLookup reply;
-        Async async([&] () {
-//            for (;;) sleep(1);
-            Network::Request(url, cmd, reply);
-        });
-        _waitForAsync(async, Forever, panel, animateButton);
-        
-        try {
-            async.get(); // Rethrows exception if one occurred on the async thread
-        } catch (const std::exception& e) {
-            _errorMessageRun(std::string("An error occurred when talking to the server: ") + e.what(), true);
-            return std::nullopt;
-        }
-        
-        if (!reply.error.empty()) {
-            _errorMessageRun(reply.error, true);
-            return std::nullopt;
-        }
-        
-        // Validate response
-        const License::SealedLicense& sealed = reply.license;
-        License::License license;
-        License::Status st = _licenseUnseal(sealed, license);
-        if (st != License::Status::Valid) {
-            if (st == License::Status::InvalidVersion) {
-                std::stringstream ss;
-                ss << "This license is only valid for debase version " << license.version << " and older, but this is debase version " << DebaseVersion << ".";
-                _errorMessageRun(ss.str(), true);
-                return std::nullopt;
-            
-            } else if (st == License::Status::Expired) {
-                _errorMessageRun("The license supplied by the server is already expired.", true);
-                return std::nullopt;
-            
-            } else {
-                _errorMessageRun("The license supplied by the server is invalid.", true);
-                return std::nullopt;
-            }
-        }
-        
-        // License is valid; save it and dismiss
-        State::State state(StateDir());
-        state.license(sealed);
-        state.write();
-        
-        return license;
-    }
-    
-    bool _trialLookup(UI::PanelPtr panel, UI::ButtonPtr animateButton) {
-        const auto cmd = _commandTrialLookup();
-        std::optional<License::License> license = _licenseLookupRun(panel, animateButton, DebaseTrialLookupURL, cmd);
-        if (!license) return false;
-        _trialCountdownAlert = _trialCountdownAlertCreate(*license);
-        return true;
-    }
-    
-    License::Server::CommandTrialLookup _commandTrialLookup() {
-        return {
-            .machineId      = _licenseCtxGet().machineId,
-            .machineInfo    = _licenseCtxGet().machineInfo,
-        };
-    }
-    
-    License::Server::CommandLicenseLookup _commandLicenseLookup(std::string_view email, std::string_view licenseCode) {
-        return {
-            .email          = std::string(email),
-            .licenseCode    = std::string(licenseCode),
-            .machineId      = _licenseCtxGet().machineId,
-            .machineInfo    = _licenseCtxGet().machineInfo,
-        };
-    }
-    
-//    void _licenseRenewActionTrial() {
-//        assert(_registerAlert);
-//        
-//        const License::Request req = _trialRequestCreate();
-//        std::optional<License::License> license = _licenseRequest(_registerAlert, _registerAlert->dismissButton(), req);
-//        if (license) {
-//            _trialCountdownShow(*license);
-//            _registerAlert = nullptr;
-//        }
-//    }
-    
-//    void _welcomeAlertActionTrial() {
-//        assert(_welcomeAlert);
-//        
-//        const License::Request req = _trialRequestCreate();
-//        std::optional<License::License> license = _licenseRequest(_welcomeAlert, _welcomeAlert->trialButton(), req);
-//        if (license) {
-//            _trialCountdownShow(*license);
-//            _welcomeAlert = nullptr;
-//        }
-//    }
-//    
-//    void _welcomeAlertActionRegister() {
-//        _registerAlertPresent();
-//    }
-    
-    void _welcomeAlertRun() {
-        std::optional<bool> choice;
-        
-        auto alert = _panelPresent<UI::WelcomeAlert>();
-        alert->width                    (40);
-        alert->color                    (colors().menu);
-        alert->title()->text            ("");
-        alert->message()->text          ("Welcome to debase!");
-        alert->trialButton()->action    ( [&] (UI::Button& b) { choice = true; } );
-        alert->registerButton()->action ( [&] (UI::Button& b) { choice = false; } );
-        
-        for (;;) {
-            // Wait until the user clicks a button
-            while (!choice) track(Once);
-            
-            // Trial
-            if (*choice) {
-                if (_trialLookup(alert.panel(), alert->trialButton())) {
-                    return;
-                }
-            
-            // Register
-            } else {
-                if (_registerAlertRun()) {
-                    return;
-                }
-            }
-            
-            choice = std::nullopt;
-        }
-    }
-    
-    auto _registerAlertPresent(std::string_view title, std::string_view message) {
-        auto alert = _panelPresent<UI::RegisterAlert>();
-        alert->width            (52);
-        alert->color            (colors().menu);
-        alert->title()->text    (title);
-        alert->message()->text  (message);
-        return alert;
-    }
-    
-    bool _registerAlertRun(UI::RegisterAlertPtr alert, std::function<bool()> dismissAction=nullptr) {
-//        std::string msg = std::string(message)_showAlert;
-//        msg += " To buy a license, please visit:\n";
-        
-        const auto dismissActionPrev = alert->dismissButton()->action();
-        std::optional<bool> choice;
-        
-        alert->okButton()->action                          ( [&] (UI::Button& b) { choice = true; } );
-        if (dismissAction) {
-            alert->dismissButton()->action ( [&] (UI::Button& b) {
-                if (dismissAction()) {
-                    choice = false;
-                }
-            });
-        }
-        
-        for (;;) {
-            // Wait until the user clicks a button
-            while (!choice) track(Once);
-            
-            // Register
-            if (*choice) {
-                const std::string email = alert->email()->value();
-                const std::string licenseCode = alert->code()->value();
-                const auto cmd = _commandLicenseLookup(email, licenseCode);
-                bool ok = (bool)_licenseLookupRun(alert, alert->okButton(), DebaseLicenseLookupURL, cmd);
-                if (ok) {
-                    _trialCountdownAlert = nullptr;
-                    _thankYouMessageRun();
-                    return true;
-                }
-            
-            // Dismiss
-            } else {
-                return false;
-            }
-            
-            choice = std::nullopt;
-        }
-    }
-    
-    bool _registerAlertRun() {
-        constexpr const char* Title     = "Register debase";
-        constexpr const char* Message   = "Please enter your license information.";
-        
-        auto panel = _registerAlertPresent(Title, Message);
-        return _registerAlertRun(panel, []() { return true; });
-    }
-    
-    bool _trialExpiredPanelRun() {
-        constexpr const char* Title     = "Trial Expired";
-        constexpr const char* Message   = "Thank you for trying debase. Please enter your license information to continue.";
-        
-        auto panel = _registerAlertPresent(Title, Message);
-        return _registerAlertRun(panel);
-    }
-    
-    bool _licenseRenewRun(const License::License& license) {
-        constexpr const char* PanelTitle            = "Renew License";
-        constexpr const char* PanelMessageUnderway  = "Renewing debase license for this machine...";
-        constexpr const char* PanelMessageError     = "A problem was encountered with your debase license. Please try registering again.";
-        
-        // Create the register panel, but keep it hidden for now
-        auto panel = _registerAlertPresent(PanelTitle, PanelMessageUnderway);
-        panel->visible(false);
-        panel->buyMessageVisible(false);
-        panel->email()->value(license.email);
-        panel->code()->value(license.licenseCode);
-        panel->dismissButton()->label()->text("Free Trial");
-        panel->okButton()->action([] (UI::Button&) {});
-        panel->dismissButton()->action([] (UI::Button&) {});
-//        panel->dismissButton()->action([&] (UI::Button&) {
-//            _trialLookup(panel.alert(), panel->dismissButton());
-//        });
-//        _registerAlert->layoutNeeded(true);
-        
-        const auto cmd = _commandLicenseLookup(license.email, license.licenseCode);
-        
-        // Request license and wait until we get a response
-        License::Server::ReplyLicenseLookup reply;
-        Async async([&] () {
-//            for (;;) sleep(1);
-            Network::Request(DebaseLicenseLookupURL, cmd, reply);
-        });
-        
-        // Wait until the async to complete, or for the timeout to occur, whichever comes first.
-//        #warning TODO: revert timeout
-//        constexpr auto ShowPanelTimeout = std::chrono::seconds(1);
-        constexpr auto ShowPanelTimeout = std::chrono::seconds(5);
-        const auto showPanelDeadline = std::chrono::steady_clock::now()+ShowPanelTimeout;
-        _waitForAsync(async, showPanelDeadline);
-        
-//        // Disable interaction from this point forward
-//        assert(interaction());
-//        interaction(false);
-//        Defer( interaction(true); );
-        
-        // If the license request hasn't completed yet, show the register panel until it does,
-        // so that we block the app from being used until the license is valid
-        if (!async.done()) {
-            panel->visible(true);
-            _waitForAsync(async, Forever, panel.panel(), panel->okButton());
-        }
-        
-        bool ok = false;
-        try {
-            async.get(); // Rethrows exception if one occurred on the async thread
-            
-            // Check the license
-            // If it's not valid, show or update the register panel
-            const License::SealedLicense& sealed = reply.license;
-            License::License license;
-            License::Status st = _licenseUnseal(sealed, license);
-            if (st == License::Status::Valid) {
-                // License is valid; save it and dismiss
-                State::State state(StateDir());
-                state.license(sealed);
-                state.write();
-                ok = true;
-            }
-        } catch (...) {}
-        
-        if (!ok) {
-            panel->visible(true);
-            panel->buyMessageVisible(true);
-            panel->message()->text(PanelMessageError);
-            layoutNeeded(true);
-            return _registerAlertRun(panel, [&] {
-                // Dismiss action
-                return _trialLookup(panel.panel(), panel->dismissButton());
-            });
-        }
-        
-        return true;
-    }
-    
-    UI::TrialCountdownAlertPtr _trialCountdownAlertCreate(const License::License& license) {
-        using namespace std::chrono;
-        assert(license.expiration);
-        
-//        using namespace std::chrono;
-////        using days = duration<int64_t, std::ratio<86400>>;
-//        constexpr auto Day = std::chrono::seconds(86400);
-//        
-//        _registerButton->label()->text  ("Register");
-//        _registerButton->drawBorder     (true);
-//        _registerButton->enabled        (true);
-//        
-//        title()->text("debase trial");
-//        title()->align(Align::Center);
-//        
-//        // If the time remaining is > 1 day, add .5 days, causing the RelativeTimeString()
-//        // result to effectively round to the nearest day (instead of flooring) when the
-//        // time remaining is in days.
-//        auto rem = duration_cast<seconds>(std::chrono::system_clock::from_time_t(_expiration) - std::chrono::system_clock::now());
-//        if (rem > Day) rem += Day/2;
-//        message()->text(Time::RelativeTimeString({.futureSuffix="left"}, rem));
-        
-        const License::Context& ctx = _licenseCtxGet();
-        const auto rem = duration_cast<seconds>(system_clock::from_time_t(license.expiration)-ctx.time);
-        UI::TrialCountdownAlertPtr alert = subviewCreate<UI::TrialCountdownAlert>(rem);
-        alert->registerButton()->action([&] (UI::Button&) {
-            _registerAlertRun();
-        });
-        return alert;
-    }
-    
-    void _thankYouMessageRun() {
-        bool done = false;
-        
-        auto alert = _panelPresent<UI::Alert>();
-        alert->width                (42);
-        alert->color                (colors().menu);
-        alert->title()->text        ("Thank You!");
-        alert->message()->text      ("Thank you for supporting debase!");
-        alert->message()->align     (UI::Align::Center);
-        alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
-        
-        // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
-        // as a result of pressing a keyboard key. For some reason showing panels
-        // due to a mouse event doesn't trigger the flicker, only keyboard events.
-        // For some reason sleeping a short time fixes it.
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        
-        // Wait until the user clicks a button
-        while (!done) track(Once);
-    }
-    
-    void _errorMessageRun(std::string_view msg, bool showSupportMessage) {
+    void _errorMessageRun(std::string_view msg) {
         bool done = false;
         
         auto alert = _panelPresent<UI::ErrorAlert>();
         alert->width                (40);
         alert->message()->text      (msg);
         alert->okButton()->action   ( [&] (UI::Button&) { done = true; } );
-        alert->showSupportMessage   (showSupportMessage);
         
         // Sleep 10ms to prevent an odd flicker that occurs when showing a panel
         // as a result of pressing a keyboard key. For some reason showing panels
@@ -2799,73 +2358,6 @@ private:
         });
     }
     
-    void _licenseCheck() {
-        // Limit lifetime of `state` since our various Run() functions are synchronous
-        // and don't return until the user responds, and while we hold `state`, other
-        // debase instances are blocked from accessing it
-        License::SealedLicense sealedLicense;
-        bool trialExpired = false;
-        {
-            State::State state(StateDir());
-            sealedLicense = state.license();
-            trialExpired = state.trialExpired();
-        }
-        
-        License::License license;
-        License::Status st = _licenseUnseal(sealedLicense, license);
-        if (st == License::Status::Empty) {
-            // Show welcome panel
-            if (!trialExpired) _welcomeAlertRun();
-            // Show trial-expired panel
-            else _trialExpiredPanelRun();
-        
-        } else if (st==License::Status::InvalidMachineId && !license.expiration) {
-            _licenseRenewRun(license);
-        
-        } else if (st == License::Status::Expired) {
-            // Delete license, set expired=1, show trial-expired panel
-            // Don't hold `state` while we call _trialExpiredPanelRun(), since it blocks
-            // until the user responds
-            {
-                State::State state(StateDir());
-                state.license(License::SealedLicense{});
-                state.trialExpired(true);
-                state.write();
-            }
-            
-            _trialExpiredPanelRun();
-        
-        } else if (st == License::Status::Valid) {
-            if (license.expiration) {
-                _trialCountdownAlert = _trialCountdownAlertCreate(license);
-            }
-            
-            // Done; debase is registered
-        
-        } else {
-            // Unknown license error
-            // Delete license, show welcome panel
-            // Don't hold `state` while we call _welcomeAlertRun(), since it blocks
-            // until the user responds
-            {
-                State::State state(StateDir());
-                state.license(License::SealedLicense{});
-                state.write();
-            }
-            
-            _welcomeAlertRun();
-        }
-    }
-    
-//    void _updateCheckActionDownload() {
-//        OpenURL(DebaseDownloadURL);
-//    }
-//    
-//    void _updateCheckActionIgnore() {
-//        State::State state(StateDir());
-//        state.updateIgnoreVersion();
-//    }
-    
     void _updateCheck() {
         using namespace std::chrono;
         const std::time_t currentTime = system_clock::to_time_t(system_clock::now());
@@ -2924,35 +2416,6 @@ private:
                 _updateAvailableAlertShow(latestVersion);
             }
         }
-        
-//        // If the latest version is <= our version, there's nothing to do
-//        if (latestVersion <= DebaseVersion) return;
-//        if (latestVersion <= state.updateIgnoreVersion()) return;
-//        
-//        _updateAvailableAlert = subviewCreate<UI::UpdateAvailableAlert>(latestVersion);
-//        
-//        
-//        
-//        if (resp<=DebaseVersion resp>state.lastIgnoredUpdateVersion()) {
-//        
-//        }
-//        
-//        system_clock::from_time_t(license.expiration)
-//        
-//        if (lastIgnoredUpdateTime > )
-//        
-//        state.
-//        
-//        system_clock::from_time_t(license.expiration)
-//        
-//            {"lastIgnoredUpdateTime", state.lastIgnoredUpdateTime},
-//            {"lastIgnoredUpdateVersion", state.lastIgnoredUpdateVersion},
-//        
-//        _updateCheckAsync = AsyncFn<Version>([]() {
-//            Version resp = 0;
-//            Network::Request(DebaseCurrentVersionURL, nullptr, resp);
-//            return resp;
-//        });
     }
     
     Git::Repo _repo;
@@ -2960,7 +2423,6 @@ private:
     
 //    UI::ColorPalette _colors;
 //    UI::ColorPalette _colorsPrev;
-    std::optional<License::Context> _licenseCtx;
     State::RepoState _repoState;
     Git::Rev _head;
     bool _headReattach = false;
@@ -2988,7 +2450,6 @@ private:
     
 //    AsyncFn<Version> _updateCheckAsync;
     
-    UI::TrialCountdownAlertPtr _trialCountdownAlert;
     UI::AlertPtr _updateAvailableAlert;
     std::deque<UI::PanelPtr> _panels;
 };

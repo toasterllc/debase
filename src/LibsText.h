@@ -1,18 +1,4 @@
 constexpr const char*const LibsText = R"#(
-Thanks to Daniel Beer for the c25519 project:
-
-    https://www.dlbeer.co.nz/oss/c25519.html
-
-
-
-
-
-==================================================
-
-
-
-
-
 Thanks to the libcurl project:
 
     https://curl.se/libcurl/
