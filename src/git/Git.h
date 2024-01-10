@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 #include <cassert>
+#include <cstring>
 #include "Debase.h"
 #include "RefCounted.h"
 #include "lib/toastbox/RuntimeError.h"
