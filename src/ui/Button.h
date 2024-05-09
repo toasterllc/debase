@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <functional>
 #include "Window.h"
 #include "UTF8.h"
 #include "View.h"
