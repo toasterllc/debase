@@ -2,7 +2,7 @@
 
 ![debase screen recording](./readme-copy.gif)
 
-`debase` allows you to easily move / copy / delete / edit commits with a mouse.
+`debase` makes editing git history easier by allowing you to move / copy / edit / delete commits with a mouse.
 
 Full details: [toaster.llc/debase](https://toaster.llc/debase).
 
