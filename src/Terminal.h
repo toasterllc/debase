@@ -9,67 +9,6 @@
 #include "lib/toastbox/IntForStr.h"
 #include "lib/toastbox/Defer.h"
 
-//// Terminal::_Parse() Fuzz testing (replaces ReadWrite.h)
-//namespace Toastbox {
-//
-//template <typename T>
-//T RandomInt(T max) {
-//    if (!max) return 0;
-//    return rand()%((int)max+1);
-//}
-//
-//inline size_t Read(int fd, void* data, size_t len, std::chrono::steady_clock::time_point deadline=std::chrono::steady_clock::time_point()) {
-//    assert(fd == 0);
-//    assert(len == 1);
-//    
-//    static std::vector<uint8_t> randomData;
-//    static bool replinish = true;
-//    if (replinish) {
-//        replinish = false;
-//        
-//        // Reproduce random data
-//        size_t len = RandomInt(16);
-//        for (size_t i=0; i<len; i++) {
-//            int excess = 16;
-//            randomData.push_back('0'+RandomInt(10+(2*excess))-excess);
-//        }
-//        
-//        if (RandomInt(1)) {
-//            randomData.insert(randomData.begin()+0, ';');
-//            randomData.insert(randomData.begin()+1, 'r');
-//            randomData.insert(randomData.begin()+2, 'g');
-//            randomData.insert(randomData.begin()+3, 'b');
-//            randomData.insert(randomData.begin()+4, ':');
-//        }
-//        
-//        if (RandomInt(1)) {
-//            for (int i=0; i<3; i++) {
-//                randomData.insert(randomData.begin()+RandomInt(randomData.size()), '/');
-//            }
-//        }
-//        
-//        if (RandomInt(1)) {
-//            randomData.insert(randomData.begin(), 0x1B);
-//            randomData.push_back(0x07);
-//        }
-//    }
-//    
-//    if (randomData.empty()) {
-//        replinish = true;
-//        return 0;
-//    }
-//    
-//    *(uint8_t*)data = randomData.front();
-//    randomData.erase(randomData.begin());
-//    return 1;
-//}
-//
-//inline size_t Write(int fd, const void* data, size_t len, std::chrono::steady_clock::time_point deadline=std::chrono::steady_clock::time_point()) {
-//    return len;
-//}
-//
-//} // namespace Toastbox
-
 namespace Terminal {
 
 class Settings : public termios {
@@ -213,4 +152,4 @@ inline Background BackgroundGet() {
     }
 }
 
-} // namespace TerminalBackground
+} // namespace Terminal

@@ -18,7 +18,6 @@ endif
 GITHASHHEADER = src/DebaseGitHash.h
 
 SRCS =											\
-	src/OpenURL-$(PLATFORM).*					\
 	src/ProcessPath-$(PLATFORM).*				\
 	src/state/StateDir-$(PLATFORM).*			\
 	src/ui/View.cpp								\

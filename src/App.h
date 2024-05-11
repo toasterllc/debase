@@ -15,7 +15,6 @@
 #include "ui/ButtonSpinner.h"
 #include "ui/ErrorAlert.h"
 #include "ui/ConflictPanel.h"
-//#include "ui/TabPanel.h"
 #include "state/StateDir.h"
 #include "state/Theme.h"
 #include "state/State.h"
@@ -23,7 +22,6 @@
 #include "lib/toastbox/String.h"
 #include "xterm-256color.h"
 #include "Terminal.h"
-#include "Async.h"
 #include "CurrentExecutablePath.h"
 #include "PathIsInEnvironmentPath.h"
 #include "ProcessPath.h"
@@ -31,7 +29,6 @@
 #include "Syscall.h"
 #include "Rev.h"
 #include "ConflictText.h"
-#include "OpenURL.h"
 
 extern "C" {
     extern char** environ;
@@ -54,16 +51,6 @@ public:
             col->frame({{offX, 0}, {_ColumnWidth, size().y}});
             offX += _ColumnWidth+_ColumnSpacing;
         }
-        
-//        col->frame({{offX, 0}, {ColumnWidth, size().y}});
-//        
-//        for (UI::RevColumnPtr col : _columns) {
-//            for (UI::CommitPanelPtr panel : col->panels()) {
-//                const _SelectState selectState = _selectStateGet(col, panel);
-//                const bool visible = (selectState!=_SelectState::True ? true : (!dragging || copying));
-//                panel->visible(visible);
-//            }
-//        }
         
         bool dragging = (bool)_drag.titlePanel;
         bool copying = _drag.copy;
@@ -108,8 +95,6 @@ public:
         }
         
         if (_drag.titlePanel) {
-//            _drag.titlePanel->draw(*_drag.titlePanel);
-            
             // Draw insertion marker
             if (_drag.insertionMarker) {
                 Attr color = attr(selectionColor);
@@ -787,19 +772,6 @@ private:
             abort();
         }
     }
-//    
-//    void _revColumnNameCommit(UI::RevColumnPtr col) {
-//        switch (reason) {
-//        case UnfocusReason::Return:
-//            
-//            return;
-//        
-//        case UnfocusReason::Escape:
-//        default:
-//            // Cancel editing
-//            return;
-//        }
-//    }
     
     void _reload() {
         // We allow ourself to be called outside of a git repo, so we need
@@ -1883,31 +1855,6 @@ private:
         panel->origin(p);
     }
     
-    template <typename T_Async>
-    void _waitForAsync(const T_Async& async, Deadline deadline=Forever, UI::PanelPtr panel=nullptr, UI::ButtonPtr button=nullptr) {
-        
-        if (panel) panel->enabled(false);
-        Defer( if (panel) panel->enabled(true); );
-        
-        // Animate until we get a response
-        UI::ButtonSpinnerPtr spinner = (button ? UI::ButtonSpinner::Create(button) : nullptr);
-        Deadline nextDeadline;
-        
-        for (;;) {
-            if (async.done()) break;
-            
-            std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
-            if (deadline!=Forever && time>deadline) break;
-            
-            if (time > nextDeadline) {
-                if (spinner) spinner->animate();
-                nextDeadline = std::chrono::steady_clock::now()+std::chrono::milliseconds(100);
-            }
-            
-            track(nextDeadline);
-        }
-    }
-    
     void _errorMessageRun(std::string_view msg) {
         bool done = false;
         
@@ -1925,161 +1872,6 @@ private:
         // Wait until the user clicks a button
         while (!done) track(Once);
     }
-    
-//    void _conflictRun() {
-//        
-//        Git::Conflict fc = {
-//            .path = "/Some/Really/Long/Path/That/We/Want/To/Truncate/FDStream.h",
-//            .hunks = {
-//                Git::Conflict::Hunk{
-//                    .type = Git::Conflict::Hunk::Type::Normal,
-//                    .normal = {
-//                        .lines = {
-//                            "#pragma once",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                            "#include <fstream>",
-//                        },
-//                    },
-//                },
-//                
-//                Git::Conflict::Hunk{
-//                    .type = Git::Conflict::Hunk::Type::Conflict,
-//                    .conflict = {
-//                        .linesOurs = {
-//                            "#include <memory>",
-//                            "#include <cassert>",
-//                            "",
-//                            "#ifdef __GLIBCXX__",
-//                            "#include <ext/stdio_filebuf.h>",
-//                            "#endif",
-//                        },
-//                        
-//                        .linesTheirs = {
-////                            "hello",
-//                        },
-//                    },
-//                },
-//                
-//                Git::Conflict::Hunk{
-//                    .type = Git::Conflict::Hunk::Type::Normal,
-//                    .normal = {
-//                        .lines = {
-//                            "",
-//                            "namespace Toastbox {",
-//                            "",
-//                            "// FDStream allows an istream/ostream/iostream to be created from a file descriptor.",
-//                            "// The FDStream object takes ownership of the file descriptor (actually, the",
-//                            "// underlying platform-specific filebuf object) and closes it when FDStream is",
-//                            "// destroyed.",
-//                            "",
-//                            "class FDStream {",
-//                            "protected:",
-//                            "#ifdef __GLIBCXX__",
-//                            "    // GCC (libstdc++)",
-//                            "    using _Filebuf = __gnu_cxx::stdio_filebuf<char>;",
-//                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
-//                            "//        if (fd >= 0) {",
-//                            "//            _filebuf = std::make_unique<_Filebuf>(fd, mode);",
-//                            "//        } else {",
-//                            "//            _filebuf = std::make_unique<_Filebuf>();",
-//                            "//        }",
-//                            "//        return _filebuf.get();",
-//                            "        ",
-//                            "//        if (fd < 0) return nullptr;",
-//                            "//        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
-//                            "//        return _filebuf.get();",
-//                            "        ",
-//                            "        assert(fd >= 0);",
-//                            "        _filebuf = std::make_unique<_Filebuf>(fd, mode);",
-//                            "        return _filebuf.get();",
-//                            "    }",
-//                            "#else",
-//                            "    // Clang (libc++)",
-//                            "    using _Filebuf = std::basic_filebuf<char>;",
-//                            "    _Filebuf* _initFilebuf(int fd, std::ios_base::openmode mode) {",
-//                            "//        _filebuf = std::make_unique<_Filebuf>();",
-//                            "//        if (fd >= 0) {",
-//                            "//            _filebuf->__open(fd, mode);",
-//                            "//        }",
-//                            "//        return _filebuf.get();",
-//                            "        ",
-//                            "//        if (fd < 0) return nullptr;",
-//                            "//        _filebuf = std::make_unique<_Filebuf>();",
-//                            "//        _filebuf->__open(fd, mode);",
-//                            "//        return _filebuf.get();",
-//                            "        ",
-//                            "        assert(fd >= 0);",
-//                            "        _filebuf = std::make_unique<_Filebuf>();",
-//                            "        _filebuf->__open(fd, mode);",
-//                            "        return _filebuf.get();",
-//                            "    }",
-//                            "#endif",
-//                            "    ",
-//                            "    void _swap(FDStream& x) {",
-//                            "        std::swap(_filebuf, x._filebuf);",
-//                            "    }",
-//                            "    ",
-//                            "    // _Filebuf needs to be a unique_ptr so that the pointer returned by",
-//                            "    // _initFilebuf() stays valid after swap() is called. Otherwise, if",
-//                            "    // _filebuf was an inline ivar, the pointer given to the iostream",
-//                            "    // constructor would reference a different object after swap() was",
-//                            "    // called.",
-//                            "    std::unique_ptr<_Filebuf> _filebuf;",
-//                            "};",
-//                            "",
-//                            "//class FDStreamIn : public FDStream, public std::istream {",
-//                            "//public:",
-//                            "//    FDStreamIn(int fd=-1) : std::istream(_initFilebuf(fd, std::ios::in)) {}",
-//                            "//};",
-//                            "//",
-//                            "//class FDStreamOut : public FDStream, public std::ostream {",
-//                            "//public:",
-//                            "//    FDStreamOut(int fd=-1) : std::ostream(_initFilebuf(fd, std::ios::out)) {}",
-//                            "//};",
-//                            "",
-//                            "class FDStreamInOut : public FDStream, public std::iostream {",
-//                            "public:",
-//                            "    FDStreamInOut() : std::iostream(nullptr) {}",
-//                            "    FDStreamInOut(int fd) : std::iostream(_initFilebuf(fd, std::ios::in|std::ios::out)) {}",
-//                            "    FDStreamInOut(FDStreamInOut&& x) : FDStreamInOut() {",
-//                            "        swap(x);",
-//                            "    }",
-//                            "    ",
-//                            "    // Move assignment operator",
-//                            "    FDStreamInOut& operator=(FDStreamInOut&& x) {",
-//                            "        swap(x);",
-//                            "        return *this;",
-//                            "    }",
-//                            "    ",
-//                            "    void swap(FDStreamInOut& x) {",
-//                            "        FDStreamInOut::_swap(x);",
-//                            "        std::iostream::swap(x);",
-//                            "        rdbuf(_filebuf.get());",
-//                            "        x.rdbuf(x._filebuf.get());",
-//                            "    }",
-//                            "};",
-//                            "",
-//                            "}",
-//                            "",
-//                        },
-//                    },
-//                },
-//            },
-//        };
-//        
-//        UI::ConflictPanel::Layout layout = UI::ConflictPanel::Layout::LeftOurs;
-//        auto panel = _panelPresent<UI::ConflictPanel>(layout, "master", "SomeBranch", fc, 1);
-//        track();
-//    }
     
     void _moveOffer() {
         namespace fs = std::filesystem;
@@ -2255,12 +2047,6 @@ private:
             updateShellPath,
         };
         
-//        static {
-//            .shell              = shell,
-//            .binDirRelativePath = binDirRelativePath,
-//            .updateShellPath    = updateShellPath,
-//        } ctx;
-        
         atexit(+[]() {
             std::cout     << "\n";
             std::cout     << "*** debase was moved to ~/" << (ctx.binDirRelativePath/DebaseFilename).string() << "\n";
@@ -2284,14 +2070,11 @@ private:
     Git::Repo _repo;
     std::vector<Rev> _revs;
     
-//    UI::ColorPalette _colors;
-//    UI::ColorPalette _colorsPrev;
     State::RepoState _repoState;
     Git::Rev _head;
     bool _headReattach = false;
     std::vector<UI::RevColumnPtr> _columns;
     UI::RevColumnPtr _columnNameFocused;
-//    UI::CursorState _cursorState;
     State::Theme _theme = State::Theme::None;
     
     struct {
