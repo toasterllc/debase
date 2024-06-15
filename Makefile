@@ -135,44 +135,6 @@ $(GITHASHHEADER): .git/HEAD .git/index
 	echo '#define _DebaseGitHash "$(shell git rev-parse HEAD)"' >> $@
 	echo '#define _DebaseGitHashShort "$(shell git rev-parse HEAD | cut -c -10)"' >> $@
 
-# codesign: intentionally no dependencies because we want to ensure
-# that codesigning/notarizing uses the existing binary and doesn't
-# trigger a new build
-codesign:
-	codesign														\
-		-vvvv														\
-		--force														\
-		--timestamp													\
-		--options=runtime											\
-		-s 'Developer ID Application: Toaster LLC (5VXGM37B6Z)'		\
-		$(BUILDDIR)/$(NAME)
-
-# notarize: initiates the notarization process using the build output
-notarize: codesign
-	cd $(BUILDDIR) && zip $(NAME).zip $(NAME)
-	
-	@echo "Uploading binary to be notarized..."
-	
-	xcrun altool									\
-		 --notarize-app								\
-		 --primary-bundle-id llc.toaster.debase		\
-		 --username 'apple@toaster.llc'				\
-		 --password '@keychain:altool'				\
-		 --file $(BUILDDIR)/$(NAME).zip
-	
-	rm $(BUILDDIR)/$(NAME).zip
-
-# notarize-status: checks Apple's notarization progress
-notarize-status:
-	xcrun altool									\
-		--notarization-history 0					\
-		-p @keychain:altool
-
-# notarize-test: checks whether the local system considers the binary notarized
-# Note that the system won't update the binary's notarization status until it's first launched!
-notarize-test:
-	codesign -vvvv --verify --test-requirement="=notarized" $(BUILDDIR)/$(NAME)
-
 clean:
 	$(MAKE) -C lib clean
 	rm -Rf $(BUILDROOT)
