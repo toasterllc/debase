@@ -942,7 +942,7 @@ public:
     // commitAmend(): change the author/message of a commit
     Commit commitAmend(const Commit& commit, const Signature& author, const std::string& msg) const {
         Id id;
-        int ir = git_commit_amend(&id, *commit, nullptr, *author, nullptr,
+        int ir = git_commit_amend(&id, *commit, nullptr, *author, *author,
             nullptr, (!msg.empty() ? msg.c_str() : nullptr), nullptr);
         if (ir) throw Error(ir, "git_commit_amend failed");
         return commitLookup(id);
