@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "Version.h"
 
-#define _DebaseVersion                      2
+#define _DebaseVersion                      3
 #define _DebaseFilename                     "debase"
 #define _DebaseProductId                    "llc.toaster.debase"
 #define _ToasterURL                         "https://toaster.llc"
