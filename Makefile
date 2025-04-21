@@ -1,6 +1,5 @@
 NAME = debase
 DEBUG ?= 0
-STAGE ?= $(DEBUG)
 ARCHS ?= x86_64 arm64
 
 ifeq ($(shell uname -s), Darwin)
@@ -37,8 +36,7 @@ CPPFLAGS =										\
 	-MMD										\
 	-MP											\
 	-Wall										\
-	-DDEBUG=$(DEBUG)							\
-	-DSTAGE=$(STAGE)
+	-DDEBUG=$(DEBUG)
 
 CFLAGS =										\
 	-std=c11									\
