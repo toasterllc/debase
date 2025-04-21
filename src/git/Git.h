@@ -630,11 +630,7 @@ class Repo : public RefCounted<git_repository*, _RepoFree> {
 public:
     using RefCounted::RefCounted;
     
-    static Repo Open(const std::filesystem::path& path) {
-        bool shutdown = true;
-        git_libgit2_init();
-        Defer( if (shutdown) git_libgit2_shutdown() );
-        
+    static std::filesystem::path _RepoDir(const std::filesystem::path& path) {
         Buf buf;
         {
             git_buf x = GIT_BUF_INIT;
@@ -643,8 +639,24 @@ public:
             buf = x;
         }
         
+        // Add a trailing slash to ensure we're in the form /a/b/.git///, with at least one trailing slash.
+        // This is necessary because parent_path("/a/b/.git///") returns /a/b/.git, not /a/b.
+        // So by ensuring there's at least one trailing slash, we ensure that we can call parent_path()
+        // twice to get the actual parent directory:
+        //   parent_path(parent_path("/a/b/.git///")) returns "/a/b"
+        const std::filesystem::path dir = std::filesystem::path(buf->ptr) / "";
+        return dir.parent_path().parent_path();
+    }
+    
+    static Repo Open(const std::filesystem::path& path) {
+        namespace fs = std::filesystem;
+        bool shutdown = true;
+        git_libgit2_init();
+        Defer( if (shutdown) git_libgit2_shutdown() );
+        
+        const fs::path dir = _RepoDir(path);
         git_repository* x = nullptr;
-        int ir = git_repository_open(&x, buf->ptr);
+        int ir = git_repository_open(&x, dir.c_str());
         if (ir) throw Error(ir, "git_repository_open failed");
         
         // We succeeded -- don't call shutdown!
